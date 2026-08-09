@@ -203,6 +203,8 @@
     .app-footer { background: var(--card); border-top: 1px solid var(--border); padding: 10px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--muted); }
     .app-footer b { color: var(--ink); }
     .app-footer .footer-role-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; background: var(--paper); border: 1px solid var(--border); font-weight: 700; }
+    .app-credit { background: var(--card); border-top: 1px solid var(--border); padding: 8px 22px; text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 0.2px; }
+    .app-credit b { color: var(--navy); font-weight: 700; }
 
     @media (max-width: 1024px) {
       .sidebar { width: 230px; }
@@ -830,6 +832,7 @@
         <span data-key="footerVersion">সংস্করণ ২.০</span>
       </div>
     </div>
+    <div class="app-credit no-print">© <span id="creditYear">2026</span> <b>Piconet IT</b>. <span data-key="footerAllRightsReserved">All rights reserved.</span></div>
   </div>
 
   </div><!-- /#appWrapper -->
@@ -1049,6 +1052,7 @@
         footerRoleAdmin: "সুপার ইউজার মোড",
         footerRoleStaff: "মডিফাই ইউজার মোড",
         footerVersion: "সংস্করণ ২.০",
+        footerAllRightsReserved: "সর্বস্বত্ব সংরক্ষিত।",
         statusApproved: "অনুমোদিত",
         statusPendingApproval: "অনুমোদনের অপেক্ষায়",
         statusPending: "অপেক্ষমাণ",
@@ -1295,6 +1299,7 @@
         footerRoleAdmin: "Super User Mode",
         footerRoleStaff: "Modify User Mode",
         footerVersion: "Version 2.0",
+        footerAllRightsReserved: "All rights reserved.",
         statusApproved: "Approved",
         statusPendingApproval: "Pending Approval",
         statusPending: "Pending",
@@ -1818,6 +1823,11 @@
       document.getElementById('displayShopName').innerText = shopConfig.name;
       document.getElementById('displayShopTagline').innerText = shopConfig.tagline;
       document.getElementById('displayShopLogo').innerText = shopConfig.logo || 'B';
+      document.getElementById('footerShopName').innerText = shopConfig.name;
+
+      let currentYear = new Date().getFullYear();
+      document.getElementById('footerYear').innerText = currentYear;
+      document.getElementById('creditYear').innerText = currentYear;
 
       document.getElementById('settingShopName').value = shopConfig.name;
       document.getElementById('settingShopTagline').value = shopConfig.tagline;
