@@ -1,0 +1,3093 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wholesale POS System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #111a27;
+      --navy-2: #1b2740;
+      --navy-3: #2a3a58;
+      --gold: #b9791f;
+      --gold-dark: #9a6316;
+      --gold-soft: #fbe9d0;
+      --paper: #f4f1ea;
+      --card: #ffffff;
+      --border: #e3ddd0;
+      --border-cool: #dcd9d2;
+      --ink: #1c2430;
+      --muted: #6d7480;
+      --green: #187a4c;
+      --green-soft: #d9f0e2;
+      --red: #b23b3b;
+      --red-soft: #f9dede;
+      --amber: #a8681a;
+      --amber-soft: #fbe9cf;
+      --radius: 10px;
+      --shadow: 0 1px 2px rgba(20,20,10,0.05), 0 4px 14px rgba(20,20,10,0.05);
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-serif; margin: 0; padding: 0; }
+    body { background: var(--paper); color: var(--ink); display: flex; height: 100vh; overflow: hidden; font-size: 15px; }
+    #appWrapper { display: flex; width: 100%; height: 100%; }
+    #appWrapper.auth-hidden { display: none; }
+    ::selection { background: var(--gold-soft); }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+    /* MOBILE TOGGLE OVERLAY */
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,12,16,0.55); z-index: 99; }
+    .sidebar-overlay.active { display: block; }
+
+    /* SIDEBAR */
+    .sidebar { width: 264px; background: var(--navy); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; z-index: 100; border-right: 1px solid #0a1119; }
+    .sidebar-brand { padding: 14px 16px; font-size: 17px; font-weight: 800; background: var(--navy-2); display: flex; align-items: center; gap: 10px; border-bottom: 3px solid var(--gold); letter-spacing: 0.2px; min-height: 76px; }
+    .sidebar-brand .brand-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sidebar-brand .brand-icon svg { width: 19px; height: 19px; stroke: #1a1206; }
+    .sidebar-brand .brand-text { flex-grow: 1; }
+    .sidebar-brand .brand-close { cursor: pointer; opacity: 0.7; }
+    .sidebar-menu { list-style: none; padding: 14px 10px; flex-grow: 1; overflow-y: auto; }
+    .sidebar-menu li { margin-bottom: 4px; }
+    .sidebar-menu button { width: 100%; text-align: left; padding: 11px 14px; background: transparent; border: none; color: #aebbcf; font-size: 14.5px; font-weight: 600; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 11px; transition: all 0.15s; }
+    .sidebar-menu button svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+    .sidebar-menu button span.menu-label { flex-grow: 1; }
+    .sidebar-menu button:hover { background: var(--navy-2); color: #fff; }
+    .sidebar-menu button.active { background: var(--gold); color: #211705 !important; }
+    .sidebar-menu button.active svg { stroke: #211705; }
+    .sidebar-foot { padding: 14px 18px; font-size: 11.5px; color: #7c8aa0; border-top: 1px solid var(--navy-3); }
+
+    /* MAIN WRAPPER */
+    .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
+
+    /* HEADER */
+    .header { background: var(--card); min-height: 68px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 10px 22px; flex-wrap: wrap; gap: 10px; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .menu-toggle { display: none; background: var(--paper); border: 1px solid var(--border); padding: 8px 11px; border-radius: 8px; font-size: 16px; cursor: pointer; color: var(--ink); }
+    .shop-logo { width: 42px; height: 42px; background: var(--navy); color: var(--gold); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; flex-shrink: 0; border: 2px solid var(--gold); }
+    .shop-info h2 { font-size: 17px; color: var(--ink); font-weight: 800; line-height: 1.25; }
+    .shop-info p { font-size: 12.5px; color: var(--muted); }
+
+    .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .icon-btn { position: relative; background: var(--paper); border: 1px solid var(--border); border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0; color: var(--ink); }
+    .icon-btn svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .icon-btn:hover { background: #ebe6da; }
+    .notification-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; font-size: 10px; font-weight: bold; border-radius: 50%; width: 17px; height: 17px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--card); }
+
+    /* SEGMENTED TOGGLES (language + role) */
+    .segment { display: flex; align-items: center; background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+    .segment button { width: auto; margin: 0; padding: 6px 12px; font-size: 12.5px; font-weight: 700; border-radius: 6px; background: transparent; color: var(--muted); border: none; cursor: pointer; white-space: nowrap; }
+    .segment button.active { background: var(--navy); color: #fff; }
+    .segment.role-segment button.active { background: var(--gold); color: #211705; }
+    .segment.role-segment button.active[data-role="staff"] { background: var(--amber); color: #fff; }
+
+    .content { padding: 22px; overflow-y: auto; flex-grow: 1; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .dashboard-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 25px; }
+    .stat-card { background: var(--card); padding: 18px 20px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .stat-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--gold); }
+    .stat-card.stat-danger::before { background: var(--red); }
+    .stat-card h4 { font-size: 12px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; }
+    .stat-card .value { font-size: 24px; font-weight: 800; color: var(--ink); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .card { background: var(--card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; box-shadow: var(--shadow); }
+    .card h3 { margin-bottom: 15px; color: var(--ink); font-size: 16.5px; font-weight: 800; border-bottom: 2px solid var(--paper); padding-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .card h3 svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; stroke-width: 2; flex-shrink: 0; }
+
+    label { font-size: 12.5px; font-weight: 700; color: #3c4655; display: block; margin-bottom: 6px; }
+    input, select, button { width: 100%; padding: 10px 12px; margin-bottom: 14px; border: 1px solid var(--border-cool); border-radius: 8px; font-size: 14px; color: var(--ink); background: #fff; }
+    input:focus, select:focus { outline: 2px solid var(--gold); border-color: transparent; }
+
+    .input-plus-group { display: flex; gap: 8px; margin-bottom: 14px; }
+    .input-plus-group select, .input-plus-group input { margin-bottom: 0; flex-grow: 1; }
+    .btn-plus { width: 42px; height: 42px; background: var(--green); color: white; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .btn-plus:hover { background: #146039; }
+
+    /* SEARCHABLE AUTOCOMPLETE COMBO */
+    .combo-wrap { position: relative; margin-bottom: 0; flex-grow: 1; }
+    .combo-wrap input { margin-bottom: 0; width: 100%; }
+    .combo-list { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid var(--border-cool); border-radius: 8px; box-shadow: var(--shadow); max-height: 220px; overflow-y: auto; z-index: 50; }
+    .combo-list.active { display: block; }
+    .combo-item { padding: 9px 12px; font-size: 13.5px; cursor: pointer; border-bottom: 1px solid var(--paper); }
+    .combo-item:last-child { border-bottom: none; }
+    .combo-item:hover, .combo-item.highlighted { background: var(--gold-soft); }
+    .combo-item .combo-sub { font-size: 11.5px; color: var(--muted); }
+    .combo-empty { padding: 10px 12px; font-size: 13px; color: var(--muted); }
+
+    /* SIDEBAR LOGO */
+    .sidebar-brand-logo { flex-grow: 1; display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
+    .sidebar-logo-box { width: 46px; height: 46px; border-radius: 8px; background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid var(--gold); transition: all 0.15s ease; }
+    .sidebar-logo-box.has-logo { width: auto; max-width: 100%; height: 56px; padding: 4px 10px; border-radius: 10px; }
+    .sidebar-logo-box img { width: 100%; height: 100%; object-fit: contain; }
+    .sidebar-logo-box.has-logo img { width: auto; max-width: 100%; height: 100%; object-fit: contain; }
+    .sidebar-logo-box .logo-placeholder { font-size: 10px; color: var(--navy); text-align: center; font-weight: 700; line-height: 1.1; }
+    .sidebar-brand-name { font-size: 14.5px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-brand-name.hidden { display: none; }
+    #sidebarLogoUpload { display: none; }
+
+    button { background: var(--navy); color: #fff; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s, transform 0.05s; border-radius: 8px; }
+    button:hover { background: var(--navy-2); }
+    button:active { transform: translateY(1px); }
+
+    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border-cool); }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 500px; }
+    th, td { border-bottom: 1px solid var(--border-cool); padding: 11px 12px; text-align: left; }
+    th { background: #f8f6f1; color: #40485a; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+    tbody tr:hover { background: #fbfaf6; }
+    tfoot td { background: #f8f6f1; font-weight: bold; }
+
+    .btn-icon-action { width: 32px; height: 32px; padding: 0; margin: 2px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: none; cursor: pointer; transition: background 0.2s; }
+    .btn-icon-action svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; }
+
+    .btn-view { background: var(--amber-soft); color: var(--amber); }
+    .btn-view:hover { background: #f3dcae; }
+    .btn-edit { background: #dbe6f7; color: #244a80; }
+    .btn-edit:hover { background: #c6d8f2; }
+    .btn-delete { background: var(--red-soft); color: var(--red); }
+    .btn-delete:hover { background: #f3c6c6; }
+
+    .btn-action { width: auto; padding: 8px 14px; margin-bottom: 0; display: inline-block; font-size: 13px; border-radius: 7px; }
+    .btn-danger { background: var(--red); color:#fff; }
+    .btn-danger:hover { background: #8f2f2f; }
+    .btn-success { background: var(--green); color:#fff; }
+    .btn-success:hover { background: #146039; }
+    .btn-warning { background: var(--gold); color:#fff; }
+    .btn-warning:hover { background: var(--gold-dark); }
+
+    .badge { padding: 4px 11px; border-radius: 20px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+    .badge-alert { background: var(--red-soft); color: #8a2c2c; }
+    .badge-ok { background: var(--green-soft); color: #0f5c37; }
+    .badge-pending { background: var(--amber-soft); color: #8a5a12; }
+
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 15px; background: var(--paper); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,12,16,0.55); justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+    .modal-content { background: #fff; padding: 22px; border-radius: 12px; width: 600px; max-width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+
+    /* LOGIN SCREEN */
+    #loginScreen { position: fixed; inset: 0; background: linear-gradient(135deg, var(--navy), var(--navy-2)); display: flex; align-items: center; justify-content: center; z-index: 5000; padding: 20px; }
+    #loginScreen.hidden { display: none; }
+    .login-box { background: #fff; border-radius: 14px; padding: 34px 30px; width: 380px; max-width: 100%; box-shadow: 0 25px 70px rgba(0,0,0,0.4); text-align: center; }
+    .login-box .login-logo-box { width: 64px; height: 64px; border-radius: 12px; background: #fff; border: 2px solid var(--gold); margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .login-box .login-logo-box img { width: 100%; height: 100%; object-fit: contain; }
+    .login-box h2 { font-size: 19px; margin-bottom: 4px; color: var(--ink); }
+    .login-box p.login-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 20px; }
+    .login-box input { text-align: left; }
+    .login-box .btn-success { width: 100%; padding: 12px; font-size: 14.5px; margin-top: 6px; }
+    .login-error { color: #dc2626; font-size: 12.5px; margin-bottom: 10px; min-height: 16px; }
+    .login-loading { color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+
+    /* USER MANAGEMENT */
+    .role-pill-badge { display:inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+    .role-pill-badge.role-admin { background: #fef3c7; color: #92400e; }
+    .role-pill-badge.role-staff { background: #dbeafe; color: #1e40af; }
+    .user-current-tag { font-size: 11.5px; color: var(--gold); font-weight: 700; }
+    #quickCustomerModal, #quickProductModal, #quickCategoryModal { z-index: 1100; }
+
+    .currency-symbol { font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'Segoe UI', Arial, sans-serif; font-weight: 700; font-size: 0.85em; letter-spacing: 0; margin-right: 3px; display: inline-block; vertical-align: 0.02em; }
+    .modal-content h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 16.5px; color: var(--ink); }
+    .modal-content h3 svg { width: 19px; height: 19px; stroke: var(--gold); fill: none; stroke-width: 2; }
+
+    .invoice-box { border: 1px solid var(--border-cool); padding: 18px; background: #fff; border-radius: 8px; line-height: 1.6; }
+    .invoice-header { text-align: center; border-bottom: 2px dashed var(--border-cool); padding-bottom: 12px; margin-bottom: 15px; }
+    .invoice-header img.invoice-logo { max-height: 64px; max-width: 220px; object-fit: contain; margin: 0 auto 10px; display: block; }
+
+    .unit-box { background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 15px; }
+
+    /* FOOTER */
+    .app-footer { background: var(--card); border-top: 1px solid var(--border); padding: 10px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--muted); }
+    .app-footer b { color: var(--ink); }
+    .app-footer .footer-role-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; background: var(--paper); border: 1px solid var(--border); font-weight: 700; }
+
+    @media (max-width: 1024px) {
+      .sidebar { width: 230px; }
+      .content { padding: 18px; }
+    }
+
+    @media (max-width: 992px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      body { flex-direction: column; overflow: auto; height: auto; min-height: 100vh; }
+      #appWrapper { flex-direction: column; overflow: auto; height: auto; min-height: 100vh; }
+      .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: min(280px, 82vw); transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .menu-toggle { display: block; }
+      .header { padding: 10px 12px; }
+      .header-left { gap: 8px; }
+      .shop-logo { width: 36px; height: 36px; font-size: 17px; }
+      .shop-info h2 { font-size: 15px; max-width: 46vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .shop-info p { display: none; }
+      .header-right { width: 100%; justify-content: space-between; margin-top: 4px; }
+      .segment button { padding: 7px 10px; font-size: 12px; }
+      .content { padding: 12px; }
+      .dashboard-cards { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+      .stat-card { padding: 14px; }
+      .stat-card .value { font-size: 19px; }
+      .card { padding: 14px; }
+      .filter-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); padding: 12px; gap: 8px; }
+      .app-footer { justify-content: center; text-align: center; padding: 10px 12px; }
+      /* Prevent iOS auto-zoom on focus by keeping form fields at 16px */
+      input, select, textarea { font-size: 16px; }
+      .modal { align-items: flex-start; padding-top: 18px; }
+      .modal-content { padding: 16px; border-radius: 10px; }
+      .btn-icon-action { width: 36px; height: 36px; }
+      table { font-size: 13px; }
+    }
+
+    @media (max-width: 480px) {
+      .header { padding: 8px 10px; }
+      .shop-info h2 { max-width: 38vw; font-size: 13.5px; }
+      .icon-btn { width: 36px; height: 36px; }
+      .icon-btn svg { width: 17px; height: 17px; }
+      .segment button { padding: 6px 8px; font-size: 11px; }
+      .sidebar-menu button { padding: 10px 12px; font-size: 13.5px; }
+      .content { padding: 10px; }
+      .dashboard-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .stat-card { padding: 12px; }
+      .stat-card h4 { font-size: 10.5px; }
+      .stat-card .value { font-size: 17px; }
+      .card h3 { font-size: 15px; }
+      .btn-action { padding: 9px 12px; font-size: 12.5px; }
+      table { font-size: 12px; min-width: 460px; }
+      th, td { padding: 8px 8px; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .dashboard-cards { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      button, .icon-btn, .btn-icon-action, .segment button, .sidebar-menu button { min-height: 38px; }
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      #printableInvoice, #printableInvoice *, #accountsPrintArea, #accountsPrintArea * { visibility: visible; }
+      #printableInvoice, #accountsPrintArea { position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <datalist id="remarksSuggestions">
+    <option value="নগদ পরিশোধের সাথে হোম ডেলিভারি">
+    <option value="ট্রাক ড্রাইভার মারফত ডেলিভারি">
+    <option value="জরুরি বাকি ডেলিভারি">
+  </datalist>
+
+  <datalist id="categorySuggestions">
+    <option value="সার">
+    <option value="সিমেন্ট">
+    <option value="খাদ্যশস্য">
+  </datalist>
+
+  <datalist id="productNameSuggestions"></datalist>
+  <datalist id="customerNameSuggestions"></datalist>
+  <datalist id="customerAddressSuggestions"></datalist>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen">
+    <div class="login-box">
+      <div class="login-logo-box" id="loginLogoBox">
+        <span id="loginLogoPlaceholder" style="font-size:11px; font-weight:700; color:var(--navy);">LOGO</span>
+        <img id="loginLogoImg" style="display:none;">
+      </div>
+      <h2 id="loginShopName" data-key="loginTitle">POS সিস্টেমে লগইন করুন</h2>
+      <p class="login-sub" data-key="loginSubtitle">আপনার ইমেইল ও পাসওয়ার্ড দিয়ে প্রবেশ করুন</p>
+      <div class="login-error" id="loginError"></div>
+      <label style="text-align:left; display:block;" data-key="lblLoginEmail">ইমেইল:</label>
+      <input type="email" id="loginEmail" placeholder="you@example.com" onkeydown="if(event.key==='Enter') doLogin();">
+      <label style="text-align:left; display:block;" data-key="lblLoginPassword">পাসওয়ার্ড:</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin();">
+      <button class="btn-success" onclick="doLogin()" id="btnDoLogin" data-key="btnLogin">লগইন করুন</button>
+      <div class="login-loading" id="loginLoadingMsg" style="display:none;" data-key="loginConnecting">সংযোগ করা হচ্ছে...</div>
+    </div>
+  </div>
+
+  <div id="appWrapper" class="auth-hidden">
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-logo" onclick="document.getElementById('sidebarLogoUpload').click()" title="Click to upload your logo">
+        <div class="sidebar-logo-box" id="sidebarLogoBox">
+          <span class="logo-placeholder" id="sidebarLogoPlaceholder">LOGO</span>
+          <img id="sidebarLogoImg" style="display:none;">
+        </div>
+        <span class="sidebar-brand-name" id="sidebarBrandName" data-key="brandName">পাইকারি বিক্রয় ব্যবস্থাপনা</span>
+      </div>
+      <input type="file" id="sidebarLogoUpload" accept="image/*" onchange="uploadShopLogo(event)">
+      <span style="cursor:pointer;" onclick="toggleSidebar()" class="no-print">✕</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li><button class="active" onclick="openTab('dashboard-tab', this)"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-5 3 3 5-7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuDashboard">ড্যাশবোর্ড</span></button></li>
+      <li><button onclick="openTab('sales-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.6L21 8H7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="21" r="1"/><circle cx="17" cy="21" r="1"/></svg><span class="menu-label" data-key="menuSales">বিক্রয়</span></button></li>
+      <li><button onclick="openTab('order-notifications-tab', this)"><svg viewBox="0 0 24 24"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-4-5.66V4a2 2 0 1 0-4 0v1.34A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuOrderNotifications">অর্ডার নোটিফিকেশন</span> <span class="notification-badge" id="sidebarBadge" style="position:static; margin-left: auto;">0</span></button></li>
+      <li><button onclick="openTab('products-tab', this)"><svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.3 7.6L12 12.5l8.7-4.9M12 21.4V12.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuProducts">পণ্য তালিকা</span></button></li>
+      <li><button onclick="openTab('categories-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuCategories">ক্যাটাগরি তালিকা</span></button></li>
+      <li><button onclick="openTab('unit-config-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 21V14M4 10V3M12 21v-8M12 9V3M20 21v-5M20 12V3M1 14h6M9 9h6M17 12h6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuUnitConfig">ইউনিট কনফিগারেশন</span></button></li>
+      <li><button onclick="openTab('customers-tab', this)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuCustomers">কাস্টমার তালিকা</span></button></li>
+      <li><button onclick="openTab('ledger-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuLedger">বকেয়া খাতা</span></button></li>
+      <li><button onclick="openTab('accounts-tab', this)"><svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuAccounts">অ্যাকাউন্টস</span></button></li>
+      <li class="admin-only"><button onclick="openTab('users-tab', this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21c0-3.5 3.5-6 8-6s8 2.5 8 6" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 3.5a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuUsers">ব্যবহারকারী ব্যবস্থাপনা</span></button></li>
+      <li><button onclick="openTab('settings-tab', this)"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuSettings">সেটিং</span></button></li>
+    </ul>
+    <div class="sidebar-foot" data-key="sidebarFootNote">সকল ডাটা এই ডিভাইসে সংরক্ষিত থাকে</div>
+  </div>
+
+  <div class="main-wrapper">
+    <div class="header">
+      <div class="header-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="shop-logo" id="displayShopLogo">B</div>
+        <div class="shop-info">
+          <h2 id="displayShopName">মেসার্স বিসমিল্লাহ ট্রেডার্স</h2>
+          <p id="displayShopTagline">পাইকারি সার, সিমেন্ট ও খাদ্যশস্য বিক্রেতা</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button type="button" class="icon-btn" id="notifBellBtn" title="নোটিফিকেশন" onclick="openTab('order-notifications-tab')">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-4-5.66V4a2 2 0 1 0-4 0v1.34A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="notification-badge" id="headerBadge">0</span>
+        </button>
+
+        <div class="segment lang-segment" id="langSwitch">
+          <button type="button" class="lang-btn active" data-lang="BN" onclick="setLanguage('BN')">বাং</button>
+          <button type="button" class="lang-btn" data-lang="EN" onclick="setLanguage('EN')">EN</button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; padding: 6px 10px; background:var(--paper); border-radius:20px;">
+          <span id="headerUserName" style="font-size:12.5px; font-weight:700; color:var(--ink); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">-</span>
+          <span id="headerUserRolePill" class="role-pill-badge role-admin">-</span>
+          <button type="button" class="icon-btn" onclick="doLogout()" title="Logout" style="width:30px; height:30px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD TAB -->
+      <div id="dashboard-tab" class="tab-content active">
+        <div class="dashboard-cards">
+          <div class="stat-card">
+            <h4 data-key="lblTotalSales">আজকের মোট বিক্রি</h4>
+            <div class="value" id="dashTotalSales"><span class="currency-symbol">৳</span>0.00</div>
+          </div>
+          <div class="stat-card">
+            <h4 data-key="lblTotalDue">মোট বাকির পরিমাণ</h4>
+            <div class="value" id="dashTotalDue" style="color: #dc2626;"><span class="currency-symbol">৳</span>0.00</div>
+          </div>
+          <div class="stat-card">
+            <h4 data-key="lblTotalStock">মোট স্টক (বস্তা)</h4>
+            <div class="value" id="dashTotalStock">0</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 data-key="lblRecentSales">সাম্প্রতিক বিক্রয়সমূহ</h3>
+          <div class="table-responsive">
+            <table id="dashSalesTable">
+              <thead>
+                <tr>
+                  <th data-key="thInvoice">ইনভয়েস</th>
+                  <th data-key="thCustomer">কাস্টমার</th>
+                  <th data-key="thProduct">আইটেম/প্রোডাক্ট</th>
+                  <th data-key="thTotal">মোট টাকা</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SALES TAB -->
+      <div id="sales-tab" class="tab-content">
+        <div class="card" style="margin-bottom:15px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <h3 style="border:none; padding:0; margin:0;" data-key="titleSalesHistory">📊 সকল বিক্রয়ের তালিকা</h3>
+            <button onclick="showNewSaleModal()" class="btn-action btn-success" style="font-size:13px;" data-key="btnCreateSale">+ Create Sale</button>
+          </div>
+          <div style="margin-top:15px;">
+            <input type="text" id="salesSearchInput" onkeyup="searchSales()" placeholder="🔎 Search by Invoice, Customer...">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table id="salesTable">
+              <thead>
+                <tr>
+                  <th data-key="thInvoice">ইনভয়েস</th>
+                  <th data-key="thCustomer">কাস্টমার</th>
+                  <th data-key="thProduct">প্রোডাক্ট</th>
+                  <th data-key="thQty">পরিমাণ</th>
+                  <th data-key="thTotal">মোট টাকা</th>
+                  <th data-key="thStatus">স্ট্যাটাস</th>
+                  <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CATEGORIES TAB -->
+      <div id="categories-tab" class="tab-content">
+        <div class="card" style="margin-bottom:15px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <h3 style="border:none; padding:0; margin:0;" data-key="menuCategories">📁 Category Management</h3>
+            <button onclick="showQuickAddCategory()" class="btn-action btn-success" style="font-size:13px;" data-key="btnCreateCategory">+ Create Category</button>
+          </div>
+          <div style="margin-top:15px;">
+            <input type="text" id="categorySearchInput" onkeyup="searchCategories()" placeholder="🔎 Search Categories...">
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 data-key="titleAllCategories">📁 সকল ক্যাটাগরি তালিকা</h3>
+          <div class="table-responsive">
+            <table id="categoryTable">
+              <thead>
+                <tr>
+                  <th data-key="thId">আইডি</th>
+                  <th data-key="thCategoryName">ক্যাটাগরির নাম</th>
+                  <th data-key="thProductCount">প্রোডাক্ট সংখ্যা</th>
+                  <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDER NOTIFICATIONS TAB -->
+      <div id="order-notifications-tab" class="tab-content">
+        <div class="card">
+          <h3 data-key="titleOrderNotifications">🔔 অর্ডার নোটিফিকেশন ও অপেক্ষমান অনুমোদন</h3>
+          <p style="color: #64748b; margin-bottom: 15px; font-size: 13px;" data-key="notifTabNote">স্টাফদের নতুন অর্ডার এখানে এপ্রুভালের জন্য জমা হবে।</p>
+          <div class="table-responsive">
+            <table id="notificationTable">
+              <thead>
+                <tr>
+                  <th data-key="thInvoice">ইনভয়েস</th>
+                  <th data-key="thStaffName">স্টাফ নাম</th>
+                  <th data-key="thCustomer">কাস্টমার</th>
+                  <th data-key="thProduct">প্রোডাক্ট</th>
+                  <th data-key="thTotal">মোট টাকা</th>
+                  <th data-key="thStatus">স্ট্যাটাস</th>
+                  <th style="text-align:center;" data-key="thActionSuperUser">অ্যাকশন (Super User)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS TAB -->
+      <div id="products-tab" class="tab-content">
+        <div class="card" style="margin-bottom:15px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <h3 style="border:none; padding:0; margin:0;" data-key="menuProducts">📦 Products Management</h3>
+            <button onclick="showQuickAddProduct()" class="btn-action btn-success" style="font-size:13px;" data-key="btnCreateProduct">+ Create Product</button>
+          </div>
+          <div style="margin-top:15px;">
+            <input type="text" id="productSearchInput" onkeyup="searchProducts()" placeholder="🔎 Search Products...">
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 data-key="titleAllProducts">📦 সকল পণ্যের তালিকা</h3>
+          <div class="table-responsive">
+            <table id="stockTable">
+              <thead>
+                <tr>
+                  <th data-key="thId">আইডি</th>
+                  <th data-key="thProdName">প্রোডাক্টের নাম</th>
+                  <th data-key="thCategory">ক্যাটাগরি</th>
+                  <th data-key="thBagPrice">মূল্য (বস্তা)</th>
+                  <th data-key="thStock">স্টক (বস্তা)</th>
+                  <th data-key="thStatus">স্ট্যাটাস</th>
+                  <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- UNIT CONFIGURATION TAB -->
+      <div id="unit-config-tab" class="tab-content">
+        <div class="grid">
+          
+          <div class="card admin-only">
+            <h3 data-key="titleUnitConfig">⚙️ পৃথক ইউনিট সেটআপ</h3>
+            <label data-key="lblSelectProd">প্রোডাক্ট নির্বাচন করুন:</label>
+            <select id="unitProductSelect" onchange="loadUnitConfigForProduct()">
+              <option value="">-- সিলেক্ট করুন --</option>
+            </select>
+
+            <div class="unit-box">
+              <label data-key="lblRow1">ধাপ ১: বস্তার ওজন সেটআপ (১ বস্তা = কত কেজি)</label>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <input type="number" id="unitBagKg" placeholder="30" oninput="recalculatePerKgRate()">
+                <span style="font-weight:bold; margin-bottom:14px; font-size:12px;">KG/Bosta</span>
+              </div>
+            </div>
+
+            <div class="unit-box">
+              <label data-key="lblRow2">ধাপ ২: কেজি ভিত্তিক মূল্য সেটআপ (১ কেজি = কত টাকা)</label>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <input type="number" id="unitPerKgPrice" placeholder="10" oninput="recalculateBagRate()">
+                <span style="font-weight:bold; margin-bottom:14px; font-size:12px;">BDT/KG</span>
+              </div>
+            </div>
+
+            <label data-key="lblBagCurrentPrice">১ বস্তার বর্তমান সংগৃহীত মূল্য (৳):</label>
+            <input type="number" id="unitBagPrice" placeholder="0.00" readonly style="background:#e2e8f0; font-weight:bold;">
+
+            <button onclick="saveUnitConfiguration()" class="btn-success" data-key="btnSaveConfig">সেটিং সেভ করুন</button>
+          </div>
+
+          <div class="card">
+            <h3 data-key="titleUnitList">📋 সকল প্রোডাক্টের ইউনিট কনফিগারেশন তালিকা</h3>
+            <div class="table-responsive">
+              <table id="unitConfigTable">
+                <thead>
+                  <tr>
+                    <th data-key="thProdName">প্রোডাক্টের নাম</th>
+                    <th data-key="thBagWeight">১ বস্তার ওজন (কেজি)</th>
+                    <th data-key="thKgPrice">১ কেজির মূল্য (৳)</th>
+                    <th data-key="thTotalBagPrice">১ বস্তার মোট মূল্য (৳)</th>
+                    <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CUSTOMERS TAB -->
+      <div id="customers-tab" class="tab-content">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 15px;">
+            <h3 data-key="titleCustList">👥 সকল কাস্টমার তালিকা</h3>
+            <button onclick="showQuickAddCustomer()" class="btn-action btn-success admin-only" style="font-size:13px;" data-key="btnAddCust">+ কাস্টমার যোগ করুন</button>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <input type="text" id="custSearchInput" onkeyup="searchCustomers()" placeholder="🔎 খুঁজুন...">
+          </div>
+
+          <div class="table-responsive">
+            <table id="customersTable">
+              <thead>
+                <tr>
+                  <th data-key="thId">আইডি</th>
+                  <th data-key="thCustName">কাস্টমারের নাম</th>
+                  <th data-key="thMobile">মোবাইল নম্বর</th>
+                  <th data-key="thAddress">ঠিকানা</th>
+                  <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEDGER TAB -->
+      <div id="ledger-tab" class="tab-content">
+        <div class="card">
+          <h3 data-key="titleLedger">📕 গ্রাহকের বকেয়া খাতা</h3>
+          <div class="table-responsive">
+            <table id="dueLedgerTable">
+              <thead>
+                <tr>
+                  <th data-key="thCustName">কাস্টমারের নাম</th>
+                  <th data-key="thMobile">মোবাইল</th>
+                  <th data-key="thTotalPur">মোট কেনাকাটা</th>
+                  <th data-key="thTotalPaid">মোট জমা</th>
+                  <th data-key="thCurrDue">বর্তমান বকেয়া</th>
+                  <th data-key="thStatus">স্ট্যাটাস</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCOUNTS TAB -->
+      <div id="accounts-tab" class="tab-content">
+        <div class="grid">
+          
+          <div class="card admin-only">
+            <h3 id="accFormTitle" data-key="titleAccEntry">💰 নতুন ট্রানজেকশন এন্ট্রি</h3>
+            <input type="hidden" id="editAccId">
+            
+            <label data-key="lblAccType">লেনদেনের ধরন:</label>
+            <select id="accType">
+              <option value="Joma" data-key="optAccJoma">জমা</option>
+              <option value="Kroy" data-key="optAccKroy">ক্রয়</option>
+              <option value="Bikroy" data-key="optAccBikroy">বিক্রয়</option>
+              <option value="Kharoch" data-key="optAccKharoch">খরচ</option>
+            </select>
+
+            <label data-key="lblAccMethod">পেমেন্ট পদ্ধতি:</label>
+            <select id="accMethod">
+              <option value="Cash" data-key="optAccCash">নগদ</option>
+              <option value="Bank" data-key="optAccBank">ব্যাংক ট্রান্সফার</option>
+              <option value="Mobile Banking" data-key="optAccMobile">মোবাইল ব্যাংকিং (বিকাশ/নগদ)</option>
+            </select>
+
+            <label data-key="lblAmount">পরিমাণ:</label>
+            <input type="number" id="accAmount" placeholder="0.00">
+
+            <label data-key="lblDate">তারিখ (Date):</label>
+            <input type="date" id="accDate">
+
+            <label data-key="lblNote">বিবরণ / মন্তব্য:</label>
+            <input type="text" id="accNote" placeholder="যেমন: দোকান ভাড়া, ইনভয়েস পেমেন্ট">
+
+            <div style="display:flex; gap:10px;">
+              <button onclick="saveAccountTransaction()" class="btn-success" id="btnAccSave" data-key="btnSaveAcc">সেভ করুন</button>
+              <button onclick="resetAccForm()" class="btn-danger" id="btnAccCancel" style="display:none;" data-key="btnCancel">বাতিল</button>
+            </div>
+          </div>
+
+          <div class="card" id="accountsPrintArea">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
+              <h3 data-key="titleAccReport">📊 অ্যাকাউন্টস হিস্ট্রি ও ফিল্টার রিপোর্ট</h3>
+              <button onclick="window.print()" class="btn-action btn-warning no-print" data-key="btnPrintReport">🖨️ প্রিন্ট</button>
+            </div>
+
+            <div class="filter-grid no-print">
+              <div>
+                <label>From Date:</label>
+                <input type="date" id="filterFromDate" style="margin-bottom:0;">
+              </div>
+              <div>
+                <label>To Date:</label>
+                <input type="date" id="filterToDate" style="margin-bottom:0;">
+              </div>
+              <div>
+                <label>Type:</label>
+                <select id="filterType" style="margin-bottom:0;">
+                  <option value="All">All Types</option>
+                  <option value="Joma">Joma</option>
+                  <option value="Kroy">Kroy</option>
+                  <option value="Bikroy">Bikroy</option>
+                  <option value="Kharoch">Kharoch</option>
+                </select>
+              </div>
+              <div>
+                <label>Method:</label>
+                <select id="filterMethod" style="margin-bottom:0;">
+                  <option value="All">All Methods</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Bank">Bank</option>
+                  <option value="Mobile Banking">Mobile Banking</option>
+                </select>
+              </div>
+              <div style="display:flex; align-items:flex-end;">
+                <button onclick="filterAccounts()" class="btn-action btn-success" style="width:100%; height:38px;">Filter</button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table id="accTable">
+                <thead>
+                  <tr>
+                    <th data-key="lblDate">তারিখ</th>
+                    <th data-key="lblAccType">ধরণ</th>
+                    <th data-key="lblAccMethod">মেথড</th>
+                    <th data-key="lblNote">বিবরণ</th>
+                    <th data-key="lblAmount">পরিমাণ</th>
+                    <th class="no-print" style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="4" style="text-align:right;">Sub Total:</td>
+                    <td id="accSubTotal" style="color:#2563eb; font-size:16px;"><span class="currency-symbol">৳</span>0.00</td>
+                    <td class="no-print"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- USER MANAGEMENT TAB (Super User only) -->
+      <div id="users-tab" class="tab-content">
+        <div class="card admin-only" style="margin-bottom:15px;">
+          <h3 data-key="titleCreateUser">➕ নতুন ব্যবহারকারী তৈরি করুন</h3>
+          <label data-key="lblUserName">নাম:</label>
+          <input type="text" id="newUserName" placeholder="করিম উদ্দিন">
+          <label data-key="lblUserEmail">ইমেইল:</label>
+          <input type="email" id="newUserEmail" placeholder="staff@example.com">
+          <label data-key="lblUserPassword">পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর):</label>
+          <input type="password" id="newUserPassword" placeholder="••••••••">
+          <label data-key="lblUserRole">রোল সিলেক্ট করুন:</label>
+          <select id="newUserRole">
+            <option value="staff" data-key="optRoleStaff">স্টাফ (Staff)</option>
+            <option value="admin" data-key="optRoleAdmin">সুপার ইউজার (Admin)</option>
+          </select>
+          <button onclick="createNewUser()" class="btn-success" id="btnCreateUser" data-key="btnCreateUser">ব্যবহারকারী তৈরি করুন</button>
+          <div id="createUserMsg" style="font-size:12.5px; margin-top:8px;"></div>
+        </div>
+
+        <div class="card">
+          <h3 data-key="titleAllUsers">👥 সকল ব্যবহারকারী তালিকা</h3>
+          <div class="table-responsive">
+            <table id="usersTable">
+              <thead>
+                <tr>
+                  <th data-key="thUserName">নাম</th>
+                  <th data-key="thUserEmail">ইমেইল</th>
+                  <th data-key="thUserRole">রোল</th>
+                  <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS TAB -->
+      <div id="settings-tab" class="tab-content">
+        <div class="grid">
+          
+          <div class="card admin-only">
+            <h3 data-key="titleShopSettings">🏪 দোকানের তথ্য পরিবর্তন করুন</h3>
+            <label data-key="lblShopName">দোকানের নাম:</label>
+            <input type="text" id="settingShopName" placeholder="মেসার্স বিসমিল্লাহ ট্রেডার্স">
+
+            <label data-key="lblShopTagline">দোকানের সাব-টাইটেল / বিবরণ:</label>
+            <input type="text" id="settingShopTagline" placeholder="পাইকারি সার, সিমেন্ট ও খাদ্যশস্য বিক্রেতা">
+
+            <label data-key="lblShopLogoImage">দোকানের লোগো (ছবি):</label>
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+              <div class="sidebar-logo-box" style="border-color:var(--border-cool);">
+                <span class="logo-placeholder" id="settingLogoPlaceholder" style="color:var(--muted);">LOGO</span>
+                <img id="settingLogoPreview" style="display:none;">
+              </div>
+              <input type="file" id="settingShopLogoFile" accept="image/*" onchange="uploadShopLogo(event)" style="margin-bottom:0;">
+            </div>
+
+            <button onclick="saveShopSettings()" class="btn-success" data-key="btnSaveShop">তথ্য সেভ করুন</button>
+          </div>
+
+
+          <div class="card admin-only">
+            <h3 data-key="titleBackup">💾 ডাটা ব্যাকআপ ও রিস্টোর</h3>
+            <p style="font-size: 13px; color: #475569; margin-bottom: 15px;" data-key="backupDownloadNote">ব্যাকআপ ডাউনলোড করে রাখুন।</p>
+            
+            <button onclick="exportSystemData()" class="btn-warning" style="margin-bottom:15px;" data-key="btnExport">📥 ডাটা ডাউনলোড (Export Backup)</button>
+
+            <label data-key="lblRestore">ব্যাকআপ ফাইল আপলোড করে রিস্টোর করুন:</label>
+            <input type="file" id="importFile" accept=".json">
+            <button onclick="importSystemData()" class="btn-success" data-key="btnImport">📤 ডাটা রিস্টোর করুন (Import Data)</button>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #cbd5e1;">
+            
+            <button onclick="resetAllSystemData()" class="btn-danger" data-key="btnResetAll">⚠️ সকল ডাটা রিসেট করুন (Reset All)</button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="app-footer no-print">
+      <div><span data-key="footerShopLabel">দোকান</span>: <b id="footerShopName">মেসার্স বিসমিল্লাহ ট্রেডার্স</b> &nbsp;•&nbsp; <span data-key="footerCopyright">সর্বস্বত্ব সংরক্ষিত</span> © <span id="footerYear">2026</span></div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="footer-role-pill" id="footerRolePill" data-key="footerRoleAdmin">সুপার ইউজার মোড</span>
+        <span data-key="footerVersion">সংস্করণ ২.০</span>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /#appWrapper -->
+
+  <!-- FIREBASE (Cloud Data Storage) -->
+  <script type="module">
+    import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+    import {
+      getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+      createUserWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAbiACFr31J3XqaiXeCPnvBNjXOWIUcSCQ",
+      authDomain: "numaira-corporation.firebaseapp.com",
+      projectId: "numaira-corporation",
+      storageBucket: "numaira-corporation.firebasestorage.app",
+      messagingSenderId: "281765458880",
+      appId: "1:281765458880:web:5d895f92bb09ddcfb58e25"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // ---------- Firestore helpers ----------
+    window.firestoreDB = db;
+    window.firestoreDoc = doc;
+    window.firestoreGetDoc = getDoc;
+    window.firestoreSetDoc = setDoc;
+    window.firestoreDeleteDoc = deleteDoc;
+    window.firestoreCollection = collection;
+    window.firestoreGetDocs = getDocs;
+
+    // ---------- Auth helpers ----------
+    window.authSignIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
+    window.authSignOut = () => signOut(auth);
+
+    onAuthStateChanged(auth, (user) => {
+      window.currentAuthUser = user;
+      window.dispatchEvent(new Event('authStateChanged'));
+    });
+
+    // Creates a new login WITHOUT logging the super user out of their own
+    // session — a temporary secondary Firebase app instance is used just
+    // for the sign-up call, then thrown away immediately.
+    window.createSecondaryUser = async (email, password) => {
+      let secondaryApp = initializeApp(firebaseConfig, 'secondary-' + Date.now());
+      let secondaryAuth = getAuth(secondaryApp);
+      try {
+        let cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        let uid = cred.user.uid;
+        await signOut(secondaryAuth);
+        await deleteApp(secondaryApp);
+        return uid;
+      } catch (err) {
+        try { await deleteApp(secondaryApp); } catch (e) {}
+        throw err;
+      }
+    };
+
+    window.firebaseReady = true;
+    window.dispatchEvent(new Event('firebaseReady'));
+  </script>
+
+  <!-- SVG ICONS -->
+  <script>
+    const SVG_VIEW = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`;
+    const SVG_EDIT = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
+    const SVG_DELETE = `<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
+  </script>
+
+  <!-- MODALS -->
+  <div id="quickCustomerModal" class="modal">
+    <div class="modal-content">
+      <h3 id="custModalTitle" data-key="titleQuickAddCustomer">👥 দ্রুত নতুন কাস্টমার যোগ করুন</h3>
+      <input type="hidden" id="qcId">
+      <label data-key="lblCustNameShort">কাস্টমারের নাম:</label>
+      <input type="text" id="qcName" list="customerNameSuggestions" placeholder="রহিম ট্রেডার্স">
+      <label data-key="lblMobileNumShort">মোবাইল নম্বর:</label>
+      <input type="text" id="qcPhone" placeholder="01700000000">
+      <label data-key="lblAddressShort">ঠিকানা:</label>
+      <input type="text" id="qcAddress" list="customerAddressSuggestions" placeholder="যশোর">
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button onclick="saveQuickCustomer()" class="btn-success" data-key="btnSaveShort">সেভ করুন</button>
+        <button onclick="closeModal('quickCustomerModal')" class="btn-danger" data-key="btnCancelShort">বাতিল</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="quickProductModal" class="modal">
+    <div class="modal-content">
+      <h3 id="prodModalTitle" data-key="titleQuickAddProduct">📦 দ্রুত নতুন প্রোডাক্ট যোগ করুন</h3>
+      <input type="hidden" id="qpId">
+      <label data-key="lblProdNameShort">প্রোডাক্টের নাম:</label>
+      <input type="text" id="qpName" list="productNameSuggestions" placeholder="ইউরিয়া সার">
+      <label data-key="lblCategoryShort">ক্যাটাগরি:</label>
+      <select id="qpCategory"></select>
+      <label data-key="lblBagSellPrice">প্রতি বস্তার বিক্রয় মূল্য:</label>
+      <input type="number" id="qpPrice" placeholder="1350">
+      <label data-key="lblBagWeightKg">প্রতি বস্তার ওজন (কেজি):</label>
+      <input type="number" id="qpBagKg" placeholder="50">
+      <label data-key="lblStockBagShort">স্টক (বস্তা):</label>
+      <input type="number" id="qpStock" placeholder="100">
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button onclick="saveQuickProduct()" class="btn-success" id="btnProdSave" data-key="btnSaveShort">সেভ করুন</button>
+        <button onclick="closeModal('quickProductModal')" class="btn-danger" data-key="btnCancelShort">বাতিল</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="quickCategoryModal" class="modal">
+    <div class="modal-content">
+      <h3 id="catModalTitle" data-key="titleQuickAddCategory">📁 দ্রুত নতুন ক্যাটাগরি যোগ করুন</h3>
+      <input type="hidden" id="qcatId">
+      <label data-key="lblCategoryNameShort">ক্যাটাগরির নাম:</label>
+      <input type="text" id="qcatName" list="categorySuggestions" placeholder="সার">
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button onclick="saveQuickCategory()" class="btn-success" data-key="btnSaveShort">সেভ করুন</button>
+        <button onclick="closeModal('quickCategoryModal')" class="btn-danger" data-key="btnCancelShort">বাতিল</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="newSaleModal" class="modal">
+    <div class="modal-content">
+      <h3 id="saleFormTitle" data-key="titleNewSale">🛒 নতুন বিক্রি (New Sale)</h3>
+      <input type="hidden" id="editSaleId">
+
+      <label data-key="lblSelectCust">কাস্টমার সিলেক্ট করুন:</label>
+      <div class="input-plus-group">
+        <div class="combo-wrap">
+          <input type="text" id="saleCustomerSearch" autocomplete="off" placeholder="🔎 নাম বা মোবাইল দিয়ে খুঁজুন..." oninput="renderCustomerCombo(this.value)" onfocus="renderCustomerCombo(this.value)">
+          <input type="hidden" id="saleCustomer">
+          <div class="combo-list" id="customerComboList"></div>
+        </div>
+        <button type="button" class="btn-plus admin-only" onclick="showQuickAddCustomer()" title="নতুন কাস্টমার যোগ করুন">+</button>
+      </div>
+
+      <label data-key="lblSelectProd">প্রোডাক্ট সিলেক্ট করুন:</label>
+      <div class="input-plus-group">
+        <div class="combo-wrap">
+          <input type="text" id="saleProductSearch" autocomplete="off" placeholder="🔎 নাম, ক্যাটাগরি বা যেকোনো অক্ষর দিয়ে খুঁজুন..." oninput="renderProductCombo(this.value)" onfocus="renderProductCombo(this.value)">
+          <input type="hidden" id="saleProduct">
+          <div class="combo-list" id="productComboList"></div>
+        </div>
+        <button type="button" class="btn-plus" onclick="showQuickAddProduct()" title="নতুন প্রোডাক্ট যোগ করুন">+</button>
+      </div>
+
+      <label data-key="lblSaleUnit">বিক্রয় ইউনিট:</label>
+      <select id="saleUnitType" onchange="updatePriceAndUnit()">
+        <option value="Bag" data-key="optUnitBag">বস্তা</option>
+        <option value="Kg" data-key="optUnitKg">কেজি</option>
+      </select>
+
+      <label id="lblSaleQty" data-key="lblQty">পরিমাণ:</label>
+      <input type="number" id="saleQty" placeholder="10" oninput="calculateSaleTotal()">
+
+      <label id="lblUnitPrice" data-key="lblPrice">একক মূল্য (BDT):</label>
+      <input type="number" id="saleUnitPrice" placeholder="0.00" oninput="calculateSaleTotal()">
+
+      <label data-key="lblTotal">মোট টাকা:</label>
+      <input type="number" id="saleTotalAmount" placeholder="0.00" readonly style="background:#e2e8f0; font-weight:bold;">
+
+      <label data-key="lblPaid">জমা / পেমেন্ট:</label>
+      <input type="number" id="salePaidAmount" placeholder="0.00">
+
+      <label data-key="lblRemarks">নোট / মন্তব্য:</label>
+      <input type="text" id="saleRemarks" list="remarksSuggestions" placeholder="যেমন: গাড়ি নম্বর বা স্পেশাল নোট">
+
+      <label data-key="lblPaymentTypeColon">পেমেন্ট মেথড:</label>
+      <select id="paymentType">
+        <option value="Cash" data-key="optPayCash">নগদ পেমেন্ট</option>
+        <option value="Due" data-key="optPayDue">বকেয়া</option>
+        <option value="Bank" data-key="optPayBank">ব্যাংক ট্রান্সফার</option>
+        <option value="Mobile Banking" data-key="optPayMobile">মোবাইল ব্যাংকিং (বিকাশ/নগদ)</option>
+      </select>
+
+      <div style="display:flex; gap:10px;">
+        <button onclick="processSale()" id="btnSaveSale" class="btn-success" data-key="btnSaveSale">বিক্রি সেভ করুন</button>
+        <button onclick="closeModal('newSaleModal')" id="btnCancelSale" class="btn-danger" data-key="btnCancel">বাতিল</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewSaleModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;" class="no-print">
+        <h3 data-key="titleViewSaleInvoice">🧾 বিক্রয় ইনভয়েস ও ইতিহাস</h3>
+        <button onclick="window.print()" class="btn-action btn-warning" data-key="btnPrintInvoice">🖨️ প্রিন্ট ইনভয়েস</button>
+      </div>
+      <div id="printableInvoice" class="invoice-box"></div>
+      <div style="margin-top:15px; text-align:right;" class="no-print">
+        <button onclick="closeModal('viewSaleModal')" class="btn-danger" style="width:auto;" data-key="btnCloseShort">বন্ধ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUserRole = "admin";
+    let currentLang = "BN";
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+
+    const translations = {
+      BN: {
+        brandName: "পাইকারি বিক্রয় ব্যবস্থাপনা",
+        sidebarFootNote: "সকল তথ্য এই ডিভাইসে নিরাপদে সংরক্ষিত থাকে",
+        roleAdminBtn: "সুপার ইউজার",
+        roleStaffBtn: "মডিফাই ইউজার",
+        footerShopLabel: "দোকান",
+        footerCopyright: "সর্বস্বত্ব সংরক্ষিত",
+        footerRoleAdmin: "সুপার ইউজার মোড",
+        footerRoleStaff: "মডিফাই ইউজার মোড",
+        footerVersion: "সংস্করণ ২.০",
+        statusApproved: "অনুমোদিত",
+        statusPendingApproval: "অনুমোদনের অপেক্ষায়",
+        statusPending: "অপেক্ষমাণ",
+        approvalPendingNote: "অনুমোদনের অপেক্ষায়",
+        titlePrintView: "প্রিন্ট / দেখুন",
+        titleEdit: "সম্পাদনা",
+        titleDelete: "মুছুন",
+        btnApproveOrder: "অনুমোদন করুন",
+        waitingSuperUserOnly: "অপেক্ষমাণ (শুধু সুপার ইউজার)",
+        noPendingNotifications: "কোনো পেন্ডিং অর্ডার নোটিফিকেশন নেই।",
+        unitBagLabel: "বস্তা",
+        unitKgLabel: "কেজি",
+        naLabel: "প্রযোজ্য নয়",
+        lowStockLabel: "স্টক কম",
+        stockOkLabel: "পর্যাপ্ত আছে",
+        noActionsLabel: "কোনো অ্যাকশন নেই",
+        lockedLabel: "লকড",
+        dueExistsLabel: "বকেয়া আছে",
+        fullyPaidLabel: "পরিশোধিত",
+        editSaleTitleLabel: "✏️ বিক্রয় তথ্য আপডেট করুন",
+        btnUpdateSave: "আপডেট সেভ করুন",
+        editCustTitleLabel: "✏️ গ্রাহক তথ্য আপডেট করুন",
+        addCustTitleLabel: "👥 দ্রুত নতুন গ্রাহক যোগ করুন",
+        editAccTitleLabel: "✏️ লেনদেন সম্পাদনা করুন",
+        btnUpdateOnly: "আপডেট করুন",
+        confirmDeleteSale: "আপনি কি নিশ্চিত যে এই রেকর্ডটি মুছে ফেলতে চান?",
+        confirmDeleteProduct: "এই প্রোডাক্টটি কি ডিলিট করতে চান?",
+        confirmDeleteCustomer: "এই গ্রাহককে ডিলিট করতে চান?",
+        confirmDeleteAccount: "এই ট্রানজেকশনটি মুছে ফেলতে চান?",
+        alertSelectValidSale: "দয়া করে সঠিক গ্রাহক, প্রোডাক্ট এবং পরিমাণ নির্বাচন করুন!",
+        alertSaleSentApproval: "বিক্রিটি অনুমোদনের জন্য সুপার ইউজারের নিকট নোটিফিকেশন পাঠানো হয়েছে।",
+        alertSaleSaved: "বিক্রয় রেকর্ড সফলভাবে সংরক্ষিত হয়েছে!",
+        alertOnlyAdminApproveOrder: "শুধুমাত্র সুপার ইউজার অর্ডার অনুমোদন করতে পারবেন!",
+        alertOrderApproved: "অর্ডার #{inv} অনুমোদন করা হয়েছে!",
+        alertOrderNotApprovedYet: "অর্ডারটি এখনো অনুমোদন করা হয়নি!",
+        alertSelectProductFirst: "একটি প্রোডাক্ট নির্বাচন করুন!",
+        alertUnitUpdated: "ইউনিট সেটিং সফলভাবে আপডেট হয়েছে!",
+        alertEnterName: "নাম লিখুন!",
+        alertEnterProductName: "প্রোডাক্ট নাম লিখুন!",
+        alertOnlyAdminAddTransaction: "শুধুমাত্র সুপার ইউজার লেনদেন যুক্ত করতে পারবেন!",
+        alertEnterValidAmount: "সঠিক টাকার পরিমাণ লিখুন!",
+        alertAccSaved: "লেনদেন সফলভাবে সংরক্ষণ করা হয়েছে!",
+        alertSelectBackupFile: "দয়া করে ব্যাকআপ ফাইল সিলেক্ট করুন!",
+        alertBackupFileError: "ফাইলটি পড়া যাচ্ছে না! সঠিক ফরম্যাটের ফাইল আপলোড করুন।",
+        alertDataRestored: "ডাটা রিস্টোর সম্পন্ন হয়েছে! পেজটি রিলোড হচ্ছে...",
+        alertSelectValidBackup: "সঠিক ব্যাকআপ ফাইল নির্বাচন করুন!",
+        confirmResetAll: "আপনি কি নিশ্চিত যে সকল ডাটা মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না!",
+        alertDataReset: "সকল ডাটা মুছে ফেলা হয়েছে।",
+        selectCustomerDefault: "-- গ্রাহক নির্বাচন করুন --",
+        selectProductDefault: "-- প্রোডাক্ট সিলেক্ট করুন --",
+        selectGenericDefault: "-- সিলেক্ট করুন --",
+        custDetailsHeading: "👤 গ্রাহকের বিবরণ:",
+        lblNameShort: "নাম",
+        lblMobileShort: "মোবাইল",
+        currentSaleHeading: "📦 বর্তমান বিক্রয় বিবরণ:",
+        thRate: "দর",
+        notesRemarksShort: "নোট/মন্তব্য",
+        paymentMethodShort: "পেমেন্ট পদ্ধতি",
+        custHistoryHeading: "📕 গ্রাহকের সর্বমোট লেনদেন ইতিহাস:",
+        totalPurchaseShort: "সর্বমোট কেনাকাটা",
+        totalPaidShort: "সর্বমোট জমা/পরিশোধ",
+        currentDueShort: "বর্তমান বকেয়া",
+        invoiceDateLabel: "তারিখ",
+        stockShortLabel: "স্টক",
+        generalEntryLabel: "সাধারণ এন্ট্রি",
+        menuDashboard: "ড্যাশবোর্ড",
+        menuSales: "বিক্রয়",
+        menuOrderNotifications: "অর্ডার নোটিফিকেশন",
+        titleOrderNotifications: "🔔 অর্ডার নোটিফিকেশন ও অপেক্ষমান অনুমোদন",
+        menuProducts: "পণ্য তালিকা",
+        menuUnitConfig: "ইউনিট কনফিগারেশন",
+        menuCustomers: "গ্রাহক তালিকা",
+        menuLedger: "বকেয়া খাতা",
+        menuAccounts: "অ্যাকাউন্টস",
+        menuSettings: "সেটিং",
+        lblTotalSales: "আজকের মোট বিক্রি",
+        lblTotalDue: "মোট বাকির পরিমাণ",
+        lblTotalStock: "মোট স্টক (বস্তা)",
+        lblRecentSales: "সাম্প্রতিক বিক্রয়সমূহ",
+        thInvoice: "ইনভয়েস",
+        thCustomer: "গ্রাহক",
+        thProduct: "আইটেম/প্রোডাক্ট",
+        thTotal: "মোট টাকা",
+        titleNewSale: "🛒 নতুন বিক্রি",
+        lblSelectCust: "গ্রাহক নির্বাচন করুন:",
+        lblSelectProd: "প্রোডাক্ট সিলেক্ট করুন:",
+        lblSaleUnit: "বিক্রয় ইউনিট:",
+        lblQty: "পরিমাণ:",
+        lblPrice: "একক মূল্য (৳):",
+        lblPaid: "জমা / পেমেন্ট:",
+        lblRemarks: "নোট / মন্তব্য:",
+        lblPaymentType: "পেমেন্ট পদ্ধতি:",
+        btnSaveSale: "বিক্রি সেভ করুন",
+        btnCancel: "বাতিল",
+        titleSalesHistory: "📊 সকল বিক্রয়ের তালিকা",
+        thQty: "পরিমাণ",
+        thAction: "অ্যাকশন",
+        btnCreateProduct: "+ নতুন প্রোডাক্ট তৈরি করুন",
+        titleAllProducts: "📦 সকল পণ্যের তালিকা",
+        thId: "আইডি",
+        thProdName: "প্রোডাক্টের নাম",
+        thCategory: "ক্যাটাগরি",
+        thBagPrice: "প্রতি বস্তার মূল্য",
+        thStock: "স্টক (বস্তা)",
+        thStatus: "স্ট্যাটাস",
+        titleUnitConfig: "⚙️ পৃথক ইউনিট সেটআপ",
+        lblRow1: "ধাপ ১: বস্তার ওজন সেটআপ (১ বস্তা = কত কেজি)",
+        lblRow2: "ধাপ ২: কেজি ভিত্তিক মূল্য সেটআপ (১ কেজি = কত টাকা)",
+        lblBagCurrentPrice: "১ বস্তার বর্তমান সংগৃহীত মূল্য (৳):",
+        btnSaveConfig: "সেটিং সেভ করুন",
+        titleUnitList: "📋 সকল প্রোডাক্টের ইউনিট কনফিগারেশন তালিকা",
+        thBagWeight: "১ বস্তার ওজন (কেজি)",
+        thKgPrice: "১ কেজির মূল্য (৳)",
+        thTotalBagPrice: "১ বস্তার মোট মূল্য (৳)",
+        titleCustList: "👥 সকল গ্রাহকের তালিকা",
+        btnAddCust: "+ গ্রাহক যোগ করুন",
+        thCustName: "গ্রাহকের নাম",
+        thMobile: "মোবাইল নম্বর",
+        thAddress: "ঠিকানা",
+        titleLedger: "📕 গ্রাহকের বকেয়া খাতা",
+        thTotalPur: "মোট কেনাকাটা",
+        thTotalPaid: "মোট জমা",
+        thCurrDue: "বর্তমান বকেয়া",
+        titleAccEntry: "💰 নতুন লেনদেন এন্ট্রি",
+        lblAccType: "লেনদেনের ধরন:",
+        lblAccMethod: "পেমেন্ট পদ্ধতি:",
+        lblAmount: "পরিমাণ:",
+        lblDate: "তারিখ:",
+        lblNote: "বিবরণ / মন্তব্য:",
+        btnSaveAcc: "লেনদেন সেভ করুন",
+        titleAccReport: "📊 অ্যাকাউন্টস হিস্ট্রি ও ফিল্টার রিপোর্ট",
+        btnPrintReport: "🖨️ প্রিন্ট",
+        alertShopSaved: "দোকানের তথ্য পরিবর্তন সফল হয়েছে!",
+        titleShopSettings: "🏪 দোকানের তথ্য পরিবর্তন করুন",
+        lblShopName: "দোকানের নাম:",
+        lblShopTagline: "দোকানের সাব-টাইটেল / বিবরণ:",
+        lblShopLogo: "লোগো শর্ট নেম (১টি অক্ষর):",
+        btnSaveShop: "তথ্য সেভ করুন",
+        titleBackup: "💾 ডাটা ব্যাকআপ ও রিস্টোর",
+        btnExport: "📥 ডাটা ডাউনলোড করুন",
+        lblRestore: "ব্যাকআপ ফাইল আপলোড করে রিস্টোর করুন:",
+        btnImport: "📤 ডাটা রিস্টোর করুন",
+        btnResetAll: "⚠️ সকল ডাটা রিসেট করুন",
+        lblTotal: "মোট টাকা:",
+        lblPaymentTypeColon: "পেমেন্ট মেথড:",
+        optUnitBag: "বস্তা",
+        optUnitKg: "কেজি",
+        optPayCash: "নগদ পেমেন্ট",
+        optPayDue: "বকেয়া",
+        optPayBank: "ব্যাংক ট্রান্সফার",
+        optPayMobile: "মোবাইল ব্যাংকিং (বিকাশ/নগদ)",
+        optAccJoma: "জমা",
+        optAccKroy: "ক্রয়",
+        optAccBikroy: "বিক্রয়",
+        optAccKharoch: "খরচ",
+        optAccCash: "নগদ",
+        optAccBank: "ব্যাংক ট্রান্সফার",
+        optAccMobile: "মোবাইল ব্যাংকিং (বিকাশ/নগদ)",
+        notifTabNote: "স্টাফদের নতুন অর্ডার এখানে এপ্রুভালের জন্য জমা হবে।",
+        thStaffName: "স্টাফ নাম",
+        thActionSuperUser: "অ্যাকশন (Super User)",
+        titleQuickAddCustomer: "👥 দ্রুত নতুন কাস্টমার যোগ করুন",
+        lblCustNameShort: "কাস্টমারের নাম:",
+        lblMobileNumShort: "মোবাইল নম্বর:",
+        lblAddressShort: "ঠিকানা:",
+        btnSaveShort: "সেভ করুন",
+        titleQuickAddProduct: "📦 দ্রুত নতুন প্রোডাক্ট যোগ করুন",
+        lblProdNameShort: "প্রোডাক্টের নাম:",
+        lblCategoryShort: "ক্যাটাগরি:",
+        lblBagSellPrice: "প্রতি বস্তার বিক্রয় মূল্য:",
+        lblBagWeightKg: "প্রতি বস্তার ওজন (কেজি):",
+        lblStockBagShort: "স্টক (বস্তা):",
+        titleViewSaleInvoice: "🧾 বিক্রয় ইনভয়েস ও ইতিহাস",
+        btnPrintInvoice: "🖨️ প্রিন্ট ইনভয়েস",
+        btnCloseShort: "বন্ধ করুন",
+        btnCancelShort: "বাতিল",
+        titleShopSettingsShort: "🏪 দোকানের তথ্য পরিবর্তন করুন",
+        backupDownloadNote: "ব্যাকআপ ডাউনলোড করে রাখুন।",
+        notifBellTitle: "নোটিফিকেশন",
+        menuCategories: "ক্যাটাগরি তালিকা",
+        btnCreateSale: "+ নতুন বিক্রি তৈরি করুন",
+        btnCreateCategory: "+ নতুন ক্যাটাগরি তৈরি করুন",
+        titleAllCategories: "📁 সকল ক্যাটাগরি তালিকা",
+        thCategoryName: "ক্যাটাগরির নাম",
+        thProductCount: "প্রোডাক্ট সংখ্যা",
+        titleQuickAddCategory: "📁 দ্রুত নতুন ক্যাটাগরি যোগ করুন",
+        lblCategoryNameShort: "ক্যাটাগরির নাম:",
+        editCatTitleLabel: "✏️ ক্যাটাগরি সম্পাদনা করুন",
+        addCatTitleLabel: "📁 দ্রুত নতুন ক্যাটাগরি যোগ করুন",
+        editProdTitleLabel: "✏️ প্রোডাক্ট তথ্য আপডেট করুন",
+        addProdTitleLabel: "📦 দ্রুত নতুন প্রোডাক্ট যোগ করুন",
+        alertEnterCategoryName: "ক্যাটাগরির নাম লিখুন!",
+        confirmDeleteCategory: "এই ক্যাটাগরিটি কি ডিলিট করতে চান?",
+        alertCategoryInUse: "এই ক্যাটাগরিতে প্রোডাক্ট আছে, তাই ডিলিট করা যাবে না। আগে প্রোডাক্টগুলোর ক্যাটাগরি পরিবর্তন করুন।",
+        alertCategorySaved: "ক্যাটাগরি সফলভাবে সংরক্ষিত হয়েছে!",
+        lblShopLogoImage: "দোকানের লোগো (ছবি):",
+        noResultsFound: "কোনো ফলাফল পাওয়া যায়নি",
+        comboSearchPlaceholderCust: "🔎 নাম বা মোবাইল দিয়ে খুঁজুন...",
+        comboSearchPlaceholderProd: "🔎 নাম, ক্যাটাগরি বা যেকোনো অক্ষর দিয়ে খুঁজুন...",
+        selectCategoryDefault: "-- ক্যাটাগরি সিলেক্ট করুন --",
+        loginTitle: "POS সিস্টেমে লগইন করুন",
+        loginSubtitle: "আপনার ইমেইল ও পাসওয়ার্ড দিয়ে প্রবেশ করুন",
+        lblLoginEmail: "ইমেইল:",
+        lblLoginPassword: "পাসওয়ার্ড:",
+        btnLogin: "লগইন করুন",
+        loginConnecting: "সংযোগ করা হচ্ছে...",
+        loginErrFillFields: "ইমেইল ও পাসওয়ার্ড লিখুন!",
+        loginErrInvalid: "ইমেইল বা পাসওয়ার্ড সঠিক নয়!",
+        menuUsers: "ব্যবহারকারী ব্যবস্থাপনা",
+        titleCreateUser: "➕ নতুন ব্যবহারকারী তৈরি করুন",
+        lblUserName: "নাম:",
+        lblUserEmail: "ইমেইল:",
+        lblUserPassword: "পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর):",
+        lblUserRole: "রোল সিলেক্ট করুন:",
+        optRoleStaff: "স্টাফ (Staff)",
+        optRoleAdmin: "সুপার ইউজার (Admin)",
+        btnCreateUser: "ব্যবহারকারী তৈরি করুন",
+        titleAllUsers: "👥 সকল ব্যবহারকারী তালিকা",
+        thUserName: "নাম",
+        thUserEmail: "ইমেইল",
+        thUserRole: "রোল",
+        titleToggleRole: "রোল পরিবর্তন করুন",
+        titleRemoveAccess: "অ্যাক্সেস মুছে ফেলুন",
+        confirmChangeRole: "এই ব্যবহারকারীর রোল পরিবর্তন করতে চান?",
+        confirmRemoveAccess: "এই ব্যবহারকারীর অ্যাক্সেস মুছে দিতে চান? (এতে তার লগইন করার অনুমতি বাতিল হবে)",
+        alertFillAllFields: "সব ঘর পূরণ করুন!",
+        alertPasswordTooShort: "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে!",
+        alertUserCreated: "✅ ব্যবহারকারী সফলভাবে তৈরি হয়েছে!",
+        alertEmailInUse: "এই ইমেইল দিয়ে ইতিমধ্যে একটি একাউন্ট আছে!",
+        alertUserCreateFailed: "ব্যবহারকারী তৈরি করা যায়নি, আবার চেষ্টা করুন।",
+        alertRoleUpdateFailed: "রোল পরিবর্তন করা যায়নি।",
+        alertAccessRemoved: "অ্যাক্সেস মুছে ফেলা হয়েছে।",
+        alertAccessRemoveFailed: "অ্যাক্সেস মুছা যায়নি।",
+        alertUserListFailed: "ব্যবহারকারী তালিকা লোড করা যায়নি।",
+        loadingLabel: "লোড হচ্ছে..."
+      },
+      EN: {
+        brandName: "Wholesale Sales Manager",
+        sidebarFootNote: "All data is stored safely on this device",
+        roleAdminBtn: "Super User",
+        roleStaffBtn: "Modify User",
+        footerShopLabel: "Shop",
+        footerCopyright: "All rights reserved",
+        footerRoleAdmin: "Super User Mode",
+        footerRoleStaff: "Modify User Mode",
+        footerVersion: "Version 2.0",
+        statusApproved: "Approved",
+        statusPendingApproval: "Pending Approval",
+        statusPending: "Pending",
+        approvalPendingNote: "Approval Pending",
+        titlePrintView: "Print / View Invoice",
+        titleEdit: "Edit",
+        titleDelete: "Delete",
+        btnApproveOrder: "Approve Order",
+        waitingSuperUserOnly: "Waiting (Super User Only)",
+        noPendingNotifications: "There are no pending order notifications.",
+        unitBagLabel: "Bag",
+        unitKgLabel: "Kg",
+        naLabel: "N/A",
+        lowStockLabel: "Low Stock",
+        stockOkLabel: "OK",
+        noActionsLabel: "No actions",
+        lockedLabel: "Locked",
+        dueExistsLabel: "Due Pending",
+        fullyPaidLabel: "Fully Paid",
+        editSaleTitleLabel: "✏️ Update Sale Details",
+        btnUpdateSave: "Update & Save",
+        editCustTitleLabel: "✏️ Update Customer Details",
+        addCustTitleLabel: "👥 Quickly Add New Customer",
+        editAccTitleLabel: "✏️ Edit Transaction",
+        btnUpdateOnly: "Update",
+        confirmDeleteSale: "Are you sure you want to delete this record?",
+        confirmDeleteProduct: "Are you sure you want to delete this product?",
+        confirmDeleteCustomer: "Are you sure you want to delete this customer?",
+        confirmDeleteAccount: "Are you sure you want to delete this transaction?",
+        alertSelectValidSale: "Please select a valid customer, product, and quantity!",
+        alertSaleSentApproval: "The sale has been sent to the Super User for approval.",
+        alertSaleSaved: "Sale record saved successfully!",
+        alertOnlyAdminApproveOrder: "Only the Super User can approve orders!",
+        alertOrderApproved: "Order #{inv} has been approved!",
+        alertOrderNotApprovedYet: "This order has not been approved yet!",
+        alertSelectProductFirst: "Please select a product!",
+        alertUnitUpdated: "Unit settings updated successfully!",
+        alertEnterName: "Please enter a name!",
+        alertEnterProductName: "Please enter a product name!",
+        alertOnlyAdminAddTransaction: "Only the Super User can add transactions!",
+        alertEnterValidAmount: "Please enter a valid amount!",
+        alertAccSaved: "Transaction saved successfully!",
+        alertSelectBackupFile: "Please select a backup file!",
+        alertBackupFileError: "Could not read the file! Please upload a valid backup file.",
+        alertDataRestored: "Data restored successfully! Reloading the page...",
+        alertSelectValidBackup: "Please select a valid backup file!",
+        confirmResetAll: "Are you sure you want to delete all data? This cannot be undone!",
+        alertDataReset: "All data has been deleted.",
+        selectCustomerDefault: "-- Select Customer --",
+        selectProductDefault: "-- Select Product --",
+        selectGenericDefault: "-- Select --",
+        custDetailsHeading: "👤 Customer Details:",
+        lblNameShort: "Name",
+        lblMobileShort: "Mobile",
+        currentSaleHeading: "📦 Current Sale Details:",
+        thRate: "Rate",
+        notesRemarksShort: "Notes/Remarks",
+        paymentMethodShort: "Payment Method",
+        custHistoryHeading: "📕 Customer's Total Transaction History:",
+        totalPurchaseShort: "Total Purchase",
+        totalPaidShort: "Total Paid",
+        currentDueShort: "Current Due",
+        invoiceDateLabel: "Date",
+        stockShortLabel: "Stock",
+        generalEntryLabel: "General Entry",
+        menuDashboard: "Dashboard",
+        menuSales: "Sales",
+        menuOrderNotifications: "Order Notifications",
+        titleOrderNotifications: "🔔 Order Notifications & Pending Approvals",
+        menuProducts: "Products",
+        menuUnitConfig: "Unit Configuration",
+        menuCustomers: "Customers",
+        menuLedger: "Due Ledger",
+        menuAccounts: "Accounts",
+        menuSettings: "Settings",
+        lblTotalSales: "Today's Total Sales",
+        lblTotalDue: "Total Due Amount",
+        lblTotalStock: "Total Stock (Bags)",
+        lblRecentSales: "Recent Sales History",
+        thInvoice: "Invoice",
+        thCustomer: "Customer",
+        thProduct: "Item/Product",
+        thTotal: "Total Amount",
+        titleNewSale: "🛒 New Sale",
+        lblSelectCust: "Select Customer:",
+        lblSelectProd: "Select Product:",
+        lblSaleUnit: "Sales Unit Type:",
+        lblQty: "Quantity:",
+        lblPrice: "Unit Price (BDT):",
+        lblPaid: "Paid Amount:",
+        lblRemarks: "Notes / Remarks:",
+        lblPaymentType: "Payment Method:",
+        btnSaveSale: "Save Sale",
+        btnCancel: "Cancel",
+        titleSalesHistory: "📊 All Sales History",
+        thQty: "Quantity",
+        thAction: "Action",
+        btnCreateProduct: "+ Create Product",
+        titleAllProducts: "📦 All Products List",
+        thId: "ID",
+        thProdName: "Product Name",
+        thCategory: "Category",
+        thBagPrice: "Price Per Bag",
+        thStock: "Stock (Bags)",
+        thStatus: "Status",
+        titleUnitConfig: "⚙️ Individual Unit Setup",
+        lblRow1: "Step 1: Bag Weight Setup (1 Bag = KG)",
+        lblRow2: "Step 2: Per KG Rate Setup (1 KG = BDT)",
+        lblBagCurrentPrice: "1 Bag Current Price (BDT):",
+        btnSaveConfig: "Save Settings",
+        titleUnitList: "📋 Unit Configuration List",
+        thBagWeight: "Bag Weight (Kg)",
+        thKgPrice: "Price Per Kg (BDT)",
+        thTotalBagPrice: "Total Bag Price (BDT)",
+        titleCustList: "👥 All Customers List",
+        btnAddCust: "+ Add Customer",
+        thCustName: "Customer Name",
+        thMobile: "Mobile No.",
+        thAddress: "Address",
+        titleLedger: "📕 Customer Due Ledger",
+        thTotalPur: "Total Purchase",
+        thTotalPaid: "Total Paid",
+        thCurrDue: "Current Due",
+        titleAccEntry: "💰 New Transaction Entry",
+        lblAccType: "Transaction Type:",
+        lblAccMethod: "Payment Method:",
+        lblAmount: "Amount:",
+        lblDate: "Date:",
+        lblNote: "Description / Note:",
+        btnSaveAcc: "Save Transaction",
+        titleAccReport: "📊 Accounts History & Reports",
+        btnPrintReport: "🖨️ Print",
+        alertShopSaved: "Store information updated successfully!",
+        titleShopSettings: "🏪 Store Information",
+        lblShopName: "Shop Name:",
+        lblShopTagline: "Shop Tagline / Subtitle:",
+        lblShopLogo: "Logo Initial (1 Char):",
+        btnSaveShop: "Save Shop Info",
+        titleBackup: "💾 Data Backup & Restore",
+        btnExport: "📥 Export Backup Data",
+        lblRestore: "Restore Data from File:",
+        btnImport: "📤 Import Backup Data",
+        btnResetAll: "⚠️ Reset All Data",
+        lblTotal: "Total Amount:",
+        lblPaymentTypeColon: "Payment Method:",
+        optUnitBag: "Bag",
+        optUnitKg: "Kg",
+        optPayCash: "Cash Payment",
+        optPayDue: "Due",
+        optPayBank: "Bank Transfer",
+        optPayMobile: "Mobile Banking (bKash/Nagad)",
+        optAccJoma: "Deposit",
+        optAccKroy: "Purchase",
+        optAccBikroy: "Sale",
+        optAccKharoch: "Expense",
+        optAccCash: "Cash",
+        optAccBank: "Bank Transfer",
+        optAccMobile: "Mobile Banking (bKash/Nagad)",
+        notifTabNote: "New orders from staff will be submitted here for approval.",
+        thStaffName: "Staff Name",
+        thActionSuperUser: "Action (Super User)",
+        titleQuickAddCustomer: "👥 Quick Add New Customer",
+        lblCustNameShort: "Customer Name:",
+        lblMobileNumShort: "Mobile Number:",
+        lblAddressShort: "Address:",
+        btnSaveShort: "Save",
+        titleQuickAddProduct: "📦 Quick Add New Product",
+        lblProdNameShort: "Product Name:",
+        lblCategoryShort: "Category:",
+        lblBagSellPrice: "Sale Price per Bag:",
+        lblBagWeightKg: "Weight per Bag (Kg):",
+        lblStockBagShort: "Stock (Bags):",
+        titleViewSaleInvoice: "🧾 Sale Invoice & History",
+        btnPrintInvoice: "🖨️ Print Invoice",
+        btnCloseShort: "Close",
+        btnCancelShort: "Cancel",
+        titleShopSettingsShort: "🏪 Update Store Information",
+        backupDownloadNote: "Keep a backup downloaded.",
+        notifBellTitle: "Notifications",
+        menuCategories: "Categories",
+        btnCreateSale: "+ Create Sale",
+        btnCreateCategory: "+ Create Category",
+        titleAllCategories: "📁 All Categories",
+        thCategoryName: "Category Name",
+        thProductCount: "Product Count",
+        titleQuickAddCategory: "📁 Quick Add New Category",
+        lblCategoryNameShort: "Category Name:",
+        editCatTitleLabel: "✏️ Edit Category",
+        addCatTitleLabel: "📁 Quick Add New Category",
+        editProdTitleLabel: "✏️ Update Product Details",
+        addProdTitleLabel: "📦 Quick Add New Product",
+        alertEnterCategoryName: "Please enter a category name!",
+        confirmDeleteCategory: "Are you sure you want to delete this category?",
+        alertCategoryInUse: "This category has products in it, so it cannot be deleted. Please change those products' category first.",
+        alertCategorySaved: "Category saved successfully!",
+        lblShopLogoImage: "Store Logo (Image):",
+        noResultsFound: "No results found",
+        comboSearchPlaceholderCust: "🔎 Search by name or mobile...",
+        comboSearchPlaceholderProd: "🔎 Search by name, category, or any letter...",
+        selectCategoryDefault: "-- Select Category --",
+        loginTitle: "Login to POS System",
+        loginSubtitle: "Enter your email and password to continue",
+        lblLoginEmail: "Email:",
+        lblLoginPassword: "Password:",
+        btnLogin: "Login",
+        loginConnecting: "Connecting...",
+        loginErrFillFields: "Please enter both email and password!",
+        loginErrInvalid: "Invalid email or password!",
+        menuUsers: "User Management",
+        titleCreateUser: "➕ Create New User",
+        lblUserName: "Name:",
+        lblUserEmail: "Email:",
+        lblUserPassword: "Password (min. 6 characters):",
+        lblUserRole: "Select Role:",
+        optRoleStaff: "Staff",
+        optRoleAdmin: "Super User (Admin)",
+        btnCreateUser: "Create User",
+        titleAllUsers: "👥 All Users",
+        thUserName: "Name",
+        thUserEmail: "Email",
+        thUserRole: "Role",
+        titleToggleRole: "Change Role",
+        titleRemoveAccess: "Remove Access",
+        confirmChangeRole: "Change this user's role?",
+        confirmRemoveAccess: "Remove this user's access? (This revokes their login permission)",
+        alertFillAllFields: "Please fill in all fields!",
+        alertPasswordTooShort: "Password must be at least 6 characters!",
+        alertUserCreated: "✅ User created successfully!",
+        alertEmailInUse: "An account already exists with this email!",
+        alertUserCreateFailed: "Could not create user, please try again.",
+        alertRoleUpdateFailed: "Could not update role.",
+        alertAccessRemoved: "Access removed.",
+        alertAccessRemoveFailed: "Could not remove access.",
+        alertUserListFailed: "Could not load user list.",
+        loadingLabel: "Loading..."
+      }
+    };
+
+    function t(key) {
+      return (translations[currentLang] && translations[currentLang][key]) || key;
+    }
+
+    function unitLabel(unitType) {
+      return unitType === 'Kg' ? t('unitKgLabel') : t('unitBagLabel');
+    }
+
+    let shopConfig = JSON.parse(localStorage.getItem('pos_shop_info')) || {
+      name: "মেসার্স বিসমিল্লাহ ট্রেডার্স",
+      tagline: "পাইকারি সার, সিমেন্ট ও খাদ্যশস্য বিক্রেতা",
+      logo: "B",
+      logoImage: ""
+    };
+
+    let categories = JSON.parse(localStorage.getItem('pos_categories')) || [
+      { id: 1, name: "সার" },
+      { id: 2, name: "সিমেন্ট" },
+      { id: 3, name: "খাদ্যশস্য" }
+    ];
+
+    let customers = JSON.parse(localStorage.getItem('pos_customers')) || [
+      { id: 1, name: "নগদ কাস্টমার", phone: "N/A", address: "Local" },
+      { id: 2, name: "আব্দুল করিম", phone: "01711223344", address: "যশোর বাজার" }
+    ];
+
+    let products = JSON.parse(localStorage.getItem('pos_products')) || [
+      { id: 101, name: "ইউরিয়া সার", category: "সার", price: 1350, stock: 100, bagKg: 50, perKgPrice: 27 },
+      { id: 102, name: "শাহ সিমেন্ট", category: "সিমেন্ট", price: 520, stock: 80, bagKg: 50, perKgPrice: 10.4 }
+    ];
+
+    let salesHistory = JSON.parse(localStorage.getItem('pos_sales')) || [
+      { id: 1001, invNo: "INV-1001", custId: 2, custName: "আব্দুল করিম", prodId: 101, prodName: "ইউরিয়া সার", qty: 10, unitType: "Bag", unitPrice: 1350, total: 13500, paid: 10000, due: 3500, method: "Due", remarks: "ট্রাক নম্বর ৬৮৭২", date: "2026-08-05", createdBy: "admin", status: "Approved" }
+    ];
+
+    let accountTransactions = JSON.parse(localStorage.getItem('pos_accounts')) || [
+      { id: 201, type: 'Joma', method: 'Cash', amount: 5000, note: 'আজকের নগদ জমা', date: "2026-08-05" },
+      { id: 202, type: 'Kharoch', method: 'Mobile Banking', amount: 300, note: 'দোকান চা খরচ', date: "2026-08-05" }
+    ];
+
+    // ---------- FIREBASE CLOUD SYNC ----------
+    const FIRESTORE_COLLECTION = 'pos_data';
+    const FIRESTORE_DOC_ID = 'main';
+
+    function waitForFirebase(timeoutMs = 4000) {
+      return new Promise((resolve) => {
+        if (window.firebaseReady) return resolve(true);
+        let done = false;
+        window.addEventListener('firebaseReady', () => { if (!done) { done = true; resolve(true); } }, { once: true });
+        setTimeout(() => { if (!done) { done = true; resolve(!!window.firebaseReady); } }, timeoutMs);
+      });
+    }
+
+    async function loadFromFirestore() {
+      try {
+        if (!window.firestoreDB) return null;
+        let docRef = window.firestoreDoc(window.firestoreDB, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
+        let snap = await window.firestoreGetDoc(docRef);
+        return snap.exists() ? snap.data() : null;
+      } catch (err) {
+        console.error('Firestore load error:', err);
+        return null;
+      }
+    }
+
+    async function saveToFirestore() {
+      try {
+        if (!window.firestoreDB) return;
+        let docRef = window.firestoreDoc(window.firestoreDB, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
+        await window.firestoreSetDoc(docRef, {
+          shopConfig, customers, products, salesHistory, accountTransactions, categories,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error('Firestore save error (data is still saved locally):', err);
+      }
+    }
+
+    function syncCloudFromLocalVars(cloud) {
+      shopConfig = cloud.shopConfig || shopConfig;
+      customers = cloud.customers || customers;
+      products = cloud.products || products;
+      salesHistory = cloud.salesHistory || salesHistory;
+      accountTransactions = cloud.accountTransactions || accountTransactions;
+      categories = cloud.categories || categories;
+
+      localStorage.setItem('pos_shop_info', JSON.stringify(shopConfig));
+      localStorage.setItem('pos_customers', JSON.stringify(customers));
+      localStorage.setItem('pos_products', JSON.stringify(products));
+      localStorage.setItem('pos_sales', JSON.stringify(salesHistory));
+      localStorage.setItem('pos_accounts', JSON.stringify(accountTransactions));
+      localStorage.setItem('pos_categories', JSON.stringify(categories));
+    }
+
+    function openTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.sidebar-menu button').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      
+      if(btn) {
+        btn.classList.add('active');
+      } else {
+        let activeBtn = document.querySelector(`.sidebar-menu button[onclick*="${tabId}"]`);
+        if(activeBtn) activeBtn.classList.add('active');
+      }
+
+      if (window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('active')) {
+        toggleSidebar();
+      }
+    }
+
+    function setUserRole(role) {
+      currentUserRole = role;
+
+      let adminElements = document.querySelectorAll('.admin-only');
+      adminElements.forEach(el => el.style.display = (currentUserRole === 'staff') ? 'none' : '');
+
+      let pill = document.getElementById('footerRolePill');
+      if (pill) {
+        let langData = translations[currentLang];
+        pill.setAttribute('data-key', role === 'staff' ? 'footerRoleStaff' : 'footerRoleAdmin');
+        pill.innerText = langData[role === 'staff' ? 'footerRoleStaff' : 'footerRoleAdmin'];
+      }
+
+      let headerPill = document.getElementById('headerUserRolePill');
+      if (headerPill) {
+        headerPill.innerText = role === 'admin' ? t('roleAdminBtn') : t('roleStaffBtn');
+        headerPill.className = 'role-pill-badge ' + (role === 'admin' ? 'role-admin' : 'role-staff');
+      }
+
+      renderSales();
+      renderNotifications();
+      renderProducts();
+      renderCategories();
+      renderUnitConfigTable();
+      renderCustomers();
+      renderLedger();
+      renderAccounts();
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.querySelectorAll('#langSwitch .lang-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-lang') === lang);
+      });
+
+      let langData = translations[currentLang];
+
+      document.querySelectorAll('[data-key]').forEach(el => {
+        let key = el.getAttribute('data-key');
+        if (langData[key]) {
+          el.innerText = langData[key];
+        }
+      });
+
+      let pill = document.getElementById('footerRolePill');
+      if (pill) {
+        pill.innerText = (currentUserRole === 'staff') ? t('footerRoleStaff') : t('footerRoleAdmin');
+      }
+
+      // Re-render every dynamic table/dropdown so no stale-language text remains
+      populateDropdowns();
+      renderSales();
+      renderNotifications();
+      renderProducts();
+      renderCategories();
+      renderUnitConfigTable();
+      renderCustomers();
+      renderLedger();
+      renderAccounts();
+      renderUsersTable();
+
+      // Reset in-progress form button/title states to the new language's defaults
+      if (!document.getElementById('editSaleId').value) {
+        document.getElementById('saleFormTitle').innerText = t('titleNewSale');
+        document.getElementById('btnSaveSale').innerText = t('btnSaveSale');
+      }
+      if (!document.getElementById('editAccId').value) {
+        document.getElementById('accFormTitle').innerText = t('titleAccEntry');
+        document.getElementById('btnAccSave').innerText = t('btnSaveAcc');
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function populateDropdowns() {
+      let unitProdSelect = document.getElementById('unitProductSelect');
+      unitProdSelect.innerHTML = `<option value="">${t('selectGenericDefault')}</option>`;
+      products.forEach(p => {
+        unitProdSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+      });
+
+      let qpCat = document.getElementById('qpCategory');
+      if (qpCat) {
+        let currentVal = qpCat.value;
+        qpCat.innerHTML = `<option value="">${t('selectCategoryDefault')}</option>`;
+        categories.forEach(c => {
+          qpCat.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+        });
+        if (currentVal) qpCat.value = currentVal;
+      }
+
+      // History-based suggestion lists (site-wide typeahead)
+      let prodNameList = document.getElementById('productNameSuggestions');
+      if (prodNameList) prodNameList.innerHTML = [...new Set(products.map(p => p.name))].map(n => `<option value="${n}">`).join('');
+
+      let custNameList = document.getElementById('customerNameSuggestions');
+      if (custNameList) custNameList.innerHTML = [...new Set(customers.map(c => c.name))].map(n => `<option value="${n}">`).join('');
+
+      let custAddrList = document.getElementById('customerAddressSuggestions');
+      if (custAddrList) custAddrList.innerHTML = [...new Set(customers.map(c => c.address).filter(Boolean))].map(n => `<option value="${n}">`).join('');
+
+      let catList = document.getElementById('categorySuggestions');
+      if (catList) catList.innerHTML = categories.map(c => `<option value="${c.name}">`).join('');
+    }
+
+    // ---------- SEARCHABLE COMBO BOX (Customer / Product) ----------
+    // Matches ANY substring, anywhere in the name/phone/category — not just prefix.
+    function renderCustomerCombo(query) {
+      let list = document.getElementById('customerComboList');
+      let q = (query || '').trim().toLowerCase();
+      let matches = customers.filter(c =>
+        !q || c.name.toLowerCase().includes(q) || (c.phone || '').toLowerCase().includes(q)
+      );
+      if (matches.length === 0) {
+        list.innerHTML = `<div class="combo-empty">${t('noResultsFound')}</div>`;
+      } else {
+        list.innerHTML = matches.slice(0, 50).map(c => `
+          <div class="combo-item" onclick="selectCustomerCombo(${c.id})">
+            <div>${c.name}</div>
+            <div class="combo-sub">${c.phone || ''}</div>
+          </div>
+        `).join('');
+      }
+      list.classList.add('active');
+    }
+
+    function selectCustomerCombo(id) {
+      let c = customers.find(x => x.id == id);
+      if (!c) return;
+      document.getElementById('saleCustomer').value = c.id;
+      document.getElementById('saleCustomerSearch').value = `${c.name} (${c.phone})`;
+      document.getElementById('customerComboList').classList.remove('active');
+    }
+
+    function renderProductCombo(query) {
+      let list = document.getElementById('productComboList');
+      let q = (query || '').trim().toLowerCase();
+      let matches = products.filter(p =>
+        !q || p.name.toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q)
+      );
+      if (matches.length === 0) {
+        list.innerHTML = `<div class="combo-empty">${t('noResultsFound')}</div>`;
+      } else {
+        list.innerHTML = matches.slice(0, 50).map(p => `
+          <div class="combo-item" onclick="selectProductCombo(${p.id})">
+            <div>${p.name}</div>
+            <div class="combo-sub">${p.category || ''} · <span class="currency-symbol">৳</span>${p.price} (${t('stockShortLabel')}: ${p.stock})</div>
+          </div>
+        `).join('');
+      }
+      list.classList.add('active');
+    }
+
+    function selectProductCombo(id) {
+      let p = products.find(x => x.id == id);
+      if (!p) return;
+      document.getElementById('saleProduct').value = p.id;
+      document.getElementById('saleProductSearch').value = `${p.name} - ৳${p.price}`;
+      document.getElementById('productComboList').classList.remove('active');
+      updatePriceAndUnit();
+    }
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.combo-wrap')) {
+        document.querySelectorAll('.combo-list').forEach(l => l.classList.remove('active'));
+      }
+    });
+
+    function renderShopInfo() {
+      document.getElementById('displayShopName').innerText = shopConfig.name;
+      document.getElementById('displayShopTagline').innerText = shopConfig.tagline;
+      document.getElementById('displayShopLogo').innerText = shopConfig.logo || 'B';
+
+      document.getElementById('settingShopName').value = shopConfig.name;
+      document.getElementById('settingShopTagline').value = shopConfig.tagline;
+
+      let sidebarImg = document.getElementById('sidebarLogoImg');
+      let sidebarPlaceholder = document.getElementById('sidebarLogoPlaceholder');
+      let sidebarBox = document.getElementById('sidebarLogoBox');
+      let sidebarName = document.getElementById('sidebarBrandName');
+      let settingImg = document.getElementById('settingLogoPreview');
+      let settingPlaceholder = document.getElementById('settingLogoPlaceholder');
+
+      if (shopConfig.logoImage) {
+        if (sidebarImg) { sidebarImg.src = shopConfig.logoImage; sidebarImg.style.display = 'block'; }
+        if (sidebarPlaceholder) sidebarPlaceholder.style.display = 'none';
+        if (sidebarBox) sidebarBox.classList.add('has-logo');
+        if (sidebarName) sidebarName.classList.add('hidden');
+        if (settingImg) { settingImg.src = shopConfig.logoImage; settingImg.style.display = 'block'; }
+        if (settingPlaceholder) settingPlaceholder.style.display = 'none';
+      } else {
+        if (sidebarImg) sidebarImg.style.display = 'none';
+        if (sidebarPlaceholder) sidebarPlaceholder.style.display = 'block';
+        if (sidebarBox) sidebarBox.classList.remove('has-logo');
+        if (sidebarName) sidebarName.classList.remove('hidden');
+        if (settingImg) settingImg.style.display = 'none';
+        if (settingPlaceholder) settingPlaceholder.style.display = 'block';
+      }
+    }
+
+    function uploadShopLogo(event) {
+      let file = event.target.files && event.target.files[0];
+      if (!file) return;
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        let img = new Image();
+        img.onload = function() {
+          // Resize/compress so the logo stays crisp but small enough for cloud storage
+          let maxW = 300, maxH = 150;
+          let ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+          let canvas = document.createElement('canvas');
+          canvas.width = img.width * ratio;
+          canvas.height = img.height * ratio;
+          let ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          shopConfig.logoImage = canvas.toDataURL('image/png');
+          localStorage.setItem('pos_shop_info', JSON.stringify(shopConfig));
+          saveToFirestore();
+          renderShopInfo();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveShopSettings() {
+      shopConfig.name = document.getElementById('settingShopName').value || "মেসার্স বিসমিল্লাহ ট্রেডার্স";
+      shopConfig.tagline = document.getElementById('settingShopTagline').value || "";
+
+      localStorage.setItem('pos_shop_info', JSON.stringify(shopConfig));
+      saveToFirestore();
+      renderShopInfo();
+      alert(t("alertShopSaved"));
+    }
+
+    // ---------- CATEGORIES ----------
+    function renderCategories(list = categories) {
+      let tbody = document.querySelector('#categoryTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      list.forEach(cat => {
+        let count = products.filter(p => p.category === cat.name).length;
+        let actionsHtml = currentUserRole === 'admin' ? `
+          <div style="text-align:center;">
+            <button onclick="editCategory(${cat.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
+            <button onclick="deleteCategory(${cat.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
+          </div>
+        ` : `<div style="text-align:center;"><span style="font-size:12px; color:#94a3b8;">${t('noActionsLabel')}</span></div>`;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>#${cat.id}</b></td>
+            <td><b>${cat.name}</b></td>
+            <td>${count}</td>
+            <td>${actionsHtml}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function searchCategories() {
+      let q = document.getElementById('categorySearchInput').value.toLowerCase();
+      renderCategories(categories.filter(c => c.name.toLowerCase().includes(q)));
+    }
+
+    function showQuickAddCategory() {
+      document.getElementById('qcatId').value = '';
+      document.getElementById('qcatName').value = '';
+      document.getElementById('catModalTitle').innerText = t('addCatTitleLabel');
+      document.getElementById('quickCategoryModal').style.display = 'flex';
+    }
+
+    function editCategory(id) {
+      let cat = categories.find(c => c.id == id);
+      if (!cat) return;
+      document.getElementById('qcatId').value = cat.id;
+      document.getElementById('qcatName').value = cat.name;
+      document.getElementById('catModalTitle').innerText = t('editCatTitleLabel');
+      document.getElementById('quickCategoryModal').style.display = 'flex';
+    }
+
+    function saveQuickCategory() {
+      let editId = document.getElementById('qcatId').value;
+      let name = document.getElementById('qcatName').value.trim();
+      if (!name) return alert(t("alertEnterCategoryName"));
+
+      if (editId) {
+        let cat = categories.find(c => c.id == editId);
+        if (cat) {
+          let oldName = cat.name;
+          cat.name = name;
+          products.forEach(p => { if (p.category === oldName) p.category = name; });
+        }
+      } else {
+        categories.push({ id: Date.now(), name });
+      }
+
+      saveData();
+      populateDropdowns();
+      renderCategories();
+      renderProducts();
+      alert(t("alertCategorySaved"));
+      closeModal('quickCategoryModal');
+    }
+
+    function deleteCategory(id) {
+      let cat = categories.find(c => c.id == id);
+      if (!cat) return;
+      let inUse = products.some(p => p.category === cat.name);
+      if (inUse) return alert(t("alertCategoryInUse"));
+      if (confirm(t("confirmDeleteCategory"))) {
+        categories = categories.filter(c => c.id != id);
+        saveData();
+        populateDropdowns();
+        renderCategories();
+      }
+    }
+
+    function exportSystemData() {
+      let backupData = { shopConfig, customers, products, salesHistory, accountTransactions, categories };
+      let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+      let dlAnchorElem = document.createElement('a');
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", `POS_Backup_${new Date().toISOString().split('T')[0]}.json`);
+      dlAnchorElem.click();
+    }
+
+    function importSystemData() {
+      let fileInput = document.getElementById('importFile');
+      if (!fileInput.files.length) return alert(t("alertSelectBackupFile"));
+
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          let data = JSON.parse(e.target.result);
+          if (data.customers && data.products && data.salesHistory) {
+            localStorage.setItem('pos_shop_info', JSON.stringify(data.shopConfig || shopConfig));
+            localStorage.setItem('pos_customers', JSON.stringify(data.customers));
+            localStorage.setItem('pos_products', JSON.stringify(data.products));
+            localStorage.setItem('pos_sales', JSON.stringify(data.salesHistory));
+            localStorage.setItem('pos_accounts', JSON.stringify(data.accountTransactions || []));
+            localStorage.setItem('pos_categories', JSON.stringify(data.categories || categories));
+
+            alert(t("alertDataRestored"));
+            location.reload();
+          } else {
+            alert(t("alertSelectValidBackup"));
+          }
+        } catch (err) {
+          alert(t("alertBackupFileError"));
+        }
+      };
+      reader.readAsText(fileInput.files[0]);
+    }
+
+    function resetAllSystemData() {
+      if (confirm(t("confirmResetAll"))) {
+        localStorage.clear();
+        alert(t("alertDataReset"));
+        location.reload();
+      }
+    }
+
+    function renderDashboard() {
+      let approvedSales = salesHistory.filter(s => s.status === 'Approved');
+      let totalSalesAmt = approvedSales.reduce((sum, s) => sum + s.total, 0);
+      let totalDueAmt = approvedSales.reduce((sum, s) => sum + s.due, 0);
+      let totalStockBags = products.reduce((sum, p) => sum + p.stock, 0);
+
+      document.getElementById('dashTotalSales').innerHTML = '<span class="currency-symbol">৳</span>' + totalSalesAmt.toFixed(2);
+      document.getElementById('dashTotalDue').innerHTML = '<span class="currency-symbol">৳</span>' + totalDueAmt.toFixed(2);
+      document.getElementById('dashTotalStock').innerText = totalStockBags.toFixed(1);
+
+      let tbody = document.querySelector('#dashSalesTable tbody');
+      tbody.innerHTML = '';
+      approvedSales.slice(0, 5).forEach(s => {
+        tbody.innerHTML += `
+          <tr>
+            <td><b>#${s.invNo}</b></td>
+            <td>${s.custName}</td>
+            <td>${s.prodName}</td>
+            <td><b><span class="currency-symbol">৳</span>${s.total.toFixed(2)}</b></td>
+          </tr>
+        `;
+      });
+    }
+
+    function updatePriceAndUnit() {
+      let pId = document.getElementById('saleProduct').value;
+      let unitType = document.getElementById('saleUnitType').value;
+      let prod = products.find(p => p.id == pId);
+
+      if (prod) {
+        if (unitType === 'Bag') {
+          document.getElementById('lblSaleQty').innerText = currentLang === 'BN' ? 'পরিমাণ (বস্তা):' : 'Quantity (Bags):';
+          document.getElementById('lblUnitPrice').innerText = currentLang === 'BN' ? 'প্রতি বস্তার দাম (BDT):' : 'Price per Bag (BDT):';
+          document.getElementById('saleUnitPrice').value = prod.price;
+        } else {
+          document.getElementById('lblSaleQty').innerText = currentLang === 'BN' ? 'পরিমাণ (কেজি):' : 'Quantity (Kg):';
+          document.getElementById('lblUnitPrice').innerText = currentLang === 'BN' ? 'প্রতি কেজি\'র দাম (BDT):' : 'Price per Kg (BDT):';
+          let perKg = prod.perKgPrice || (prod.bagKg ? (prod.price / prod.bagKg) : 0);
+          document.getElementById('saleUnitPrice').value = perKg.toFixed(2);
+        }
+        calculateSaleTotal();
+      }
+    }
+
+    function calculateSaleTotal() {
+      let qty = parseFloat(document.getElementById('saleQty').value) || 0;
+      let price = parseFloat(document.getElementById('saleUnitPrice').value) || 0;
+      document.getElementById('saleTotalAmount').value = (qty * price).toFixed(2);
+    }
+
+    function processSale() {
+      let editId = document.getElementById('editSaleId').value;
+      let custId = document.getElementById('saleCustomer').value;
+      let prodId = document.getElementById('saleProduct').value;
+      let unitType = document.getElementById('saleUnitType').value;
+      let qty = parseFloat(document.getElementById('saleQty').value) || 0;
+      let unitPrice = parseFloat(document.getElementById('saleUnitPrice').value) || 0;
+      let total = parseFloat(document.getElementById('saleTotalAmount').value) || 0;
+      let paid = parseFloat(document.getElementById('salePaidAmount').value) || 0;
+      let remarks = document.getElementById('saleRemarks').value;
+      let method = document.getElementById('paymentType').value;
+
+      if (!custId || !prodId || qty <= 0) return alert(t("alertSelectValidSale"));
+
+      let cust = customers.find(c => c.id == custId);
+      let prod = products.find(p => p.id == prodId);
+      let due = total - paid;
+
+      let initialStatus = (currentUserRole === 'staff') ? 'Pending' : 'Approved';
+
+      if (editId) {
+        let sale = salesHistory.find(s => s.id == editId);
+        if (sale) {
+          sale.custId = custId; sale.custName = cust.name;
+          sale.prodId = prodId; sale.prodName = prod.name;
+          sale.unitType = unitType;
+          sale.qty = qty; sale.unitPrice = unitPrice; sale.total = total;
+          sale.paid = paid; sale.due = due; sale.method = method; sale.remarks = remarks;
+        }
+      } else {
+        salesHistory.unshift({
+          id: Date.now(),
+          invNo: "INV-" + Math.floor(1000 + Math.random() * 9000),
+          custId, custName: cust.name,
+          prodId, prodName: prod.name,
+          unitType, qty, unitPrice, total, paid, due, method, remarks,
+          date: new Date().toISOString().split('T')[0],
+          createdBy: currentUserRole,
+          status: initialStatus
+        });
+
+        if (initialStatus === 'Approved' && prod) {
+          if (unitType === 'Bag') {
+            prod.stock -= qty;
+          } else {
+            let bagKg = prod.bagKg || 50;
+            prod.stock -= (qty / bagKg);
+          }
+        }
+      }
+
+      saveData();
+      renderSales();
+      renderNotifications();
+      renderDashboard();
+      renderLedger();
+      resetSaleForm();
+
+      if (currentUserRole === 'staff') {
+        alert(t("alertSaleSentApproval"));
+      } else {
+        alert(t("alertSaleSaved"));
+      }
+    }
+
+    function renderSales(list = salesHistory) {
+      let tbody = document.querySelector('#salesTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      list.forEach(s => {
+        let isApproved = s.status === 'Approved';
+        let statusBadge = isApproved 
+          ? `<span class="badge badge-ok">${t('statusApproved')}</span>` 
+          : `<span class="badge badge-pending">${t('statusPendingApproval')}</span>`;
+
+        let canPrint = isApproved;
+
+        let actionsHtml = `
+          <div style="text-align:center;">
+            ${canPrint ? `
+              <button onclick="viewSale(${s.id})" class="btn-icon-action btn-view" title="${t('titlePrintView')}">${SVG_VIEW}</button>
+            ` : `<span style="font-size:12px; color:#94a3b8;">${t('approvalPendingNote')}</span>`}
+            ${currentUserRole === 'admin' ? `
+              <button onclick="editSale(${s.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
+              <button onclick="deleteSale(${s.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
+            ` : ''}
+          </div>
+        `;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>#${s.invNo}</b></td>
+            <td>${s.custName}</td>
+            <td>${s.prodName}</td>
+            <td>${s.qty} ${unitLabel(s.unitType)}</td>
+            <td><b><span class="currency-symbol">৳</span>${s.total.toFixed(2)}</b></td>
+            <td>${statusBadge}</td>
+            <td>${actionsHtml}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderNotifications() {
+      let pendingSales = salesHistory.filter(s => s.status === 'Pending');
+      
+      let count = pendingSales.length;
+      document.getElementById('headerBadge').innerText = count;
+      document.getElementById('sidebarBadge').innerText = count;
+
+      let tbody = document.querySelector('#notificationTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (pendingSales.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b;">${t('noPendingNotifications')}</td></tr>`;
+        return;
+      }
+
+      pendingSales.forEach(s => {
+        let actionBtn = (currentUserRole === 'admin')
+          ? `<button onclick="approveOrder(${s.id})" class="btn-action btn-success">${t('btnApproveOrder')}</button>`
+          : `<span style="font-size:12px; color:#64748b;">${t('waitingSuperUserOnly')}</span>`;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>#${s.invNo}</b></td>
+            <td><span class="badge badge-alert">${s.createdBy}</span></td>
+            <td>${s.custName}</td>
+            <td>${s.prodName} (${s.qty} ${unitLabel(s.unitType)})</td>
+            <td><b><span class="currency-symbol">৳</span>${s.total.toFixed(2)}</b></td>
+            <td><span class="badge badge-pending">${t('statusPending')}</span></td>
+            <td style="text-align:center;">${actionBtn}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function approveOrder(id) {
+      if (currentUserRole !== 'admin') return alert(t("alertOnlyAdminApproveOrder"));
+
+      let sale = salesHistory.find(s => s.id == id);
+      if (sale) {
+        sale.status = 'Approved';
+
+        let prod = products.find(p => p.id == sale.prodId);
+        if (prod) {
+          if (sale.unitType === 'Bag') {
+            prod.stock -= sale.qty;
+          } else {
+            let bagKg = prod.bagKg || 50;
+            prod.stock -= (sale.qty / bagKg);
+          }
+        }
+
+        saveData();
+        renderSales();
+        renderNotifications();
+        renderDashboard();
+        renderProducts();
+        renderLedger();
+        alert(t("alertOrderApproved").replace("{inv}", sale.invNo));
+      }
+    }
+
+    function searchSales() {
+      let q = document.getElementById('salesSearchInput').value.toLowerCase().trim();
+      let filtered = salesHistory.filter(s =>
+        s.invNo.toLowerCase().includes(q) ||
+        s.custName.toLowerCase().includes(q) ||
+        s.prodName.toLowerCase().includes(q) ||
+        s.total.toString().includes(q)
+      );
+      renderSales(filtered);
+    }
+
+    function searchProducts() {
+      let q = document.getElementById('productSearchInput').value.toLowerCase().trim();
+      let filtered = products.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.id.toString().includes(q)
+      );
+      renderProductsList(filtered);
+    }
+
+    function searchCustomers() {
+      let q = document.getElementById('custSearchInput').value.toLowerCase().trim();
+      let filtered = customers.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.phone.toLowerCase().includes(q) ||
+        c.address.toLowerCase().includes(q) ||
+        c.id.toString().includes(q)
+      );
+      renderCustomersList(filtered);
+    }
+
+    function showNewSaleModal() {
+      resetSaleForm();
+      document.getElementById('newSaleModal').style.display = 'flex';
+    }
+
+    function editSale(id) {
+      let s = salesHistory.find(x => x.id == id);
+      if (!s) return;
+
+      document.getElementById('editSaleId').value = s.id;
+      document.getElementById('saleCustomer').value = s.custId;
+      let cust = customers.find(c => c.id == s.custId);
+      document.getElementById('saleCustomerSearch').value = cust ? `${cust.name} (${cust.phone})` : (s.custName || '');
+      document.getElementById('saleProduct').value = s.prodId;
+      let prod = products.find(p => p.id == s.prodId);
+      document.getElementById('saleProductSearch').value = prod ? `${prod.name} - ৳${prod.price}` : (s.prodName || '');
+      document.getElementById('saleUnitType').value = s.unitType || 'Bag';
+      updatePriceAndUnit();
+
+      document.getElementById('saleQty').value = s.qty;
+      document.getElementById('saleUnitPrice').value = s.unitPrice;
+      document.getElementById('saleTotalAmount').value = s.total;
+      document.getElementById('salePaidAmount').value = s.paid;
+      document.getElementById('saleRemarks').value = s.remarks;
+      document.getElementById('paymentType').value = s.method;
+
+      document.getElementById('saleFormTitle').innerText = t('editSaleTitleLabel');
+      document.getElementById('btnSaveSale').innerText = t('btnUpdateSave');
+      document.getElementById('newSaleModal').style.display = 'flex';
+    }
+
+    function resetSaleForm() {
+      document.getElementById('editSaleId').value = '';
+      document.getElementById('saleCustomer').value = '';
+      document.getElementById('saleCustomerSearch').value = '';
+      document.getElementById('saleProduct').value = '';
+      document.getElementById('saleProductSearch').value = '';
+      document.getElementById('saleQty').value = '';
+      document.getElementById('saleUnitPrice').value = '';
+      document.getElementById('saleTotalAmount').value = '';
+      document.getElementById('salePaidAmount').value = '';
+      document.getElementById('saleRemarks').value = '';
+      document.getElementById('saleFormTitle').innerText = translations[currentLang].titleNewSale;
+      document.getElementById('btnSaveSale').innerText = translations[currentLang].btnSaveSale;
+      closeModal('newSaleModal');
+    }
+
+    function deleteSale(id) {
+      if (confirm(t("confirmDeleteSale"))) {
+        salesHistory = salesHistory.filter(s => s.id != id);
+        saveData();
+        renderSales();
+        renderNotifications();
+        renderDashboard();
+        renderLedger();
+      }
+    }
+
+    function viewSale(id) {
+      let sale = salesHistory.find(s => s.id == id);
+      if (!sale) return;
+
+      if (sale.status !== 'Approved') {
+        return alert(t("alertOrderNotApprovedYet"));
+      }
+
+      let cust = customers.find(c => c.id == sale.custId) || { name: sale.custName, phone: t('naLabel'), address: t('naLabel') };
+      let customerAllSales = salesHistory.filter(s => s.custId == sale.custId && s.status === 'Approved');
+
+      let totalCustPurchase = customerAllSales.reduce((acc, curr) => acc + curr.total, 0);
+      let totalCustPaid = customerAllSales.reduce((acc, curr) => acc + curr.paid, 0);
+      let totalCustDue = totalCustPurchase - totalCustPaid;
+
+      let html = `
+        <div class="invoice-header">
+          ${shopConfig.logoImage ? `<img class="invoice-logo" src="${shopConfig.logoImage}">` : ''}
+          <h2>${shopConfig.name}</h2>
+          <p>${shopConfig.tagline}</p>
+          <p style="font-size:12px; color:#64748b;">${t('invoiceDateLabel')}: ${sale.date} | ${t('thInvoice')}: <b>#${sale.invNo}</b></p>
+        </div>
+
+        <div style="margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px;">
+          <h4>${t('custDetailsHeading')}</h4>
+          <p><strong>${t('lblNameShort')}:</strong> ${cust.name}</p>
+          <p><strong>${t('lblMobileShort')}:</strong> ${cust.phone}</p>
+          <p><strong>${t('thAddress')}:</strong> ${cust.address}</p>
+        </div>
+
+        <h4>${t('currentSaleHeading')}</h4>
+        <div class="table-responsive">
+          <table style="margin-bottom: 15px;">
+            <thead>
+              <tr>
+                <th>${t('thProduct')}</th>
+                <th>${t('thQty')}</th>
+                <th>${t('thRate')}</th>
+                <th>${t('thTotal')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${sale.prodName}</td>
+                <td>${sale.qty} ${unitLabel(sale.unitType)}</td>
+                <td><b><span class="currency-symbol">৳</span>${sale.unitPrice}</b></td>
+                <td><b><span class="currency-symbol">৳</span>${sale.total.toFixed(2)}</b></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="background:#e2e8f0; padding: 12px; border-radius:6px; margin-bottom: 15px;">
+          <p><strong>${t('notesRemarksShort')}:</strong> ${sale.remarks || t('naLabel')}</p>
+          <p><strong>${t('paymentMethodShort')}:</strong> ${sale.method}</p>
+        </div>
+
+        <h4 style="border-top:2px dashed #cbd5e1; padding-top:10px; margin-top:10px;">${t('custHistoryHeading')}</h4>
+        <div class="table-responsive">
+          <table style="margin-top:8px; font-size:13px;">
+            <tr>
+              <td>${t('totalPurchaseShort')}:</td>
+              <td><b><span class="currency-symbol">৳</span>${totalCustPurchase.toFixed(2)}</b></td>
+            </tr>
+            <tr>
+              <td>${t('totalPaidShort')}:</td>
+              <td style="color:#16a34a;"><b><span class="currency-symbol">৳</span>${totalCustPaid.toFixed(2)}</b></td>
+            </tr>
+            <tr>
+              <td>${t('currentDueShort')}:</td>
+              <td style="color:#dc2626;"><b><span class="currency-symbol">৳</span>${totalCustDue.toFixed(2)}</b></td>
+            </tr>
+          </table>
+        </div>
+      `;
+
+      document.getElementById('printableInvoice').innerHTML = html;
+      document.getElementById('viewSaleModal').style.display = 'flex';
+    }
+
+    function renderProducts() {
+      renderProductsList(products);
+    }
+
+    function renderProductsList(list) {
+      let tbody = document.querySelector('#stockTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      list.forEach(p => {
+        let actionsHtml = `
+          <div style="text-align:center;">
+            ${currentUserRole === 'admin' ? `
+              <button onclick="editProduct(${p.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
+              <button onclick="deleteProduct(${p.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
+            ` : `<span style="font-size:12px; color:#94a3b8;">${t('noActionsLabel')}</span>`}
+          </div>
+        `;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>#${p.id}</b></td>
+            <td><b>${p.name}</b></td>
+            <td>${p.category}</td>
+            <td><b><span class="currency-symbol">৳</span>${p.price}</b></td>
+            <td>${p.stock.toFixed(1)}</td>
+            <td><span class="badge ${p.stock <= 20 ? 'badge-alert' : 'badge-ok'}">${p.stock <= 20 ? t('lowStockLabel') : t('stockOkLabel')}</span></td>
+            <td>${actionsHtml}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function deleteProduct(id) {
+      if (confirm(t("confirmDeleteProduct"))) {
+        products = products.filter(p => p.id != id);
+        saveData();
+        renderProducts();
+        populateDropdowns();
+        renderUnitConfigTable();
+      }
+    }
+
+    function editUnitConfig(id) {
+      document.getElementById('unitProductSelect').value = id;
+      loadUnitConfigForProduct();
+    }
+
+    function loadUnitConfigForProduct() {
+      let pId = document.getElementById('unitProductSelect').value;
+      let prod = products.find(p => p.id == pId);
+
+      if (prod) {
+        let bagKg = prod.bagKg || 30;
+        let bagPrice = prod.price || 0;
+        let perKg = prod.perKgPrice || (bagPrice / bagKg);
+
+        document.getElementById('unitBagKg').value = bagKg;
+        document.getElementById('unitPerKgPrice').value = perKg.toFixed(2);
+        document.getElementById('unitBagPrice').value = bagPrice.toFixed(2);
+      } else {
+        document.getElementById('unitBagKg').value = '';
+        document.getElementById('unitPerKgPrice').value = '';
+        document.getElementById('unitBagPrice').value = '';
+      }
+    }
+
+    function recalculatePerKgRate() {
+      let bagKg = parseFloat(document.getElementById('unitBagKg').value) || 0;
+      let bagPrice = parseFloat(document.getElementById('unitBagPrice').value) || 0;
+      if (bagKg > 0) {
+        let perKg = bagPrice / bagKg;
+        document.getElementById('unitPerKgPrice').value = perKg.toFixed(2);
+      }
+    }
+
+    function recalculateBagRate() {
+      let bagKg = parseFloat(document.getElementById('unitBagKg').value) || 0;
+      let perKg = parseFloat(document.getElementById('unitPerKgPrice').value) || 0;
+      let totalPrice = bagKg * perKg;
+      document.getElementById('unitBagPrice').value = totalPrice.toFixed(2);
+    }
+
+    function saveUnitConfiguration() {
+      let pId = document.getElementById('unitProductSelect').value;
+      if (!pId) return alert(t("alertSelectProductFirst"));
+
+      let prod = products.find(p => p.id == pId);
+      if (prod) {
+        let bagKg = parseFloat(document.getElementById('unitBagKg').value) || 30;
+        let perKgPrice = parseFloat(document.getElementById('unitPerKgPrice').value) || 10;
+        let bagPrice = parseFloat(document.getElementById('unitBagPrice').value) || (bagKg * perKgPrice);
+
+        prod.bagKg = bagKg;
+        prod.perKgPrice = perKgPrice;
+        prod.price = bagPrice;
+
+        saveData();
+        renderProducts();
+        renderUnitConfigTable();
+        populateDropdowns();
+        alert(t("alertUnitUpdated"));
+      }
+    }
+
+    function renderUnitConfigTable() {
+      let tbody = document.querySelector('#unitConfigTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      products.forEach(p => {
+        let bagKg = p.bagKg || 30;
+        let perKg = p.perKgPrice || (p.price / bagKg);
+
+        let actionsHtml = `
+          <div style="text-align:center;">
+            ${currentUserRole === 'admin' ? `
+              <button onclick="editUnitConfig(${p.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
+              <button onclick="deleteProduct(${p.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
+            ` : `<span style="font-size:12px; color:#94a3b8;">${t('lockedLabel')}</span>`}
+          </div>
+        `;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>${p.name}</b></td>
+            <td><b>${bagKg} ${t('unitKgLabel')}</b></td>
+            <td><b><span class="currency-symbol">৳</span>${perKg.toFixed(2)}</b></td>
+            <td><b style="color:#2563eb;"><span class="currency-symbol">৳</span>${p.price.toFixed(2)}</b></td>
+            <td>${actionsHtml}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderCustomers() {
+      renderCustomersList(customers);
+    }
+
+    function renderCustomersList(list) {
+      let tbody = document.querySelector('#customersTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      list.forEach(c => {
+        let actionsHtml = `
+          <div style="text-align:center;">
+            ${currentUserRole === 'admin' ? `
+              <button onclick="editCustomer(${c.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
+              <button onclick="deleteCustomer(${c.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
+            ` : `<span style="font-size:12px; color:#94a3b8;">${t('noActionsLabel')}</span>`}
+          </div>
+        `;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>#${c.id}</b></td>
+            <td><b>${c.name}</b></td>
+            <td>${c.phone}</td>
+            <td>${c.address}</td>
+            <td>${actionsHtml}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function editCustomer(id) {
+      let c = customers.find(x => x.id == id);
+      if (!c) return;
+
+      document.getElementById('qcId').value = c.id;
+      document.getElementById('qcName').value = c.name;
+      document.getElementById('qcPhone').value = c.phone;
+      document.getElementById('qcAddress').value = c.address;
+      document.getElementById('custModalTitle').innerText = t('editCustTitleLabel');
+      
+      document.getElementById('quickCustomerModal').style.display = 'flex';
+    }
+
+    function deleteCustomer(id) {
+      if (confirm(t("confirmDeleteCustomer"))) {
+        customers = customers.filter(c => c.id != id);
+        saveData();
+        renderCustomers();
+        renderLedger();
+        populateDropdowns();
+      }
+    }
+
+    function renderLedger() {
+      let tbody = document.querySelector('#dueLedgerTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      customers.forEach(c => {
+        let cSales = salesHistory.filter(s => s.custId == c.id && s.status === 'Approved');
+        let totalPur = cSales.reduce((acc, curr) => acc + curr.total, 0);
+        let totalPaid = cSales.reduce((acc, curr) => acc + curr.paid, 0);
+        let due = totalPur - totalPaid;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>${c.name}</b></td>
+            <td>${c.phone}</td>
+            <td><span class="currency-symbol">৳</span>${totalPur.toFixed(2)}</td>
+            <td style="color:#16a34a;"><span class="currency-symbol">৳</span>${totalPaid.toFixed(2)}</td>
+            <td style="color:${due > 0 ? '#dc2626' : '#16a34a'}; font-weight:bold;"><span class="currency-symbol">৳</span>${due.toFixed(2)}</td>
+            <td><span class="badge ${due > 0 ? 'badge-alert' : 'badge-ok'}">${due > 0 ? t('dueExistsLabel') : t('fullyPaidLabel')}</span></td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderAccounts(list = accountTransactions) {
+      let tbody = document.querySelector('#accTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      let subTotal = 0;
+
+      list.forEach(acc => {
+        subTotal += acc.amount;
+
+        let typeBadge = (acc.type === 'Joma' || acc.type === 'Bikroy') 
+          ? `<span class="badge badge-ok">${acc.type}</span>` 
+          : `<span class="badge badge-alert">${acc.type}</span>`;
+
+        let actionBtns = (currentUserRole === 'admin') 
+          ? `<div style="text-align:center;">
+               <button onclick="editAccount(${acc.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
+               <button onclick="deleteAccount(${acc.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
+             </div>` 
+          : `<div style="text-align:center; color:#94a3b8;">${t('lockedLabel')}</div>`;
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${acc.date}</td>
+            <td>${typeBadge}</td>
+            <td><b>${acc.method}</b></td>
+            <td>${acc.note}</td>
+            <td style="font-weight:bold; color:${(acc.type==='Joma'||acc.type==='Bikroy')?'#16a34a':'#dc2626'};"><span class="currency-symbol">৳</span>${acc.amount.toFixed(2)}</td>
+            <td class="no-print">${actionBtns}</td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('accSubTotal').innerHTML = '<span class="currency-symbol">৳</span>' + subTotal.toFixed(2);
+    }
+
+    function saveAccountTransaction() {
+      if (currentUserRole !== 'admin') return alert(t("alertOnlyAdminAddTransaction"));
+
+      let editId = document.getElementById('editAccId').value;
+      let type = document.getElementById('accType').value;
+      let method = document.getElementById('accMethod').value;
+      let amount = parseFloat(document.getElementById('accAmount').value);
+      let date = document.getElementById('accDate').value || new Date().toISOString().split('T')[0];
+      let note = document.getElementById('accNote').value;
+
+      if (!amount || amount <= 0) return alert(t("alertEnterValidAmount"));
+
+      if (editId) {
+        let acc = accountTransactions.find(x => x.id == editId);
+        if (acc) {
+          acc.type = type; acc.method = method; acc.amount = amount; acc.date = date; acc.note = note;
+        }
+      } else {
+        accountTransactions.unshift({ id: Date.now(), type, method, amount, date, note: note || t('generalEntryLabel') });
+      }
+
+      saveData();
+      renderAccounts();
+      resetAccForm();
+      alert(t("alertAccSaved"));
+    }
+
+    function editAccount(id) {
+      let acc = accountTransactions.find(x => x.id == id);
+      if (!acc) return;
+
+      document.getElementById('editAccId').value = acc.id;
+      document.getElementById('accType').value = acc.type;
+      document.getElementById('accMethod').value = acc.method;
+      document.getElementById('accAmount').value = acc.amount;
+      document.getElementById('accDate').value = acc.date;
+      document.getElementById('accNote').value = acc.note;
+
+      document.getElementById('accFormTitle').innerText = t('editAccTitleLabel');
+      document.getElementById('btnAccSave').innerText = t('btnUpdateOnly');
+      document.getElementById('btnAccCancel').style.display = 'inline-block';
+    }
+
+    function resetAccForm() {
+      document.getElementById('editAccId').value = '';
+      document.getElementById('accAmount').value = '';
+      document.getElementById('accNote').value = '';
+      document.getElementById('accFormTitle').innerText = translations[currentLang].titleAccEntry;
+      document.getElementById('btnAccSave').innerText = translations[currentLang].btnSaveAcc;
+      document.getElementById('btnAccCancel').style.display = 'none';
+    }
+
+    function deleteAccount(id) {
+      if (confirm(t("confirmDeleteAccount"))) {
+        accountTransactions = accountTransactions.filter(x => x.id !== id);
+        saveData();
+        renderAccounts();
+      }
+    }
+
+    function filterAccounts() {
+      let fromDate = document.getElementById('filterFromDate').value;
+      let toDate = document.getElementById('filterToDate').value;
+      let type = document.getElementById('filterType').value;
+      let method = document.getElementById('filterMethod').value;
+
+      let filtered = accountTransactions.filter(acc => {
+        let matchDate = true;
+        if (fromDate && acc.date < fromDate) matchDate = false;
+        if (toDate && acc.date > toDate) matchDate = false;
+
+        let matchType = (type === 'All' || acc.type === type);
+        let matchMethod = (method === 'All' || acc.method === method);
+
+        return matchDate && matchType && matchMethod;
+      });
+
+      renderAccounts(filtered);
+    }
+
+    function showQuickAddCustomer() {
+      document.getElementById('qcId').value = '';
+      document.getElementById('qcName').value = '';
+      document.getElementById('qcPhone').value = '';
+      document.getElementById('qcAddress').value = '';
+      document.getElementById('custModalTitle').innerText = t('addCustTitleLabel');
+      document.getElementById('quickCustomerModal').style.display = 'flex';
+    }
+
+    function saveQuickCustomer() {
+      let editId = document.getElementById('qcId').value;
+      let name = document.getElementById('qcName').value;
+      let phone = document.getElementById('qcPhone').value || t('naLabel');
+      let address = document.getElementById('qcAddress').value || t('naLabel');
+
+      if (!name) return alert(t("alertEnterName"));
+
+      if (editId) {
+        let c = customers.find(x => x.id == editId);
+        if (c) {
+          c.name = name;
+          c.phone = phone;
+          c.address = address;
+
+          salesHistory.forEach(s => {
+            if (s.custId == editId) s.custName = name;
+          });
+        }
+      } else {
+        customers.push({ id: Date.now(), name, phone, address });
+      }
+
+      saveData();
+      populateDropdowns();
+      renderCustomers();
+      renderSales();
+      renderLedger();
+      closeModal('quickCustomerModal');
+    }
+
+    function showQuickAddProduct() {
+      document.getElementById('qpId').value = '';
+      document.getElementById('qpName').value = '';
+      document.getElementById('qpCategory').value = '';
+      document.getElementById('qpPrice').value = '';
+      document.getElementById('qpBagKg').value = '';
+      document.getElementById('qpStock').value = '';
+      document.getElementById('prodModalTitle').innerText = t('addProdTitleLabel');
+      document.getElementById('btnProdSave').innerText = t('btnSaveShort');
+      document.getElementById('quickProductModal').style.display = 'flex';
+    }
+
+    function editProduct(id) {
+      let p = products.find(x => x.id == id);
+      if (!p) return;
+      document.getElementById('qpId').value = p.id;
+      document.getElementById('qpName').value = p.name;
+      document.getElementById('qpCategory').value = p.category || '';
+      document.getElementById('qpPrice').value = p.price;
+      document.getElementById('qpBagKg').value = p.bagKg;
+      document.getElementById('qpStock').value = p.stock;
+      document.getElementById('prodModalTitle').innerText = t('editProdTitleLabel');
+      document.getElementById('btnProdSave').innerText = t('btnUpdateSave');
+      document.getElementById('quickProductModal').style.display = 'flex';
+    }
+
+    function saveQuickProduct() {
+      let editId = document.getElementById('qpId').value;
+      let name = document.getElementById('qpName').value;
+      if (!name) return alert(t("alertEnterProductName"));
+
+      let bagPrice = parseFloat(document.getElementById('qpPrice').value) || 0;
+      let bagKg = parseFloat(document.getElementById('qpBagKg').value) || 50;
+      let perKgPrice = bagPrice / bagKg;
+      let category = document.getElementById('qpCategory').value || 'General';
+      let stock = parseFloat(document.getElementById('qpStock').value) || 0;
+
+      if (editId) {
+        let p = products.find(x => x.id == editId);
+        if (p) {
+          p.name = name;
+          p.category = category;
+          p.price = bagPrice;
+          p.bagKg = bagKg;
+          p.perKgPrice = perKgPrice;
+          p.stock = stock;
+        }
+      } else {
+        products.push({
+          id: Date.now(),
+          name,
+          category,
+          price: bagPrice,
+          bagKg: bagKg,
+          perKgPrice: perKgPrice,
+          stock: stock
+        });
+      }
+
+      saveData();
+      populateDropdowns();
+      renderProducts();
+      renderCategories();
+      renderUnitConfigTable();
+      closeModal('quickProductModal');
+    }
+
+    function saveData() {
+      localStorage.setItem('pos_customers', JSON.stringify(customers));
+      localStorage.setItem('pos_products', JSON.stringify(products));
+      localStorage.setItem('pos_sales', JSON.stringify(salesHistory));
+      localStorage.setItem('pos_accounts', JSON.stringify(accountTransactions));
+      localStorage.setItem('pos_categories', JSON.stringify(categories));
+      saveToFirestore();
+    }
+
+    // ================= AUTHENTICATION =================
+    let appInitialized = false;
+
+    function showLoginError(msg) {
+      document.getElementById('loginError').innerText = msg;
+    }
+
+    async function doLogin() {
+      let email = document.getElementById('loginEmail').value.trim();
+      let password = document.getElementById('loginPassword').value;
+      showLoginError('');
+
+      if (!email || !password) {
+        return showLoginError(t('loginErrFillFields'));
+      }
+
+      document.getElementById('btnDoLogin').disabled = true;
+      document.getElementById('loginLoadingMsg').style.display = 'block';
+
+      try {
+        await waitForFirebase();
+        await window.authSignIn(email, password);
+        // onAuthStateChanged listener (below) takes over from here.
+      } catch (err) {
+        console.error('Login failed:', err);
+        showLoginError(t('loginErrInvalid'));
+      } finally {
+        document.getElementById('btnDoLogin').disabled = false;
+        document.getElementById('loginLoadingMsg').style.display = 'none';
+      }
+    }
+
+    async function doLogout() {
+      try {
+        await window.authSignOut();
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+      appInitialized = false;
+      document.getElementById('appWrapper').classList.add('auth-hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+    }
+
+    async function fetchUserProfile(uid) {
+      try {
+        let docRef = window.firestoreDoc(window.firestoreDB, 'users', uid);
+        let snap = await window.firestoreGetDoc(docRef);
+        return snap.exists() ? snap.data() : null;
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+        return null;
+      }
+    }
+
+    function updateHeaderUserDisplay(name, role) {
+      let nameEl = document.getElementById('headerUserName');
+      let pillEl = document.getElementById('headerUserRolePill');
+      if (nameEl) nameEl.innerText = name || '-';
+      if (pillEl) {
+        pillEl.innerText = role === 'admin' ? t('roleAdminBtn') : t('roleStaffBtn');
+        pillEl.className = 'role-pill-badge ' + (role === 'admin' ? 'role-admin' : 'role-staff');
+      }
+    }
+
+    window.addEventListener('authStateChanged', async function() {
+      let user = window.currentAuthUser;
+
+      if (!user) {
+        appInitialized = false;
+        document.getElementById('appWrapper').classList.add('auth-hidden');
+        document.getElementById('loginScreen').classList.remove('hidden');
+        return;
+      }
+
+      let profile = await fetchUserProfile(user.uid);
+      let role = (profile && profile.role) ? profile.role : 'staff';
+      let name = (profile && profile.name) ? profile.name : (user.email || '');
+
+      currentUserRole = role;
+      updateHeaderUserDisplay(name, role);
+
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appWrapper').classList.remove('auth-hidden');
+
+      if (!appInitialized) {
+        appInitialized = true;
+        await initApp();
+      } else {
+        setUserRole(currentUserRole);
+      }
+    });
+
+    // ================= USER MANAGEMENT (Super User only) =================
+    async function createNewUser() {
+      let name = document.getElementById('newUserName').value.trim();
+      let email = document.getElementById('newUserEmail').value.trim();
+      let password = document.getElementById('newUserPassword').value;
+      let role = document.getElementById('newUserRole').value;
+      let msgEl = document.getElementById('createUserMsg');
+
+      msgEl.style.color = '';
+      msgEl.innerText = '';
+
+      if (!name || !email || !password) {
+        msgEl.style.color = '#dc2626';
+        msgEl.innerText = t('alertFillAllFields');
+        return;
+      }
+      if (password.length < 6) {
+        msgEl.style.color = '#dc2626';
+        msgEl.innerText = t('alertPasswordTooShort');
+        return;
+      }
+
+      document.getElementById('btnCreateUser').disabled = true;
+      try {
+        let uid = await window.createSecondaryUser(email, password);
+        let docRef = window.firestoreDoc(window.firestoreDB, 'users', uid);
+        await window.firestoreSetDoc(docRef, {
+          name, email, role, createdAt: new Date().toISOString()
+        });
+
+        msgEl.style.color = '#16a34a';
+        msgEl.innerText = t('alertUserCreated');
+        document.getElementById('newUserName').value = '';
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPassword').value = '';
+        renderUsersTable();
+      } catch (err) {
+        console.error('Create user error:', err);
+        msgEl.style.color = '#dc2626';
+        msgEl.innerText = (err.code === 'auth/email-already-in-use') ? t('alertEmailInUse') : t('alertUserCreateFailed');
+      } finally {
+        document.getElementById('btnCreateUser').disabled = false;
+      }
+    }
+
+    async function renderUsersTable() {
+      let tbody = document.querySelector('#usersTable tbody');
+      if (!tbody) return;
+      if (currentUserRole !== 'admin') return; // Only the super user can see the user list
+
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">${t('loadingLabel')}</td></tr>`;
+
+      try {
+        let colRef = window.firestoreCollection(window.firestoreDB, 'users');
+        let snap = await window.firestoreGetDocs(colRef);
+        let rows = '';
+        snap.forEach(docSnap => {
+          let u = docSnap.data();
+          let uid = docSnap.id;
+          rows += `
+            <tr>
+              <td><b>${u.name || '-'}</b></td>
+              <td>${u.email || '-'}</td>
+              <td><span class="role-pill-badge ${u.role === 'admin' ? 'role-admin' : 'role-staff'}">${u.role === 'admin' ? t('roleAdminBtn') : t('roleStaffBtn')}</span></td>
+              <td style="text-align:center;">
+                <button onclick="toggleUserRole('${uid}', '${u.role}')" class="btn-icon-action btn-edit" title="${t('titleToggleRole')}">${SVG_EDIT}</button>
+                ${(window.currentAuthUser && window.currentAuthUser.uid !== uid) ? `<button onclick="removeUserAccess('${uid}')" class="btn-icon-action btn-delete" title="${t('titleRemoveAccess')}">${SVG_DELETE}</button>` : ''}
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = rows || `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+      } catch (err) {
+        console.error('Error loading users:', err);
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#dc2626;">${t('alertUserListFailed')}</td></tr>`;
+      }
+    }
+
+    async function toggleUserRole(uid, currentRole) {
+      let newRole = currentRole === 'admin' ? 'staff' : 'admin';
+      if (!confirm(t('confirmChangeRole'))) return;
+      try {
+        let docRef = window.firestoreDoc(window.firestoreDB, 'users', uid);
+        let snap = await window.firestoreGetDoc(docRef);
+        let data = snap.exists() ? snap.data() : {};
+        await window.firestoreSetDoc(docRef, { ...data, role: newRole });
+        renderUsersTable();
+      } catch (err) {
+        console.error('Error updating role:', err);
+        alert(t('alertRoleUpdateFailed'));
+      }
+    }
+
+    async function removeUserAccess(uid) {
+      if (!confirm(t('confirmRemoveAccess'))) return;
+      try {
+        let docRef = window.firestoreDoc(window.firestoreDB, 'users', uid);
+        await window.firestoreDeleteDoc(docRef);
+        renderUsersTable();
+        alert(t('alertAccessRemoved'));
+      } catch (err) {
+        console.error('Error removing access:', err);
+        alert(t('alertAccessRemoveFailed'));
+      }
+    }
+
+    // ================= APP INITIALIZATION =================
+    async function initApp() {
+      document.getElementById('accDate').value = new Date().toISOString().split('T')[0];
+
+      // Pull the latest data from Firebase (cloud). Falls back to the local
+      // cached copy automatically if offline or Firebase can't be reached.
+      try {
+        let cloud = await loadFromFirestore();
+        if (cloud) {
+          syncCloudFromLocalVars(cloud);
+        } else {
+          // First run for this Firebase project — push current local data up.
+          saveToFirestore();
+        }
+      } catch (err) {
+        console.error('Firebase sync failed, continuing with local data.', err);
+      }
+
+      renderShopInfo();
+      populateDropdowns();
+      renderDashboard();
+      renderSales();
+      renderNotifications();
+      renderProducts();
+      renderCategories();
+      renderUnitConfigTable();
+      renderCustomers();
+      renderLedger();
+      renderAccounts();
+      renderUsersTable();
+      setUserRole(currentUserRole || 'staff');
+    }
+
+    window.onload = async function() {
+      await waitForFirebase();
+      renderShopInfo(); // shows logo on the login screen too, if already set locally
+      let loginImg = document.getElementById('loginLogoImg');
+      let loginPlaceholder = document.getElementById('loginLogoPlaceholder');
+      if (shopConfig.logoImage && loginImg) {
+        loginImg.src = shopConfig.logoImage;
+        loginImg.style.display = 'block';
+        if (loginPlaceholder) loginPlaceholder.style.display = 'none';
+      }
+      document.getElementById('loginShopName').innerText = shopConfig.name || t('loginTitle');
+      // If Firebase already knows about a logged-in session, authStateChanged
+      // will fire on its own and take over from here.
+    };
+  </script>
+</body>
+</html>
