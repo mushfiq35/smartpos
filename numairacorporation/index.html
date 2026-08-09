@@ -182,6 +182,16 @@
     .login-error { color: #dc2626; font-size: 12.5px; margin-bottom: 10px; min-height: 16px; }
     .login-loading { color: var(--muted); font-size: 12.5px; margin-top: 10px; }
 
+    /* AUTH SPLASH (shown only if Firebase's session check takes a moment) */
+    #authSplash { position: fixed; inset: 0; background: linear-gradient(135deg, var(--navy), var(--navy-2)); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 6000; gap: 14px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+    #authSplash.visible { opacity: 1; pointer-events: auto; }
+    #authSplash.hidden { display: none; }
+    .splash-logo-box { width: 56px; height: 56px; border-radius: 12px; background: #fff; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .splash-logo-box img { width: 100%; height: 100%; object-fit: contain; }
+    .splash-spinner { width: 30px; height: 30px; border: 4px solid rgba(255,255,255,0.25); border-top-color: var(--gold); border-radius: 50%; animation: splashSpin 0.8s linear infinite; }
+    @keyframes splashSpin { to { transform: rotate(360deg); } }
+    .splash-text { color: rgba(255,255,255,0.8); font-size: 13px; letter-spacing: 0.3px; }
+
     /* USER MANAGEMENT */
     .role-pill-badge { display:inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
     .role-pill-badge.role-admin { background: #fef3c7; color: #92400e; }
@@ -295,8 +305,17 @@
   <datalist id="customerNameSuggestions"></datalist>
   <datalist id="customerAddressSuggestions"></datalist>
 
+  <!-- AUTH SPLASH (shown briefly while Firebase checks for an existing session) -->
+  <div id="authSplash">
+    <div class="splash-logo-box" id="splashLogoBox">
+      <span id="splashLogoPlaceholder" style="font-size:10px; font-weight:700; color:var(--navy);">LOGO</span>
+      <img id="splashLogoImg" style="display:none;">
+    </div>
+    <div class="splash-spinner"></div>
+  </div>
+
   <!-- LOGIN SCREEN -->
-  <div id="loginScreen">
+  <div id="loginScreen" class="hidden">
     <div class="login-box">
       <div class="login-logo-box" id="loginLogoBox">
         <span id="loginLogoPlaceholder" style="font-size:11px; font-weight:700; color:var(--navy);">LOGO</span>
@@ -2907,6 +2926,27 @@
       }
     }
 
+    let splashRevealTimer = null;
+
+    function startSplashRevealTimer() {
+      splashRevealTimer = setTimeout(() => {
+        let splash = document.getElementById('authSplash');
+        if (splash) splash.classList.add('visible');
+      }, 300);
+    }
+
+    function hideSplash() {
+      if (splashRevealTimer) {
+        clearTimeout(splashRevealTimer);
+        splashRevealTimer = null;
+      }
+      let splash = document.getElementById('authSplash');
+      if (splash) {
+        splash.classList.remove('visible');
+        setTimeout(() => splash.classList.add('hidden'), 250);
+      }
+    }
+
     window.addEventListener('authStateChanged', async function() {
       let user = window.currentAuthUser;
 
@@ -2914,6 +2954,7 @@
         appInitialized = false;
         document.getElementById('appWrapper').classList.add('auth-hidden');
         document.getElementById('loginScreen').classList.remove('hidden');
+        hideSplash();
         return;
       }
 
@@ -2926,6 +2967,7 @@
 
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('appWrapper').classList.remove('auth-hidden');
+      hideSplash();
 
       if (!appInitialized) {
         appInitialized = true;
@@ -3075,14 +3117,19 @@
     }
 
     window.onload = async function() {
+      startSplashRevealTimer();
+
       await waitForFirebase();
       renderShopInfo(); // shows logo on the login screen too, if already set locally
       let loginImg = document.getElementById('loginLogoImg');
       let loginPlaceholder = document.getElementById('loginLogoPlaceholder');
-      if (shopConfig.logoImage && loginImg) {
-        loginImg.src = shopConfig.logoImage;
-        loginImg.style.display = 'block';
+      let splashImg = document.getElementById('splashLogoImg');
+      let splashPlaceholder = document.getElementById('splashLogoPlaceholder');
+      if (shopConfig.logoImage) {
+        if (loginImg) { loginImg.src = shopConfig.logoImage; loginImg.style.display = 'block'; }
         if (loginPlaceholder) loginPlaceholder.style.display = 'none';
+        if (splashImg) { splashImg.src = shopConfig.logoImage; splashImg.style.display = 'block'; }
+        if (splashPlaceholder) splashPlaceholder.style.display = 'none';
       }
       document.getElementById('loginShopName').innerText = shopConfig.name || t('loginTitle');
       // If Firebase already knows about a logged-in session, authStateChanged
