@@ -368,6 +368,25 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
   </div>
 </div>
 
+<!-- Return Modal -->
+<div class="overlay top" id="returnOverlay">
+  <div class="modal" style="max-width:400px;">
+    <h2 id="returnTitle">New Return</h2>
+    <div class="field-hint" id="returnLineInfo" style="margin-bottom:12px;"></div>
+    <div class="field"><label id="returnQtyLabel">Return Qty</label><input type="number" id="returnQtyInput" min="1"></div>
+    <div class="field"><label id="returnDateLabel">Date</label><input type="date" id="returnDateInput"></div>
+    <div class="field"><label id="returnNoteLabel">Reason/Note</label>
+      <input type="text" id="returnNoteInput" list="dl-return-note" autocomplete="off">
+      <datalist id="dl-return-note"></datalist>
+    </div>
+    <div class="field-hint" id="returnCalcInfo" style="margin:10px 0;"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="returnCancelBtn">Cancel</button>
+      <button class="btn amber" id="returnConfirmBtn">Confirm Return</button>
+    </div>
+  </div>
+</div>
+
 <!-- Sale View Modal -->
 <div class="overlay" id="saleViewOverlay">
   <div class="modal" style="max-width:420px;">
@@ -498,7 +517,7 @@ const K = {
   customers:'pos-customers', suppliers:'pos-suppliers', products:'pos-products',
   purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo'
 };
-let db = { customers:{}, suppliers:{}, products:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[] };
+let db = { customers:{}, suppliers:{}, products:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[] };
 let currentTab = 'dashboard';
 let logoData = null;
 
@@ -509,7 +528,15 @@ const I18N = {
     brand_sub:'ব্যবসা ব্যবস্থাপনা', logo_change:'লোগো পরিবর্তন / Change logo', new_sale:'+ নতুন বিক্রি',
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'কাস্টমার', nav_products:'পণ্য', nav_suppliers:'সাপ্লায়ার',
-    nav_purchases:'ক্রয়', nav_sales:'বিক্রি', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_reports:'রিপোর্ট',
+    nav_purchases:'ক্রয়', nav_sales:'বিক্রি', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'রিটার্ন', nav_reports:'রিপোর্ট',
+    return_title:'রিটার্ন', return_new:'নতুন রিটার্ন', return_no:'রিটার্ন নং',
+    return_original_qty:'বিক্রিত পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
+    return_qty_label:'রিটার্ন পরিমাণ', return_value:'রিটার্ন মূল্য', return_due_adjust:'বাকি থেকে সমন্বয়',
+    return_excess_refund:'অতিরিক্ত রিফান্ড', return_note:'কারণ/নোট', return_confirm:'রিটার্ন নিশ্চিত করুন',
+    return_qty_invalid:'রিটার্নের পরিমাণ অবশিষ্ট পরিমাণের বেশি হতে পারবে না', return_history:'রিটার্ন ইতিহাস',
+    return_no_history:'কোনো রিটার্ন নেই', return_cancel_action:'রিটার্ন বাতিল করুন', return_cancelled:'বাতিল হয়েছে',
+    return_confirm_cancel:'এই রিটার্নটা বাতিল করতে চান? স্টক ও বাকির হিসাব আগের অবস্থায় ফিরে যাবে।',
+    return_status:'অবস্থা', return_active:'সক্রিয়',
     cancel:'বাতিল', save:'সংরক্ষণ করুন', edit_prefix:'এডিট করুন — ', new_prefix:'নতুন — ',
     required_fields:'আবশ্যক ফিল্ড পূরণ করুন', confirm_delete:'এটি ডিলিট করতে চান?',
     no_data:'কোনো তথ্য নেই', no_data_hint:'উপরে বাটনে চেপে যোগ করুন।', search_placeholder:'খুঁজুন...',
@@ -592,7 +619,15 @@ const I18N = {
     brand_sub:'Business Management', logo_change:'Change logo', new_sale:'+ New Sale',
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Customers', nav_products:'Products', nav_suppliers:'Suppliers',
-    nav_purchases:'Purchases', nav_sales:'Sales', nav_installments:'Installment', nav_expenses:'Expense', nav_reports:'Reports',
+    nav_purchases:'Purchases', nav_sales:'Sales', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Returns', nav_reports:'Reports',
+    return_title:'Returns', return_new:'New Return', return_no:'Return No.',
+    return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
+    return_qty_label:'Return Qty', return_value:'Return Value', return_due_adjust:'Adjusted from Due',
+    return_excess_refund:'Excess Refund', return_note:'Reason/Note', return_confirm:'Confirm Return',
+    return_qty_invalid:'Return quantity cannot exceed the remaining quantity', return_history:'Return History',
+    return_no_history:'No returns yet', return_cancel_action:'Cancel this return', return_cancelled:'Cancelled',
+    return_confirm_cancel:'Cancel this return? Stock and due will be restored to their previous state.',
+    return_status:'Status', return_active:'Active',
     cancel:'Cancel', save:'Save', edit_prefix:'Edit — ', new_prefix:'New — ',
     required_fields:'Please fill in the required fields', confirm_delete:'Delete this item?',
     no_data:'No data yet', no_data_hint:'Click the button above to add.', search_placeholder:'Search...',
@@ -998,6 +1033,7 @@ const NAV = [
   {id:'sales', ic:'💰', key:'nav_sales'},
   {id:'installments', ic:'📆', key:'nav_installments'},
   {id:'expenses', ic:'💸', key:'nav_expenses'},
+  {id:'returns', ic:'↩️', key:'nav_returns'},
   {id:'reports', ic:'📈', key:'nav_reports'},
 ];
 
@@ -1021,6 +1057,13 @@ function nextCustomerDisplayId(){
   const maxId = Object.values(db.customers).reduce((m,c)=>Math.max(m, Number(c.displayId)||0), 0);
   return maxId + 1;
 }
+function nextReturnNo(){
+  const maxNo = db.returns.reduce((m,r)=>Math.max(m, Number(r.returnNo)||0), 0);
+  return maxNo + 1;
+}
+function saleReturnedQty(saleId){
+  return db.returns.filter(r=>r.saleId===saleId && !r.cancelled).reduce((s,r)=>s+Number(r.qty),0);
+}
 function money(n){ return Number(n||0).toLocaleString('en-US', {maximumFractionDigits:2}); }
 function formatDateDMY(dateStr){
   if(!dateStr) return '—';
@@ -1041,7 +1084,7 @@ function paymentSystemKey(v){
 /* ---------- Load / Save ---------- */
 async function loadAll(){
   const objTabs = ['customers','suppliers','products'];
-  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans'];
+  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns'];
   let hadError = false;
   for(const key of [...objTabs, ...arrTabs]){
     try{
@@ -1172,6 +1215,7 @@ function renderPage(){
   else if(currentTab==='sales') renderListPage('sales');
   else if(currentTab==='installments') renderInstallmentsPage();
   else if(currentTab==='expenses') renderListPage('expenses');
+  else if(currentTab==='returns') renderReturnsPage();
   else if(currentTab==='reports') renderReportsPage();
   attachPageEvents();
 }
@@ -1870,7 +1914,7 @@ const CONFIG = {
       {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
     ],
     isObj:false,
-    extraRowActions:(id,item)=> `<button class="icon-btn" title="${t('view_title')}" onclick="openSaleView('${id}')">👁</button>`
+    extraRowActions:(id,item)=> `<button class="icon-btn" title="${t('view_title')}" onclick="openSaleView('${id}')">👁</button>${!item._groupIds && (Number(item.qty)-saleReturnedQty(id))>0 ? `<button class="icon-btn" title="${t('return_new')}" onclick="openReturnForm('${id}')">↩️</button>` : (item._groupIds ? `<button class="icon-btn" title="${t('return_new')}" onclick="openSaleView('${id}')">↩️</button>` : '')}`
   },
   expenses: {
     titleKey:'title_expenses', addLabelKey:'add_expenses',
@@ -2221,7 +2265,7 @@ function openCustomerHistory(custId){
       ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
     <div class="field-hint" style="margin-bottom:10px;">
-      ${t('history_summary')(totalBought, totalPaid, cust.due)}
+      ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
     </div>
     ${timeline.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
     <table class="data">
@@ -2416,6 +2460,196 @@ async function markInstallmentPaid(planId, idx){
   if(currentTab==='installments') renderInstallmentsPage();
 }
 
+/* ---------- Sales Returns ---------- */
+function renderReturnHistoryHtml(saleIds){
+  const list = db.returns.filter(r=>saleIds.includes(r.saleId)).sort((a,b)=>b.ts-a.ts);
+  if(list.length===0) return '';
+  return `
+    <div style="margin-top:16px;">
+      <h3 style="font-family:'Roboto Slab',serif;font-size:15px;margin:0 0 8px;">${t('return_history')}</h3>
+      <table class="data">
+        <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th><th class="no-print"></th></tr></thead>
+        <tbody>
+          ${list.map(r => `<tr>
+            <td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.productName)}</td>
+            <td>${r.qty}</td><td>৳${money(r.value)}</td>
+            <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
+            <td class="no-print">${!r.cancelled ? `<button class="icon-btn" title="${t('return_cancel_action')}" onclick="cancelReturn('${r.id}')">🗑️</button>` : ''}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+let returnCtx = null; // saleId
+function openReturnForm(saleId){
+  const sale = db.sales.find(s=>s.id===saleId);
+  if(!sale) return;
+  const alreadyReturned = saleReturnedQty(saleId);
+  const remaining = Number(sale.qty) - alreadyReturned;
+  if(remaining<=0) return;
+  returnCtx = saleId;
+  document.getElementById('returnTitle').textContent = t('return_new');
+  document.getElementById('returnLineInfo').innerHTML = `
+    <b>${escapeHtml(sale.productName)}</b><br>
+    ${t('return_original_qty')}: ${sale.qty} · ${t('return_already')}: ${alreadyReturned} · ${t('return_remaining')}: ${remaining}
+  `;
+  document.getElementById('returnQtyLabel').textContent = t('return_qty_label');
+  document.getElementById('returnDateLabel').textContent = t('f_date');
+  document.getElementById('returnNoteLabel').textContent = t('return_note');
+  document.getElementById('returnCancelBtn').textContent = t('cancel');
+  document.getElementById('returnConfirmBtn').textContent = t('return_confirm');
+  const qtyInput = document.getElementById('returnQtyInput');
+  qtyInput.max = remaining;
+  qtyInput.value = 1;
+  document.getElementById('returnDateInput').value = todayStr();
+  document.getElementById('returnNoteInput').value = '';
+  const noteSugg = [...new Set(db.returns.map(r=>r.note).filter(Boolean))];
+  document.getElementById('dl-return-note').innerHTML = noteSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('');
+  updateReturnCalcInfo();
+  document.getElementById('returnOverlay').classList.add('open');
+}
+function updateReturnCalcInfo(){
+  if(!returnCtx) return;
+  const sale = db.sales.find(s=>s.id===returnCtx);
+  if(!sale) return;
+  const qty = Number(document.getElementById('returnQtyInput').value)||0;
+  const perUnitValue = Number(sale.qty)>0 ? Number(sale.total)/Number(sale.qty) : 0;
+  const returnValue = qty*perUnitValue;
+  const dueAdjust = Math.min(returnValue, Number(sale.due));
+  const excessRefund = Math.max(0, returnValue - dueAdjust);
+  document.getElementById('returnCalcInfo').innerHTML = `
+    ${t('return_value')}: ৳${money(returnValue)}<br>
+    ${t('return_due_adjust')}: ৳${money(dueAdjust)}
+    ${excessRefund>0 ? `<br>${t('return_excess_refund')}: ৳${money(excessRefund)}` : ''}
+  `;
+}
+document.getElementById('returnQtyInput').addEventListener('input', updateReturnCalcInfo);
+document.getElementById('returnCancelBtn').addEventListener('click', () => {
+  document.getElementById('returnOverlay').classList.remove('open');
+  returnCtx = null;
+});
+setupOverlayBackdropClose('returnOverlay', () => { returnCtx = null; });
+
+document.getElementById('returnConfirmBtn').addEventListener('click', async () => {
+  if(!returnCtx) return;
+  const sale = db.sales.find(s=>s.id===returnCtx);
+  if(!sale) return;
+  const qty = Number(document.getElementById('returnQtyInput').value)||0;
+  const alreadyReturned = saleReturnedQty(returnCtx);
+  const remaining = Number(sale.qty) - alreadyReturned;
+  if(qty<=0 || qty>remaining){ alert(t('return_qty_invalid')); return; }
+  const date = document.getElementById('returnDateInput').value || todayStr();
+  const note = document.getElementById('returnNoteInput').value.trim();
+
+  const perUnitValue = Number(sale.qty)>0 ? Number(sale.total)/Number(sale.qty) : 0;
+  const returnValue = qty*perUnitValue;
+  const dueAdjust = Math.min(returnValue, Number(sale.due));
+  const excessRefund = Math.max(0, returnValue - dueAdjust);
+
+  const product = db.products[sale.productId];
+  if(product){ product.qty = Number(product.qty) + qty; await safePut('products', sale.productId, product); }
+
+  sale.due = Math.max(0, Number(sale.due) - dueAdjust);
+  await safePut('sales', sale.id, sale);
+
+  if(sale.customerId && db.customers[sale.customerId]){
+    const cust = db.customers[sale.customerId];
+    cust.due = Math.max(0, Number(cust.due) - dueAdjust);
+    cust.refundOwed = Number(cust.refundOwed||0) + excessRefund;
+    await safePut('customers', sale.customerId, cust);
+  }
+
+  const record = {
+    id: uid(), returnNo: nextReturnNo(), saleId: sale.id, invoiceId: sale.invoiceId||null,
+    productId: sale.productId, productName: sale.productName,
+    customerId: sale.customerId||null, customerName: sale.customerName||'',
+    qty, unitValue: perUnitValue, value: returnValue, dueAdjust, excessRefund,
+    date, note, cancelled:false, ts: Date.now()
+  };
+  db.returns.push(record);
+  await safePut('returns', record.id, record);
+
+  document.getElementById('returnOverlay').classList.remove('open');
+  returnCtx = null;
+  renderNav();
+  renderPage();
+  if(document.getElementById('saleViewOverlay').classList.contains('open')) openSaleView(sale.id);
+});
+
+async function cancelReturn(returnId){
+  const rec = db.returns.find(r=>r.id===returnId);
+  if(!rec || rec.cancelled) return;
+  if(!confirm(t('return_confirm_cancel'))) return;
+  rec.cancelled = true;
+  await safePut('returns', rec.id, rec);
+
+  const product = db.products[rec.productId];
+  if(product){ product.qty = Math.max(0, Number(product.qty) - rec.qty); await safePut('products', rec.productId, product); }
+
+  const sale = db.sales.find(s=>s.id===rec.saleId);
+  if(sale){
+    sale.due = Number(sale.due) + Number(rec.dueAdjust);
+    await safePut('sales', sale.id, sale);
+    if(sale.customerId && db.customers[sale.customerId]){
+      const cust = db.customers[sale.customerId];
+      cust.due = Number(cust.due) + Number(rec.dueAdjust);
+      cust.refundOwed = Math.max(0, Number(cust.refundOwed||0) - Number(rec.excessRefund));
+      await safePut('customers', sale.customerId, cust);
+    }
+  }
+  renderNav();
+  renderPage();
+  if(document.getElementById('saleViewOverlay').classList.contains('open') && sale) openSaleView(sale.id);
+}
+
+/* ---------- Returns List Page ---------- */
+let returnsPageQuery = '';
+function renderReturnsPage(){
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="toolbar">
+      <input type="text" id="returnsPageSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(returnsPageQuery)}">
+    </div>
+    <div id="returnsPageList"></div>
+  `;
+  document.getElementById('returnsPageSearch').addEventListener('input', (e) => {
+    returnsPageQuery = e.target.value;
+    renderList();
+  });
+  function renderList(){
+    const q = returnsPageQuery.trim().toLowerCase();
+    const list = db.returns.filter(r => {
+      if(!q) return true;
+      return String(r.returnNo).includes(q) || r.productName.toLowerCase().includes(q) ||
+        (r.customerName||'').toLowerCase().includes(q);
+    }).sort((a,b)=>b.ts-a.ts);
+    const listEl = document.getElementById('returnsPageList');
+    if(list.length===0){
+      listEl.innerHTML = `<div class="empty"><div class="big">${t('return_no_history')}</div></div>`;
+      return;
+    }
+    listEl.innerHTML = `
+      <table class="data">
+        <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th><th></th></tr></thead>
+        <tbody>
+          ${list.map(r => `<tr class="${r.cancelled?'':''}">
+            <td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td>
+            <td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td>
+            <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
+            <td class="actions-cell">
+              <button class="icon-btn" title="${t('view_title')}" onclick="openSaleView('${r.saleId}')">👁</button>
+              ${!r.cancelled ? `<button class="icon-btn" title="${t('return_cancel_action')}" onclick="cancelReturn('${r.id}')">🗑️</button>` : ''}
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+  renderList();
+}
+
 function openSaleView(id){
   const sale = db.sales.find(s=>s.id===id);
   if(!sale) return;
@@ -2442,9 +2676,13 @@ function openSaleView(id){
       </tbody>
     </table>
     <table class="data" style="margin-top:10px;">
-      <thead><tr><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('f_unit_price')}</th><th>${t('col_discount')}</th><th>${t('col_total')}</th></tr></thead>
+      <thead><tr><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('f_unit_price')}</th><th>${t('col_discount')}</th><th>${t('col_total')}</th><th>${t('return_already')}</th><th>${t('return_remaining')}</th><th class="no-print"></th></tr></thead>
       <tbody>
-        ${groupItems.map(it => `<tr><td>${escapeHtml(it.productName)}</td><td>${it.qty}</td><td>৳${money(it.unitPrice)}</td><td>${Number(it.discount)>0?'৳'+money(it.discount):'—'}</td><td>৳${money(it.total)}</td></tr>`).join('')}
+        ${groupItems.map(it => {
+          const returned = saleReturnedQty(it.id);
+          const remaining = Number(it.qty) - returned;
+          return `<tr><td>${escapeHtml(it.productName)}</td><td>${it.qty}</td><td>৳${money(it.unitPrice)}</td><td>${Number(it.discount)>0?'৳'+money(it.discount):'—'}</td><td>৳${money(it.total)}</td><td>${returned>0?returned:'—'}</td><td>${remaining}</td><td class="no-print">${remaining>0?`<button class="btn ghost small" onclick="openReturnForm('${it.id}')">↩️ ${t('return_new')}</button>`:''}</td></tr>`;
+        }).join('')}
       </tbody>
     </table>
     <table class="data" style="margin-top:10px;">
@@ -2455,6 +2693,7 @@ function openSaleView(id){
       </tbody>
     </table>
     ${renderInstallmentPlanHtml(plan)}
+    ${renderReturnHistoryHtml(groupItems.map(x=>x.id))}
   `;
   document.getElementById('saleViewOverlay').classList.add('open');
 }
