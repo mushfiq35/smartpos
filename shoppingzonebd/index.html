@@ -2510,6 +2510,10 @@ function openReturnForm(saleId){
   updateReturnCalcInfo();
   document.getElementById('returnOverlay').classList.add('open');
 }
+function invoiceDueTotal(sale){
+  const group = sale.invoiceId ? db.sales.filter(s=>s.invoiceId===sale.invoiceId) : [sale];
+  return group.reduce((s,x)=>s+Number(x.due),0);
+}
 function updateReturnCalcInfo(){
   if(!returnCtx) return;
   const sale = db.sales.find(s=>s.id===returnCtx);
@@ -2517,7 +2521,7 @@ function updateReturnCalcInfo(){
   const qty = Number(document.getElementById('returnQtyInput').value)||0;
   const perUnitValue = Number(sale.qty)>0 ? Number(sale.total)/Number(sale.qty) : 0;
   const returnValue = qty*perUnitValue;
-  const dueAdjust = Math.min(returnValue, Number(sale.due));
+  const dueAdjust = Math.min(returnValue, invoiceDueTotal(sale));
   const excessRefund = Math.max(0, returnValue - dueAdjust);
   document.getElementById('returnCalcInfo').innerHTML = `
     ${t('return_value')}: ৳${money(returnValue)}<br>
@@ -2545,14 +2549,31 @@ document.getElementById('returnConfirmBtn').addEventListener('click', async () =
 
   const perUnitValue = Number(sale.qty)>0 ? Number(sale.total)/Number(sale.qty) : 0;
   const returnValue = qty*perUnitValue;
-  const dueAdjust = Math.min(returnValue, Number(sale.due));
+  const groupSales = sale.invoiceId ? db.sales.filter(s=>s.invoiceId===sale.invoiceId) : [sale];
+  const invoiceDue = groupSales.reduce((s,x)=>s+Number(x.due),0);
+  const dueAdjust = Math.min(returnValue, invoiceDue);
   const excessRefund = Math.max(0, returnValue - dueAdjust);
 
   const product = db.products[sale.productId];
   if(product){ product.qty = Number(product.qty) + qty; await safePut('products', sale.productId, product); }
 
-  sale.due = Math.max(0, Number(sale.due) - dueAdjust);
+  // distribute the due reduction across the invoice: the returned line first, then other lines
+  let remainingAdjust = dueAdjust;
+  const adjustments = [];
+  const ownReduce = Math.min(Number(sale.due), remainingAdjust);
+  if(ownReduce>0){ sale.due = Number(sale.due) - ownReduce; remainingAdjust -= ownReduce; adjustments.push({saleId: sale.id, amount: ownReduce}); }
   await safePut('sales', sale.id, sale);
+  for(const otherSale of groupSales){
+    if(remainingAdjust<=0) break;
+    if(otherSale.id===sale.id) continue;
+    const reduce = Math.min(Number(otherSale.due), remainingAdjust);
+    if(reduce>0){
+      otherSale.due = Number(otherSale.due) - reduce;
+      remainingAdjust -= reduce;
+      adjustments.push({saleId: otherSale.id, amount: reduce});
+      await safePut('sales', otherSale.id, otherSale);
+    }
+  }
 
   if(sale.customerId && db.customers[sale.customerId]){
     const cust = db.customers[sale.customerId];
@@ -2565,7 +2586,7 @@ document.getElementById('returnConfirmBtn').addEventListener('click', async () =
     id: uid(), returnNo: nextReturnNo(), saleId: sale.id, invoiceId: sale.invoiceId||null,
     productId: sale.productId, productName: sale.productName,
     customerId: sale.customerId||null, customerName: sale.customerName||'',
-    qty, unitValue: perUnitValue, value: returnValue, dueAdjust, excessRefund,
+    qty, unitValue: perUnitValue, value: returnValue, dueAdjust, excessRefund, adjustments,
     date, note, cancelled:false, ts: Date.now()
   };
   db.returns.push(record);
@@ -2588,16 +2609,17 @@ async function cancelReturn(returnId){
   const product = db.products[rec.productId];
   if(product){ product.qty = Math.max(0, Number(product.qty) - rec.qty); await safePut('products', rec.productId, product); }
 
+  const adjustments = rec.adjustments && rec.adjustments.length ? rec.adjustments : [{saleId: rec.saleId, amount: rec.dueAdjust}];
+  for(const adj of adjustments){
+    const s = db.sales.find(x=>x.id===adj.saleId);
+    if(s){ s.due = Number(s.due) + Number(adj.amount); await safePut('sales', s.id, s); }
+  }
   const sale = db.sales.find(s=>s.id===rec.saleId);
-  if(sale){
-    sale.due = Number(sale.due) + Number(rec.dueAdjust);
-    await safePut('sales', sale.id, sale);
-    if(sale.customerId && db.customers[sale.customerId]){
-      const cust = db.customers[sale.customerId];
-      cust.due = Number(cust.due) + Number(rec.dueAdjust);
-      cust.refundOwed = Math.max(0, Number(cust.refundOwed||0) - Number(rec.excessRefund));
-      await safePut('customers', sale.customerId, cust);
-    }
+  if(sale && sale.customerId && db.customers[sale.customerId]){
+    const cust = db.customers[sale.customerId];
+    cust.due = Number(cust.due) + Number(rec.dueAdjust);
+    cust.refundOwed = Math.max(0, Number(cust.refundOwed||0) - Number(rec.excessRefund));
+    await safePut('customers', sale.customerId, cust);
   }
   renderNav();
   renderPage();
