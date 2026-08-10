@@ -281,8 +281,8 @@
 
     @media print {
       body * { visibility: hidden; }
-      #printableInvoice, #printableInvoice *, #accountsPrintArea, #accountsPrintArea * { visibility: visible; }
-      #printableInvoice, #accountsPrintArea { position: absolute; left: 0; top: 0; width: 100%; }
+      #printableInvoice, #printableInvoice *, #accountsPrintArea, #accountsPrintArea *, #printableAccountVoucher, #printableAccountVoucher * { visibility: visible; }
+      #printableInvoice, #accountsPrintArea, #printableAccountVoucher { position: absolute; left: 0; top: 0; width: 100%; }
       .no-print { display: none !important; }
     }
   </style>
@@ -370,7 +370,7 @@
         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
         <div class="shop-logo" id="displayShopLogo">B</div>
         <div class="shop-info">
-          <h2 id="displayShopName">মেসার্স বিসমিল্লাহ ট্রেডার্স</h2>
+          <h2 id="displayShopName">Business Trading POS</h2>
           <p id="displayShopTagline">পাইকারি সার, সিমেন্ট ও খাদ্যশস্য বিক্রেতা</p>
         </div>
       </div>
@@ -505,6 +505,7 @@
               <thead>
                 <tr>
                   <th data-key="thInvoice">ইনভয়েস</th>
+                  <th data-key="thType">ধরণ</th>
                   <th data-key="thStaffName">স্টাফ নাম</th>
                   <th data-key="thCustomer">কাস্টমার</th>
                   <th data-key="thProduct">প্রোডাক্ট</th>
@@ -661,7 +662,7 @@
       <div id="accounts-tab" class="tab-content">
         <div class="grid">
           
-          <div class="card admin-only">
+          <div class="card">
             <h3 id="accFormTitle" data-key="titleAccEntry">💰 নতুন ট্রানজেকশন এন্ট্রি</h3>
             <input type="hidden" id="editAccId">
             
@@ -695,7 +696,26 @@
             </div>
           </div>
 
-          <div class="card" id="accountsPrintArea">
+          <div class="card staff-only" id="myVouchersCard">
+            <h3 data-key="titleMyVouchers">🧾 আমার জমা দেওয়া এন্ট্রি</h3>
+            <p style="font-size:12.5px; color:#64748b; margin-bottom:12px;" data-key="myVouchersNote">অনুমোদন হওয়ার পর ভাউচার প্রিন্ট করতে পারবেন।</p>
+            <div class="table-responsive">
+              <table id="myVouchersTable">
+                <thead>
+                  <tr>
+                    <th data-key="lblDate">তারিখ</th>
+                    <th data-key="lblAccType">ধরণ</th>
+                    <th data-key="lblAmount">পরিমাণ</th>
+                    <th data-key="thStatus">স্ট্যাটাস</th>
+                    <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card admin-only" id="accountsPrintArea">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
               <h3 data-key="titleAccReport">📊 অ্যাকাউন্টস হিস্ট্রি ও ফিল্টার রিপোর্ট</h3>
               <button onclick="window.print()" class="btn-action btn-warning no-print" data-key="btnPrintReport">🖨️ প্রিন্ট</button>
@@ -743,6 +763,7 @@
                     <th data-key="lblAccMethod">মেথড</th>
                     <th data-key="lblNote">বিবরণ</th>
                     <th data-key="lblAmount">পরিমাণ</th>
+                    <th class="no-print" data-key="thStatus">স্ট্যাটাস</th>
                     <th class="no-print" style="text-align:center;" data-key="thAction">অ্যাকশন</th>
                   </tr>
                 </thead>
@@ -751,6 +772,7 @@
                   <tr>
                     <td colspan="4" style="text-align:right;">Sub Total:</td>
                     <td id="accSubTotal" style="color:#2563eb; font-size:16px;"><span class="currency-symbol">৳</span>0.00</td>
+                    <td class="no-print"></td>
                     <td class="no-print"></td>
                   </tr>
                 </tfoot>
@@ -805,7 +827,7 @@
           <div class="card admin-only">
             <h3 data-key="titleShopSettings">🏪 দোকানের তথ্য পরিবর্তন করুন</h3>
             <label data-key="lblShopName">দোকানের নাম:</label>
-            <input type="text" id="settingShopName" placeholder="মেসার্স বিসমিল্লাহ ট্রেডার্স">
+            <input type="text" id="settingShopName" placeholder="Business Trading POS">
 
             <label data-key="lblShopTagline">দোকানের সাব-টাইটেল / বিবরণ:</label>
             <input type="text" id="settingShopTagline" placeholder="পাইকারি সার, সিমেন্ট ও খাদ্যশস্য বিক্রেতা">
@@ -1043,6 +1065,33 @@
     </div>
   </div>
 
+  <div id="viewAccountModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;" class="no-print">
+        <h3 data-key="titleViewVoucher">🧾 ট্রানজেকশন ভাউচার</h3>
+        <button onclick="window.print()" class="btn-action btn-warning" data-key="btnPrintVoucher">🖨️ প্রিন্ট ভাউচার</button>
+      </div>
+      <div id="printableAccountVoucher" class="invoice-box"></div>
+      <div style="margin-top:15px; text-align:right;" class="no-print">
+        <button onclick="closeModal('viewAccountModal')" class="btn-danger" style="width:auto;" data-key="btnCloseShort">বন্ধ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="declineModal" class="modal">
+    <div class="modal-content">
+      <h3 data-key="titleDeclineOrder">❌ প্রত্যাখ্যানের কারণ লিখুন</h3>
+      <input type="hidden" id="declineItemId">
+      <input type="hidden" id="declineItemKind">
+      <label data-key="lblDeclineNote">প্রত্যাখ্যানের কারণ:</label>
+      <textarea id="declineNoteInput" rows="3" placeholder="যেমন: ভুল পরিমাণ, স্টক নেই ইত্যাদি" style="width:100%; padding:10px; border:1px solid var(--border-cool); border-radius:8px; font-family:inherit; font-size:14px; margin-bottom:14px; resize:vertical;"></textarea>
+      <div style="display:flex; gap:10px;">
+        <button onclick="confirmDecline()" class="btn-danger" data-key="btnConfirmDecline">প্রত্যাখ্যান নিশ্চিত করুন</button>
+        <button onclick="closeModal('declineModal')" class="btn-action" style="background:var(--paper); border:1px solid var(--border-cool);" data-key="btnCancelShort">বাতিল</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let currentUserRole = "admin";
     let currentLang = "EN";
@@ -1067,6 +1116,20 @@
         statusApproved: "অনুমোদিত",
         statusPendingApproval: "অনুমোদনের অপেক্ষায়",
         statusPending: "অপেক্ষমাণ",
+        statusDeclined: "প্রত্যাখ্যাত",
+        thType: "ধরণ",
+        titleMyVouchers: "🧾 আমার জমা দেওয়া এন্ট্রি",
+        myVouchersNote: "অনুমোদন হওয়ার পর ভাউচার প্রিন্ট করতে পারবেন।",
+        declineReasonLabel: "প্রত্যাখ্যানের কারণ",
+        voucherFooterNote: "এই ভাউচারটি কম্পিউটার-জেনারেটেড, স্বাক্ষরের প্রয়োজন নেই।",
+        alertTransactionSentApproval: "✅ ট্রানজেকশনটি অনুমোদনের জন্য সুপার ইউজারের কাছে পাঠানো হয়েছে!",
+        titleViewVoucher: "🧾 ট্রানজেকশন ভাউচার",
+        btnPrintVoucher: "🖨️ প্রিন্ট ভাউচার",
+        titleDeclineOrder: "❌ প্রত্যাখ্যানের কারণ লিখুন",
+        lblDeclineNote: "প্রত্যাখ্যানের কারণ:",
+        btnConfirmDecline: "প্রত্যাখ্যান নিশ্চিত করুন",
+        btnDeclineOrder: "প্রত্যাখ্যান করুন",
+        alertDeclineNoteRequired: "প্রত্যাখ্যানের কারণ লিখা আবশ্যক!",
         approvalPendingNote: "অনুমোদনের অপেক্ষায়",
         titlePrintView: "প্রিন্ট / দেখুন",
         titleEdit: "সম্পাদনা",
@@ -1314,6 +1377,20 @@
         statusApproved: "Approved",
         statusPendingApproval: "Pending Approval",
         statusPending: "Pending",
+        statusDeclined: "Declined",
+        thType: "Type",
+        titleMyVouchers: "🧾 My Submitted Entries",
+        myVouchersNote: "You can print the voucher once it's approved.",
+        declineReasonLabel: "Decline Reason",
+        voucherFooterNote: "This voucher is computer-generated and does not require a signature.",
+        alertTransactionSentApproval: "✅ Transaction sent to the Super User for approval!",
+        titleViewVoucher: "🧾 Transaction Voucher",
+        btnPrintVoucher: "🖨️ Print Voucher",
+        titleDeclineOrder: "❌ Enter Decline Reason",
+        lblDeclineNote: "Decline Reason:",
+        btnConfirmDecline: "Confirm Decline",
+        btnDeclineOrder: "Decline",
+        alertDeclineNoteRequired: "A decline reason is required!",
         approvalPendingNote: "Approval Pending",
         titlePrintView: "Print / View Invoice",
         titleEdit: "Edit",
@@ -1558,7 +1635,7 @@
     }
 
     let shopConfig = JSON.parse(localStorage.getItem('pos_shop_info')) || {
-      name: "মেসার্স বিসমিল্লাহ ট্রেডার্স",
+      name: "Business Trading POS",
       tagline: "পাইকারি সার, সিমেন্ট ও খাদ্যশস্য বিক্রেতা",
       logo: "B",
       logoImage: ""
@@ -1585,8 +1662,8 @@
     ];
 
     let accountTransactions = JSON.parse(localStorage.getItem('pos_accounts')) || [
-      { id: 201, type: 'Joma', method: 'Cash', amount: 5000, note: 'আজকের নগদ জমা', date: "2026-08-05" },
-      { id: 202, type: 'Kharoch', method: 'Mobile Banking', amount: 300, note: 'দোকান চা খরচ', date: "2026-08-05" }
+      { id: 201, type: 'Joma', method: 'Cash', amount: 5000, note: 'আজকের নগদ জমা', date: "2026-08-05", status: 'Approved', createdBy: 'admin' },
+      { id: 202, type: 'Kharoch', method: 'Mobile Banking', amount: 300, note: 'দোকান চা খরচ', date: "2026-08-05", status: 'Approved', createdBy: 'admin' }
     ];
 
     // ---------- FIREBASE CLOUD SYNC ----------
@@ -1666,6 +1743,9 @@
       let adminElements = document.querySelectorAll('.admin-only');
       adminElements.forEach(el => el.style.display = (currentUserRole === 'staff') ? 'none' : '');
 
+      let staffOnlyElements = document.querySelectorAll('.staff-only');
+      staffOnlyElements.forEach(el => el.style.display = (currentUserRole === 'staff') ? '' : 'none');
+
       let pill = document.getElementById('footerRolePill');
       if (pill) {
         let langData = translations[currentLang];
@@ -1687,6 +1767,7 @@
       renderCustomers();
       renderLedger();
       renderAccounts();
+      renderMyVouchers();
     }
 
     function setLanguage(lang) {
@@ -1719,6 +1800,7 @@
       renderCustomers();
       renderLedger();
       renderAccounts();
+      renderMyVouchers();
       renderUsersTable();
 
       // Reset in-progress form button/title states to the new language's defaults
@@ -1892,7 +1974,7 @@
     }
 
     function saveShopSettings() {
-      shopConfig.name = document.getElementById('settingShopName').value || "মেসার্স বিসমিল্লাহ ট্রেডার্স";
+      shopConfig.name = document.getElementById('settingShopName').value || "Business Trading POS";
       shopConfig.tagline = document.getElementById('settingShopTagline').value || "";
 
       localStorage.setItem('pos_shop_info', JSON.stringify(shopConfig));
@@ -2151,17 +2233,17 @@
 
       list.forEach(s => {
         let isApproved = s.status === 'Approved';
-        let statusBadge = isApproved 
-          ? `<span class="badge badge-ok">${t('statusApproved')}</span>` 
-          : `<span class="badge badge-pending">${t('statusPendingApproval')}</span>`;
+        let statusBadge = accStatusBadge(s.status);
 
-        let canPrint = isApproved;
+        let declineNoteHtml = (s.status === 'Declined' && s.declineNote)
+          ? `<div style="font-size:11px; color:#dc2626; margin-top:2px;">${t('declineReasonLabel')}: ${s.declineNote}</div>`
+          : '';
 
         let actionsHtml = `
           <div style="text-align:center;">
-            ${canPrint ? `
+            ${isApproved ? `
               <button onclick="viewSale(${s.id})" class="btn-icon-action btn-view" title="${t('titlePrintView')}">${SVG_VIEW}</button>
-            ` : `<span style="font-size:12px; color:#94a3b8;">${t('approvalPendingNote')}</span>`}
+            ` : `<span style="font-size:12px; color:#94a3b8;">${s.status === 'Declined' ? '' : t('approvalPendingNote')}</span>`}
             ${currentUserRole === 'admin' ? `
               <button onclick="editSale(${s.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
               <button onclick="deleteSale(${s.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
@@ -2176,7 +2258,7 @@
             <td>${s.prodName}</td>
             <td>${s.qty} ${unitLabel(s.unitType)}</td>
             <td><b><span class="currency-symbol">৳</span>${s.total.toFixed(2)}</b></td>
-            <td>${statusBadge}</td>
+            <td>${statusBadge}${declineNoteHtml}</td>
             <td>${actionsHtml}</td>
           </tr>
         `;
@@ -2184,9 +2266,11 @@
     }
 
     function renderNotifications() {
-      let pendingSales = salesHistory.filter(s => s.status === 'Pending');
-      
-      let count = pendingSales.length;
+      let pendingSales = salesHistory.filter(s => s.status === 'Pending').map(s => ({ ...s, kind: 'sale' }));
+      let pendingAccounts = accountTransactions.filter(a => a.status === 'Pending').map(a => ({ ...a, kind: 'account' }));
+      let pendingAll = [...pendingSales, ...pendingAccounts].sort((a, b) => b.id - a.id);
+
+      let count = pendingAll.length;
       document.getElementById('headerBadge').innerText = count;
       document.getElementById('sidebarBadge').innerText = count;
 
@@ -2194,23 +2278,34 @@
       if (!tbody) return;
       tbody.innerHTML = '';
 
-      if (pendingSales.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b;">${t('noPendingNotifications')}</td></tr>`;
+      if (pendingAll.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b;">${t('noPendingNotifications')}</td></tr>`;
         return;
       }
 
-      pendingSales.forEach(s => {
+      pendingAll.forEach(item => {
         let actionBtn = (currentUserRole === 'admin')
-          ? `<button onclick="approveOrder(${s.id})" class="btn-action btn-success">${t('btnApproveOrder')}</button>`
+          ? `<div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
+               <button onclick="${item.kind === 'sale' ? `approveOrder(${item.id})` : `approveAccount(${item.id})`}" class="btn-action btn-success" style="font-size:12px; padding:6px 10px;">${t('btnApproveOrder')}</button>
+               <button onclick="openDeclineModal(${item.id}, '${item.kind}')" class="btn-action btn-danger" style="font-size:12px; padding:6px 10px;">${t('btnDeclineOrder')}</button>
+             </div>`
           : `<span style="font-size:12px; color:#64748b;">${t('waitingSuperUserOnly')}</span>`;
+
+        let refLabel = item.kind === 'sale' ? `#${item.invNo}` : `ACC-${item.id.toString().slice(-4)}`;
+        let typeLabel = item.kind === 'sale' ? `<span class="badge badge-ok">${t('menuSales')}</span>` : `<span class="badge badge-pending">${t('optAcc' + item.type)}</span>`;
+        let customerLabel = item.kind === 'sale' ? item.custName : '-';
+        let detailLabel = item.kind === 'sale' ? `${item.prodName} (${item.qty} ${unitLabel(item.unitType)})` : `${item.method} · ${item.note}`;
+        let amountLabel = item.kind === 'sale' ? item.total : item.amount;
+        let creatorLabel = item.createdByName || item.createdBy;
 
         tbody.innerHTML += `
           <tr>
-            <td><b>#${s.invNo}</b></td>
-            <td><span class="badge badge-alert">${s.createdBy}</span></td>
-            <td>${s.custName}</td>
-            <td>${s.prodName} (${s.qty} ${unitLabel(s.unitType)})</td>
-            <td><b><span class="currency-symbol">৳</span>${s.total.toFixed(2)}</b></td>
+            <td><b>${refLabel}</b></td>
+            <td>${typeLabel}</td>
+            <td><span class="badge badge-alert">${creatorLabel}</span></td>
+            <td>${customerLabel}</td>
+            <td>${detailLabel}</td>
+            <td><b><span class="currency-symbol">৳</span>${amountLabel.toFixed(2)}</b></td>
             <td><span class="badge badge-pending">${t('statusPending')}</span></td>
             <td style="text-align:center;">${actionBtn}</td>
           </tr>
@@ -2243,6 +2338,44 @@
         renderLedger();
         alert(t("alertOrderApproved").replace("{inv}", sale.invNo));
       }
+    }
+
+    function openDeclineModal(id, kind) {
+      if (currentUserRole !== 'admin') return;
+      document.getElementById('declineItemId').value = id;
+      document.getElementById('declineItemKind').value = kind;
+      document.getElementById('declineNoteInput').value = '';
+      document.getElementById('declineModal').style.display = 'flex';
+    }
+
+    function confirmDecline() {
+      let id = document.getElementById('declineItemId').value;
+      let kind = document.getElementById('declineItemKind').value;
+      let note = document.getElementById('declineNoteInput').value.trim();
+
+      if (!note) return alert(t('alertDeclineNoteRequired'));
+
+      if (kind === 'sale') {
+        let sale = salesHistory.find(s => s.id == id);
+        if (sale) {
+          sale.status = 'Declined';
+          sale.declineNote = note;
+        }
+        renderSales();
+      } else {
+        let acc = accountTransactions.find(a => a.id == id);
+        if (acc) {
+          acc.status = 'Declined';
+          acc.declineNote = note;
+        }
+        renderAccounts();
+        renderMyVouchers();
+      }
+
+      saveData();
+      renderNotifications();
+      renderDashboard();
+      closeModal('declineModal');
     }
 
     function searchSales() {
@@ -2628,6 +2761,12 @@
       });
     }
 
+    function accStatusBadge(status) {
+      if (status === 'Approved') return `<span class="badge badge-ok">${t('statusApproved')}</span>`;
+      if (status === 'Declined') return `<span class="badge badge-alert">${t('statusDeclined')}</span>`;
+      return `<span class="badge badge-pending">${t('statusPendingApproval')}</span>`;
+    }
+
     function renderAccounts(list = accountTransactions) {
       let tbody = document.querySelector('#accTable tbody');
       if (!tbody) return;
@@ -2636,26 +2775,36 @@
       let subTotal = 0;
 
       list.forEach(acc => {
-        subTotal += acc.amount;
+        if (acc.status === 'Approved') subTotal += acc.amount;
 
-        let typeBadge = (acc.type === 'Joma' || acc.type === 'Bikroy') 
-          ? `<span class="badge badge-ok">${acc.type}</span>` 
-          : `<span class="badge badge-alert">${acc.type}</span>`;
+        let typeBadge = (acc.type === 'Joma' || acc.type === 'Bikroy')
+          ? `<span class="badge badge-ok">${t('optAcc' + acc.type)}</span>`
+          : `<span class="badge badge-alert">${t('optAcc' + acc.type)}</span>`;
 
-        let actionBtns = (currentUserRole === 'admin') 
+        let printBtn = (acc.status === 'Approved')
+          ? `<button onclick="viewAccountVoucher(${acc.id})" class="btn-icon-action btn-view" title="${t('titlePrintView')}">${SVG_VIEW}</button>`
+          : '';
+
+        let actionBtns = (currentUserRole === 'admin')
           ? `<div style="text-align:center;">
+               ${printBtn}
                <button onclick="editAccount(${acc.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
                <button onclick="deleteAccount(${acc.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
-             </div>` 
+             </div>`
           : `<div style="text-align:center; color:#94a3b8;">${t('lockedLabel')}</div>`;
+
+        let declineNoteHtml = (acc.status === 'Declined' && acc.declineNote)
+          ? `<div style="font-size:11px; color:#dc2626; margin-top:2px;">${t('declineReasonLabel')}: ${acc.declineNote}</div>`
+          : '';
 
         tbody.innerHTML += `
           <tr>
             <td>${acc.date}</td>
             <td>${typeBadge}</td>
             <td><b>${acc.method}</b></td>
-            <td>${acc.note}</td>
+            <td>${acc.note}${declineNoteHtml}</td>
             <td style="font-weight:bold; color:${(acc.type==='Joma'||acc.type==='Bikroy')?'#16a34a':'#dc2626'};"><span class="currency-symbol">৳</span>${acc.amount.toFixed(2)}</td>
+            <td class="no-print">${accStatusBadge(acc.status)}</td>
             <td class="no-print">${actionBtns}</td>
           </tr>
         `;
@@ -2664,9 +2813,42 @@
       document.getElementById('accSubTotal').innerHTML = '<span class="currency-symbol">৳</span>' + subTotal.toFixed(2);
     }
 
-    function saveAccountTransaction() {
-      if (currentUserRole !== 'admin') return alert(t("alertOnlyAdminAddTransaction"));
+    function renderMyVouchers() {
+      let tbody = document.querySelector('#myVouchersTable tbody');
+      if (!tbody) return;
+      if (currentUserRole !== 'staff') return;
 
+      let uid = window.currentAuthUser ? window.currentAuthUser.uid : null;
+      let mine = accountTransactions.filter(acc => acc.createdBy === 'staff' && (!uid || acc.createdByUid === uid));
+
+      tbody.innerHTML = '';
+      if (mine.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+        return;
+      }
+
+      mine.forEach(acc => {
+        let printBtn = (acc.status === 'Approved')
+          ? `<button onclick="viewAccountVoucher(${acc.id})" class="btn-icon-action btn-view" title="${t('titlePrintView')}">${SVG_VIEW}</button>`
+          : `<span style="font-size:12px; color:#94a3b8;">${t('approvalPendingNote')}</span>`;
+
+        let declineNoteHtml = (acc.status === 'Declined' && acc.declineNote)
+          ? `<div style="font-size:11px; color:#dc2626; margin-top:2px;">${t('declineReasonLabel')}: ${acc.declineNote}</div>`
+          : '';
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${acc.date}</td>
+            <td>${t('optAcc' + acc.type)}${declineNoteHtml}</td>
+            <td><b><span class="currency-symbol">৳</span>${acc.amount.toFixed(2)}</b></td>
+            <td>${accStatusBadge(acc.status)}</td>
+            <td style="text-align:center;">${printBtn}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function saveAccountTransaction() {
       let editId = document.getElementById('editAccId').value;
       let type = document.getElementById('accType').value;
       let method = document.getElementById('accMethod').value;
@@ -2677,18 +2859,41 @@
       if (!amount || amount <= 0) return alert(t("alertEnterValidAmount"));
 
       if (editId) {
+        if (currentUserRole !== 'admin') return alert(t("alertOnlyAdminAddTransaction"));
         let acc = accountTransactions.find(x => x.id == editId);
         if (acc) {
           acc.type = type; acc.method = method; acc.amount = amount; acc.date = date; acc.note = note;
         }
-      } else {
-        accountTransactions.unshift({ id: Date.now(), type, method, amount, date, note: note || t('generalEntryLabel') });
+        saveData();
+        renderAccounts();
+        resetAccForm();
+        alert(t("alertAccSaved"));
+        return;
       }
+
+      let initialStatus = (currentUserRole === 'staff') ? 'Pending' : 'Approved';
+
+      accountTransactions.unshift({
+        id: Date.now(),
+        type, method, amount, date,
+        note: note || t('generalEntryLabel'),
+        status: initialStatus,
+        createdBy: currentUserRole,
+        createdByUid: window.currentAuthUser ? window.currentAuthUser.uid : null,
+        createdByName: document.getElementById('headerUserName') ? document.getElementById('headerUserName').innerText : currentUserRole
+      });
 
       saveData();
       renderAccounts();
+      renderMyVouchers();
+      renderNotifications();
       resetAccForm();
-      alert(t("alertAccSaved"));
+
+      if (currentUserRole === 'staff') {
+        alert(t("alertTransactionSentApproval"));
+      } else {
+        alert(t("alertAccSaved"));
+      }
     }
 
     function editAccount(id) {
@@ -2717,14 +2922,52 @@
     }
 
     function deleteAccount(id) {
+      if (currentUserRole !== 'admin') return;
       if (confirm(t("confirmDeleteAccount"))) {
         accountTransactions = accountTransactions.filter(x => x.id !== id);
         saveData();
         renderAccounts();
+        renderMyVouchers();
       }
     }
 
+    function approveAccount(id) {
+      if (currentUserRole !== 'admin') return alert(t("alertOnlyAdminApproveOrder"));
+      let acc = accountTransactions.find(x => x.id == id);
+      if (acc) {
+        acc.status = 'Approved';
+        saveData();
+        renderAccounts();
+        renderMyVouchers();
+        renderNotifications();
+      }
+    }
+
+    function viewAccountVoucher(id) {
+      let acc = accountTransactions.find(x => x.id == id);
+      if (!acc) return;
+
+      let html = `
+        <div class="invoice-header">
+          ${shopConfig.logoImage ? `<img class="invoice-logo" src="${shopConfig.logoImage}">` : ''}
+          <h2>${shopConfig.name}</h2>
+          <p>${shopConfig.tagline}</p>
+          <p style="font-size:12px; color:#64748b;">${t('lblDate')}: ${acc.date} | ${t('lblAccType')}: <b>${t('optAcc' + acc.type)}</b></p>
+        </div>
+        <table style="width:100%; margin-top:10px;">
+          <tr><td style="padding:6px 0;">${t('lblAccMethod')}</td><td style="text-align:right;"><b>${acc.method}</b></td></tr>
+          <tr><td style="padding:6px 0;">${t('lblNote')}</td><td style="text-align:right;">${acc.note}</td></tr>
+          <tr><td style="padding:10px 0; font-size:16px; border-top:2px dashed var(--border-cool);">${t('lblAmount')}</td><td style="text-align:right; padding:10px 0; font-size:18px; border-top:2px dashed var(--border-cool);"><b><span class="currency-symbol">৳</span>${acc.amount.toFixed(2)}</b></td></tr>
+        </table>
+        <p style="text-align:center; font-size:11px; color:#94a3b8; margin-top:20px;">${t('voucherFooterNote')}</p>
+      `;
+
+      document.getElementById('printableAccountVoucher').innerHTML = html;
+      document.getElementById('viewAccountModal').style.display = 'flex';
+    }
+
     function filterAccounts() {
+
       let fromDate = document.getElementById('filterFromDate').value;
       let toDate = document.getElementById('filterToDate').value;
       let type = document.getElementById('filterType').value;
