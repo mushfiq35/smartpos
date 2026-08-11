@@ -281,8 +281,8 @@
 
     @media print {
       body * { visibility: hidden; }
-      #printableInvoice, #printableInvoice *, #accountsPrintArea, #accountsPrintArea *, #printableAccountVoucher, #printableAccountVoucher * { visibility: visible; }
-      #printableInvoice, #accountsPrintArea, #printableAccountVoucher { position: absolute; left: 0; top: 0; width: 100%; }
+      #printableInvoice, #printableInvoice *, #accountsPrintArea, #accountsPrintArea *, #printableAccountVoucher, #printableAccountVoucher *, #printableReturnReceipt, #printableReturnReceipt *, #printableCustomerStatement, #printableCustomerStatement * { visibility: visible; }
+      #printableInvoice, #accountsPrintArea, #printableAccountVoucher, #printableReturnReceipt, #printableCustomerStatement { position: absolute; left: 0; top: 0; width: 100%; }
       .no-print { display: none !important; }
     }
   </style>
@@ -356,7 +356,9 @@
       <li><button onclick="openTab('products-tab', this)"><svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.3 7.6L12 12.5l8.7-4.9M12 21.4V12.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuProducts">পণ্য তালিকা</span></button></li>
       <li><button onclick="openTab('categories-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuCategories">ক্যাটাগরি তালিকা</span></button></li>
       <li><button onclick="openTab('sales-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.6L21 8H7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="21" r="1"/><circle cx="17" cy="21" r="1"/></svg><span class="menu-label" data-key="menuSales">বিক্রয়</span></button></li>
+      <li><button onclick="openTab('returns-tab', this)"><svg viewBox="0 0 24 24"><path d="M3 7v6h6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13a9 9 0 1 0 3-6.7L3 9" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuReturns">রিটার্ন</span></button></li>
       <li><button onclick="openTab('accounts-tab', this)"><svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuAccounts">অ্যাকাউন্টস</span></button></li>
+      <li class="admin-only"><button onclick="openTab('reports-tab', this)"><svg viewBox="0 0 24 24"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 15l4-5 3 3 5-7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="15" r="1.2"/><circle cx="11" cy="10" r="1.2"/><circle cx="14" cy="13" r="1.2"/><circle cx="19" cy="6" r="1.2"/></svg><span class="menu-label" data-key="menuReports">রিপোর্টস</span></button></li>
       <li><button onclick="openTab('ledger-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuLedger">বকেয়া খাতা</span></button></li>
       <li><button onclick="openTab('unit-config-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 21V14M4 10V3M12 21v-8M12 9V3M20 21v-5M20 12V3M1 14h6M9 9h6M17 12h6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuUnitConfig">ইউনিট কনফিগারেশন</span></button></li>
       <li class="admin-only"><button onclick="openTab('users-tab', this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21c0-3.5 3.5-6 8-6s8 2.5 8 6" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 3.5a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuUsers">ব্যবহারকারী ব্যবস্থাপনা</span></button></li>
@@ -413,6 +415,10 @@
             <h4 data-key="lblTotalStock">মোট স্টক (বস্তা)</h4>
             <div class="value" id="dashTotalStock">0</div>
           </div>
+          <div class="stat-card">
+            <h4 data-key="lblTotalReturns">মোট রিটার্ন</h4>
+            <div class="value" id="dashTotalReturns" style="color:#d97706;"><span class="currency-symbol">৳</span>0.00</div>
+          </div>
         </div>
 
         <div class="card">
@@ -455,6 +461,38 @@
                   <th data-key="thProduct">প্রোডাক্ট</th>
                   <th data-key="thQty">পরিমাণ</th>
                   <th data-key="thTotal">মোট টাকা</th>
+                  <th data-key="thStatus">স্ট্যাটাস</th>
+                  <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RETURNS TAB -->
+      <div id="returns-tab" class="tab-content">
+        <div class="card" style="margin-bottom:15px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <h3 style="border:none; padding:0; margin:0;" data-key="titleAllReturns">↩️ সকল রিটার্নের তালিকা</h3>
+          </div>
+          <div style="margin-top:15px;">
+            <input type="text" id="returnsSearchInput" onkeyup="searchReturns()" placeholder="🔎 Search by Return No, Invoice...">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table id="returnsTable">
+              <thead>
+                <tr>
+                  <th data-key="thReturnNo">রিটার্ন নং</th>
+                  <th data-key="thInvoice">ইনভয়েস</th>
+                  <th data-key="thProduct">প্রোডাক্ট</th>
+                  <th data-key="thReturnQty">রিটার্ন পরিমাণ</th>
+                  <th data-key="thRefundValue">রিফান্ড মূল্য</th>
+                  <th data-key="lblDate">তারিখ</th>
                   <th data-key="thStatus">স্ট্যাটাস</th>
                   <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
                 </tr>
@@ -783,6 +821,152 @@
         </div>
       </div>
 
+      <!-- REPORTS TAB (Super User only) -->
+      <div id="reports-tab" class="tab-content">
+        <div class="card" style="margin-bottom:15px;">
+          <h3 style="border:none; padding:0; margin:0 0 12px;" data-key="titleReports">📊 রিপোর্টস</h3>
+          <div class="segment" id="reportSubTabSwitch" style="display:inline-flex;">
+            <button type="button" class="lang-btn active" data-report-tab="overview" onclick="openReportSubTab('overview')" data-key="reportTabOverview">ওভারভিউ</button>
+            <button type="button" class="lang-btn" data-report-tab="sales" onclick="openReportSubTab('sales')" data-key="reportTabSales">বিক্রয়</button>
+            <button type="button" class="lang-btn" data-report-tab="customers" onclick="openReportSubTab('customers')" data-key="reportTabCustomers">কাস্টমার</button>
+            <button type="button" class="lang-btn" data-report-tab="products" onclick="openReportSubTab('products')" data-key="reportTabProducts">প্রোডাক্ট</button>
+          </div>
+        </div>
+
+        <!-- OVERVIEW SUB-TAB -->
+        <div id="report-overview" class="report-subtab" style="display:block;">
+          <div class="card" style="margin-bottom:15px;">
+            <div class="filter-grid no-print">
+              <div>
+                <label data-key="lblFromDate">From Date:</label>
+                <input type="date" id="ovFromDate" style="margin-bottom:0;">
+              </div>
+              <div>
+                <label data-key="lblToDate">To Date:</label>
+                <input type="date" id="ovToDate" style="margin-bottom:0;">
+              </div>
+              <div style="display:flex; align-items:flex-end;">
+                <button onclick="runOverviewReport()" class="btn-action btn-success" style="width:100%; height:38px;" data-key="btnRunReport">Run Report</button>
+              </div>
+            </div>
+          </div>
+          <div class="dashboard-cards">
+            <div class="stat-card">
+              <h4 data-key="lblTotalSales">আজকের মোট বিক্রয়</h4>
+              <div class="value" id="ovTotalSales"><span class="currency-symbol">৳</span>0.00</div>
+            </div>
+            <div class="stat-card">
+              <h4 data-key="lblTotalDue">মোট বাকি টাকা</h4>
+              <div class="value" id="ovTotalDue" style="color:#dc2626;"><span class="currency-symbol">৳</span>0.00</div>
+            </div>
+            <div class="stat-card">
+              <h4 data-key="lblTotalReturns">মোট রিটার্ন</h4>
+              <div class="value" id="ovTotalReturns" style="color:#d97706;"><span class="currency-symbol">৳</span>0.00</div>
+            </div>
+            <div class="stat-card">
+              <h4 data-key="totalPaidShort">মোট আদায়</h4>
+              <div class="value" id="ovTotalPaid" style="color:#16a34a;"><span class="currency-symbol">৳</span>0.00</div>
+            </div>
+            <div class="stat-card">
+              <h4 data-key="optAccKharoch">খরচ</h4>
+              <div class="value" id="ovTotalExpense" style="color:#dc2626;"><span class="currency-symbol">৳</span>0.00</div>
+            </div>
+            <div class="stat-card">
+              <h4 data-key="reportInvoiceCountLabel">মোট ইনভয়েস</h4>
+              <div class="value" id="ovInvoiceCount">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SALES SUB-TAB -->
+        <div id="report-sales" class="report-subtab" style="display:none;">
+          <div class="card" style="margin-bottom:15px;">
+            <div class="filter-grid no-print">
+              <div>
+                <label data-key="lblFromDate">From Date:</label>
+                <input type="date" id="rsFromDate" style="margin-bottom:0;">
+              </div>
+              <div>
+                <label data-key="lblToDate">To Date:</label>
+                <input type="date" id="rsToDate" style="margin-bottom:0;">
+              </div>
+              <div>
+                <label data-key="reportSearchLabel">Search (Invoice/Customer/Phone):</label>
+                <input type="text" id="rsSearchInput" style="margin-bottom:0;" placeholder="🔎">
+              </div>
+              <div style="display:flex; align-items:flex-end;">
+                <button onclick="runSalesReport()" class="btn-action btn-success" style="width:100%; height:38px;" data-key="btnRunReport">Run Report</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="table-responsive">
+              <table id="reportSalesTable">
+                <thead>
+                  <tr>
+                    <th data-key="thInvoice">ইনভয়েস</th>
+                    <th data-key="lblDate">তারিখ</th>
+                    <th data-key="thCustomer">কাস্টমার</th>
+                    <th data-key="thProduct">প্রোডাক্ট</th>
+                    <th data-key="thTotal">মোট টাকা</th>
+                    <th data-key="thStatus">স্ট্যাটাস</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- CUSTOMERS SUB-TAB -->
+        <div id="report-customers" class="report-subtab" style="display:none;">
+          <div class="card" style="margin-bottom:15px;">
+            <label data-key="reportSearchCustLabel">Search by Name, Invoice, or Contact Number:</label>
+            <input type="text" id="rcSearchInput" onkeyup="searchReportCustomers()" placeholder="🔎">
+          </div>
+          <div class="card">
+            <div class="table-responsive">
+              <table id="reportCustomersTable">
+                <thead>
+                  <tr>
+                    <th data-key="lblCustNameShort">কাস্টমারের নাম</th>
+                    <th data-key="lblMobileNumShort">মোবাইল নম্বর</th>
+                    <th data-key="totalPurchaseShort">মোট ক্রয়</th>
+                    <th data-key="currentDueShort">বর্তমান বাকি</th>
+                    <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRODUCTS SUB-TAB -->
+        <div id="report-products" class="report-subtab" style="display:none;">
+          <div class="card" style="margin-bottom:15px;">
+            <label data-key="reportSearchProdLabel">Search Product:</label>
+            <input type="text" id="rpSearchInput" onkeyup="runProductsReport()" placeholder="🔎">
+          </div>
+          <div class="card">
+            <div class="table-responsive">
+              <table id="reportProductsTable">
+                <thead>
+                  <tr>
+                    <th data-key="thProduct">প্রোডাক্ট</th>
+                    <th data-key="reportSoldQtyLabel">মোট বিক্রি</th>
+                    <th data-key="reportReturnedQtyLabel">মোট রিটার্ন</th>
+                    <th data-key="reportCurrentStockLabel">বর্তমান স্টক</th>
+                    <th data-key="reportSalesValueLabel">বিক্রয় মূল্য</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- USER MANAGEMENT TAB (Super User only) -->
       <div id="users-tab" class="tab-content">
         <div class="card admin-only" style="margin-bottom:15px;">
@@ -937,6 +1121,7 @@
     const SVG_VIEW = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`;
     const SVG_EDIT = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
     const SVG_DELETE = `<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
+    const SVG_RETURN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13a9 9 0 1 0 3-6.7L3 9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   </script>
 
   <!-- MODALS -->
@@ -1092,6 +1277,68 @@
     </div>
   </div>
 
+  <div id="returnModal" class="modal">
+    <div class="modal-content">
+      <h3 data-key="titleCreateReturn">↩️ পণ্য রিটার্ন এন্ট্রি</h3>
+      <input type="hidden" id="returnSaleId">
+
+      <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:14px; font-size:13.5px;">
+        <p><b data-key="thInvoice">ইনভয়েস</b>: <span id="retInfoInvoice">-</span></p>
+        <p><b data-key="thProduct">প্রোডাক্ট</b>: <span id="retInfoProduct">-</span></p>
+        <p><b data-key="thSoldQty">বিক্রিত পরিমাণ</b>: <span id="retInfoSold">-</span></p>
+        <p><b data-key="thAlreadyReturned">ইতিমধ্যে রিটার্ন</b>: <span id="retInfoReturned">-</span></p>
+        <p style="color:#16a34a;"><b data-key="thRemainingQty">বাকি আছে</b>: <span id="retInfoRemaining">-</span></p>
+      </div>
+
+      <label data-key="lblReturnUnit">রিটার্ন ইউনিট:</label>
+      <select id="returnUnitType" onchange="updateReturnPreview()">
+        <option value="Bag" data-key="optUnitBag">বস্তা</option>
+        <option value="Kg" data-key="optUnitKg">কেজি</option>
+      </select>
+
+      <label data-key="lblReturnQty">রিটার্ন পরিমাণ:</label>
+      <input type="number" id="returnQtyInput" min="0" step="0.01" oninput="updateReturnPreview()">
+
+      <label data-key="lblReturnReason">কারণ / মন্তব্য (ঐচ্ছিক):</label>
+      <input type="text" id="returnReasonInput" placeholder="যেমন: নষ্ট পণ্য, ভুল অর্ডার ইত্যাদি">
+
+      <div style="background:#fff7ed; border:1px solid #fed7aa; padding:12px; border-radius:8px; margin-bottom:14px; font-size:13.5px;">
+        <p><b data-key="lblRefundValuePreview">আনুমানিক রিফান্ড মূল্য</b>: <b id="retInfoRefundPreview" style="color:#d97706;">৳0.00</b></p>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button onclick="submitReturn()" class="btn-success" data-key="btnSubmitReturn">রিটার্ন সম্পন্ন করুন</button>
+        <button onclick="closeModal('returnModal')" class="btn-action" style="background:var(--paper); border:1px solid var(--border-cool);" data-key="btnCancelShort">বাতিল</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewReturnModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;" class="no-print">
+        <h3 data-key="titleReturnReceipt">↩️ রিটার্ন রিসিট</h3>
+        <button onclick="window.print()" class="btn-action btn-warning" data-key="btnPrintReturnReceipt">🖨️ প্রিন্ট রিসিট</button>
+      </div>
+      <div id="printableReturnReceipt" class="invoice-box"></div>
+      <div style="margin-top:15px; text-align:right;" class="no-print">
+        <button onclick="closeModal('viewReturnModal')" class="btn-danger" style="width:auto;" data-key="btnCloseShort">বন্ধ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewCustomerStatementModal" class="modal">
+    <div class="modal-content" style="width:800px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;" class="no-print">
+        <h3 data-key="titleCustomerStatement">🏦 কাস্টমার স্টেটমেন্ট</h3>
+        <button onclick="window.print()" class="btn-action btn-warning" data-key="btnPrintStatement">🖨️ প্রিন্ট স্টেটমেন্ট</button>
+      </div>
+      <div id="printableCustomerStatement" class="invoice-box"></div>
+      <div style="margin-top:15px; text-align:right;" class="no-print">
+        <button onclick="closeModal('viewCustomerStatementModal')" class="btn-danger" style="width:auto;" data-key="btnCloseShort">বন্ধ করুন</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let currentUserRole = "admin";
     let currentLang = "EN";
@@ -1130,6 +1377,65 @@
         btnConfirmDecline: "প্রত্যাখ্যান নিশ্চিত করুন",
         btnDeclineOrder: "প্রত্যাখ্যান করুন",
         alertDeclineNoteRequired: "প্রত্যাখ্যানের কারণ লিখা আবশ্যক!",
+        menuReturns: "রিটার্ন",
+        titleAllReturns: "↩️ সকল রিটার্নের তালিকা",
+        thReturnNo: "রিটার্ন নং",
+        thReturnQty: "রিটার্ন পরিমাণ",
+        thRefundValue: "রিফান্ড মূল্য",
+        thSoldQty: "বিক্রিত পরিমাণ",
+        thAlreadyReturned: "ইতিমধ্যে রিটার্ন",
+        thRemainingQty: "বাকি আছে",
+        titleCreateReturn: "↩️ পণ্য রিটার্ন এন্ট্রি",
+        lblReturnUnit: "রিটার্ন ইউনিট:",
+        lblReturnQty: "রিটার্ন পরিমাণ:",
+        lblReturnReason: "কারণ / মন্তব্য (ঐচ্ছিক):",
+        lblRefundValuePreview: "আনুমানিক রিফান্ড মূল্য",
+        btnSubmitReturn: "রিটার্ন সম্পন্ন করুন",
+        alertFullyReturnedAlready: "এই পণ্যের সম্পূর্ণ পরিমাণ ইতিমধ্যে রিটার্ন হয়ে গেছে!",
+        alertEnterValidReturnQty: "সঠিক রিটার্ন পরিমাণ লিখুন!",
+        alertReturnExceedsRemaining: "রিটার্ন পরিমাণ বিক্রিত/অবশিষ্ট পরিমাণের চেয়ে বেশি হতে পারবে না!",
+        alertReturnSaved: "✅ রিটার্ন সফলভাবে সংরক্ষিত হয়েছে! (রিটার্ন নং: {no})",
+        confirmReverseReturn: "এই রিটার্নটি বাতিল (reverse) করতে চান? স্টক এবং কাস্টমারের বকেয়া পূর্বাবস্থায় ফিরে যাবে।",
+        alertReturnReversed: "রিটার্নটি বাতিল (reverse) করা হয়েছে।",
+        statusReversed: "বাতিলকৃত",
+        statusActive: "সক্রিয়",
+        titleReverseReturn: "রিটার্ন বাতিল করুন",
+        unitTonLabel: "টন",
+        returnedIndicatorLabel: "রিটার্ন হয়েছে",
+        lblTotalReturns: "মোট রিটার্ন",
+        menuReports: "রিপোর্টস",
+        titleReports: "📊 রিপোর্টস",
+        reportTabOverview: "ওভারভিউ",
+        reportTabSales: "বিক্রয়",
+        reportTabCustomers: "কাস্টমার",
+        reportTabProducts: "প্রোডাক্ট",
+        lblFromDate: "শুরুর তারিখ:",
+        lblToDate: "শেষের তারিখ:",
+        btnRunReport: "রিপোর্ট দেখুন",
+        reportInvoiceCountLabel: "মোট ইনভয়েস",
+        reportSearchLabel: "খুঁজুন (ইনভয়েস/কাস্টমার/ফোন):",
+        reportSearchCustLabel: "নাম, ইনভয়েস, বা মোবাইল নম্বর দিয়ে খুঁজুন:",
+        reportSearchProdLabel: "প্রোডাক্ট খুঁজুন:",
+        reportSoldQtyLabel: "মোট বিক্রি",
+        reportReturnedQtyLabel: "মোট রিটার্ন",
+        reportCurrentStockLabel: "বর্তমান স্টক",
+        reportSalesValueLabel: "বিক্রয় মূল্য",
+        titleViewStatement: "স্টেটমেন্ট দেখুন",
+        titleReturnReceipt: "↩️ রিটার্ন রিসিট",
+        btnPrintReturnReceipt: "🖨️ প্রিন্ট রিসিট",
+        titleCustomerStatement: "🏦 কাস্টমার স্টেটমেন্ট",
+        btnPrintStatement: "🖨️ প্রিন্ট স্টেটমেন্ট",
+        statementSaleLabel: "বিক্রয়",
+        statementPaymentLabel: "পেমেন্ট গ্রহণ",
+        statementReturnLabel: "রিটার্ন",
+        statementRefLabel: "রেফারেন্স",
+        statementDescriptionLabel: "বিবরণ",
+        statementDebitLabel: "ডেবিট",
+        statementCreditLabel: "ক্রেডিট",
+        statementBalanceLabel: "ব্যালেন্স",
+        statementTotalDebitLabel: "সর্বমোট ডেবিট",
+        statementTotalCreditLabel: "সর্বমোট ক্রেডিট",
+        statementCreditBalanceLabel: "কাস্টমারের পাওনা (Credit Balance)",
         approvalPendingNote: "অনুমোদনের অপেক্ষায়",
         titlePrintView: "প্রিন্ট / দেখুন",
         titleEdit: "সম্পাদনা",
@@ -1391,6 +1697,65 @@
         btnConfirmDecline: "Confirm Decline",
         btnDeclineOrder: "Decline",
         alertDeclineNoteRequired: "A decline reason is required!",
+        menuReturns: "Returns",
+        titleAllReturns: "↩️ All Returns",
+        thReturnNo: "Return No",
+        thReturnQty: "Return Qty",
+        thRefundValue: "Refund Value",
+        thSoldQty: "Sold Qty",
+        thAlreadyReturned: "Already Returned",
+        thRemainingQty: "Remaining",
+        titleCreateReturn: "↩️ Product Return Entry",
+        lblReturnUnit: "Return Unit:",
+        lblReturnQty: "Return Quantity:",
+        lblReturnReason: "Reason / Note (optional):",
+        lblRefundValuePreview: "Estimated Refund Value",
+        btnSubmitReturn: "Submit Return",
+        alertFullyReturnedAlready: "The full sold quantity of this product has already been returned!",
+        alertEnterValidReturnQty: "Please enter a valid return quantity!",
+        alertReturnExceedsRemaining: "Return quantity cannot exceed the sold/remaining quantity!",
+        alertReturnSaved: "✅ Return saved successfully! (Return No: {no})",
+        confirmReverseReturn: "Reverse this return? Stock and the customer's due will be restored to their prior state.",
+        alertReturnReversed: "The return has been reversed.",
+        statusReversed: "Reversed",
+        statusActive: "Active",
+        titleReverseReturn: "Reverse Return",
+        unitTonLabel: "Ton",
+        returnedIndicatorLabel: "Returned",
+        lblTotalReturns: "Total Returns",
+        menuReports: "Reports",
+        titleReports: "📊 Reports",
+        reportTabOverview: "Overview",
+        reportTabSales: "Sales",
+        reportTabCustomers: "Customers",
+        reportTabProducts: "Products",
+        lblFromDate: "From Date:",
+        lblToDate: "To Date:",
+        btnRunReport: "Run Report",
+        reportInvoiceCountLabel: "Total Invoices",
+        reportSearchLabel: "Search (Invoice/Customer/Phone):",
+        reportSearchCustLabel: "Search by Name, Invoice, or Contact Number:",
+        reportSearchProdLabel: "Search Product:",
+        reportSoldQtyLabel: "Total Sold",
+        reportReturnedQtyLabel: "Total Returned",
+        reportCurrentStockLabel: "Current Stock",
+        reportSalesValueLabel: "Sales Value",
+        titleViewStatement: "View Statement",
+        titleReturnReceipt: "↩️ Return Receipt",
+        btnPrintReturnReceipt: "🖨️ Print Receipt",
+        titleCustomerStatement: "🏦 Customer Statement",
+        btnPrintStatement: "🖨️ Print Statement",
+        statementSaleLabel: "Sale",
+        statementPaymentLabel: "Payment Received",
+        statementReturnLabel: "Return",
+        statementRefLabel: "Reference",
+        statementDescriptionLabel: "Description",
+        statementDebitLabel: "Debit",
+        statementCreditLabel: "Credit",
+        statementBalanceLabel: "Balance",
+        statementTotalDebitLabel: "Total Debit",
+        statementTotalCreditLabel: "Total Credit",
+        statementCreditBalanceLabel: "Credit Balance (Owed to Customer)",
         approvalPendingNote: "Approval Pending",
         titlePrintView: "Print / View Invoice",
         titleEdit: "Edit",
@@ -1666,6 +2031,8 @@
       { id: 202, type: 'Kharoch', method: 'Mobile Banking', amount: 300, note: 'দোকান চা খরচ', date: "2026-08-05", status: 'Approved', createdBy: 'admin' }
     ];
 
+    let salesReturns = JSON.parse(localStorage.getItem('pos_returns')) || [];
+
     // ---------- FIREBASE CLOUD SYNC ----------
     const FIRESTORE_COLLECTION = 'pos_data';
     const FIRESTORE_DOC_ID = 'main';
@@ -1696,7 +2063,7 @@
         if (!window.firestoreDB) return;
         let docRef = window.firestoreDoc(window.firestoreDB, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
         await window.firestoreSetDoc(docRef, {
-          shopConfig, customers, products, salesHistory, accountTransactions, categories,
+          shopConfig, customers, products, salesHistory, accountTransactions, categories, salesReturns,
           updatedAt: new Date().toISOString()
         });
       } catch (err) {
@@ -1711,6 +2078,7 @@
       salesHistory = cloud.salesHistory || salesHistory;
       accountTransactions = cloud.accountTransactions || accountTransactions;
       categories = cloud.categories || categories;
+      salesReturns = cloud.salesReturns || salesReturns;
 
       localStorage.setItem('pos_shop_info', JSON.stringify(shopConfig));
       localStorage.setItem('pos_customers', JSON.stringify(customers));
@@ -1718,6 +2086,7 @@
       localStorage.setItem('pos_sales', JSON.stringify(salesHistory));
       localStorage.setItem('pos_accounts', JSON.stringify(accountTransactions));
       localStorage.setItem('pos_categories', JSON.stringify(categories));
+      localStorage.setItem('pos_returns', JSON.stringify(salesReturns));
     }
 
     function openTab(tabId, btn) {
@@ -1732,9 +2101,131 @@
         if(activeBtn) activeBtn.classList.add('active');
       }
 
+      if (tabId === 'reports-tab') {
+        openReportSubTab('overview');
+      }
+
       if (window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('active')) {
         toggleSidebar();
       }
+    }
+
+    // ================= REPORTS =================
+    function openReportSubTab(name) {
+      document.querySelectorAll('.report-subtab').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('#reportSubTabSwitch button').forEach(b => b.classList.remove('active'));
+
+      document.getElementById('report-' + name).style.display = 'block';
+      let btn = document.querySelector(`#reportSubTabSwitch button[data-report-tab="${name}"]`);
+      if (btn) btn.classList.add('active');
+
+      if (name === 'overview') runOverviewReport();
+      if (name === 'sales') runSalesReport();
+      if (name === 'customers') searchReportCustomers();
+      if (name === 'products') runProductsReport();
+    }
+
+    function runOverviewReport() {
+      let fromDate = document.getElementById('ovFromDate').value;
+      let toDate = document.getElementById('ovToDate').value;
+
+      let inRange = (date) => (!fromDate || date >= fromDate) && (!toDate || date <= toDate);
+
+      let salesInRange = salesHistory.filter(s => s.status === 'Approved' && inRange(s.date));
+      let returnsInRange = salesReturns.filter(r => !r.reversed && inRange(r.date));
+      let accInRange = accountTransactions.filter(a => a.status === 'Approved' && inRange(a.date));
+
+      let totalSales = salesInRange.reduce((sum, s) => sum + s.total, 0);
+      let totalDue = salesInRange.reduce((sum, s) => sum + s.due, 0);
+      let totalReturns = returnsInRange.reduce((sum, r) => sum + r.refundValue, 0);
+      let totalPaid = salesInRange.reduce((sum, s) => sum + s.paid, 0);
+      let totalExpense = accInRange.filter(a => a.type === 'Kharoch' || a.type === 'Kroy').reduce((sum, a) => sum + a.amount, 0);
+
+      document.getElementById('ovTotalSales').innerHTML = '<span class="currency-symbol">৳</span>' + totalSales.toFixed(2);
+      document.getElementById('ovTotalDue').innerHTML = '<span class="currency-symbol">৳</span>' + totalDue.toFixed(2);
+      document.getElementById('ovTotalReturns').innerHTML = '<span class="currency-symbol">৳</span>' + totalReturns.toFixed(2);
+      document.getElementById('ovTotalPaid').innerHTML = '<span class="currency-symbol">৳</span>' + totalPaid.toFixed(2);
+      document.getElementById('ovTotalExpense').innerHTML = '<span class="currency-symbol">৳</span>' + totalExpense.toFixed(2);
+      document.getElementById('ovInvoiceCount').innerText = salesInRange.length;
+    }
+
+    function runSalesReport() {
+      let fromDate = document.getElementById('rsFromDate').value;
+      let toDate = document.getElementById('rsToDate').value;
+      let q = document.getElementById('rsSearchInput').value.toLowerCase().trim();
+
+      let filtered = salesHistory.filter(s => {
+        let inRange = (!fromDate || s.date >= fromDate) && (!toDate || s.date <= toDate);
+        let matchesSearch = !q ||
+          s.invNo.toLowerCase().includes(q) ||
+          s.custName.toLowerCase().includes(q) ||
+          (customers.find(c => c.id == s.custId)?.phone || '').toLowerCase().includes(q);
+        return inRange && matchesSearch;
+      });
+
+      let tbody = document.querySelector('#reportSalesTable tbody');
+      tbody.innerHTML = filtered.length ? filtered.map(s => `
+        <tr>
+          <td><b>#${s.invNo}</b></td>
+          <td>${s.date}</td>
+          <td>${s.custName}</td>
+          <td>${s.prodName}</td>
+          <td><b><span class="currency-symbol">৳</span>${s.total.toFixed(2)}</b></td>
+          <td>${accStatusBadge(s.status)}</td>
+        </tr>
+      `).join('') : `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+    }
+
+    function searchReportCustomers() {
+      let q = document.getElementById('rcSearchInput').value.toLowerCase().trim();
+
+      let filtered = customers.filter(c => {
+        if (!q) return true;
+        let matchesBasic = c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q);
+        let matchesInvoice = salesHistory.some(s => s.custId == c.id && s.invNo.toLowerCase().includes(q));
+        return matchesBasic || matchesInvoice;
+      });
+
+      let tbody = document.querySelector('#reportCustomersTable tbody');
+      tbody.innerHTML = filtered.length ? filtered.map(c => {
+        let cSales = salesHistory.filter(s => s.custId == c.id && s.status === 'Approved');
+        let totalPur = cSales.reduce((sum, s) => sum + s.total, 0);
+        let totalDue = cSales.reduce((sum, s) => sum + s.due, 0);
+        return `
+          <tr>
+            <td><b>${c.name}</b></td>
+            <td>${c.phone}</td>
+            <td><span class="currency-symbol">৳</span>${totalPur.toFixed(2)}</td>
+            <td style="color:${totalDue > 0 ? '#dc2626' : '#16a34a'};"><b><span class="currency-symbol">৳</span>${totalDue.toFixed(2)}</b></td>
+            <td style="text-align:center;">
+              <button onclick="showCustomerStatement(${c.id})" class="btn-icon-action btn-view" title="${t('titleViewStatement')}">${SVG_VIEW}</button>
+            </td>
+          </tr>
+        `;
+      }).join('') : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+    }
+
+    function runProductsReport() {
+      let q = document.getElementById('rpSearchInput').value.toLowerCase().trim();
+      let filtered = products.filter(p => !q || p.name.toLowerCase().includes(q));
+
+      let tbody = document.querySelector('#reportProductsTable tbody');
+      tbody.innerHTML = filtered.length ? filtered.map(p => {
+        let pSales = salesHistory.filter(s => s.prodId == p.id && s.status === 'Approved');
+        let soldKg = pSales.reduce((sum, s) => sum + getSaleQtyKg(s, p), 0);
+        let salesValue = pSales.reduce((sum, s) => sum + s.total, 0);
+        let returnedKg = salesReturns.filter(r => r.prodId == p.id && !r.reversed).reduce((sum, r) => sum + r.qtyKg, 0);
+
+        return `
+          <tr>
+            <td><b>${p.name}</b></td>
+            <td>${formatQtyKg(soldKg, p.bagKg)}</td>
+            <td style="color:#d97706;">${formatQtyKg(returnedKg, p.bagKg)}</td>
+            <td>${p.stock.toFixed(2)} ${t('unitBagLabel')}</td>
+            <td><b><span class="currency-symbol">৳</span>${salesValue.toFixed(2)}</b></td>
+          </tr>
+        `;
+      }).join('') : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
     }
 
     function setUserRole(role) {
@@ -1768,6 +2259,7 @@
       renderLedger();
       renderAccounts();
       renderMyVouchers();
+      renderReturns();
     }
 
     function setLanguage(lang) {
@@ -1801,6 +2293,7 @@
       renderLedger();
       renderAccounts();
       renderMyVouchers();
+      renderReturns();
       renderUsersTable();
 
       // Reset in-progress form button/title states to the new language's defaults
@@ -2067,7 +2560,7 @@
     }
 
     function exportSystemData() {
-      let backupData = { shopConfig, customers, products, salesHistory, accountTransactions, categories };
+      let backupData = { shopConfig, customers, products, salesHistory, accountTransactions, categories, salesReturns };
       let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
       let dlAnchorElem = document.createElement('a');
       dlAnchorElem.setAttribute("href", dataStr);
@@ -2090,6 +2583,7 @@
             localStorage.setItem('pos_sales', JSON.stringify(data.salesHistory));
             localStorage.setItem('pos_accounts', JSON.stringify(data.accountTransactions || []));
             localStorage.setItem('pos_categories', JSON.stringify(data.categories || categories));
+            localStorage.setItem('pos_returns', JSON.stringify(data.salesReturns || []));
 
             alert(t("alertDataRestored"));
             location.reload();
@@ -2116,10 +2610,12 @@
       let totalSalesAmt = approvedSales.reduce((sum, s) => sum + s.total, 0);
       let totalDueAmt = approvedSales.reduce((sum, s) => sum + s.due, 0);
       let totalStockBags = products.reduce((sum, p) => sum + p.stock, 0);
+      let totalReturnsAmt = salesReturns.filter(r => !r.reversed).reduce((sum, r) => sum + r.refundValue, 0);
 
       document.getElementById('dashTotalSales').innerHTML = '<span class="currency-symbol">৳</span>' + totalSalesAmt.toFixed(2);
       document.getElementById('dashTotalDue').innerHTML = '<span class="currency-symbol">৳</span>' + totalDueAmt.toFixed(2);
       document.getElementById('dashTotalStock').innerText = totalStockBags.toFixed(1);
+      document.getElementById('dashTotalReturns').innerHTML = '<span class="currency-symbol">৳</span>' + totalReturnsAmt.toFixed(2);
 
       let tbody = document.querySelector('#dashSalesTable tbody');
       tbody.innerHTML = '';
@@ -2239,10 +2735,22 @@
           ? `<div style="font-size:11px; color:#dc2626; margin-top:2px;">${t('declineReasonLabel')}: ${s.declineNote}</div>`
           : '';
 
+        let prod = products.find(p => p.id == s.prodId);
+        let returnedKg = isApproved ? getReturnedQtyKg(s.id) : 0;
+        let remainingKg = isApproved ? getRemainingQtyKg(s, prod) : 0;
+        let returnedNoteHtml = (returnedKg > 0)
+          ? `<div style="font-size:11px; color:#d97706; margin-top:2px;">${t('returnedIndicatorLabel')}: ${formatQtyKg(returnedKg, (prod && prod.bagKg) || 50)}</div>`
+          : '';
+
+        let returnBtn = (isApproved && currentUserRole === 'admin' && remainingKg > 0.0001)
+          ? `<button onclick="openReturnModal(${s.id})" class="btn-icon-action" style="color:#d97706;" title="${t('titleCreateReturn')}">${SVG_RETURN}</button>`
+          : '';
+
         let actionsHtml = `
           <div style="text-align:center;">
             ${isApproved ? `
               <button onclick="viewSale(${s.id})" class="btn-icon-action btn-view" title="${t('titlePrintView')}">${SVG_VIEW}</button>
+              ${returnBtn}
             ` : `<span style="font-size:12px; color:#94a3b8;">${s.status === 'Declined' ? '' : t('approvalPendingNote')}</span>`}
             ${currentUserRole === 'admin' ? `
               <button onclick="editSale(${s.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
@@ -2258,7 +2766,7 @@
             <td>${s.prodName}</td>
             <td>${s.qty} ${unitLabel(s.unitType)}</td>
             <td><b><span class="currency-symbol">৳</span>${s.total.toFixed(2)}</b></td>
-            <td>${statusBadge}${declineNoteHtml}</td>
+            <td>${statusBadge}${declineNoteHtml}${returnedNoteHtml}</td>
             <td>${actionsHtml}</td>
           </tr>
         `;
@@ -2548,6 +3056,285 @@
       document.getElementById('viewSaleModal').style.display = 'flex';
     }
 
+    // ================= SALES RETURNS =================
+
+    function getSaleQtyKg(sale, prod) {
+      let bagKg = (prod && prod.bagKg) || 50;
+      return sale.unitType === 'Kg' ? sale.qty : sale.qty * bagKg;
+    }
+
+    function getReturnedQtyKg(saleId) {
+      return salesReturns
+        .filter(r => r.saleId == saleId && !r.reversed)
+        .reduce((sum, r) => sum + r.qtyKg, 0);
+    }
+
+    function getRemainingQtyKg(sale, prod) {
+      return getSaleQtyKg(sale, prod) - getReturnedQtyKg(sale.id);
+    }
+
+    // Formats a kg quantity as "X বস্তা (Y কেজি)", adding a Ton figure too
+    // once the amount is large enough for that to be a useful reference.
+    function formatQtyKg(qtyKg, bagKg) {
+      bagKg = bagKg || 50;
+      let bags = qtyKg / bagKg;
+      let text = `${bags.toFixed(2)} ${t('unitBagLabel')} (${qtyKg.toFixed(2)} ${t('unitKgLabel')}`;
+      if (qtyKg >= 1000) {
+        text += `, ${(qtyKg / 1000).toFixed(3)} ${t('unitTonLabel')}`;
+      }
+      text += ')';
+      return text;
+    }
+
+    function openReturnModal(saleId) {
+      let sale = salesHistory.find(s => s.id == saleId);
+      if (!sale) return;
+      if (sale.status !== 'Approved') return alert(t("alertOrderNotApprovedYet"));
+
+      let prod = products.find(p => p.id == sale.prodId);
+      let bagKg = (prod && prod.bagKg) || 50;
+      let soldKg = getSaleQtyKg(sale, prod);
+      let returnedKg = getReturnedQtyKg(sale.id);
+      let remainingKg = soldKg - returnedKg;
+
+      if (remainingKg <= 0.0001) {
+        return alert(t("alertFullyReturnedAlready"));
+      }
+
+      document.getElementById('returnSaleId').value = sale.id;
+      document.getElementById('retInfoInvoice').innerText = '#' + sale.invNo;
+      document.getElementById('retInfoProduct').innerText = sale.prodName;
+      document.getElementById('retInfoSold').innerText = formatQtyKg(soldKg, bagKg);
+      document.getElementById('retInfoReturned').innerText = formatQtyKg(returnedKg, bagKg);
+      document.getElementById('retInfoRemaining').innerText = formatQtyKg(remainingKg, bagKg);
+
+      document.getElementById('returnUnitType').value = sale.unitType || 'Bag';
+      document.getElementById('returnQtyInput').value = '';
+      document.getElementById('returnReasonInput').value = '';
+      document.getElementById('retInfoRefundPreview').innerHTML = '<span class="currency-symbol">৳</span>0.00';
+
+      document.getElementById('returnModal').style.display = 'flex';
+    }
+
+    function updateReturnPreview() {
+      let saleId = document.getElementById('returnSaleId').value;
+      let sale = salesHistory.find(s => s.id == saleId);
+      if (!sale) return;
+
+      let prod = products.find(p => p.id == sale.prodId);
+      let bagKg = (prod && prod.bagKg) || 50;
+      let returnUnit = document.getElementById('returnUnitType').value;
+      let qty = parseFloat(document.getElementById('returnQtyInput').value) || 0;
+
+      let qtyKg = returnUnit === 'Kg' ? qty : qty * bagKg;
+      let pricePerKg = sale.unitType === 'Kg' ? sale.unitPrice : (sale.unitPrice / bagKg);
+      let refundValue = qtyKg * pricePerKg;
+
+      document.getElementById('retInfoRefundPreview').innerHTML = '<span class="currency-symbol">৳</span>' + refundValue.toFixed(2);
+    }
+
+    function submitReturn() {
+      let saleId = document.getElementById('returnSaleId').value;
+      let sale = salesHistory.find(s => s.id == saleId);
+      if (!sale) return;
+
+      let prod = products.find(p => p.id == sale.prodId);
+      let bagKg = (prod && prod.bagKg) || 50;
+
+      let returnUnit = document.getElementById('returnUnitType').value;
+      let qty = parseFloat(document.getElementById('returnQtyInput').value);
+      let reason = document.getElementById('returnReasonInput').value.trim();
+
+      if (!qty || qty <= 0) return alert(t("alertEnterValidReturnQty"));
+
+      let qtyKg = returnUnit === 'Kg' ? qty : qty * bagKg;
+      let remainingKg = getRemainingQtyKg(sale, prod);
+
+      if (qtyKg > remainingKg + 0.0001) {
+        return alert(t("alertReturnExceedsRemaining"));
+      }
+
+      let pricePerKg = sale.unitType === 'Kg' ? sale.unitPrice : (sale.unitPrice / bagKg);
+      let refundValue = qtyKg * pricePerKg;
+
+      // Apply the financial impact: reduce the sale's net total, recompute
+      // due from scratch (never negative), and separately track any excess
+      // already-paid amount as a refund owed back to the customer.
+      sale.total -= refundValue;
+      sale.due = Math.max(0, sale.total - sale.paid);
+      sale.refundOwed = Math.max(0, sale.paid - sale.total);
+
+      // Return the stock
+      if (prod) prod.stock += (qtyKg / bagKg);
+
+      let returnNo = "RET-" + Math.floor(1000 + Math.random() * 9000);
+      let newReturnId = Date.now();
+      salesReturns.unshift({
+        id: newReturnId,
+        returnNo,
+        saleId: sale.id,
+        invNo: sale.invNo,
+        prodId: sale.prodId,
+        prodName: sale.prodName,
+        unitType: returnUnit,
+        qty,
+        qtyKg,
+        refundValue,
+        reason,
+        date: new Date().toISOString().split('T')[0],
+        createdBy: currentUserRole,
+        createdByName: document.getElementById('headerUserName') ? document.getElementById('headerUserName').innerText : currentUserRole,
+        reversed: false
+      });
+
+      saveData();
+      renderSales();
+      renderReturns();
+      renderDashboard();
+      renderLedger();
+      renderProducts();
+      closeModal('returnModal');
+      viewReturnReceipt(newReturnId);
+    }
+
+    function viewReturnReceipt(id) {
+      let ret = salesReturns.find(r => r.id == id);
+      if (!ret) return;
+
+      let sale = salesHistory.find(s => s.id == ret.saleId);
+      let cust = sale ? (customers.find(c => c.id == sale.custId) || { name: sale.custName, phone: t('naLabel') }) : { name: t('naLabel'), phone: t('naLabel') };
+      let qtyDisplay = ret.unitType === 'Kg' ? `${ret.qty} ${t('unitKgLabel')}` : `${ret.qty} ${t('unitBagLabel')}`;
+
+      let html = `
+        <div class="invoice-header">
+          ${shopConfig.logoImage ? `<img class="invoice-logo" src="${shopConfig.logoImage}">` : ''}
+          <h2>${shopConfig.name}</h2>
+          <p>${shopConfig.tagline}</p>
+          <p style="font-size:12px; color:#64748b;">${t('lblDate')}: ${ret.date} | ${t('thReturnNo')}: <b>${ret.returnNo}</b></p>
+        </div>
+
+        <div style="margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px;">
+          <h4>${t('custDetailsHeading')}</h4>
+          <p><strong>${t('lblNameShort')}:</strong> ${cust.name}</p>
+          <p><strong>${t('lblMobileShort')}:</strong> ${cust.phone}</p>
+          <p><strong>${t('thInvoice')}:</strong> #${ret.invNo}</p>
+        </div>
+
+        <div class="table-responsive">
+          <table style="margin-bottom: 15px;">
+            <thead>
+              <tr>
+                <th>${t('thProduct')}</th>
+                <th>${t('thReturnQty')}</th>
+                <th>${t('thRefundValue')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${ret.prodName}</td>
+                <td>${qtyDisplay}</td>
+                <td><b><span class="currency-symbol">৳</span>${ret.refundValue.toFixed(2)}</b></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        ${ret.reason ? `
+          <div style="background:#e2e8f0; padding: 12px; border-radius:6px; margin-bottom: 15px;">
+            <p><strong>${t('lblReturnReason')}</strong> ${ret.reason}</p>
+          </div>
+        ` : ''}
+
+        <p style="text-align:center; font-size:11px; color:#94a3b8; margin-top:20px;">${t('voucherFooterNote')}</p>
+      `;
+
+      document.getElementById('printableReturnReceipt').innerHTML = html;
+      document.getElementById('viewReturnModal').style.display = 'flex';
+    }
+
+    function reverseReturn(id) {
+      if (currentUserRole !== 'admin') return;
+      let ret = salesReturns.find(r => r.id == id);
+      if (!ret || ret.reversed) return;
+      if (!confirm(t("confirmReverseReturn"))) return;
+
+      let sale = salesHistory.find(s => s.id == ret.saleId);
+      let prod = sale ? products.find(p => p.id == sale.prodId) : null;
+      let bagKg = (prod && prod.bagKg) || 50;
+
+      ret.reversed = true;
+
+      if (sale) {
+        sale.total += ret.refundValue;
+        sale.due = Math.max(0, sale.total - sale.paid);
+        sale.refundOwed = Math.max(0, sale.paid - sale.total);
+      }
+      if (prod) prod.stock -= (ret.qtyKg / bagKg);
+
+      saveData();
+      renderSales();
+      renderReturns();
+      renderDashboard();
+      renderLedger();
+      renderProducts();
+      alert(t("alertReturnReversed"));
+    }
+
+    function renderReturns(list = salesReturns) {
+      let tbody = document.querySelector('#returnsTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+        return;
+      }
+
+      list.forEach(ret => {
+        let prod = products.find(p => p.id == ret.prodId);
+        let bagKg = (prod && prod.bagKg) || 50;
+        let qtyDisplay = ret.unitType === 'Kg'
+          ? `${ret.qty} ${t('unitKgLabel')}`
+          : `${ret.qty} ${t('unitBagLabel')}`;
+
+        let statusBadge = ret.reversed
+          ? `<span class="badge badge-alert">${t('statusReversed')}</span>`
+          : `<span class="badge badge-ok">${t('statusActive')}</span>`;
+
+        let actionBtn = `
+          <div style="text-align:center;">
+            <button onclick="viewReturnReceipt(${ret.id})" class="btn-icon-action btn-view" title="${t('titlePrintView')}">${SVG_VIEW}</button>
+            ${(currentUserRole === 'admin' && !ret.reversed) ? `<button onclick="reverseReturn(${ret.id})" class="btn-icon-action btn-delete" title="${t('titleReverseReturn')}">${SVG_DELETE}</button>` : ''}
+          </div>
+        `;
+
+        let reasonHtml = ret.reason ? `<div style="font-size:11px; color:#64748b; margin-top:2px;">${ret.reason}</div>` : '';
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>${ret.returnNo}</b></td>
+            <td>#${ret.invNo}</td>
+            <td>${ret.prodName}</td>
+            <td>${qtyDisplay}${reasonHtml}</td>
+            <td><b><span class="currency-symbol">৳</span>${ret.refundValue.toFixed(2)}</b></td>
+            <td>${ret.date}</td>
+            <td>${statusBadge}</td>
+            <td style="text-align:center;">${actionBtn}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function searchReturns() {
+      let q = document.getElementById('returnsSearchInput').value.toLowerCase().trim();
+      let filtered = salesReturns.filter(r =>
+        r.returnNo.toLowerCase().includes(q) ||
+        r.invNo.toLowerCase().includes(q) ||
+        r.prodName.toLowerCase().includes(q)
+      );
+      renderReturns(filtered);
+    }
+
     function renderProducts() {
       renderProductsList(products);
     }
@@ -2695,10 +3482,11 @@
       list.forEach(c => {
         let actionsHtml = `
           <div style="text-align:center;">
+            <button onclick="showCustomerStatement(${c.id})" class="btn-icon-action btn-view" title="${t('titleViewStatement')}">${SVG_VIEW}</button>
             ${currentUserRole === 'admin' ? `
               <button onclick="editCustomer(${c.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
               <button onclick="deleteCustomer(${c.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
-            ` : `<span style="font-size:12px; color:#94a3b8;">${t('noActionsLabel')}</span>`}
+            ` : ''}
           </div>
         `;
 
@@ -2712,6 +3500,131 @@
           </tr>
         `;
       });
+    }
+
+    // Builds a chronological, bank-statement-style list of every event
+    // affecting a customer's balance: each sale (debit), the payment taken
+    // at the time of that sale (credit), and any approved returns against
+    // that sale (credit) — with a running balance carried through.
+    function getCustomerStatementLines(custId) {
+      let lines = [];
+      let custSales = salesHistory.filter(s => s.custId == custId && s.status === 'Approved');
+
+      custSales.forEach(sale => {
+        let saleReturns = salesReturns.filter(r => r.saleId == sale.id && !r.reversed);
+        let returnedValue = saleReturns.reduce((sum, r) => sum + r.refundValue, 0);
+        let originalTotal = sale.total + returnedValue;
+
+        lines.push({
+          date: sale.date,
+          ref: sale.invNo,
+          description: `${t('statementSaleLabel')} - ${sale.prodName}`,
+          debit: originalTotal,
+          credit: 0
+        });
+
+        if (sale.paid > 0) {
+          lines.push({
+            date: sale.date,
+            ref: sale.invNo,
+            description: t('statementPaymentLabel'),
+            debit: 0,
+            credit: sale.paid
+          });
+        }
+
+        saleReturns.forEach(ret => {
+          lines.push({
+            date: ret.date,
+            ref: ret.returnNo,
+            description: `${t('statementReturnLabel')} - ${ret.prodName}`,
+            debit: 0,
+            credit: ret.refundValue
+          });
+        });
+      });
+
+      lines.sort((a, b) => a.date.localeCompare(b.date));
+
+      let balance = 0;
+      lines.forEach(line => {
+        balance += line.debit - line.credit;
+        line.balance = balance;
+      });
+
+      return lines;
+    }
+
+    function showCustomerStatement(custId) {
+      let cust = customers.find(c => c.id == custId);
+      if (!cust) return;
+
+      let lines = getCustomerStatementLines(custId);
+      let finalBalance = lines.length ? lines[lines.length - 1].balance : 0;
+      let totalDebit = lines.reduce((sum, l) => sum + l.debit, 0);
+      let totalCredit = lines.reduce((sum, l) => sum + l.credit, 0);
+
+      let rowsHtml = lines.length ? lines.map(l => `
+        <tr>
+          <td>${l.date}</td>
+          <td>${l.ref}</td>
+          <td>${l.description}</td>
+          <td style="text-align:right; color:#dc2626;">${l.debit > 0 ? `<span class="currency-symbol">৳</span>${l.debit.toFixed(2)}` : '-'}</td>
+          <td style="text-align:right; color:#16a34a;">${l.credit > 0 ? `<span class="currency-symbol">৳</span>${l.credit.toFixed(2)}` : '-'}</td>
+          <td style="text-align:right;"><b><span class="currency-symbol">৳</span>${l.balance.toFixed(2)}</b></td>
+        </tr>
+      `).join('') : `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+
+      let html = `
+        <div class="invoice-header">
+          ${shopConfig.logoImage ? `<img class="invoice-logo" src="${shopConfig.logoImage}">` : ''}
+          <h2>${shopConfig.name}</h2>
+          <p>${shopConfig.tagline}</p>
+          <p style="font-size:12px; color:#64748b;">${t('titleCustomerStatement')}</p>
+        </div>
+
+        <div style="margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px;">
+          <p><strong>${t('lblNameShort')}:</strong> ${cust.name}</p>
+          <p><strong>${t('lblMobileShort')}:</strong> ${cust.phone}</p>
+          <p><strong>${t('thAddress')}:</strong> ${cust.address}</p>
+        </div>
+
+        <div class="table-responsive">
+          <table style="margin-bottom: 15px;">
+            <thead>
+              <tr>
+                <th>${t('lblDate')}</th>
+                <th>${t('statementRefLabel')}</th>
+                <th>${t('statementDescriptionLabel')}</th>
+                <th style="text-align:right;">${t('statementDebitLabel')}</th>
+                <th style="text-align:right;">${t('statementCreditLabel')}</th>
+                <th style="text-align:right;">${t('statementBalanceLabel')}</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+
+        <div style="background:#e2e8f0; padding: 12px; border-radius:6px;">
+          <table style="font-size:13px;">
+            <tr>
+              <td>${t('statementTotalDebitLabel')}:</td>
+              <td style="text-align:right; color:#dc2626;"><b><span class="currency-symbol">৳</span>${totalDebit.toFixed(2)}</b></td>
+            </tr>
+            <tr>
+              <td>${t('statementTotalCreditLabel')}:</td>
+              <td style="text-align:right; color:#16a34a;"><b><span class="currency-symbol">৳</span>${totalCredit.toFixed(2)}</b></td>
+            </tr>
+            <tr>
+              <td style="font-size:15px;">${finalBalance >= 0 ? t('currentDueShort') : t('statementCreditBalanceLabel')}:</td>
+              <td style="text-align:right; font-size:16px; color:${finalBalance >= 0 ? '#dc2626' : '#16a34a'};"><b><span class="currency-symbol">৳</span>${Math.abs(finalBalance).toFixed(2)}</b></td>
+            </tr>
+          </table>
+        </div>
+      `;
+
+      document.getElementById('printableCustomerStatement').innerHTML = html;
+      document.getElementById('viewCustomerStatementModal').style.display = 'flex';
     }
 
     function editCustomer(id) {
@@ -3100,6 +4013,7 @@
       localStorage.setItem('pos_sales', JSON.stringify(salesHistory));
       localStorage.setItem('pos_accounts', JSON.stringify(accountTransactions));
       localStorage.setItem('pos_categories', JSON.stringify(categories));
+      localStorage.setItem('pos_returns', JSON.stringify(salesReturns));
       saveToFirestore();
     }
 
