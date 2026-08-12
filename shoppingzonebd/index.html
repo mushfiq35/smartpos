@@ -346,7 +346,7 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 
 <!-- Customer History Modal -->
 <div class="overlay" id="historyOverlay">
-  <div class="modal" style="max-width:560px;">
+  <div class="modal" style="max-width:700px;width:95%;">
     <h2 id="historyTitle">History</h2>
     <div id="historyBody"></div>
     <div class="modal-actions no-print">
@@ -370,7 +370,7 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 
 <!-- Return Modal -->
 <div class="overlay top" id="returnOverlay">
-  <div class="modal" style="max-width:650px;">
+  <div class="modal" style="max-width:650px;width:90%;">
     <h2 id="returnTitle">New Return</h2>
     <div class="field-hint" id="returnLineInfo" style="margin-bottom:12px;"></div>
     <div class="field"><label id="returnQtyLabel">Return Qty</label><input type="number" id="returnQtyInput" min="1"></div>
@@ -389,7 +389,7 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 
 <!-- Sale View Modal -->
 <div class="overlay" id="saleViewOverlay">
-  <div class="modal" style="max-width:420px;">
+  <div class="modal" style="max-width:800px;width:95%;">
     <h2 id="saleViewTitle">View</h2>
     <div id="saleViewBody"></div>
     <div class="modal-actions no-print">
@@ -437,7 +437,7 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 
 <!-- Installment History Modal -->
 <div class="overlay" id="instHistoryOverlay">
-  <div class="modal" style="max-width:560px;">
+  <div class="modal" style="max-width:700px;width:95%;">
     <h2 id="instHistoryTitle">Installment History</h2>
     <div id="instHistoryBody"></div>
     <div class="modal-actions no-print">
@@ -453,9 +453,11 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
     <h2 id="multiSaleTitle">New Sale</h2>
     <div class="field">
       <label id="msCustomerLabel">Customer</label>
-      <div class="select-row">
-        <select id="msCustomer"></select>
-        <button type="button" class="qa-btn" onclick="openQuickAdd('customers','msCustomer')">+</button>
+      <div class="select-row" style="position:relative;">
+        <input type="text" id="msCustomer" autocomplete="off" placeholder="Walk-in Customer" oninput="onMsCustomerSearch()" onfocus="onMsCustomerSearch()">
+        <input type="hidden" id="msCustomerId" value="">
+        <button type="button" class="qa-btn" onclick="openQuickAdd('customers','msCustomerId')">+</button>
+        <div class="ms-product-results" id="msCustomerResults"></div>
       </div>
     </div>
     <div id="msRows"></div>
@@ -529,6 +531,7 @@ const I18N = {
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'কাস্টমার', nav_products:'পণ্য', nav_suppliers:'সাপ্লায়ার',
     nav_purchases:'ক্রয়', nav_sales:'বিক্রি', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'রিটার্ন', nav_reports:'রিপোর্ট',
+    reports_sales_returns_tab:'বিক্রি ও রিটার্ন', sr_sales_count:'বিক্রি সংখ্যা', sr_returns_count:'রিটার্ন সংখ্যা', sr_net_label:'নিট',
     return_title:'রিটার্ন', return_new:'নতুন রিটার্ন', return_no:'রিটার্ন নং',
     return_original_qty:'বিক্রিত পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
     return_qty_label:'রিটার্ন পরিমাণ', return_value:'রিটার্ন মূল্য', return_due_adjust:'বাকি থেকে সমন্বয়',
@@ -599,7 +602,8 @@ const I18N = {
     ms_add_row:'+ আরেকটা পণ্য যোগ করুন', invoice_label:'ইনভয়েস', items_count:(n)=>`${n} টা পণ্য`,
     inst_already_started:'এই ইনভয়েসে কিস্তি পরিশোধ ইতিমধ্যে শুরু হয়ে গেছে, তাই সম্পূর্ণ এডিট করা যাবে না।',
     inv_email_label:'ইমেইল', inv_contact_label:'যোগাযোগ', no_active_installments:'কোনো সক্রিয় কিস্তি নেই', col_id:'আইডি',
-    f_voucher:'অ্যাকাউন্ট নম্বর', col_voucher:'অ্যাকাউন্ট নম্বর', f_voucher_tag:'ভাউচার', col_voucher_tag:'ভাউচার', all_categories:'সব ক্যাটাগরি',
+    f_voucher:'অ্যাকাউন্ট নম্বর', col_voucher:'অ্যাকাউন্ট নম্বর', f_voucher_tag:'নোট', col_voucher_tag:'নোট', all_categories:'সব ক্যাটাগরি',
+    col_invoice_no:'ইনভয়েস নং', col_receipt_no:'রসিদ নং',
     history_type_label:'ধরন', history_type_sale:'বিক্রি', history_type_payment:'কিস্তি পেমেন্ট',
     reports_summary_tab:'ব্যালেন্স', summary_dp:'দৈনিক প্রাপ্তি (DP)', summary_de:'দৈনিক খরচ (DE)',
     summary_s:'ব্যালেন্স (S)', summary_final:'মোট ব্যালেন্স',
@@ -620,6 +624,7 @@ const I18N = {
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Customers', nav_products:'Products', nav_suppliers:'Suppliers',
     nav_purchases:'Purchases', nav_sales:'Sales', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Returns', nav_reports:'Reports',
+    reports_sales_returns_tab:'Sales & Returns', sr_sales_count:'Sales Count', sr_returns_count:'Returns Count', sr_net_label:'Net',
     return_title:'Returns', return_new:'New Return', return_no:'Return No.',
     return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
     return_qty_label:'Return Qty', return_value:'Return Value', return_due_adjust:'Adjusted from Due',
@@ -690,7 +695,8 @@ const I18N = {
     ms_add_row:'+ Add another product', invoice_label:'Invoice', items_count:(n)=>`${n} items`,
     inst_already_started:'This invoice already has paid installments, so it cannot be fully edited.',
     inv_email_label:'Email', inv_contact_label:'Contact', no_active_installments:'No active installments', col_id:'ID',
-    f_voucher:'Account Number', col_voucher:'Account Number', f_voucher_tag:'Voucher', col_voucher_tag:'Voucher', all_categories:'All Categories',
+    f_voucher:'Account Number', col_voucher:'Account Number', f_voucher_tag:'Note', col_voucher_tag:'Note', all_categories:'All Categories',
+    col_invoice_no:'Invoice No.', col_receipt_no:'Receipt No.',
     history_type_label:'Type', history_type_sale:'Sale', history_type_payment:'Installment Payment',
     reports_summary_tab:'Balance', summary_dp:'Daily Paid (DP)', summary_de:'Daily Expense (DE)',
     summary_s:'Balance (S)', summary_final:'Total Balance',
@@ -1061,8 +1067,27 @@ function nextReturnNo(){
   const maxNo = db.returns.reduce((m,r)=>Math.max(m, Number(r.returnNo)||0), 0);
   return maxNo + 1;
 }
+function nextInvoiceNo(){
+  const maxNo = db.sales.reduce((m,s)=>Math.max(m, Number(s.invoiceNo)||0), 0);
+  return maxNo + 1;
+}
+function nextReceiptNo(){
+  const maxNo = db.installments.reduce((m,i)=>Math.max(m, Number(i.receiptNo)||0), 0);
+  return maxNo + 1;
+}
 function saleReturnedQty(saleId){
   return db.returns.filter(r=>r.saleId===saleId && !r.cancelled).reduce((s,r)=>s+Number(r.qty),0);
+}
+function saleGrossProfit(sale){
+  return (Number(sale.unitPrice)-Number(sale.unitCost||0))*Number(sale.qty) - Number(sale.discount||0);
+}
+function saleReturnedProfitAmount(sale){
+  if(!sale || !Number(sale.qty)) return 0;
+  const perUnitProfit = saleGrossProfit(sale) / Number(sale.qty);
+  return perUnitProfit * saleReturnedQty(sale.id);
+}
+function saleNetProfit(sale){
+  return saleGrossProfit(sale) - saleReturnedProfitAmount(sale);
 }
 function money(n){ return Number(n||0).toLocaleString('en-US', {maximumFractionDigits:2}); }
 function formatDateDMY(dateStr){
@@ -1240,7 +1265,7 @@ function pageDashboard(){
   const today = todayStr();
   const todaySales = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.total),0);
   const todayExpense = db.expenses.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.amount),0);
-  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+(Number(x.unitPrice)-Number(x.unitCost||0))*Number(x.qty)-Number(x.discount||0),0);
+  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0);
   const todayIncome = todayProfit - todayExpense;
   const lowStock = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold));
   const totalProductQty = Object.values(db.products).reduce((s,p)=>s+Number(p.qty),0);
@@ -1432,6 +1457,9 @@ function renderReportsPage(){
     <div class="tabs-sub no-print">
       <button class="sub-tab ${reportsSubTab==='overview'?'active':''}" data-sub="overview">${t('reports_overview')}</button>
       <button class="sub-tab ${reportsSubTab==='summary'?'active':''}" data-sub="summary">${t('reports_summary_tab')}</button>
+      <button class="sub-tab ${reportsSubTab==='salesrpt'?'active':''}" data-sub="salesrpt">${t('nav_sales')}</button>
+      <button class="sub-tab ${reportsSubTab==='returnsrpt'?'active':''}" data-sub="returnsrpt">${t('nav_returns')}</button>
+      <button class="sub-tab ${reportsSubTab==='installmentrpt'?'active':''}" data-sub="installmentrpt">${t('nav_installments')}</button>
       <button class="sub-tab ${reportsSubTab==='customer'?'active':''}" data-sub="customer">${t('nav_customers')}</button>
       <button class="sub-tab ${reportsSubTab==='supplier'?'active':''}" data-sub="supplier">${t('nav_suppliers')}</button>
       <button class="sub-tab ${reportsSubTab==='stock'?'active':''}" data-sub="stock">${t('nav_products')}</button>
@@ -1444,6 +1472,9 @@ function renderReportsPage(){
   const body = document.getElementById('reportsBody');
   if(reportsSubTab==='overview') renderReportsOverview(body);
   else if(reportsSubTab==='summary') renderSummaryReport(body);
+  else if(reportsSubTab==='salesrpt') renderSalesOnlyReport(body);
+  else if(reportsSubTab==='returnsrpt') renderReturnsOnlyReport(body);
+  else if(reportsSubTab==='installmentrpt') renderInstallmentOnlyReport(body);
   else if(reportsSubTab==='customer') renderCustomerReport(body);
   else if(reportsSubTab==='supplier') renderSupplierReport(body);
   else if(reportsSubTab==='stock') renderStockReport(body);
@@ -1528,6 +1559,149 @@ function renderSummaryReport(body){
   fromInput.addEventListener('change', () => { summaryFrom = fromInput.value; refresh(); });
   toInput.addEventListener('change', () => { summaryTo = toInput.value; refresh(); });
   document.getElementById('summaryPrintBtn').addEventListener('click', () => window.print());
+  refresh();
+}
+
+/* ---------- Separate Sales / Returns / Installment Reports ---------- */
+let salesRptRange='last14', salesRptFrom='', salesRptTo='';
+let returnsRptRange='last14', returnsRptFrom='', returnsRptTo='';
+let instRptRange='last14', instRptFrom='', instRptTo='';
+
+function buildRangeToolbar(prefix, state){
+  return `
+    <div class="toolbar no-print">
+      <select id="${prefix}RangeSelect">
+        <option value="last14">${t('range_last14')}</option>
+        <option value="thisMonth">${t('range_this_month')}</option>
+        <option value="thisYear">${t('range_this_year')}</option>
+        <option value="allTime">${t('range_all_time')}</option>
+        <option value="custom">${t('range_custom')}</option>
+      </select>
+      <input type="date" id="${prefix}FromDate" style="display:none;">
+      <input type="date" id="${prefix}ToDate" style="display:none;">
+      <button class="btn ghost" id="${prefix}PrintBtn" style="margin-left:auto;">${t('print_report')}</button>
+    </div>
+    <div id="${prefix}Body"></div>
+  `;
+}
+function wireRangeToolbar(prefix, getState, setState, refresh){
+  const rangeSelect = document.getElementById(`${prefix}RangeSelect`);
+  const fromInput = document.getElementById(`${prefix}FromDate`);
+  const toInput = document.getElementById(`${prefix}ToDate`);
+  const st = getState();
+  rangeSelect.value = st.range;
+  fromInput.value = st.from || getEarliestDate();
+  toInput.value = st.to || todayStr();
+  fromInput.style.display = st.range==='custom' ? '' : 'none';
+  toInput.style.display = st.range==='custom' ? '' : 'none';
+  rangeSelect.addEventListener('change', () => {
+    const s = getState(); s.range = rangeSelect.value;
+    fromInput.style.display = s.range==='custom' ? '' : 'none';
+    toInput.style.display = s.range==='custom' ? '' : 'none';
+    if(s.range==='custom'){ s.from = fromInput.value; s.to = toInput.value; }
+    setState(s); refresh();
+  });
+  fromInput.addEventListener('change', () => { const s=getState(); s.from=fromInput.value; setState(s); refresh(); });
+  toInput.addEventListener('change', () => { const s=getState(); s.to=toInput.value; setState(s); refresh(); });
+  document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => window.print());
+}
+
+function renderSalesOnlyReport(body){
+  body.innerHTML = buildRangeToolbar('salesRpt');
+  function refresh(){
+    const st = {range:salesRptRange, from:salesRptFrom, to:salesRptTo};
+    const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('salesRptFromDate').value, st.to || document.getElementById('salesRptToDate').value);
+    const list = db.sales.filter(s=>s.date>=fromStr && s.date<=toStr).sort((a,b)=>b.ts-a.ts);
+    const totalValue = list.reduce((s,x)=>s+Number(x.total),0);
+    const totalPaid = list.reduce((s,x)=>s+Number(x.paid),0);
+    const totalDue = list.reduce((s,x)=>s+Number(x.due),0);
+    document.getElementById('salesRptBody').innerHTML = `
+      <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="stat-card c4"><div class="val">৳${money(totalValue)}</div><div class="lbl">${t('col_total')}</div></div>
+        <div class="stat-card c5"><div class="val">৳${money(totalPaid)}</div><div class="lbl">${t('col_paid')}</div></div>
+        <div class="stat-card c7"><div class="val">৳${money(totalDue)}</div><div class="lbl">${t('col_due')}</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('nav_sales')}</h3>
+        <table class="data">
+          <thead><tr><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
+          <tbody>${list.map(s=>`<tr><td>${formatDateDMY(s.date)}</td><td>${escapeHtml(s.customerName||t('walk_in'))}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>৳${money(s.total)}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td></tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalValue)}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDue)}</td></tr></tfoot>
+        </table>
+      </div>
+    `;
+  }
+  wireRangeToolbar('salesRpt',
+    () => ({range:salesRptRange, from:salesRptFrom, to:salesRptTo}),
+    (s) => { salesRptRange=s.range; salesRptFrom=s.from; salesRptTo=s.to; },
+    refresh
+  );
+  refresh();
+}
+
+function renderReturnsOnlyReport(body){
+  body.innerHTML = buildRangeToolbar('returnsRpt');
+  function refresh(){
+    const st = {range:returnsRptRange, from:returnsRptFrom, to:returnsRptTo};
+    const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('returnsRptFromDate').value, st.to || document.getElementById('returnsRptToDate').value);
+    const list = db.returns.filter(r=>r.date>=fromStr && r.date<=toStr).sort((a,b)=>b.ts-a.ts);
+    const activeList = list.filter(r=>!r.cancelled);
+    const totalValue = activeList.reduce((s,x)=>s+Number(x.value),0);
+    const totalDueAdjust = activeList.reduce((s,x)=>s+Number(x.dueAdjust),0);
+    const totalRefund = activeList.reduce((s,x)=>s+Number(x.excessRefund),0);
+    document.getElementById('returnsRptBody').innerHTML = `
+      <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="stat-card c7"><div class="val">৳${money(totalValue)}</div><div class="lbl">${t('return_value')}</div></div>
+        <div class="stat-card c6"><div class="val">৳${money(totalDueAdjust)}</div><div class="lbl">${t('return_due_adjust')}</div></div>
+        <div class="stat-card c8"><div class="val">৳${money(totalRefund)}</div><div class="lbl">${t('return_excess_refund')}</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('nav_returns')}</h3>
+        <table class="data">
+          <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th></tr></thead>
+          <tbody>${list.map(r=>`<tr><td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td><td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td><td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td></tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;"><td colspan="5">${t('totals_label')} (${t('return_active')})</td><td>৳${money(totalValue)}</td><td></td></tr></tfoot>
+        </table>
+      </div>
+    `;
+  }
+  wireRangeToolbar('returnsRpt',
+    () => ({range:returnsRptRange, from:returnsRptFrom, to:returnsRptTo}),
+    (s) => { returnsRptRange=s.range; returnsRptFrom=s.from; returnsRptTo=s.to; },
+    refresh
+  );
+  refresh();
+}
+
+function renderInstallmentOnlyReport(body){
+  body.innerHTML = buildRangeToolbar('instRpt');
+  function refresh(){
+    const st = {range:instRptRange, from:instRptFrom, to:instRptTo};
+    const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('instRptFromDate').value, st.to || document.getElementById('instRptToDate').value);
+    const list = db.installments.filter(i=>i.date>=fromStr && i.date<=toStr).sort((a,b)=>b.ts-a.ts);
+    const totalPaid = list.reduce((s,x)=>s+Number(x.amount),0);
+    const totalDiscount = list.reduce((s,x)=>s+Number(x.discount||0),0);
+    const totalNewDue = list.reduce((s,x)=>s+Number(x.newDue),0);
+    document.getElementById('instRptBody').innerHTML = `
+      <div class="stat-grid no-print" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px;">
+        <div class="stat-card c4"><div class="val">৳${money(totalPaid)}</div><div class="lbl">${t('inst_col_amount')} (${t('totals_label')})</div></div>
+        <div class="stat-card c7"><div class="val">৳${money(totalDiscount)}</div><div class="lbl">${t('inst_col_discount')} (${t('totals_label')})</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('nav_installments')}</h3>
+        <table class="data">
+          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('col_customer')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
+          <tbody>${list.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>${escapeHtml(i.customerName||'')}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td></tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalNewDue)}</td><td></td></tr></tfoot>
+        </table>
+      </div>
+    `;
+  }
+  wireRangeToolbar('instRpt',
+    () => ({range:instRptRange, from:instRptFrom, to:instRptTo}),
+    (s) => { instRptRange=s.range; instRptFrom=s.from; instRptTo=s.to; },
+    refresh
+  );
   refresh();
 }
 
@@ -1722,7 +1896,7 @@ function renderCustomerReport(body){
       .sort((a,b)=>b.ts-a.ts);
     const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
     const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
-    const totalProfit = sales.reduce((s,x)=>s+((Number(x.unitPrice)-Number(x.unitCost||0))*Number(x.qty)-Number(x.discount||0)),0);
+    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
     el.innerHTML = `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
@@ -1732,10 +1906,11 @@ function renderCustomerReport(body){
         <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
         ${sales.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
         <table class="data">
-          <thead><tr><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+          <thead><tr><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('return_already')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
           <tbody>${sales.map(s=>{
-            const profit = (Number(s.unitPrice)-Number(s.unitCost||0))*Number(s.qty)-Number(s.discount||0);
-            return `<tr><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
+            const profit = saleNetProfit(s);
+            const returned = saleReturnedQty(s.id);
+            return `<tr><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
           }).join('')}</tbody>
         </table>`}
       </div>
@@ -1902,7 +2077,7 @@ const CONFIG = {
   },
   sales: {
     titleKey:'title_sales', addLabelKey:'add_sales',
-    columns:[{k:'voucherTag',hKey:'col_voucher_tag',fmt:v=>v||'—'},{k:'voucherNo',hKey:'col_voucher',fmt:v=>v||'—'},{k:'date',hKey:'col_date'},{k:'customerName',hKey:'col_customer',fmt:v=>v||t('walk_in')},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)},{k:'discount',hKey:'col_discount',fmt:v=>Number(v)>0?'৳'+money(v):'—'},{k:'paid',hKey:'col_paid',fmt:v=>'৳'+money(v)},{k:'due',hKey:'col_due',fmt:v=>v>0?'৳'+money(v):'—'},{k:'paymentSystem',hKey:'col_payment_system',fmt:v=>{const k=paymentSystemKey(v); return k?t(k):'—';}}],
+    columns:[{k:'invoiceNo',hKey:'col_invoice_no',fmt:v=>v?('#'+v):'—'},{k:'voucherNo',hKey:'col_voucher',fmt:v=>v||'—'},{k:'date',hKey:'col_date'},{k:'customerName',hKey:'col_customer',fmt:v=>v||t('walk_in')},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)},{k:'discount',hKey:'col_discount',fmt:v=>Number(v)>0?'৳'+money(v):'—'},{k:'paid',hKey:'col_paid',fmt:v=>'৳'+money(v)},{k:'due',hKey:'col_due',fmt:v=>v>0?'৳'+money(v):'—'},{k:'paymentSystem',hKey:'col_payment_system',fmt:v=>{const k=paymentSystemKey(v); return k?t(k):'—';}},{k:'voucherTag',hKey:'col_voucher_tag',fmt:v=>v||'—'}],
     fields:[
       {key:'customerId', labelKey:'f_customer_opt', type:'select', optionsFrom:'customers', allowEmptyKey:'walk_in', quickAdd:'customers'},
       {key:'productId', labelKey:'f_product_select', type:'select', optionsFrom:'products', required:true, quickAdd:'products'},
@@ -2162,10 +2337,15 @@ async function handleSave(tab, id, values){
       if(cust){ customerName = cust.name; cust.due = Number(cust.due||0) + due; touchedCustomers.add(values.customerId); }
     }
     const record = {
-      id: id || uid(), customerId: values.customerId||null, customerName,
+      id: id || uid(), invoiceId: existing ? existing.invoiceId : null,
+      invoiceNo: existing ? (existing.invoiceNo || nextInvoiceNo()) : nextInvoiceNo(),
+      voucherNo: existing ? existing.voucherNo : '', voucherTag: existing ? existing.voucherTag : '',
+      paymentSystem: existing ? existing.paymentSystem : 'cash', isOldEntry: existing ? existing.isOldEntry : false,
+      customerId: values.customerId||null, customerName,
       productId: values.productId, productName: product.name,
       qty: Number(values.qty), unitPrice: Number(values.unitPrice), unitCost: Number(product.cost||0), discount,
-      total, paid, due, date: values.date, ts: existing ? existing.ts : Date.now()
+      total, paid, due, initialPaid: existing ? (existing.initialPaid!==undefined ? existing.initialPaid : paid) : paid,
+      date: values.date, ts: existing ? existing.ts : Date.now()
     };
     if(existing){
       const idx = db.sales.findIndex(x=>x.id===id);
@@ -2372,6 +2552,8 @@ document.getElementById('quickAddSaveBtn').addEventListener('click', async () =>
   const msProductMatch = fieldKey.match(/^ms-product-(.+)$/);
   if(kind==='products' && msProductMatch){
     selectMsProduct(msProductMatch[1], key);
+  } else if(kind==='customers' && fieldKey==='msCustomerId'){
+    selectMsCustomer(key);
   } else {
     let selectEl = document.getElementById(fieldKey);
     if(!selectEl || selectEl.tagName!=='SELECT'){
@@ -2445,7 +2627,7 @@ async function markInstallmentPaid(planId, idx){
     cust.due = Math.max(0, previousDue - Number(item.amount));
     await safePut('customers', plan.customerId, cust);
     const instRecord = {
-      id: uid(), customerId: plan.customerId, customerName: plan.customerName,
+      id: uid(), receiptNo: nextReceiptNo(), customerId: plan.customerId, customerName: plan.customerName,
       amount: Number(item.amount), discount: 0, previousDue, newDue: cust.due,
       date: todayStr(), ts: Date.now(), planId: plan.id, installmentNo: idx
     };
@@ -2683,12 +2865,13 @@ function openSaleView(id){
   const grandTotal = groupItems.reduce((s,x)=>s+Number(x.total),0);
   const grandPaid = groupItems.reduce((s,x)=>s+Number(x.paid),0);
   const grandDue = groupItems.reduce((s,x)=>s+Number(x.due),0);
-  document.getElementById('saleViewTitle').textContent = sale.invoiceId ? t('invoice_label') : t('view_title');
+  document.getElementById('saleViewTitle').textContent = (sale.invoiceId ? t('invoice_label') : t('view_title')) + (sale.invoiceNo ? ' #'+sale.invoiceNo : '');
   document.getElementById('saleViewCloseBtn').textContent = t('close');
   document.getElementById('saleViewPrintBtn').textContent = t('print_report');
   document.getElementById('saleViewBody').innerHTML = `
     <table class="data">
       <tbody>
+        ${sale.invoiceNo ? `<tr><td>${t('col_invoice_no')}</td><td>#${sale.invoiceNo}</td></tr>` : ''}
         <tr><td>${t('col_date')}</td><td>${sale.date}</td></tr>
         <tr><td>${t('col_customer')}</td><td>${escapeHtml(sale.customerName||t('walk_in'))}</td></tr>
         ${custRecord && custRecord.phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml(custRecord.phone)}</td></tr>` : ''}
@@ -2729,6 +2912,7 @@ setupOverlayBackdropClose('saleViewOverlay');
 let msRowSeq = 0;
 let msRows = []; // [{rowId}]
 let msEditInvoiceId = null;
+let msEditInvoiceNo = null;
 
 function openMultiSale(editInvoiceId){
   msRows = [];
@@ -2736,6 +2920,7 @@ function openMultiSale(editInvoiceId){
   msEditInvoiceId = editInvoiceId || null;
   document.getElementById('multiSaleTitle').textContent = msEditInvoiceId ? t('edit_title') + ' — ' + t('invoice_label') : t('new_sale_invoice_title');
   document.getElementById('msCustomerLabel').textContent = t('f_customer_opt');
+  document.getElementById('msCustomer').placeholder = t('walk_in');
   const voucherTagSugg = [...new Set(db.sales.map(s=>s.voucherTag).filter(Boolean))];
   const voucherNoSugg = [...new Set(db.sales.map(s=>s.voucherNo).filter(Boolean))];
   document.getElementById('dl-ms-vouchertag').innerHTML = voucherTagSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('');
@@ -2760,9 +2945,10 @@ function openMultiSale(editInvoiceId){
   document.getElementById('msSaveBtn').textContent = t('save');
   document.getElementById('msAddRowBtn').textContent = t('ms_add_row');
 
-  const custSel = document.getElementById('msCustomer');
-  custSel.innerHTML = `<option value="">${t('walk_in')}</option>` +
-    Object.entries(db.customers).map(([cid,c]) => `<option value="${cid}">${escapeHtml(c.name)}</option>`).join('');
+  document.getElementById('msCustomer').value = '';
+  document.getElementById('msCustomerId').value = '';
+  const custResultsEl = document.getElementById('msCustomerResults');
+  if(custResultsEl){ custResultsEl.classList.remove('open'); custResultsEl.innerHTML=''; }
 
   document.getElementById('msRows').innerHTML = '';
 
@@ -2777,7 +2963,8 @@ function openMultiSale(editInvoiceId){
         msEditInvoiceId = null;
       } else {
         const first = groupSales[0];
-        custSel.value = first.customerId || '';
+        msEditInvoiceNo = first.invoiceNo || null;
+        selectMsCustomer(first.customerId || '');
         document.getElementById('msDate').value = first.date;
         document.getElementById('msVoucher').value = first.voucherNo || '';
         document.getElementById('msVoucherTag').value = first.voucherTag || '';
@@ -2791,6 +2978,7 @@ function openMultiSale(editInvoiceId){
       }
     }
   }
+  msEditInvoiceNo = null;
   document.getElementById('msPaid').value = 0;
   document.getElementById('msInstCount').value = '';
   document.getElementById('msDate').value = todayStr();
@@ -2837,6 +3025,31 @@ function removeMultiSaleRow(rowId){
   if(el) el.remove();
   recalcMultiSaleTotal();
 }
+
+function onMsCustomerSearch(){
+  const input = document.getElementById('msCustomer');
+  const resultsEl = document.getElementById('msCustomerResults');
+  if(!input || !resultsEl) return;
+  const q = input.value.trim().toLowerCase();
+  const entries = Object.entries(db.customers);
+  const matches = q
+    ? entries.filter(([cid,c]) => c.name.toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || String(c.displayId||'').includes(q)).slice(0,10)
+    : entries.slice(0,10);
+  if(matches.length===0){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; return; }
+  resultsEl.innerHTML = matches.map(([cid,c]) => `<div class="ms-product-result-item" onclick="selectMsCustomer('${cid}')">${escapeHtml(c.name)} <span style="color:var(--ink-soft);font-size:11px;">${c.phone?escapeHtml(c.phone):''}${Number(c.due)>0?' · ৳'+money(c.due):''}</span></div>`).join('');
+  resultsEl.classList.add('open');
+}
+function selectMsCustomer(cid){
+  const cust = cid ? db.customers[cid] : null;
+  document.getElementById('msCustomer').value = cust ? cust.name : '';
+  document.getElementById('msCustomerId').value = cid || '';
+  const resultsEl = document.getElementById('msCustomerResults');
+  if(resultsEl){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; }
+}
+document.addEventListener('click', (e) => {
+  const el = document.getElementById('msCustomerResults');
+  if(el && el.classList.contains('open') && !el.parentElement.contains(e.target)) el.classList.remove('open');
+});
 
 function onMsProductSearch(rowId){
   const input = document.getElementById(`ms-product-${rowId}`);
@@ -2892,11 +3105,12 @@ document.getElementById('msAddRowBtn').addEventListener('click', () => addMultiS
 document.getElementById('msCancelBtn').addEventListener('click', () => {
   document.getElementById('multiSaleOverlay').classList.remove('open');
   msEditInvoiceId = null;
+  msEditInvoiceNo = null;
 });
-setupOverlayBackdropClose('multiSaleOverlay', () => { msEditInvoiceId = null; });
+setupOverlayBackdropClose('multiSaleOverlay', () => { msEditInvoiceId = null; msEditInvoiceNo = null; });
 
 document.getElementById('msSaveBtn').addEventListener('click', async () => {
-  const customerId = document.getElementById('msCustomer').value || null;
+  const customerId = document.getElementById('msCustomerId').value || null;
   const cust = customerId ? db.customers[customerId] : null;
   const customerName = cust ? cust.name : '';
   const date = document.getElementById('msDate').value || todayStr();
@@ -2951,6 +3165,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   const overallDue = Math.max(0, grandTotal - overallPaid);
 
   const invoiceId = rowsData.length>1 ? (msEditInvoiceId || uid()) : null;
+  const invoiceNo = msEditInvoiceNo || nextInvoiceNo();
   const saleRecords = [];
   let remainingPaid = overallPaid;
   let remainingDue = overallDue;
@@ -2964,7 +3179,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     remainingDue -= rowDue;
     const saleId = uid();
     const record = {
-      id: saleId, invoiceId, voucherNo, voucherTag, paymentSystem, isOldEntry, customerId, customerName,
+      id: saleId, invoiceId, invoiceNo, voucherNo, voucherTag, paymentSystem, isOldEntry, customerId, customerName,
       productId: r.pid, productName: r.product.name,
       qty: r.qty, unitPrice: r.price, unitCost: Number(r.product.cost||0), discount: r.disc,
       total: r.rowTotal, paid: rowPaid, due: rowDue, initialPaid: rowPaid, date, ts: Date.now()
@@ -2999,6 +3214,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
 
   document.getElementById('multiSaleOverlay').classList.remove('open');
   msEditInvoiceId = null;
+  msEditInvoiceNo = null;
   renderNav();
   renderPage();
 });
@@ -3071,7 +3287,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   }
 
   const instRecord = {
-    id: uid(), customerId: dueCtx, customerName: cust.name,
+    id: uid(), receiptNo: nextReceiptNo(), customerId: dueCtx, customerName: cust.name,
     amount: paid, discount, previousDue, newDue, note, isOldEntry,
     date: payDate, ts: new Date(payDate).getTime() || Date.now()
   };
@@ -3085,12 +3301,13 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
 
 function openInstallmentReceipt(rec){
   const custRecord = rec.customerId ? db.customers[rec.customerId] : null;
-  document.getElementById('instReceiptTitle').textContent = t('installment_receipt_title');
+  document.getElementById('instReceiptTitle').textContent = t('installment_receipt_title') + (rec.receiptNo ? ' #'+rec.receiptNo : '');
   document.getElementById('instReceiptCloseBtn').textContent = t('close');
   document.getElementById('instReceiptPrintBtn').textContent = t('print_report');
   document.getElementById('instReceiptBody').innerHTML = `
     <table class="data">
       <tbody>
+        ${rec.receiptNo ? `<tr><td>${t('col_receipt_no')}</td><td>#${rec.receiptNo}</td></tr>` : ''}
         <tr><td>${t('col_customer')}</td><td>${escapeHtml(rec.customerName)}</td></tr>
         ${custRecord && custRecord.phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml(custRecord.phone)}</td></tr>` : ''}
         <tr><td>${t('inst_col_date')}</td><td>${formatDateDMY(rec.date)}</td></tr>
