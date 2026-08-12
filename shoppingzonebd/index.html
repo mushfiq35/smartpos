@@ -93,7 +93,8 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 #pgTableWrap{overflow-x:auto;}
 table.data{width:100%;border-collapse:collapse;font-size:14px;}
 table.data th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;color:var(--ink-soft);padding:8px 10px;border-bottom:2px solid var(--line);}
-table.data td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+table.data td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;}
+table.data th{white-space:nowrap;}
 table.data tr.low td{background:var(--red-bg);}
 table.data tr:hover td{background:rgba(193,119,46,0.06);}
 .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;}
@@ -522,7 +523,7 @@ const K = {
   customers:'pos-customers', suppliers:'pos-suppliers', products:'pos-products',
   purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo'
 };
-let db = { customers:{}, suppliers:{}, products:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[] };
+let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[] };
 let currentTab = 'dashboard';
 let logoData = null;
 
@@ -532,7 +533,8 @@ const I18N = {
   bn: {
     brand_sub:'ব্যবসা ব্যবস্থাপনা', logo_change:'লোগো পরিবর্তন / Change logo', new_sale:'+ নতুন বিক্রি',
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
-    nav_dashboard:'ড্যাশবোর্ড', nav_customers:'কাস্টমার', nav_products:'পণ্য', nav_suppliers:'সাপ্লায়ার',
+    nav_dashboard:'ড্যাশবোর্ড', nav_customers:'কাস্টমার', nav_products:'পণ্য', nav_categories:'ক্যাটাগরি', nav_suppliers:'সাপ্লায়ার',
+    title_categories:'ক্যাটাগরি', add_categories:'+ নতুন ক্যাটাগরি', f_category_name:'ক্যাটাগরির নাম',
     nav_purchases:'ক্রয়', nav_sales:'বিক্রি', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'রিটার্ন', nav_reports:'রিপোর্ট',
     reports_sales_returns_tab:'বিক্রি ও রিটার্ন', sr_sales_count:'বিক্রি সংখ্যা', sr_returns_count:'রিটার্ন সংখ্যা', sr_net_label:'নিট',
     return_title:'রিটার্ন', return_new:'নতুন রিটার্ন', return_no:'রিটার্ন নং',
@@ -630,7 +632,8 @@ const I18N = {
   en: {
     brand_sub:'Business Management', logo_change:'Change logo', new_sale:'+ New Sale',
     loading:'Loading...', crumb_prefix:'Dashboard',
-    nav_dashboard:'Dashboard', nav_customers:'Customers', nav_products:'Products', nav_suppliers:'Suppliers',
+    nav_dashboard:'Dashboard', nav_customers:'Customers', nav_products:'Products', nav_categories:'Category', nav_suppliers:'Suppliers',
+    title_categories:'Category', add_categories:'+ New Category', f_category_name:'Category Name',
     nav_purchases:'Purchases', nav_sales:'Sales', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Returns', nav_reports:'Reports',
     reports_sales_returns_tab:'Sales & Returns', sr_sales_count:'Sales Count', sr_returns_count:'Returns Count', sr_net_label:'Net',
     return_title:'Returns', return_new:'New Return', return_no:'Return No.',
@@ -1047,6 +1050,7 @@ const NAV = [
   {id:'dashboard', ic:'📊', key:'nav_dashboard'},
   {id:'customers', ic:'👥', key:'nav_customers'},
   {id:'products', ic:'📦', key:'nav_products'},
+  {id:'categories', ic:'🏷️', key:'nav_categories'},
   {id:'suppliers', ic:'🚚', key:'nav_suppliers'},
   {id:'purchases', ic:'🧾', key:'nav_purchases'},
   {id:'sales', ic:'💰', key:'nav_sales'},
@@ -1121,7 +1125,7 @@ function paymentSystemKey(v){
 
 /* ---------- Load / Save ---------- */
 async function loadAll(){
-  const objTabs = ['customers','suppliers','products'];
+  const objTabs = ['customers','suppliers','products','categories'];
   const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns'];
   let hadError = false;
   for(const key of [...objTabs, ...arrTabs]){
@@ -1249,6 +1253,7 @@ function renderPage(){
   if(currentTab==='dashboard') c.innerHTML = pageDashboard();
   else if(currentTab==='customers') renderListPage('customers');
   else if(currentTab==='products') renderListPage('products');
+  else if(currentTab==='categories') renderListPage('categories');
   else if(currentTab==='suppliers') renderListPage('suppliers');
   else if(currentTab==='purchases') renderListPage('purchases');
   else if(currentTab==='sales') renderListPage('sales');
@@ -1720,7 +1725,10 @@ function renderInstallmentOnlyReport(body){
 }
 
 function renderStockReport(body){
-  const categories = [...new Set(Object.values(db.products).map(p=>p.cat).filter(Boolean))].sort();
+  const categories = [...new Set([
+    ...Object.values(db.categories).map(c=>c.name).filter(Boolean),
+    ...Object.values(db.products).map(p=>p.cat).filter(Boolean)
+  ])].sort();
   body.innerHTML = `
     <div class="toolbar no-print">
       <select id="stockCatFilter"><option value="">${t('all_categories')}</option>${categories.map(cat=>`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('')}</select>
@@ -2055,6 +2063,14 @@ const CONFIG = {
     ],
     isObj:true
   },
+  categories: {
+    titleKey:'title_categories', addLabelKey:'add_categories',
+    columns:[{k:'name',hKey:'col_name'}],
+    fields:[
+      {key:'name', labelKey:'f_category_name', type:'text', required:true, suggest:true},
+    ],
+    isObj:true
+  },
   products: {
     titleKey:'title_products', addLabelKey:'add_products',
     columns:[
@@ -2066,7 +2082,7 @@ const CONFIG = {
     ],
     fields:[
       {key:'name', labelKey:'f_product_name', type:'text', required:true, suggest:true},
-      {key:'cat', labelKey:'f_cat', type:'text', suggest:true},
+      {key:'cat', labelKey:'f_cat', type:'text', suggest:true, suggestFromCategories:true},
       {key:'qty', labelKey:'f_current_stock', type:'number'},
       {key:'threshold', labelKey:'f_threshold', type:'number', default:5},
       {key:'cost', labelKey:'f_cost', type:'number'},
@@ -2155,7 +2171,10 @@ function renderListPage(tab){
   if(tab==='sales') items = groupSalesForDisplay(items);
 
   const isProducts = tab==='products';
-  const categories = isProducts ? [...new Set(Object.values(db.products).map(p=>p.cat).filter(Boolean))].sort() : [];
+  const categories = isProducts ? [...new Set([
+    ...Object.values(db.categories).map(c=>c.name).filter(Boolean),
+    ...Object.values(db.products).map(p=>p.cat).filter(Boolean)
+  ])].sort() : [];
 
   c.innerHTML = `
     <div class="toolbar">
@@ -2239,7 +2258,11 @@ function openForm(tab, id){
     }
     if(f.suggest){
       const collection = cfg.isObj ? Object.values(db[tab]) : db[tab];
-      const suggestions = [...new Set(collection.map(it=>it[f.key]).filter(Boolean))];
+      let suggestions = [...new Set(collection.map(it=>it[f.key]).filter(Boolean))];
+      if(f.suggestFromCategories){
+        const catNames = Object.values(db.categories).map(c=>c.name).filter(Boolean);
+        suggestions = [...new Set([...catNames, ...suggestions])];
+      }
       const listId = `dl-${tab}-${f.key}`;
       return `<div class="field"><label>${t(f.labelKey)}</label>
         <input type="${f.type}" data-key="${f.key}" value="${escapeHtml(val)}" list="${listId}" autocomplete="off">
@@ -2285,10 +2308,11 @@ document.getElementById('formSaveBtn').addEventListener('click', async () => {
 });
 
 async function handleSave(tab, id, values){
-  if(tab==='customers' || tab==='suppliers'){
+  if(tab==='customers' || tab==='suppliers' || tab==='categories'){
     const key = id || uid();
     const existing = db[tab][key] || {};
-    const record = {...existing, ...values, due: existing.due || 0};
+    const record = {...existing, ...values};
+    if(tab==='customers' || tab==='suppliers') record.due = existing.due || 0;
     if(tab==='customers' && !id && !record.displayId){
       record.displayId = nextCustomerDisplayId();
     }
