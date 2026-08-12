@@ -99,7 +99,7 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;}
 .pill.green{background:var(--green-bg);color:var(--green);}
 .pill.red{background:var(--red-bg);color:var(--red);}
-.actions-cell{display:flex;gap:6px;}
+.actions-cell{display:flex;gap:6px;flex-wrap:nowrap;white-space:nowrap;}
 .icon-btn{border:1px solid var(--line);background:#fff;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
 .icon-btn:hover{border-color:var(--ink);}
 
@@ -309,6 +309,9 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
     <div class="backup-row" id="backupRow" style="display:none;">
       <button id="backupBtn">☁️ Backup</button>
       <button id="restoreBtn">♻️ Restore</button>
+    </div>
+    <div class="backup-row">
+      <button id="clearAllBtn" style="border-color:rgba(180,66,58,0.5);color:#e6a29c;">🗑️ Clear All Data</button>
     </div>
     <div class="logout-row" id="logoutRow" style="display:none;">
       <button id="logoutBtn">Logout</button>
@@ -568,6 +571,11 @@ const I18N = {
     login_subtitle:'চালিয়ে যেতে লগ ইন করুন', login_email:'ইমেইল', login_password:'পাসওয়ার্ড',
     login_btn:'লগ ইন করুন', login_error:'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে', logout:'লগ আউট',
     backup_btn:'☁️ ব্যাকআপ', restore_btn:'♻️ রিস্টোর',
+    clear_all_confirm1:'⚠️ এটি সব কাস্টমার, পণ্য, বিক্রি, ক্রয়, খরচ, কিস্তি ও রিটার্ন — সম্পূর্ণ ডেটা স্থায়ীভাবে মুছে ফেলবে! এটা আর ফিরিয়ে আনা যাবে না। আগে ব্যাকআপ নিয়ে নিয়েছেন তো?',
+    clear_all_confirm2:'নিশ্চিত করতে নিচে ঠিক এই শব্দটা লিখুন: DELETE',
+    clear_all_confirm_word:'DELETE',
+    clear_all_aborted:'বাতিল করা হয়েছে — কোনো ডেটা মোছা হয়নি।',
+    clear_all_done:'✓ সব ডেটা মুছে ফেলা হয়েছে', clear_all_btn:'🗑️ সব ডেটা মুছুন',
     drive_auth_failed:'Google Drive অনুমতি ব্যর্থ হয়েছে', backup_success:'✓ ব্যাকআপ সফল হয়েছে',
     backup_failed:'⚠️ ব্যাকআপ ব্যর্থ হয়েছে', no_backups_found:'কোনো ব্যাকআপ পাওয়া যায়নি',
     choose_backup_prompt:'কোন ব্যাকআপ থেকে রিস্টোর করতে চান? নম্বর লিখুন:',
@@ -661,6 +669,11 @@ const I18N = {
     login_subtitle:'Please log in to continue', login_email:'Email', login_password:'Password',
     login_btn:'Login', login_error:'Incorrect email or password', logout:'Logout',
     backup_btn:'☁️ Backup', restore_btn:'♻️ Restore',
+    clear_all_confirm1:'⚠️ This will permanently delete ALL data — customers, products, sales, purchases, expenses, installments, and returns! This cannot be undone. Have you already made a backup?',
+    clear_all_confirm2:'Type exactly this word below to confirm: DELETE',
+    clear_all_confirm_word:'DELETE',
+    clear_all_aborted:'Cancelled — no data was deleted.',
+    clear_all_done:'✓ All data has been cleared', clear_all_btn:'🗑️ Clear All Data',
     drive_auth_failed:'Google Drive authorization failed', backup_success:'✓ Backup successful',
     backup_failed:'⚠️ Backup failed', no_backups_found:'No backups found',
     choose_backup_prompt:'Which backup do you want to restore? Type the number:',
@@ -1190,6 +1203,7 @@ function renderBrandTexts(){
   document.getElementById('loginBtn').textContent = t('login_btn');
   document.getElementById('logoutBtn').textContent = t('logout');
   document.getElementById('backupBtn').textContent = t('backup_btn');
+  document.getElementById('clearAllBtn').textContent = t('clear_all_btn');
   document.getElementById('restoreBtn').textContent = t('restore_btn');
 }
 function renderLogo(){
@@ -3434,6 +3448,31 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   if(useFirebase) firebase.auth().signOut();
 });
 document.getElementById('backupBtn').addEventListener('click', backupToDrive);
+document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
+
+async function clearAllData(){
+  const step1 = confirm(t('clear_all_confirm1'));
+  if(!step1) return;
+  const typed = prompt(t('clear_all_confirm2'));
+  if(typed !== t('clear_all_confirm_word')) { alert(t('clear_all_aborted')); return; }
+
+  const collections = ['customers','suppliers','products','purchases','sales','expenses','installments','installmentPlans','returns'];
+  for(const name of collections){
+    const items = db[name];
+    const ids = Array.isArray(items) ? items.map(x=>x.id) : Object.keys(items);
+    for(const id of ids){ await safeRemove(name, id); }
+  }
+  db.customers = {}; db.suppliers = {}; db.products = {};
+  db.purchases = []; db.sales = []; db.expenses = [];
+  db.installments = []; db.installmentPlans = []; db.returns = [];
+  try{ await storageSet(K.logo, null); }catch(e){}
+  logoData = null;
+
+  renderNav();
+  renderPage();
+  renderLogo();
+  showToast(t('clear_all_done'));
+}
 document.getElementById('restoreBtn').addEventListener('click', restoreFromDrive);
 
 document.getElementById('footerYear').textContent = new Date().getFullYear();
