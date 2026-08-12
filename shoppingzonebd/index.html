@@ -2656,7 +2656,10 @@ function renderReturnHistoryHtml(saleIds){
             <td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.productName)}</td>
             <td>${r.qty}</td><td>৳${money(r.value)}</td>
             <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
-            <td class="no-print">${!r.cancelled ? `<button class="icon-btn" title="${t('return_cancel_action')}" onclick="cancelReturn('${r.id}')">🗑️</button>` : ''}</td>
+            <td class="no-print">
+              ${!r.cancelled ? `<button class="icon-btn" title="${t('return_cancel_action')}" onclick="cancelReturn('${r.id}')">↩️</button>` : ''}
+              <button class="icon-btn" title="${t('delete_title')}" onclick="deleteReturn('${r.id}')">🗑️</button>
+            </td>
           </tr>`).join('')}
         </tbody>
       </table>
@@ -2808,6 +2811,40 @@ async function cancelReturn(returnId){
   if(document.getElementById('saleViewOverlay').classList.contains('open') && sale) openSaleView(sale.id);
 }
 
+async function deleteReturn(returnId){
+  const rec = db.returns.find(r=>r.id===returnId);
+  if(!rec) return;
+  if(!confirm(t('confirm_delete'))) return;
+
+  if(!rec.cancelled){
+    // still active — reverse its stock/due effects first, same as cancelling
+    const product = db.products[rec.productId];
+    if(product){ product.qty = Math.max(0, Number(product.qty) - rec.qty); await safePut('products', rec.productId, product); }
+
+    const adjustments = rec.adjustments && rec.adjustments.length ? rec.adjustments : [{saleId: rec.saleId, amount: rec.dueAdjust}];
+    for(const adj of adjustments){
+      const s = db.sales.find(x=>x.id===adj.saleId);
+      if(s){ s.due = Number(s.due) + Number(adj.amount); await safePut('sales', s.id, s); }
+    }
+    const sale = db.sales.find(s=>s.id===rec.saleId);
+    if(sale && sale.customerId && db.customers[sale.customerId]){
+      const cust = db.customers[sale.customerId];
+      cust.due = Number(cust.due) + Number(rec.dueAdjust);
+      cust.refundOwed = Math.max(0, Number(cust.refundOwed||0) - Number(rec.excessRefund));
+      await safePut('customers', sale.customerId, cust);
+    }
+  }
+
+  db.returns = db.returns.filter(r=>r.id!==returnId);
+  await safeRemove('returns', returnId);
+  renderNav();
+  renderPage();
+  if(document.getElementById('saleViewOverlay').classList.contains('open')){
+    const sale = db.sales.find(s=>s.id===rec.saleId);
+    if(sale) openSaleView(sale.id);
+  }
+}
+
 /* ---------- Returns List Page ---------- */
 let returnsPageQuery = '';
 function renderReturnsPage(){
@@ -2844,7 +2881,8 @@ function renderReturnsPage(){
             <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
             <td class="actions-cell">
               <button class="icon-btn" title="${t('view_title')}" onclick="openSaleView('${r.saleId}')">👁</button>
-              ${!r.cancelled ? `<button class="icon-btn" title="${t('return_cancel_action')}" onclick="cancelReturn('${r.id}')">🗑️</button>` : ''}
+              ${!r.cancelled ? `<button class="icon-btn" title="${t('return_cancel_action')}" onclick="cancelReturn('${r.id}')">↩️</button>` : ''}
+              <button class="icon-btn" title="${t('delete_title')}" onclick="deleteReturn('${r.id}')">🗑️</button>
             </td>
           </tr>`).join('')}
         </tbody>
