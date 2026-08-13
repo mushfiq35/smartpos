@@ -91,6 +91,10 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 
 /* Table */
 #pgTableWrap{overflow-x:auto;}
+#instPageList{overflow-x:auto;}
+#returnsPageList{overflow-x:auto;}
+#custReportList{overflow-x:auto;}
+#suppReportList{overflow-x:auto;}
 table.data{width:100%;border-collapse:collapse;font-size:14px;}
 table.data th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;color:var(--ink-soft);padding:8px 10px;border-bottom:2px solid var(--line);}
 table.data td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;}
@@ -612,14 +616,14 @@ const I18N = {
     ms_add_row:'+ আরেকটা পণ্য যোগ করুন', invoice_label:'ইনভয়েস', items_count:(n)=>`${n} টা পণ্য`,
     inst_already_started:'এই ইনভয়েসে কিস্তি পরিশোধ ইতিমধ্যে শুরু হয়ে গেছে, তাই সম্পূর্ণ এডিট করা যাবে না।',
     inv_email_label:'ইমেইল', inv_contact_label:'যোগাযোগ', no_active_installments:'কোনো সক্রিয় কিস্তি নেই', col_id:'আইডি',
-    f_voucher:'অ্যাকাউন্ট নম্বর', col_voucher:'অ্যাকাউন্ট নম্বর', f_voucher_tag:'নোট', col_voucher_tag:'নোট', all_categories:'সব ক্যাটাগরি',
+    f_voucher:'অ্যাকাউন্ট নম্বর', col_voucher:'অ্যাকাউন্ট', f_voucher_tag:'নোট', col_voucher_tag:'নোট', all_categories:'সব ক্যাটাগরি',
     col_invoice_no:'ইনভয়েস নং', col_receipt_no:'রসিদ নং',
     history_type_label:'ধরন', history_type_sale:'বিক্রি', history_type_payment:'কিস্তি পেমেন্ট',
     reports_summary_tab:'ব্যালেন্স', summary_dp:'দৈনিক প্রাপ্তি (DP)', summary_de:'দৈনিক খরচ (DE)',
     summary_s:'ব্যালেন্স (S)', summary_final:'মোট ব্যালেন্স',
     stock_value_label:'মোট স্টক মূল্য (ক্রয়মূল্যে)', stock_sale_value_label:'সম্ভাব্য বিক্রয় মূল্য',
     low_stock_label:'লো-স্টক', stock_statement_title:'স্টক স্টেটমেন্ট',
-    f_payment_system:'পেমেন্ট সিস্টেম', col_payment_system:'পেমেন্ট সিস্টেম',
+    f_payment_system:'পেমেন্ট সিস্টেম', col_payment_system:'পেমেন্ট',
     payment_cash:'ক্যাশ', payment_bank:'ব্যাংক', payment_mobile_banking:'মোবাইল ব্যাংকিং',
     pay_due_current:(name,due)=>`"${name}" এর বর্তমান বাকি: ৳${money(due)}`,
     pay_due_amount:'প্রদানকৃত টাকা (৳)', pay_due_discount:'ছাড় (৳, ঐচ্ছিক)', pay_due_nothing:'কমপক্ষে একটা মান দিন',
@@ -711,14 +715,14 @@ const I18N = {
     ms_add_row:'+ Add another product', invoice_label:'Invoice', items_count:(n)=>`${n} items`,
     inst_already_started:'This invoice already has paid installments, so it cannot be fully edited.',
     inv_email_label:'Email', inv_contact_label:'Contact', no_active_installments:'No active installments', col_id:'ID',
-    f_voucher:'Account Number', col_voucher:'Account Number', f_voucher_tag:'Note', col_voucher_tag:'Note', all_categories:'All Categories',
+    f_voucher:'Account Number', col_voucher:'Account', f_voucher_tag:'Note', col_voucher_tag:'Note', all_categories:'All Categories',
     col_invoice_no:'Invoice No.', col_receipt_no:'Receipt No.',
     history_type_label:'Type', history_type_sale:'Sale', history_type_payment:'Installment Payment',
     reports_summary_tab:'Balance', summary_dp:'Daily Paid (DP)', summary_de:'Daily Expense (DE)',
     summary_s:'Balance (S)', summary_final:'Total Balance',
     stock_value_label:'Total Stock Value (at cost)', stock_sale_value_label:'Potential Sale Value',
     low_stock_label:'Low Stock', stock_statement_title:'Stock Statement',
-    f_payment_system:'Payment System', col_payment_system:'Payment System',
+    f_payment_system:'Payment System', col_payment_system:'Payment',
     payment_cash:'Cash', payment_bank:'Bank', payment_mobile_banking:'Mobile Banking',
     pay_due_current:(name,due)=>`"${name}"'s current due: ৳${money(due)}`,
     pay_due_amount:'Amount Paid (৳)', pay_due_discount:'Discount (৳, optional)', pay_due_nothing:'Enter at least one amount',
@@ -1273,6 +1277,7 @@ function computeTotalBalance(){
   db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
   db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount)+Number(i.discount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
+  db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
   return dp - de;
 }
 
@@ -1280,9 +1285,11 @@ function pageDashboard(){
   const custCount = Object.keys(db.customers).length;
   const prodCount = Object.keys(db.products).length;
   const suppCount = Object.keys(db.suppliers).length;
-  const totalSales = db.sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalReturnsValue = db.returns.filter(r=>!r.cancelled).reduce((s,r)=>s+Number(r.value),0);
+  const totalSales = db.sales.reduce((s,x)=>s+Number(x.total),0) - totalReturnsValue;
   const today = todayStr();
-  const todaySales = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.total),0);
+  const todayReturnsValue = db.returns.filter(r=>!r.cancelled && r.date===today).reduce((s,r)=>s+Number(r.value),0);
+  const todaySales = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.total),0) - todayReturnsValue;
   const todayExpense = db.expenses.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.amount),0);
   const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0);
   const todayIncome = todayProfit - todayExpense;
@@ -1302,11 +1309,18 @@ function pageDashboard(){
       <div class="stat-card c8"><div class="val">${totalProductQty}</div><div class="lbl">${t('stat_total_qty')}</div></div>
     </div>
     <div class="panel">
-      <h3>${t('low_stock_heading')}</h3>
-      ${lowStock.length===0 ? `<div class="field-hint">${t('low_stock_ok')}</div>` :
-        `<table class="data"><thead><tr><th>${t('col_product')}</th><th>${t('col_stock')}</th><th>${t('f_threshold')}</th></tr></thead><tbody>
-          ${lowStock.map(p=>`<tr class="low"><td>${escapeHtml(p.name)}</td><td>${p.qty}</td><td>${p.threshold}</td></tr>`).join('')}
-        </tbody></table>`}
+      <h3>${t('reports_trend')}</h3>
+      ${(() => {
+        const trendDays = [...Array(14)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(13-i)); return toISODate(d); });
+        const trendVals = trendDays.map(d => db.sales.filter(x=>x.date===d).reduce((s,x)=>s+Number(x.total),0));
+        const maxVal = Math.max(1, ...trendVals);
+        return trendDays.map((d,i) => `
+          <div class="rbar-row">
+            <div>${d.slice(5)}</div>
+            <div class="rbar-track"><div class="rbar-fill" style="width:${(trendVals[i]/maxVal*100).toFixed(0)}%"></div></div>
+            <div style="text-align:right;">৳${money(trendVals[i])}</div>
+          </div>`).join('');
+      })()}
     </div>
     <div class="panel">
       <h3>${t('recent_sales_heading')}</h3>
@@ -1540,6 +1554,7 @@ function renderSummaryReport(body){
     db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); } });
     db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
+    db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
     let running = 0;
     const rows = Object.entries(buckets).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v]) => {
       running += v.dp - v.de;
