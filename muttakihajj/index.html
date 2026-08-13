@@ -565,7 +565,7 @@ const I18N = {
     stat_customer:'মোট হাজী', stat_product:'মোট প্যাকেজ', stat_supplier:'মোট ভেন্ডর',
     stat_sales:'মোট বুকিং', stat_today_sales:'আজকের বুকিং', stat_today_purchase:'আজকের ক্রয়',
     stat_today_expense:'আজকের খরচ', stat_today_income:'আজকের আয় (লাভ)', stat_total_qty:'মোট আসন সংখ্যা',
-    col_name:'নাম', col_phone:'ফোন', col_address:'ঠিকানা', col_due_amt:'বাকি (৳)',
+    col_name:'নাম', col_phone:'ফোন', col_passport:'পাসপোর্ট', col_address:'ঠিকানা', col_due_amt:'বাকি (৳)',
     col_cat:'প্যাকেজের ধরন', col_stock:'আসন সংখ্যা', col_cost:'খরচ মূল্য', col_price:'বিক্রয়মূল্য', col_supplier:'ভেন্ডর',
     col_date:'তারিখ', col_customer:'হাজী', col_product:'প্যাকেজ', col_qty:'পরিমাণ', col_unit_cost:'একক মূল্য',
     col_total:'মোট', col_paid:'প্রদানকৃত', col_due:'বাকি', col_profit:'লাভ', col_note:'নোট', col_amount:'টাকা',
@@ -573,7 +573,7 @@ const I18N = {
     add_purchases:'+ নতুন ক্রয়', add_sales:'+ নতুন বুকিং', add_expenses:'+ নতুন খরচ',
     title_customers:'Pilgrims', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'নাম', f_phone:'ফোন নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
+    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
     login_subtitle:'চালিয়ে যেতে লগ ইন করুন', login_email:'ইমেইল', login_password:'পাসওয়ার্ড',
     login_btn:'লগ ইন করুন', login_error:'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে', logout:'লগ আউট',
     backup_btn:'☁️ ব্যাকআপ', restore_btn:'♻️ রিস্টোর',
@@ -616,7 +616,7 @@ const I18N = {
     ms_add_row:'+ আরেকটা প্যাকেজ যোগ করুন', invoice_label:'ইনভয়েস', items_count:(n)=>`${n} টা প্যাকেজ`,
     inst_already_started:'এই ইনভয়েসে কিস্তি পরিশোধ ইতিমধ্যে শুরু হয়ে গেছে, তাই সম্পূর্ণ এডিট করা যাবে না।',
     inv_email_label:'ইমেইল', inv_contact_label:'যোগাযোগ', no_active_installments:'কোনো সক্রিয় কিস্তি নেই', col_id:'আইডি',
-    f_voucher:'অ্যাকাউন্ট নম্বর', col_voucher:'অ্যাকাউন্ট', f_voucher_tag:'নোট', col_voucher_tag:'নোট', all_categories:'সব ক্যাটাগরি',
+    f_voucher:'অ্যাকাউন্ট নম্বর', col_voucher:'পাসপোর্ট', f_voucher_tag:'নোট', col_voucher_tag:'নোট', all_categories:'সব ক্যাটাগরি',
     col_invoice_no:'ইনভয়েস নং', col_receipt_no:'রসিদ নং',
     history_type_label:'ধরন', history_type_sale:'বুকিং', history_type_payment:'কিস্তি পেমেন্ট',
     reports_summary_tab:'ব্যালেন্স', summary_dp:'দৈনিক প্রাপ্তি (DP)', summary_de:'দৈনিক খরচ (DE)',
@@ -664,7 +664,7 @@ const I18N = {
     stat_customer:'Total Pilgrims', stat_product:'Total Packages', stat_supplier:'Total Vendors',
     stat_sales:'Total Bookings', stat_today_sales:'Today Bookings', stat_today_purchase:'Today Purchase',
     stat_today_expense:'Today Expense', stat_today_income:'Today Income (Profit)', stat_total_qty:'Total Seats',
-    col_name:'Name', col_phone:'Phone', col_address:'Address', col_due_amt:'Due (৳)',
+    col_name:'Name', col_phone:'Phone', col_passport:'Passport', col_address:'Address', col_due_amt:'Due (৳)',
     col_cat:'Package Type', col_stock:'Seats', col_cost:'Cost Price', col_price:'Sell Price', col_supplier:'Vendor',
     col_date:'Date', col_customer:'Pilgrim', col_product:'Package', col_qty:'Qty', col_unit_cost:'Unit Cost',
     col_total:'Total', col_paid:'Paid', col_due:'Due', col_profit:'Profit', col_note:'Note', col_amount:'Amount',
@@ -672,7 +672,7 @@ const I18N = {
     add_purchases:'+ New Purchase', add_sales:'+ New Booking', add_expenses:'+ New Expense',
     title_customers:'Pilgrims', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'Name', f_phone:'Phone Number', f_address:'Address', f_email:'Email', col_email:'Email',
+    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_address:'Address', f_email:'Email', col_email:'Email',
     login_subtitle:'Please log in to continue', login_email:'Email', login_password:'Password',
     login_btn:'Login', login_error:'Incorrect email or password', logout:'Logout',
     backup_btn:'☁️ Backup', restore_btn:'♻️ Restore',
@@ -715,7 +715,7 @@ const I18N = {
     ms_add_row:'+ Add another package', invoice_label:'Invoice', items_count:(n)=>`${n} packages`,
     inst_already_started:'This invoice already has paid installments, so it cannot be fully edited.',
     inv_email_label:'Email', inv_contact_label:'Contact', no_active_installments:'No active installments', col_id:'ID',
-    f_voucher:'Account Number', col_voucher:'Account', f_voucher_tag:'Note', col_voucher_tag:'Note', all_categories:'All Categories',
+    f_voucher:'Account Number', col_voucher:'Passport', f_voucher_tag:'Note', col_voucher_tag:'Note', all_categories:'All Categories',
     col_invoice_no:'Invoice No.', col_receipt_no:'Receipt No.',
     history_type_label:'Type', history_type_sale:'Booking', history_type_payment:'Installment Payment',
     reports_summary_tab:'Balance', summary_dp:'Daily Paid (DP)', summary_de:'Daily Expense (DE)',
@@ -1448,7 +1448,9 @@ function renderInstallmentsPage(){
       if(cust.name.toLowerCase().includes(q)) return true;
       if(String(cust.displayId||'').includes(q)) return true;
       if(cust.phone && cust.phone.toLowerCase().includes(q)) return true;
+      if(cust.passport && cust.passport.toLowerCase().includes(q)) return true;
       if(accountNumbersFor(id).some(v=>v.toLowerCase().includes(q))) return true;
+      if(db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherTag||'').toLowerCase().includes(q))) return true;
       return false;
     });
     const listEl = document.getElementById('instPageList');
@@ -1640,12 +1642,34 @@ function wireRangeToolbar(prefix, getState, setState, refresh){
   document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => window.print());
 }
 
+let salesRptQuery = '';
 function renderSalesOnlyReport(body){
   body.innerHTML = buildRangeToolbar('salesRpt');
+  const toolbar = body.querySelector('.toolbar');
+  if(toolbar){
+    const srchInp = document.createElement('input');
+    srchInp.type='text'; srchInp.placeholder=t('search_placeholder');
+    srchInp.value=salesRptQuery; srchInp.style.flex='1'; srchInp.style.minWidth='160px';
+    srchInp.style.fontFamily='Inter'; srchInp.style.fontSize='14px';
+    srchInp.style.padding='9px 12px'; srchInp.style.border='1px solid var(--line)';
+    srchInp.style.borderRadius='6px'; srchInp.style.background='#fff';
+    toolbar.insertBefore(srchInp, toolbar.firstChild);
+    srchInp.addEventListener('input', e=>{ salesRptQuery=e.target.value; refresh(); });
+  }
   function refresh(){
     const st = {range:salesRptRange, from:salesRptFrom, to:salesRptTo};
     const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('salesRptFromDate').value, st.to || document.getElementById('salesRptToDate').value);
-    const list = db.sales.filter(s=>s.date>=fromStr && s.date<=toStr).sort((a,b)=>b.ts-a.ts);
+    const q = salesRptQuery.trim().toLowerCase();
+    const list = db.sales.filter(s=>{
+      if(!(s.date>=fromStr && s.date<=toStr)) return false;
+      if(!q) return true;
+      const cust = s.customerId ? db.customers[s.customerId] : null;
+      return (s.customerName||'').toLowerCase().includes(q)
+        || (s.productName||'').toLowerCase().includes(q)
+        || (s.voucherNo||'').toLowerCase().includes(q)
+        || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q));
+    }).sort((a,b)=>b.ts-a.ts);
     const totalValue = list.reduce((s,x)=>s+Number(x.total),0);
     const totalPaid = list.reduce((s,x)=>s+Number(x.paid),0);
     const totalDue = list.reduce((s,x)=>s+Number(x.due),0);
@@ -1673,12 +1697,33 @@ function renderSalesOnlyReport(body){
   refresh();
 }
 
+let returnsRptQuery = '';
 function renderReturnsOnlyReport(body){
   body.innerHTML = buildRangeToolbar('returnsRpt');
+  const toolbar = body.querySelector('.toolbar');
+  if(toolbar){
+    const srchInp = document.createElement('input');
+    srchInp.type='text'; srchInp.placeholder=t('search_placeholder');
+    srchInp.value=returnsRptQuery; srchInp.style.flex='1'; srchInp.style.minWidth='160px';
+    srchInp.style.fontFamily='Inter'; srchInp.style.fontSize='14px';
+    srchInp.style.padding='9px 12px'; srchInp.style.border='1px solid var(--line)';
+    srchInp.style.borderRadius='6px'; srchInp.style.background='#fff';
+    toolbar.insertBefore(srchInp, toolbar.firstChild);
+    srchInp.addEventListener('input', e=>{ returnsRptQuery=e.target.value; refresh(); });
+  }
   function refresh(){
     const st = {range:returnsRptRange, from:returnsRptFrom, to:returnsRptTo};
     const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('returnsRptFromDate').value, st.to || document.getElementById('returnsRptToDate').value);
-    const list = db.returns.filter(r=>r.date>=fromStr && r.date<=toStr).sort((a,b)=>b.ts-a.ts);
+    const q = returnsRptQuery.trim().toLowerCase();
+    const list = db.returns.filter(r=>{
+      if(!(r.date>=fromStr && r.date<=toStr)) return false;
+      if(!q) return true;
+      const cust = r.customerId ? db.customers[r.customerId] : null;
+      return (r.customerName||'').toLowerCase().includes(q)
+        || (r.productName||'').toLowerCase().includes(q)
+        || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q));
+    }).sort((a,b)=>b.ts-a.ts);
     const activeList = list.filter(r=>!r.cancelled);
     const totalValue = activeList.reduce((s,x)=>s+Number(x.value),0);
     const totalDueAdjust = activeList.reduce((s,x)=>s+Number(x.dueAdjust),0);
@@ -1707,12 +1752,33 @@ function renderReturnsOnlyReport(body){
   refresh();
 }
 
+let instRptQuery = '';
 function renderInstallmentOnlyReport(body){
   body.innerHTML = buildRangeToolbar('instRpt');
+  const toolbar = body.querySelector('.toolbar');
+  if(toolbar){
+    const srchInp = document.createElement('input');
+    srchInp.type='text'; srchInp.placeholder=t('search_placeholder');
+    srchInp.value=instRptQuery; srchInp.style.flex='1'; srchInp.style.minWidth='160px';
+    srchInp.style.fontFamily='Inter'; srchInp.style.fontSize='14px';
+    srchInp.style.padding='9px 12px'; srchInp.style.border='1px solid var(--line)';
+    srchInp.style.borderRadius='6px'; srchInp.style.background='#fff';
+    toolbar.insertBefore(srchInp, toolbar.firstChild);
+    srchInp.addEventListener('input', e=>{ instRptQuery=e.target.value; refresh(); });
+  }
   function refresh(){
     const st = {range:instRptRange, from:instRptFrom, to:instRptTo};
     const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('instRptFromDate').value, st.to || document.getElementById('instRptToDate').value);
-    const list = db.installments.filter(i=>i.date>=fromStr && i.date<=toStr).sort((a,b)=>b.ts-a.ts);
+    const q = instRptQuery.trim().toLowerCase();
+    const list = db.installments.filter(i=>{
+      if(!(i.date>=fromStr && i.date<=toStr)) return false;
+      if(!q) return true;
+      const cust = i.customerId ? db.customers[i.customerId] : null;
+      return (i.customerName||'').toLowerCase().includes(q)
+        || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q))
+        || (db.sales.filter(s=>s.customerId===i.customerId).some(s=>(s.voucherNo||'').toLowerCase().includes(q)));
+    }).sort((a,b)=>b.ts-a.ts);
     const totalPaid = list.reduce((s,x)=>s+Number(x.amount),0);
     const totalDiscount = list.reduce((s,x)=>s+Number(x.discount||0),0);
     const totalNewDue = list.reduce((s,x)=>s+Number(x.newDue),0);
@@ -1746,6 +1812,7 @@ function renderStockReport(body){
   ])].sort();
   body.innerHTML = `
     <div class="toolbar no-print">
+      <input type="text" id="stockSearch" placeholder="${t('search_placeholder')}" style="flex:1;min-width:160px;">
       <select id="stockCatFilter"><option value="">${t('all_categories')}</option>${categories.map(cat=>`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('')}</select>
       <button class="btn ghost" id="stockPrintBtn" style="margin-left:auto;">${t('print_report')}</button>
     </div>
@@ -1753,7 +1820,8 @@ function renderStockReport(body){
   `;
   function refresh(){
     const cat = document.getElementById('stockCatFilter').value;
-    const entries = Object.entries(db.products).filter(([id,p]) => !cat || p.cat===cat);
+    const q = (document.getElementById('stockSearch').value||'').trim().toLowerCase();
+    const entries = Object.entries(db.products).filter(([id,p]) => (!cat || p.cat===cat) && (!q || p.name.toLowerCase().includes(q) || (p.cat||'').toLowerCase().includes(q)));
     const totalStockValue = entries.reduce((s,[,p])=>s+Number(p.qty)*Number(p.cost||0),0);
     const totalSaleValue = entries.reduce((s,[,p])=>s+Number(p.qty)*Number(p.price||0),0);
     const totalPotentialProfit = totalSaleValue - totalStockValue;
@@ -1789,6 +1857,7 @@ function renderStockReport(body){
       </div>
     `;
   }
+  document.getElementById('stockSearch').addEventListener('input', refresh);
   document.getElementById('stockCatFilter').addEventListener('change', refresh);
   document.getElementById('stockPrintBtn').addEventListener('click', () => window.print());
   refresh();
@@ -1898,7 +1967,7 @@ function renderCustomerReport(body){
   });
   function renderCustList(){
     const q = reportsCustQuery.trim().toLowerCase();
-    const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)));
+    const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)) || db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherNo||'').toLowerCase().includes(q)) || (c.passport && c.passport.toLowerCase().includes(q)));
     const listEl = document.getElementById('custReportList');
     listEl.innerHTML = entries.length===0
       ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
@@ -2053,10 +2122,11 @@ function renderSupplierReport(body){
 const CONFIG = {
   customers: {
     titleKey:'title_customers', addLabelKey:'add_customers',
-    columns:[{k:'displayId',hKey:'col_id', fmt:v=>v?('#'+v):'—'},{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'email',hKey:'col_email', fmt:v=>v||'—'},{k:'address',hKey:'col_address'},{k:'due',hKey:'col_due_amt', fmt:v=>'৳'+money(v)}],
+    columns:[{k:'displayId',hKey:'col_id', fmt:v=>v?('#'+v):'—'},{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'passport',hKey:'col_passport', fmt:v=>v||'—'},{k:'email',hKey:'col_email', fmt:v=>v||'—'},{k:'address',hKey:'col_address'},{k:'due',hKey:'col_due_amt', fmt:v=>'৳'+money(v)}],
     fields:[
       {key:'name', labelKey:'f_name', type:'text', required:true, suggest:true},
       {key:'phone', labelKey:'f_phone', type:'text', suggest:true},
+      {key:'passport', labelKey:'f_passport', type:'text', suggest:true},
       {key:'email', labelKey:'f_email', type:'email', suggest:true},
       {key:'address', labelKey:'f_address', type:'text', suggest:true},
       {key:'note', labelKey:'f_note', type:'text', suggest:true},
@@ -2535,6 +2605,7 @@ function openQuickAdd(kind, fieldKey){
         <datalist id="dl-qa-custname">${nameSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist>
       </div>
       <div class="field"><label>${t('qa_phone')}</label><input type="text" id="qaPhone" autocomplete="off"></div>
+      <div class="field"><label>${t('f_passport')}</label><input type="text" id="qaPassport" autocomplete="off"></div>
       <div class="field"><label>${t('f_email')}</label><input type="email" id="qaEmail" autocomplete="off"></div>
       <div class="field"><label>${t('f_address')}</label>
         <input type="text" id="qaAddress" list="dl-qa-custaddr" autocomplete="off">
@@ -2584,9 +2655,10 @@ document.getElementById('quickAddSaveBtn').addEventListener('click', async () =>
   const key = uid();
   if(kind==='customers'){
     const phone = document.getElementById('qaPhone').value.trim();
+    const passport = document.getElementById('qaPassport').value.trim();
     const email = document.getElementById('qaEmail').value.trim();
     const address = document.getElementById('qaAddress').value.trim();
-    const record = { name, phone, email, address, due:0, displayId: nextCustomerDisplayId() };
+    const record = { name, phone, passport, email, address, due:0, displayId: nextCustomerDisplayId() };
     db.customers[key] = record;
     await safePut('customers', key, record);
   } else {
