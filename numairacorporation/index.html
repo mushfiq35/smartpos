@@ -281,8 +281,8 @@
 
     @media print {
       body * { visibility: hidden; }
-      #printableInvoice, #printableInvoice *, #accountsPrintArea, #accountsPrintArea *, #printableAccountVoucher, #printableAccountVoucher *, #printableReturnReceipt, #printableReturnReceipt *, #printableCustomerStatement, #printableCustomerStatement * { visibility: visible; }
-      #printableInvoice, #accountsPrintArea, #printableAccountVoucher, #printableReturnReceipt, #printableCustomerStatement { position: absolute; left: 0; top: 0; width: 100%; }
+      #printableInvoice, #printableInvoice *, #accountsPrintArea, #accountsPrintArea *, #printableAccountVoucher, #printableAccountVoucher *, #printableReturnReceipt, #printableReturnReceipt *, #printableCustomerStatement, #printableCustomerStatement *, #printableDeliveryChallan, #printableDeliveryChallan *, #printableCancellationReceipt, #printableCancellationReceipt *, #printablePaymentReceipt, #printablePaymentReceipt * { visibility: visible; }
+      #printableInvoice, #accountsPrintArea, #printableAccountVoucher, #printableReturnReceipt, #printableCustomerStatement, #printableDeliveryChallan, #printableCancellationReceipt, #printablePaymentReceipt { position: absolute; left: 0; top: 0; width: 100%; }
       .no-print { display: none !important; }
     }
   </style>
@@ -580,7 +580,9 @@
                   <th data-key="thProdName">প্রোডাক্টের নাম</th>
                   <th data-key="thCategory">ক্যাটাগরি</th>
                   <th data-key="thBagPrice">মূল্য (বস্তা)</th>
-                  <th data-key="thStock">স্টক (বস্তা)</th>
+                  <th data-key="thStock">ফিজিক্যাল স্টক (বস্তা)</th>
+                  <th data-key="thCommittedStock">রিজার্ভড (DO)</th>
+                  <th data-key="thAvailableStock">বিক্রয়যোগ্য স্টক</th>
                   <th data-key="thStatus">স্ট্যাটাস</th>
                   <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
                 </tr>
@@ -688,6 +690,7 @@
                   <th data-key="thTotalPaid">মোট জমা</th>
                   <th data-key="thCurrDue">বর্তমান বকেয়া</th>
                   <th data-key="thStatus">স্ট্যাটাস</th>
+                  <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -1064,13 +1067,13 @@
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAbiACFr31J3XqaiXeCPnvBNjXOWIUcSCQ",
-      authDomain: "numaira-corporation.firebaseapp.com",
-      projectId: "numaira-corporation",
-      storageBucket: "numaira-corporation.firebasestorage.app",
-      messagingSenderId: "281765458880",
-      appId: "1:281765458880:web:5d895f92bb09ddcfb58e25"
-    };
+  apiKey: "AIzaSyAbiACFr31J3XqaiXeCPnvBNjXOWIUcSCQ",
+  authDomain: "numaira-corporation.firebaseapp.com",
+  projectId: "numaira-corporation",
+  storageBucket: "numaira-corporation.firebasestorage.app",
+  messagingSenderId: "281765458880",
+  appId: "1:281765458880:web:5d895f92bb09ddcfb58e25"
+};
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -1122,6 +1125,9 @@
     const SVG_EDIT = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
     const SVG_DELETE = `<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
     const SVG_RETURN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13a9 9 0 1 0 3-6.7L3 9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const SVG_TRUCK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15v13H1z" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 8h4l3 3v5h-7V8z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`;
+    const SVG_CANCEL_ORDER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 8l8 8M16 8l-8 8" stroke-linecap="round"/></svg>`;
+    const SVG_PAY = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 10h20" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 15h4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   </script>
 
   <!-- MODALS -->
@@ -1191,6 +1197,12 @@
         <button type="button" class="btn-plus admin-only" onclick="showQuickAddCustomer()" title="নতুন কাস্টমার যোগ করুন">+</button>
       </div>
 
+      <label data-key="lblCustomerType">কাস্টমার টাইপ:</label>
+      <select id="saleCustomerType" onchange="onCustomerTypeChange()">
+        <option value="Instant" data-key="optInstantSales">Instant Sales (নগদ/ইনস্ট্যান্ট)</option>
+        <option value="DO" data-key="optDOSales">DO Sales (ডেলিভারি অর্ডার)</option>
+      </select>
+
       <label data-key="lblSelectProd">প্রোডাক্ট সিলেক্ট করুন:</label>
       <div class="input-plus-group">
         <div class="combo-wrap">
@@ -1200,6 +1212,8 @@
         </div>
         <button type="button" class="btn-plus" onclick="showQuickAddProduct()" title="নতুন প্রোডাক্ট যোগ করুন">+</button>
       </div>
+
+      <p id="saleAvailStockNote" style="display:none; font-size:12px; color:#2563eb; margin:-10px 0 12px;"></p>
 
       <label data-key="lblSaleUnit">বিক্রয় ইউনিট:</label>
       <select id="saleUnitType" onchange="updatePriceAndUnit()">
@@ -1272,7 +1286,7 @@
       <textarea id="declineNoteInput" rows="3" placeholder="যেমন: ভুল পরিমাণ, স্টক নেই ইত্যাদি" style="width:100%; padding:10px; border:1px solid var(--border-cool); border-radius:8px; font-family:inherit; font-size:14px; margin-bottom:14px; resize:vertical;"></textarea>
       <div style="display:flex; gap:10px;">
         <button onclick="confirmDecline()" class="btn-danger" data-key="btnConfirmDecline">প্রত্যাখ্যান নিশ্চিত করুন</button>
-        <button onclick="closeModal('declineModal')" class="btn-action" style="background:var(--paper); border:1px solid var(--border-cool);" data-key="btnCancelShort">বাতিল</button>
+        <button onclick="closeModal('declineModal')" class="btn-danger" data-key="btnCancelShort">বাতিল</button>
       </div>
     </div>
   </div>
@@ -1308,7 +1322,166 @@
 
       <div style="display:flex; gap:10px;">
         <button onclick="submitReturn()" class="btn-success" data-key="btnSubmitReturn">রিটার্ন সম্পন্ন করুন</button>
-        <button onclick="closeModal('returnModal')" class="btn-action" style="background:var(--paper); border:1px solid var(--border-cool);" data-key="btnCancelShort">বাতিল</button>
+        <button onclick="closeModal('returnModal')" class="btn-danger" data-key="btnCancelShort">বাতিল</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="deliveryModal" class="modal">
+    <div class="modal-content">
+      <h3 data-key="titleCreateDelivery">🚚 ডেলিভারি চালান তৈরি করুন</h3>
+      <input type="hidden" id="deliverySaleId">
+
+      <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:14px; font-size:13.5px;">
+        <p><b data-key="thInvoice">ইনভয়েস</b>: <span id="delInfoInvoice">-</span></p>
+        <p><b data-key="thProduct">প্রোডাক্ট</b>: <span id="delInfoProduct">-</span></p>
+        <p><b data-key="thOrderedQty">মোট অর্ডার</b>: <span id="delInfoOrdered">-</span></p>
+        <p><b data-key="thAlreadyDelivered">ইতিমধ্যে ডেলিভারি</b>: <span id="delInfoDelivered">-</span></p>
+        <p style="color:#2563eb;"><b data-key="thPendingDelivery">বাকি আছে (ডেলিভারির জন্য)</b>: <span id="delInfoPending">-</span></p>
+      </div>
+
+      <label data-key="lblDeliveryUnit">ডেলিভারি ইউনিট:</label>
+      <select id="deliveryUnitType">
+        <option value="Bag" data-key="optUnitBag">বস্তা</option>
+        <option value="Kg" data-key="optUnitKg">কেজি</option>
+      </select>
+
+      <label data-key="lblDeliveryQty">ডেলিভারি পরিমাণ:</label>
+      <input type="number" id="deliveryQtyInput" min="0" step="0.01">
+
+      <label data-key="lblDeliveryNote">নোট (ঐচ্ছিক):</label>
+      <input type="text" id="deliveryNoteInput" placeholder="যেমন: গাড়ি নম্বর, ড্রাইভারের নাম ইত্যাদি">
+
+      <div style="display:flex; gap:10px;">
+        <button onclick="submitDelivery()" class="btn-success" data-key="btnSubmitDelivery">ডেলিভারি সম্পন্ন করুন</button>
+        <button onclick="closeModal('deliveryModal')" class="btn-danger" data-key="btnCancelShort">বাতিল</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewDeliveryModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;" class="no-print">
+        <h3 data-key="titleDeliveryChallan">🚚 ডেলিভারি চালান</h3>
+        <button onclick="window.print()" class="btn-action btn-warning" data-key="btnPrintChallan">🖨️ প্রিন্ট চালান</button>
+      </div>
+      <div id="printableDeliveryChallan" class="invoice-box"></div>
+      <div style="margin-top:15px; text-align:right;" class="no-print">
+        <button onclick="closeModal('viewDeliveryModal')" class="btn-danger" style="width:auto;" data-key="btnCloseShort">বন্ধ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="cancelPendingModal" class="modal">
+    <div class="modal-content">
+      <h3 data-key="titleCancelPending">🚫 বাকি অর্ডার বাতিল / রিফান্ড</h3>
+      <input type="hidden" id="cancelSaleId">
+
+      <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:14px; font-size:13.5px;">
+        <p><b data-key="thInvoice">ইনভয়েস</b>: <span id="cxInfoInvoice">-</span></p>
+        <p><b data-key="thProduct">প্রোডাক্ট</b>: <span id="cxInfoProduct">-</span></p>
+        <p><b data-key="thOrderedQty">মোট অর্ডার</b>: <span id="cxInfoOrdered">-</span></p>
+        <p><b data-key="thAlreadyDelivered">ইতিমধ্যে ডেলিভারি</b>: <span id="cxInfoDelivered">-</span></p>
+        <p style="color:#2563eb;"><b data-key="thPendingDelivery">বাকি আছে (ডেলিভারির জন্য)</b>: <span id="cxInfoPending">-</span></p>
+      </div>
+
+      <p style="font-size:12.5px; color:#64748b; margin-bottom:10px;" data-key="cancelPendingHelpNote">গ্রাহক যে পরিমাণ আর নেবেন না, শুধু সেটুকু বাতিল করুন — এতে ফিজিক্যাল স্টক পরিবর্তন হবে না (কারণ সেটা কখনো বের হয়নি), শুধু হিসাব সমন্বয় হবে।</p>
+
+      <label data-key="lblCancelUnit">বাতিল ইউনিট:</label>
+      <select id="cancelUnitType">
+        <option value="Bag" data-key="optUnitBag">বস্তা</option>
+        <option value="Kg" data-key="optUnitKg">কেজি</option>
+      </select>
+
+      <label data-key="lblCancelQty">বাতিল পরিমাণ:</label>
+      <input type="number" id="cancelQtyInput" min="0" step="0.01" oninput="updateCancelPreview()">
+
+      <label data-key="lblCancelReason">কারণ / মন্তব্য (ঐচ্ছিক):</label>
+      <input type="text" id="cancelReasonInput" placeholder="যেমন: গ্রাহক আর নিতে চাচ্ছেন না">
+
+      <div style="background:#fff7ed; border:1px solid #fed7aa; padding:12px; border-radius:8px; margin-bottom:14px; font-size:13.5px;">
+        <p><b data-key="lblRefundValuePreview">আনুমানিক রিফান্ড মূল্য</b>: <b id="cxInfoRefundPreview" style="color:#d97706;">৳0.00</b></p>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button onclick="submitCancelPending()" class="btn-success" data-key="btnSubmitCancelPending">বাতিল সম্পন্ন করুন</button>
+        <button onclick="closeModal('cancelPendingModal')" class="btn-danger" data-key="btnCancelShort">বাতিল</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewCancellationModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;" class="no-print">
+        <h3 data-key="titleCancellationReceipt">🚫 অর্ডার বাতিল / রিফান্ড রিসিট</h3>
+        <button onclick="window.print()" class="btn-action btn-warning" data-key="btnPrintCancellationReceipt">🖨️ প্রিন্ট রিসিট</button>
+      </div>
+      <div id="printableCancellationReceipt" class="invoice-box"></div>
+      <div style="margin-top:15px; text-align:right;" class="no-print">
+        <button onclick="closeModal('viewCancellationModal')" class="btn-danger" style="width:auto;" data-key="btnCloseShort">বন্ধ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="paymentModal" class="modal">
+    <div class="modal-content">
+      <h3 data-key="titlePayDue">💰 বকেয়া থেকে জমা নিন</h3>
+      <input type="hidden" id="paymentCustId">
+      <input type="hidden" id="paymentEditId">
+
+      <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:14px; font-size:13.5px;">
+        <p><b data-key="lblCustNameShort">কাস্টমারের নাম:</b> <span id="pmInfoCustName">-</span></p>
+        <p style="color:#dc2626;"><b data-key="thCurrDue">বর্তমান বকেয়া</b>: <span id="pmInfoCurrentDue">-</span></p>
+      </div>
+
+      <label data-key="lblPaymentAmount">জমার পরিমাণ:</label>
+      <input type="number" id="paymentAmountInput" min="0" step="0.01">
+
+      <label data-key="lblPaymentMethod">পেমেন্ট মেথড:</label>
+      <select id="paymentMethodInput">
+        <option value="Cash" data-key="optAccCash">নগদ</option>
+        <option value="Bank" data-key="optAccBank">ব্যাংক ট্রান্সফার</option>
+        <option value="Mobile Banking" data-key="optAccMobile">মোবাইল ব্যাংকিং (বিকাশ/নগদ)</option>
+      </select>
+
+      <label data-key="lblPaymentDate">তারিখ:</label>
+      <input type="date" id="paymentDateInput">
+
+      <label data-key="lblPaymentNote">নোট (ঐচ্ছিক):</label>
+      <input type="text" id="paymentNoteInput" placeholder="যেমন: পূর্বের বকেয়া পরিশোধ">
+
+      <div style="display:flex; gap:10px; margin-bottom:18px;">
+        <button onclick="submitPayment()" class="btn-success" id="btnPaymentSave" data-key="btnSavePayment">জমা সংরক্ষণ করুন</button>
+        <button onclick="closeModal('paymentModal')" class="btn-danger" data-key="btnCancelShort">বাতিল</button>
+      </div>
+
+      <h4 style="border-top:1px solid var(--border-cool); padding-top:14px;" data-key="titlePaymentHistory">📜 জমার ইতিহাস</h4>
+      <div class="table-responsive">
+        <table id="paymentHistoryTable">
+          <thead>
+            <tr>
+              <th data-key="lblDate">তারিখ</th>
+              <th data-key="lblAmount">পরিমাণ</th>
+              <th data-key="lblAccMethod">মেথড</th>
+              <th data-key="thStatus">স্ট্যাটাস</th>
+              <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewPaymentReceiptModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;" class="no-print">
+        <h3 data-key="titlePaymentReceipt">🧾 জমার রিসিট</h3>
+        <button onclick="window.print()" class="btn-action btn-warning" data-key="btnPrintPaymentReceipt">🖨️ প্রিন্ট রিসিট</button>
+      </div>
+      <div id="printablePaymentReceipt" class="invoice-box"></div>
+      <div style="margin-top:15px; text-align:right;" class="no-print">
+        <button onclick="closeModal('viewPaymentReceiptModal')" class="btn-danger" style="width:auto;" data-key="btnCloseShort">বন্ধ করুন</button>
       </div>
     </div>
   </div>
@@ -1403,6 +1576,62 @@
         unitTonLabel: "টন",
         returnedIndicatorLabel: "রিটার্ন হয়েছে",
         lblTotalReturns: "মোট রিটার্ন",
+        lblCustomerType: "কাস্টমার টাইপ:",
+        optInstantSales: "Instant Sales (নগদ/ইনস্ট্যান্ট)",
+        optDOSales: "DO Sales (ডেলিভারি অর্ডার)",
+        optDOSalesShort: "DO Sales",
+        lblAvailableStock: "বিক্রয়যোগ্য স্টক",
+        doStockReserveNote: "এই পরিমাণ এখনই রিজার্ভ হয়ে যাবে, ডেলিভারির সময় ফিজিক্যাল স্টক কমবে।",
+        alertNotEnoughAvailableStock: "পর্যাপ্ত বিক্রয়যোগ্য স্টক নেই! বর্তমানে বিক্রয়যোগ্য: {avail}",
+        thOrderedQty: "মোট অর্ডার",
+        thAlreadyDelivered: "ইতিমধ্যে ডেলিভারি",
+        thPendingDelivery: "বাকি আছে (ডেলিভারির জন্য)",
+        titleCreateDelivery: "🚚 ডেলিভারি চালান তৈরি করুন",
+        lblDeliveryUnit: "ডেলিভারি ইউনিট:",
+        lblDeliveryQty: "ডেলিভারি পরিমাণ:",
+        lblDeliveryNote: "নোট (ঐচ্ছিক):",
+        btnSubmitDelivery: "ডেলিভারি সম্পন্ন করুন",
+        alertFullyDeliveredAlready: "এই অর্ডারের সম্পূর্ণ পরিমাণ ইতিমধ্যে ডেলিভারি হয়ে গেছে!",
+        alertEnterValidDeliveryQty: "সঠিক ডেলিভারি পরিমাণ লিখুন!",
+        alertDeliveryExceedsPending: "ডেলিভারি পরিমাণ বাকি থাকা পরিমাণের চেয়ে বেশি হতে পারবে না!",
+        confirmReverseDelivery: "এই ডেলিভারিটি বাতিল (reverse) করতে চান? ফিজিক্যাল স্টক পূর্বাবস্থায় ফিরে যাবে।",
+        alertDeliveryReversed: "ডেলিভারিটি বাতিল (reverse) করা হয়েছে।",
+        titleDeliveryChallan: "🚚 ডেলিভারি চালান",
+        btnPrintChallan: "🖨️ প্রিন্ট চালান",
+        thChallanNo: "চালান নং",
+        thDeliveryQty: "ডেলিভারি পরিমাণ",
+        thCommittedStock: "রিজার্ভড (DO)",
+        thAvailableStock: "বিক্রয়যোগ্য স্টক",
+        titleCancelPending: "🚫 বাকি অর্ডার বাতিল / রিফান্ড",
+        cancelPendingHelpNote: "গ্রাহক যে পরিমাণ আর নেবেন না, শুধু সেটুকু বাতিল করুন — এতে ফিজিক্যাল স্টক পরিবর্তন হবে না (কারণ সেটা কখনো বের হয়নি), শুধু হিসাব সমন্বয় হবে।",
+        lblCancelUnit: "বাতিল ইউনিট:",
+        lblCancelQty: "বাতিল পরিমাণ:",
+        lblCancelReason: "কারণ / মন্তব্য (ঐচ্ছিক):",
+        btnSubmitCancelPending: "বাতিল সম্পন্ন করুন",
+        alertNothingPendingToCancel: "এই অর্ডারের কোনো বাকি (ডেলিভারিবিহীন) পরিমাণ নেই!",
+        alertEnterValidCancelQty: "সঠিক বাতিল পরিমাণ লিখুন!",
+        alertCancelExceedsPending: "বাতিল পরিমাণ বাকি থাকা পরিমাণের চেয়ে বেশি হতে পারবে না!",
+        confirmReverseCancellation: "এই বাতিলটি পূর্বাবস্থায় ফেরাতে চান? গ্রাহকের বকেয়া/মোট বিল আগের অবস্থায় ফিরে যাবে।",
+        alertCancellationReversed: "বাতিলটি পূর্বাবস্থায় ফেরানো হয়েছে।",
+        titleCancellationReceipt: "🚫 অর্ডার বাতিল / রিফান্ড রিসিট",
+        btnPrintCancellationReceipt: "🖨️ প্রিন্ট রিসিট",
+        thCancelNo: "বাতিল নং",
+        statementDeliveryLabel: "ডেলিভারি",
+        statementCancelLabel: "বাতিল/রিফান্ড",
+        titlePayDue: "💰 বকেয়া থেকে জমা নিন",
+        titlePaymentHistory: "📜 জমার ইতিহাস",
+        lblPaymentAmount: "জমার পরিমাণ:",
+        lblPaymentMethod: "পেমেন্ট মেথড:",
+        lblPaymentDate: "তারিখ:",
+        lblPaymentNote: "নোট (ঐচ্ছিক):",
+        btnSavePayment: "জমা সংরক্ষণ করুন",
+        alertPaymentSaved: "✅ জমা সফলভাবে সংরক্ষিত হয়েছে!",
+        confirmDeletePayment: "এই জমার এন্ট্রিটি মুছে ফেলতে চান? এতে কাস্টমারের বকেয়া বেড়ে যাবে।",
+        titlePaymentReceipt: "🧾 জমার রিসিট",
+        btnPrintPaymentReceipt: "🖨️ প্রিন্ট রিসিট",
+        alertPaymentSentApproval: "✅ জমার তথ্যটি অনুমোদনের জন্য সুপার ইউজারের কাছে পাঠানো হয়েছে!",
+        alertPaymentApproved: "✅ জমা অনুমোদিত হয়েছে!",
+        thPaymentReceiptNo: "রিসিট নং",
         menuReports: "রিপোর্টস",
         titleReports: "📊 রিপোর্টস",
         reportTabOverview: "ওভারভিউ",
@@ -1723,6 +1952,62 @@
         unitTonLabel: "Ton",
         returnedIndicatorLabel: "Returned",
         lblTotalReturns: "Total Returns",
+        lblCustomerType: "Customer Type:",
+        optInstantSales: "Instant Sales (Cash/Immediate)",
+        optDOSales: "DO Sales (Delivery Order)",
+        optDOSalesShort: "DO Sales",
+        lblAvailableStock: "Available Stock",
+        doStockReserveNote: "This quantity will be reserved now; physical stock only drops on delivery.",
+        alertNotEnoughAvailableStock: "Not enough available stock! Currently available: {avail}",
+        thOrderedQty: "Ordered Qty",
+        thAlreadyDelivered: "Already Delivered",
+        thPendingDelivery: "Pending Delivery",
+        titleCreateDelivery: "🚚 Create Delivery Challan",
+        lblDeliveryUnit: "Delivery Unit:",
+        lblDeliveryQty: "Delivery Quantity:",
+        lblDeliveryNote: "Note (optional):",
+        btnSubmitDelivery: "Submit Delivery",
+        alertFullyDeliveredAlready: "This order has already been fully delivered!",
+        alertEnterValidDeliveryQty: "Please enter a valid delivery quantity!",
+        alertDeliveryExceedsPending: "Delivery quantity cannot exceed the pending quantity!",
+        confirmReverseDelivery: "Reverse this delivery? Physical stock will be restored to its prior state.",
+        alertDeliveryReversed: "The delivery has been reversed.",
+        titleDeliveryChallan: "🚚 Delivery Challan",
+        btnPrintChallan: "🖨️ Print Challan",
+        thChallanNo: "Challan No",
+        thDeliveryQty: "Delivered Qty",
+        thCommittedStock: "Reserved (DO)",
+        thAvailableStock: "Available Stock",
+        titleCancelPending: "🚫 Cancel Pending Order / Refund",
+        cancelPendingHelpNote: "Only cancel the quantity the customer won't be collecting — physical stock is unaffected (it never left), only the billing is adjusted.",
+        lblCancelUnit: "Cancel Unit:",
+        lblCancelQty: "Cancel Quantity:",
+        lblCancelReason: "Reason / Note (optional):",
+        btnSubmitCancelPending: "Confirm Cancellation",
+        alertNothingPendingToCancel: "This order has no pending (undelivered) quantity!",
+        alertEnterValidCancelQty: "Please enter a valid cancel quantity!",
+        alertCancelExceedsPending: "Cancel quantity cannot exceed the pending quantity!",
+        confirmReverseCancellation: "Reverse this cancellation? The customer's due/total will be restored to its prior state.",
+        alertCancellationReversed: "The cancellation has been reversed.",
+        titleCancellationReceipt: "🚫 Order Cancellation / Refund Receipt",
+        btnPrintCancellationReceipt: "🖨️ Print Receipt",
+        thCancelNo: "Cancellation No",
+        statementDeliveryLabel: "Delivery",
+        statementCancelLabel: "Cancellation/Refund",
+        titlePayDue: "💰 Collect Payment Against Due",
+        titlePaymentHistory: "📜 Payment History",
+        lblPaymentAmount: "Payment Amount:",
+        lblPaymentMethod: "Payment Method:",
+        lblPaymentDate: "Date:",
+        lblPaymentNote: "Note (optional):",
+        btnSavePayment: "Save Payment",
+        alertPaymentSaved: "✅ Payment saved successfully!",
+        confirmDeletePayment: "Delete this payment entry? This will increase the customer's due.",
+        titlePaymentReceipt: "🧾 Payment Receipt",
+        btnPrintPaymentReceipt: "🖨️ Print Receipt",
+        alertPaymentSentApproval: "✅ Payment sent to the Super User for approval!",
+        alertPaymentApproved: "✅ Payment approved!",
+        thPaymentReceiptNo: "Receipt No",
         menuReports: "Reports",
         titleReports: "📊 Reports",
         reportTabOverview: "Overview",
@@ -1999,6 +2284,12 @@
       return unitType === 'Kg' ? t('unitKgLabel') : t('unitBagLabel');
     }
 
+    // Rounds to 2 decimal places to stop floating-point drift from creeping
+    // into money fields after many repeated partial returns/reversals.
+    function roundMoney(x) {
+      return Math.round((x + Number.EPSILON) * 100) / 100;
+    }
+
     let shopConfig = JSON.parse(localStorage.getItem('pos_shop_info')) || {
       name: "Business Trading POS",
       tagline: "পাইকারি সার, সিমেন্ট ও খাদ্যশস্য বিক্রেতা",
@@ -2032,6 +2323,9 @@
     ];
 
     let salesReturns = JSON.parse(localStorage.getItem('pos_returns')) || [];
+    let deliveries = JSON.parse(localStorage.getItem('pos_deliveries')) || [];
+    let orderCancellations = JSON.parse(localStorage.getItem('pos_cancellations')) || [];
+    let payments = JSON.parse(localStorage.getItem('pos_payments')) || [];
 
     // ---------- FIREBASE CLOUD SYNC ----------
     const FIRESTORE_COLLECTION = 'pos_data';
@@ -2063,7 +2357,7 @@
         if (!window.firestoreDB) return;
         let docRef = window.firestoreDoc(window.firestoreDB, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
         await window.firestoreSetDoc(docRef, {
-          shopConfig, customers, products, salesHistory, accountTransactions, categories, salesReturns,
+          shopConfig, customers, products, salesHistory, accountTransactions, categories, salesReturns, deliveries, orderCancellations, payments,
           updatedAt: new Date().toISOString()
         });
       } catch (err) {
@@ -2079,6 +2373,9 @@
       accountTransactions = cloud.accountTransactions || accountTransactions;
       categories = cloud.categories || categories;
       salesReturns = cloud.salesReturns || salesReturns;
+      deliveries = cloud.deliveries || deliveries;
+      orderCancellations = cloud.orderCancellations || orderCancellations;
+      payments = cloud.payments || payments;
 
       localStorage.setItem('pos_shop_info', JSON.stringify(shopConfig));
       localStorage.setItem('pos_customers', JSON.stringify(customers));
@@ -2087,6 +2384,9 @@
       localStorage.setItem('pos_accounts', JSON.stringify(accountTransactions));
       localStorage.setItem('pos_categories', JSON.stringify(categories));
       localStorage.setItem('pos_returns', JSON.stringify(salesReturns));
+      localStorage.setItem('pos_deliveries', JSON.stringify(deliveries));
+      localStorage.setItem('pos_cancellations', JSON.stringify(orderCancellations));
+      localStorage.setItem('pos_payments', JSON.stringify(payments));
     }
 
     function openTab(tabId, btn) {
@@ -2134,11 +2434,17 @@
       let salesInRange = salesHistory.filter(s => s.status === 'Approved' && inRange(s.date));
       let returnsInRange = salesReturns.filter(r => !r.reversed && inRange(r.date));
       let accInRange = accountTransactions.filter(a => a.status === 'Approved' && inRange(a.date));
+      let paymentsInRange = payments.filter(p => !p.reversed && inRange(p.date));
 
       let totalSales = salesInRange.reduce((sum, s) => sum + s.total, 0);
-      let totalDue = salesInRange.reduce((sum, s) => sum + s.due, 0);
+      // Total Due is always the live current balance (a snapshot, not a
+      // period activity figure) — same source as Dashboard/Ledger, so all
+      // three screens never disagree with each other.
+      let totalDue = customers.reduce((sum, c) => sum + getCustomerTotalDue(c.id).due, 0);
       let totalReturns = returnsInRange.reduce((sum, r) => sum + r.refundValue, 0);
-      let totalPaid = salesInRange.reduce((sum, s) => sum + s.paid, 0);
+      // Paid, for the selected period, includes BOTH payment taken at sale
+      // time AND any later Due-collection payments recorded in that window.
+      let totalPaid = salesInRange.reduce((sum, s) => sum + s.paid, 0) + paymentsInRange.reduce((sum, p) => sum + p.amount, 0);
       let totalExpense = accInRange.filter(a => a.type === 'Kharoch' || a.type === 'Kroy').reduce((sum, a) => sum + a.amount, 0);
 
       document.getElementById('ovTotalSales').innerHTML = '<span class="currency-symbol">৳</span>' + totalSales.toFixed(2);
@@ -2188,15 +2494,13 @@
 
       let tbody = document.querySelector('#reportCustomersTable tbody');
       tbody.innerHTML = filtered.length ? filtered.map(c => {
-        let cSales = salesHistory.filter(s => s.custId == c.id && s.status === 'Approved');
-        let totalPur = cSales.reduce((sum, s) => sum + s.total, 0);
-        let totalDue = cSales.reduce((sum, s) => sum + s.due, 0);
+        let { totalBilled, due } = getCustomerTotalDue(c.id);
         return `
           <tr>
             <td><b>${c.name}</b></td>
             <td>${c.phone}</td>
-            <td><span class="currency-symbol">৳</span>${totalPur.toFixed(2)}</td>
-            <td style="color:${totalDue > 0 ? '#dc2626' : '#16a34a'};"><b><span class="currency-symbol">৳</span>${totalDue.toFixed(2)}</b></td>
+            <td><span class="currency-symbol">৳</span>${totalBilled.toFixed(2)}</td>
+            <td style="color:${due > 0 ? '#dc2626' : '#16a34a'};"><b><span class="currency-symbol">৳</span>${due.toFixed(2)}</b></td>
             <td style="text-align:center;">
               <button onclick="showCustomerStatement(${c.id})" class="btn-icon-action btn-view" title="${t('titleViewStatement')}">${SVG_VIEW}</button>
             </td>
@@ -2397,6 +2701,7 @@
       document.getElementById('saleProductSearch').value = `${p.name} - ৳${p.price}`;
       document.getElementById('productComboList').classList.remove('active');
       updatePriceAndUnit();
+      updateSaleAvailabilityNote();
     }
 
     document.addEventListener('click', function(e) {
@@ -2560,7 +2865,7 @@
     }
 
     function exportSystemData() {
-      let backupData = { shopConfig, customers, products, salesHistory, accountTransactions, categories, salesReturns };
+      let backupData = { shopConfig, customers, products, salesHistory, accountTransactions, categories, salesReturns, deliveries, orderCancellations, payments };
       let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
       let dlAnchorElem = document.createElement('a');
       dlAnchorElem.setAttribute("href", dataStr);
@@ -2584,6 +2889,9 @@
             localStorage.setItem('pos_accounts', JSON.stringify(data.accountTransactions || []));
             localStorage.setItem('pos_categories', JSON.stringify(data.categories || categories));
             localStorage.setItem('pos_returns', JSON.stringify(data.salesReturns || []));
+            localStorage.setItem('pos_deliveries', JSON.stringify(data.deliveries || []));
+            localStorage.setItem('pos_cancellations', JSON.stringify(data.orderCancellations || []));
+            localStorage.setItem('pos_payments', JSON.stringify(data.payments || []));
 
             alert(t("alertDataRestored"));
             location.reload();
@@ -2608,7 +2916,9 @@
     function renderDashboard() {
       let approvedSales = salesHistory.filter(s => s.status === 'Approved');
       let totalSalesAmt = approvedSales.reduce((sum, s) => sum + s.total, 0);
-      let totalDueAmt = approvedSales.reduce((sum, s) => sum + s.due, 0);
+      // Summed per-customer (never negative per customer) so one customer's
+      // overpayment can never mask another customer's real due.
+      let totalDueAmt = customers.reduce((sum, c) => sum + getCustomerTotalDue(c.id).due, 0);
       let totalStockBags = products.reduce((sum, p) => sum + p.stock, 0);
       let totalReturnsAmt = salesReturns.filter(r => !r.reversed).reduce((sum, r) => sum + r.refundValue, 0);
 
@@ -2660,6 +2970,7 @@
     function processSale() {
       let editId = document.getElementById('editSaleId').value;
       let custId = document.getElementById('saleCustomer').value;
+      let customerType = document.getElementById('saleCustomerType').value;
       let prodId = document.getElementById('saleProduct').value;
       let unitType = document.getElementById('saleUnitType').value;
       let qty = parseFloat(document.getElementById('saleQty').value) || 0;
@@ -2673,38 +2984,75 @@
 
       let cust = customers.find(c => c.id == custId);
       let prod = products.find(p => p.id == prodId);
-      let due = total - paid;
+
+      // Available stock (physical − committed) must cover this order,
+      // whether it's an Instant sale or a new DO booking reserving inventory.
+      let bagKg = (prod && prod.bagKg) || 50;
+      let qtyKg = unitType === 'Kg' ? qty : qty * bagKg;
+      let availableKg = getAvailableStockBags(prod) * bagKg;
+      // When editing an existing (unfulfilled) order, its own current reservation
+      // shouldn't count against itself.
+      if (editId) {
+        let existingSale = salesHistory.find(s => s.id == editId);
+        if (existingSale && existingSale.prodId == prodId && existingSale.status === 'Approved') {
+          if (existingSale.customerType === 'DO') {
+            availableKg += getDOPendingQtyKg(existingSale, prod);
+          } else {
+            availableKg += getSaleQtyKg(existingSale, prod);
+          }
+        }
+      }
+
+      if (qtyKg > availableKg + 0.0001) {
+        return alert(t("alertNotEnoughAvailableStock").replace("{avail}", formatQtyKg(Math.max(0, availableKg), bagKg)));
+      }
+
+      total = roundMoney(total);
+      paid = roundMoney(paid);
+      let due = roundMoney(Math.max(0, total - paid));
+      let refundOwed = roundMoney(Math.max(0, paid - total));
 
       let initialStatus = (currentUserRole === 'staff') ? 'Pending' : 'Approved';
 
       if (editId) {
         let sale = salesHistory.find(s => s.id == editId);
         if (sale) {
+          // Undo this sale's old physical-stock effect (Instant only) before
+          // re-applying the edited values, so edits never double-count stock.
+          if (sale.status === 'Approved' && sale.customerType !== 'DO') {
+            let oldProd = products.find(p => p.id == sale.prodId);
+            if (oldProd) oldProd.stock += getSaleQtyKg(sale, oldProd) / ((oldProd.bagKg) || 50);
+          }
+
           sale.custId = custId; sale.custName = cust.name;
+          sale.customerType = customerType;
           sale.prodId = prodId; sale.prodName = prod.name;
           sale.unitType = unitType;
           sale.qty = qty; sale.unitPrice = unitPrice; sale.total = total;
-          sale.paid = paid; sale.due = due; sale.method = method; sale.remarks = remarks;
+          sale.paid = paid; sale.due = due; sale.refundOwed = refundOwed; sale.method = method; sale.remarks = remarks;
+
+          if (sale.status === 'Approved' && customerType !== 'DO' && prod) {
+            prod.stock -= (qtyKg / bagKg);
+          }
         }
       } else {
         salesHistory.unshift({
           id: Date.now(),
           invNo: "INV-" + Math.floor(1000 + Math.random() * 9000),
           custId, custName: cust.name,
+          customerType,
           prodId, prodName: prod.name,
-          unitType, qty, unitPrice, total, paid, due, method, remarks,
+          unitType, qty, unitPrice, total, paid, due, refundOwed, method, remarks,
           date: new Date().toISOString().split('T')[0],
           createdBy: currentUserRole,
           status: initialStatus
         });
 
-        if (initialStatus === 'Approved' && prod) {
-          if (unitType === 'Bag') {
-            prod.stock -= qty;
-          } else {
-            let bagKg = prod.bagKg || 50;
-            prod.stock -= (qty / bagKg);
-          }
+        // Physical stock only moves for Instant Sales. A DO (bulk advance)
+        // order only reserves committed stock — that figure is computed live
+        // from this very sale record, so nothing further to store here.
+        if (initialStatus === 'Approved' && customerType !== 'DO' && prod) {
+          prod.stock -= (qtyKg / bagKg);
         }
       }
 
@@ -2713,6 +3061,7 @@
       renderNotifications();
       renderDashboard();
       renderLedger();
+      renderProducts();
       resetSaleForm();
 
       if (currentUserRole === 'staff') {
@@ -2730,6 +3079,7 @@
       list.forEach(s => {
         let isApproved = s.status === 'Approved';
         let statusBadge = accStatusBadge(s.status);
+        let isDO = s.customerType === 'DO';
 
         let declineNoteHtml = (s.status === 'Declined' && s.declineNote)
           ? `<div style="font-size:11px; color:#dc2626; margin-top:2px;">${t('declineReasonLabel')}: ${s.declineNote}</div>`
@@ -2742,8 +3092,22 @@
           ? `<div style="font-size:11px; color:#d97706; margin-top:2px;">${t('returnedIndicatorLabel')}: ${formatQtyKg(returnedKg, (prod && prod.bagKg) || 50)}</div>`
           : '';
 
+        let deliveredKg = (isApproved && isDO) ? getDeliveredQtyKg(s.id) : 0;
+        let pendingDeliveryKg = (isApproved && isDO) ? getDOPendingQtyKg(s, prod) : 0;
+        let doNoteHtml = isDO
+          ? `<div style="font-size:11px; color:#2563eb; margin-top:2px;">${t('optDOSalesShort')} — ${t('thPendingDelivery')}: ${formatQtyKg(pendingDeliveryKg, (prod && prod.bagKg) || 50)}</div>`
+          : '';
+
         let returnBtn = (isApproved && currentUserRole === 'admin' && remainingKg > 0.0001)
           ? `<button onclick="openReturnModal(${s.id})" class="btn-icon-action" style="color:#d97706;" title="${t('titleCreateReturn')}">${SVG_RETURN}</button>`
+          : '';
+
+        let deliveryBtn = (isApproved && isDO && currentUserRole === 'admin' && pendingDeliveryKg > 0.0001)
+          ? `<button onclick="openDeliveryModal(${s.id})" class="btn-icon-action" style="color:#2563eb;" title="${t('titleCreateDelivery')}">${SVG_TRUCK}</button>`
+          : '';
+
+        let cancelPendingBtn = (isApproved && isDO && currentUserRole === 'admin' && pendingDeliveryKg > 0.0001)
+          ? `<button onclick="openCancelPendingModal(${s.id})" class="btn-icon-action" style="color:#dc2626;" title="${t('titleCancelPending')}">${SVG_CANCEL_ORDER}</button>`
           : '';
 
         let actionsHtml = `
@@ -2751,6 +3115,8 @@
             ${isApproved ? `
               <button onclick="viewSale(${s.id})" class="btn-icon-action btn-view" title="${t('titlePrintView')}">${SVG_VIEW}</button>
               ${returnBtn}
+              ${deliveryBtn}
+              ${cancelPendingBtn}
             ` : `<span style="font-size:12px; color:#94a3b8;">${s.status === 'Declined' ? '' : t('approvalPendingNote')}</span>`}
             ${currentUserRole === 'admin' ? `
               <button onclick="editSale(${s.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
@@ -2766,7 +3132,7 @@
             <td>${s.prodName}</td>
             <td>${s.qty} ${unitLabel(s.unitType)}</td>
             <td><b><span class="currency-symbol">৳</span>${s.total.toFixed(2)}</b></td>
-            <td>${statusBadge}${declineNoteHtml}${returnedNoteHtml}</td>
+            <td>${statusBadge}${declineNoteHtml}${returnedNoteHtml}${doNoteHtml}</td>
             <td>${actionsHtml}</td>
           </tr>
         `;
@@ -2776,7 +3142,8 @@
     function renderNotifications() {
       let pendingSales = salesHistory.filter(s => s.status === 'Pending').map(s => ({ ...s, kind: 'sale' }));
       let pendingAccounts = accountTransactions.filter(a => a.status === 'Pending').map(a => ({ ...a, kind: 'account' }));
-      let pendingAll = [...pendingSales, ...pendingAccounts].sort((a, b) => b.id - a.id);
+      let pendingPayments = payments.filter(p => p.status === 'Pending' && !p.reversed).map(p => ({ ...p, kind: 'payment' }));
+      let pendingAll = [...pendingSales, ...pendingAccounts, ...pendingPayments].sort((a, b) => b.id - a.id);
 
       let count = pendingAll.length;
       document.getElementById('headerBadge').innerText = count;
@@ -2792,18 +3159,23 @@
       }
 
       pendingAll.forEach(item => {
+        let approveFn = { sale: 'approveOrder', account: 'approveAccount', payment: 'approvePayment' }[item.kind];
         let actionBtn = (currentUserRole === 'admin')
           ? `<div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
-               <button onclick="${item.kind === 'sale' ? `approveOrder(${item.id})` : `approveAccount(${item.id})`}" class="btn-action btn-success" style="font-size:12px; padding:6px 10px;">${t('btnApproveOrder')}</button>
+               <button onclick="${approveFn}(${item.id})" class="btn-action btn-success" style="font-size:12px; padding:6px 10px;">${t('btnApproveOrder')}</button>
                <button onclick="openDeclineModal(${item.id}, '${item.kind}')" class="btn-action btn-danger" style="font-size:12px; padding:6px 10px;">${t('btnDeclineOrder')}</button>
              </div>`
           : `<span style="font-size:12px; color:#64748b;">${t('waitingSuperUserOnly')}</span>`;
 
-        let refLabel = item.kind === 'sale' ? `#${item.invNo}` : `ACC-${item.id.toString().slice(-4)}`;
-        let typeLabel = item.kind === 'sale' ? `<span class="badge badge-ok">${t('menuSales')}</span>` : `<span class="badge badge-pending">${t('optAcc' + item.type)}</span>`;
-        let customerLabel = item.kind === 'sale' ? item.custName : '-';
-        let detailLabel = item.kind === 'sale' ? `${item.prodName} (${item.qty} ${unitLabel(item.unitType)})` : `${item.method} · ${item.note}`;
-        let amountLabel = item.kind === 'sale' ? item.total : item.amount;
+        let refLabel = item.kind === 'sale' ? `#${item.invNo}` : (item.kind === 'account' ? `ACC-${item.id.toString().slice(-4)}` : `PAY-${item.id.toString().slice(-4)}`);
+        let typeLabel = item.kind === 'sale'
+          ? `<span class="badge badge-ok">${t('menuSales')}</span>`
+          : (item.kind === 'account' ? `<span class="badge badge-pending">${t('optAcc' + item.type)}</span>` : `<span class="badge badge-ok">${t('titlePayDue')}</span>`);
+        let customerLabel = item.kind === 'sale'
+          ? item.custName
+          : (item.kind === 'payment' ? (customers.find(c => c.id == item.custId)?.name || '-') : '-');
+        let detailLabel = item.kind === 'sale' ? `${item.prodName} (${item.qty} ${unitLabel(item.unitType)})` : (item.kind === 'account' ? `${item.method} · ${item.note}` : `${item.method}${item.note ? ' · ' + item.note : ''}`);
+        let amountLabel = item.kind === 'sale' ? item.total : (item.kind === 'account' ? item.amount : item.amount);
         let creatorLabel = item.createdByName || item.createdBy;
 
         tbody.innerHTML += `
@@ -2828,13 +3200,18 @@
       if (sale) {
         sale.status = 'Approved';
 
-        let prod = products.find(p => p.id == sale.prodId);
-        if (prod) {
-          if (sale.unitType === 'Bag') {
-            prod.stock -= sale.qty;
-          } else {
-            let bagKg = prod.bagKg || 50;
-            prod.stock -= (sale.qty / bagKg);
+        // Physical stock only moves for Instant Sales on approval. A DO
+        // (bulk advance) order only reserves committed stock — computed
+        // live from this sale record — nothing to deduct here.
+        if (sale.customerType !== 'DO') {
+          let prod = products.find(p => p.id == sale.prodId);
+          if (prod) {
+            if (sale.unitType === 'Bag') {
+              prod.stock -= sale.qty;
+            } else {
+              let bagKg = prod.bagKg || 50;
+              prod.stock -= (sale.qty / bagKg);
+            }
           }
         }
 
@@ -2870,6 +3247,13 @@
           sale.declineNote = note;
         }
         renderSales();
+      } else if (kind === 'payment') {
+        let p = payments.find(x => x.id == id);
+        if (p) {
+          p.status = 'Declined';
+          p.declineNote = note;
+        }
+        renderLedger();
       } else {
         let acc = accountTransactions.find(a => a.id == id);
         if (acc) {
@@ -3070,7 +3454,13 @@
     }
 
     function getRemainingQtyKg(sale, prod) {
-      return getSaleQtyKg(sale, prod) - getReturnedQtyKg(sale.id);
+      // For a DO (bulk advance) order, only DELIVERED goods can physically
+      // come back — undelivered quantity is handled via Cancel Pending
+      // Order instead, since nothing physical was ever removed for it.
+      let returnableBaseKg = (sale.customerType === 'DO')
+        ? getDeliveredQtyKg(sale.id)
+        : getSaleQtyKg(sale, prod);
+      return returnableBaseKg - getReturnedQtyKg(sale.id);
     }
 
     // Formats a kg quantity as "X বস্তা (Y কেজি)", adding a Ton figure too
@@ -3084,6 +3474,74 @@
       }
       text += ')';
       return text;
+    }
+
+    // ================= BULK ADVANCE ORDER (DO SALES) — DUAL-LAYER STOCK =================
+    // Physical stock (product.stock) only moves on an actual Delivery Challan.
+    // Committed/Available stock is always computed live from open DO orders —
+    // never stored — so it can never drift out of sync with reality.
+
+    function getDeliveredQtyKg(saleId) {
+      return deliveries
+        .filter(d => d.saleId == saleId && !d.reversed)
+        .reduce((sum, d) => sum + d.qtyKg, 0);
+    }
+
+    // Cancelled = the portion of a DO order the customer decided NOT to take
+    // (undelivered, so nothing physical ever moved) — money is refunded/
+    // adjusted but physical stock is untouched, unlike a Return.
+    function getCancelledQtyKg(saleId) {
+      return orderCancellations
+        .filter(c => c.saleId == saleId && !c.reversed)
+        .reduce((sum, c) => sum + c.qtyKg, 0);
+    }
+
+    function getDOPendingQtyKg(sale, prod) {
+      return getSaleQtyKg(sale, prod) - getDeliveredQtyKg(sale.id) - getCancelledQtyKg(sale.id);
+    }
+
+    // Committed stock (kg) for a product = sum of (ordered - delivered) across
+    // every still-open Approved DO order for that product.
+    function getCommittedStockKg(prodId) {
+      let openDOSales = salesHistory.filter(s =>
+        s.prodId == prodId && s.customerType === 'DO' && s.status === 'Approved'
+      );
+      return openDOSales.reduce((sum, s) => {
+        let prod = products.find(p => p.id == prodId);
+        return sum + getDOPendingQtyKg(s, prod);
+      }, 0);
+    }
+
+    // Available stock (in bags) = physical stock - committed stock.
+    // This is the number a NEW order (DO or Instant) must be checked against.
+    function getAvailableStockBags(prod) {
+      let bagKg = prod.bagKg || 50;
+      let committedKg = getCommittedStockKg(prod.id);
+      return prod.stock - (committedKg / bagKg);
+    }
+
+    function onCustomerTypeChange() {
+      updateSaleAvailabilityNote();
+    }
+
+    function updateSaleAvailabilityNote() {
+      let prodId = document.getElementById('saleProduct').value;
+      let custType = document.getElementById('saleCustomerType').value;
+      let note = document.getElementById('saleAvailStockNote');
+
+      if (!prodId) { note.style.display = 'none'; return; }
+
+      let prod = products.find(p => p.id == prodId);
+      if (!prod) { note.style.display = 'none'; return; }
+
+      let availBags = getAvailableStockBags(prod);
+      note.style.display = 'block';
+
+      if (custType === 'DO') {
+        note.innerHTML = `${t('lblAvailableStock')}: <b>${formatQtyKg(availBags * (prod.bagKg || 50), prod.bagKg)}</b> — ${t('doStockReserveNote')}`;
+      } else {
+        note.innerHTML = `${t('lblAvailableStock')}: <b>${formatQtyKg(availBags * (prod.bagKg || 50), prod.bagKg)}</b>`;
+      }
     }
 
     function openReturnModal(saleId) {
@@ -3128,7 +3586,7 @@
 
       let qtyKg = returnUnit === 'Kg' ? qty : qty * bagKg;
       let pricePerKg = sale.unitType === 'Kg' ? sale.unitPrice : (sale.unitPrice / bagKg);
-      let refundValue = qtyKg * pricePerKg;
+      let refundValue = roundMoney(qtyKg * pricePerKg);
 
       document.getElementById('retInfoRefundPreview').innerHTML = '<span class="currency-symbol">৳</span>' + refundValue.toFixed(2);
     }
@@ -3155,14 +3613,16 @@
       }
 
       let pricePerKg = sale.unitType === 'Kg' ? sale.unitPrice : (sale.unitPrice / bagKg);
-      let refundValue = qtyKg * pricePerKg;
+      let refundValue = roundMoney(qtyKg * pricePerKg);
 
       // Apply the financial impact: reduce the sale's net total, recompute
       // due from scratch (never negative), and separately track any excess
       // already-paid amount as a refund owed back to the customer.
-      sale.total -= refundValue;
-      sale.due = Math.max(0, sale.total - sale.paid);
-      sale.refundOwed = Math.max(0, sale.paid - sale.total);
+      // Every step is rounded to the cent so repeated partial returns never
+      // let floating-point drift creep into the customer's balance.
+      sale.total = roundMoney(sale.total - refundValue);
+      sale.due = roundMoney(Math.max(0, sale.total - sale.paid));
+      sale.refundOwed = roundMoney(Math.max(0, sale.paid - sale.total));
 
       // Return the stock
       if (prod) prod.stock += (qtyKg / bagKg);
@@ -3252,6 +3712,357 @@
       document.getElementById('viewReturnModal').style.display = 'flex';
     }
 
+    // ================= DELIVERY CHALLAN (staggered delivery for DO orders) =================
+
+    function openDeliveryModal(saleId) {
+      let sale = salesHistory.find(s => s.id == saleId);
+      if (!sale) return;
+      if (sale.customerType !== 'DO' || sale.status !== 'Approved') return;
+
+      let prod = products.find(p => p.id == sale.prodId);
+      let bagKg = (prod && prod.bagKg) || 50;
+      let orderedKg = getSaleQtyKg(sale, prod);
+      let deliveredKg = getDeliveredQtyKg(sale.id);
+      let pendingKg = orderedKg - deliveredKg;
+
+      if (pendingKg <= 0.0001) {
+        return alert(t("alertFullyDeliveredAlready"));
+      }
+
+      document.getElementById('deliverySaleId').value = sale.id;
+      document.getElementById('delInfoInvoice').innerText = '#' + sale.invNo;
+      document.getElementById('delInfoProduct').innerText = sale.prodName;
+      document.getElementById('delInfoOrdered').innerText = formatQtyKg(orderedKg, bagKg);
+      document.getElementById('delInfoDelivered').innerText = formatQtyKg(deliveredKg, bagKg);
+      document.getElementById('delInfoPending').innerText = formatQtyKg(pendingKg, bagKg);
+
+      document.getElementById('deliveryUnitType').value = sale.unitType || 'Bag';
+      document.getElementById('deliveryQtyInput').value = '';
+      document.getElementById('deliveryNoteInput').value = '';
+
+      document.getElementById('deliveryModal').style.display = 'flex';
+    }
+
+    function submitDelivery() {
+      let saleId = document.getElementById('deliverySaleId').value;
+      let sale = salesHistory.find(s => s.id == saleId);
+      if (!sale) return;
+
+      let prod = products.find(p => p.id == sale.prodId);
+      let bagKg = (prod && prod.bagKg) || 50;
+
+      let delUnit = document.getElementById('deliveryUnitType').value;
+      let qty = parseFloat(document.getElementById('deliveryQtyInput').value);
+      let note = document.getElementById('deliveryNoteInput').value.trim();
+
+      if (!qty || qty <= 0) return alert(t("alertEnterValidDeliveryQty"));
+
+      let qtyKg = delUnit === 'Kg' ? qty : qty * bagKg;
+      let pendingKg = getDOPendingQtyKg(sale, prod);
+
+      if (qtyKg > pendingKg + 0.0001) {
+        return alert(t("alertDeliveryExceedsPending"));
+      }
+
+      // Physical stock moves NOW — this is the only point at which a DO
+      // order's inventory actually leaves the warehouse.
+      if (prod) prod.stock -= (qtyKg / bagKg);
+
+      let challanNo = "DC-" + Math.floor(1000 + Math.random() * 9000);
+      let newDeliveryId = Date.now();
+      deliveries.unshift({
+        id: newDeliveryId,
+        challanNo,
+        saleId: sale.id,
+        invNo: sale.invNo,
+        prodId: sale.prodId,
+        prodName: sale.prodName,
+        unitType: delUnit,
+        qty,
+        qtyKg,
+        note,
+        date: new Date().toISOString().split('T')[0],
+        deliveredBy: currentUserRole,
+        deliveredByName: document.getElementById('headerUserName') ? document.getElementById('headerUserName').innerText : currentUserRole,
+        reversed: false
+      });
+
+      saveData();
+      renderSales();
+      renderDashboard();
+      renderProducts();
+      closeModal('deliveryModal');
+      viewDeliveryChallan(newDeliveryId);
+    }
+
+    function reverseDelivery(id) {
+      if (currentUserRole !== 'admin') return;
+      let del = deliveries.find(d => d.id == id);
+      if (!del || del.reversed) return;
+      if (!confirm(t("confirmReverseDelivery"))) return;
+
+      let sale = salesHistory.find(s => s.id == del.saleId);
+      let prod = sale ? products.find(p => p.id == sale.prodId) : null;
+      let bagKg = (prod && prod.bagKg) || 50;
+
+      del.reversed = true;
+      if (prod) prod.stock += (del.qtyKg / bagKg);
+
+      saveData();
+      renderSales();
+      renderDashboard();
+      renderProducts();
+      alert(t("alertDeliveryReversed"));
+    }
+
+    function viewDeliveryChallan(id) {
+      let del = deliveries.find(d => d.id == id);
+      if (!del) return;
+
+      let sale = salesHistory.find(s => s.id == del.saleId);
+      let prod = sale ? products.find(p => p.id == sale.prodId) : null;
+      let cust = sale ? (customers.find(c => c.id == sale.custId) || { name: sale.custName, phone: t('naLabel') }) : { name: t('naLabel'), phone: t('naLabel') };
+      let qtyDisplay = del.unitType === 'Kg' ? `${del.qty} ${t('unitKgLabel')}` : `${del.qty} ${t('unitBagLabel')}`;
+
+      let pendingAfterKg = sale ? getDOPendingQtyKg(sale, prod) : 0;
+
+      let html = `
+        <div class="invoice-header">
+          ${shopConfig.logoImage ? `<img class="invoice-logo" src="${shopConfig.logoImage}">` : ''}
+          <h2>${shopConfig.name}</h2>
+          <p>${shopConfig.tagline}</p>
+          <p style="font-size:12px; color:#64748b;">${t('lblDate')}: ${del.date} | ${t('thChallanNo')}: <b>${del.challanNo}</b></p>
+        </div>
+
+        <div style="margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px;">
+          <h4>${t('custDetailsHeading')}</h4>
+          <p><strong>${t('lblNameShort')}:</strong> ${cust.name}</p>
+          <p><strong>${t('lblMobileShort')}:</strong> ${cust.phone}</p>
+          <p><strong>${t('thInvoice')}:</strong> #${del.invNo}</p>
+        </div>
+
+        <div class="table-responsive">
+          <table style="margin-bottom: 15px;">
+            <thead>
+              <tr>
+                <th>${t('thProduct')}</th>
+                <th>${t('thDeliveryQty')}</th>
+                <th>${t('thPendingDelivery')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${del.prodName}</td>
+                <td>${qtyDisplay}</td>
+                <td>${formatQtyKg(pendingAfterKg, (prod && prod.bagKg) || 50)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        ${del.note ? `
+          <div style="background:#e2e8f0; padding: 12px; border-radius:6px; margin-bottom: 15px;">
+            <p><strong>${t('lblDeliveryNote')}</strong> ${del.note}</p>
+          </div>
+        ` : ''}
+
+        <p style="text-align:center; font-size:11px; color:#94a3b8; margin-top:20px;">${t('voucherFooterNote')}</p>
+      `;
+
+      document.getElementById('printableDeliveryChallan').innerHTML = html;
+      document.getElementById('viewDeliveryModal').style.display = 'flex';
+    }
+
+    // ================= CANCEL PENDING ORDER (undelivered DO qty, refund-only) =================
+    // Distinct from a Return: nothing physical ever left the warehouse for
+    // the pending portion, so physical stock is NEVER touched here — only
+    // the financial total/due/refund and the live-computed "pending" figure
+    // (via getCancelledQtyKg) are adjusted.
+
+    function openCancelPendingModal(saleId) {
+      let sale = salesHistory.find(s => s.id == saleId);
+      if (!sale) return;
+      if (sale.customerType !== 'DO' || sale.status !== 'Approved') return;
+
+      let prod = products.find(p => p.id == sale.prodId);
+      let bagKg = (prod && prod.bagKg) || 50;
+      let orderedKg = getSaleQtyKg(sale, prod);
+      let deliveredKg = getDeliveredQtyKg(sale.id);
+      let pendingKg = getDOPendingQtyKg(sale, prod);
+
+      if (pendingKg <= 0.0001) {
+        return alert(t("alertNothingPendingToCancel"));
+      }
+
+      document.getElementById('cancelSaleId').value = sale.id;
+      document.getElementById('cxInfoInvoice').innerText = '#' + sale.invNo;
+      document.getElementById('cxInfoProduct').innerText = sale.prodName;
+      document.getElementById('cxInfoOrdered').innerText = formatQtyKg(orderedKg, bagKg);
+      document.getElementById('cxInfoDelivered').innerText = formatQtyKg(deliveredKg, bagKg);
+      document.getElementById('cxInfoPending').innerText = formatQtyKg(pendingKg, bagKg);
+
+      document.getElementById('cancelUnitType').value = sale.unitType || 'Bag';
+      document.getElementById('cancelQtyInput').value = '';
+      document.getElementById('cancelReasonInput').value = '';
+      document.getElementById('cxInfoRefundPreview').innerHTML = '<span class="currency-symbol">৳</span>0.00';
+
+      document.getElementById('cancelPendingModal').style.display = 'flex';
+    }
+
+    function updateCancelPreview() {
+      let saleId = document.getElementById('cancelSaleId').value;
+      let sale = salesHistory.find(s => s.id == saleId);
+      if (!sale) return;
+
+      let prod = products.find(p => p.id == sale.prodId);
+      let bagKg = (prod && prod.bagKg) || 50;
+      let cancelUnit = document.getElementById('cancelUnitType').value;
+      let qty = parseFloat(document.getElementById('cancelQtyInput').value) || 0;
+
+      let qtyKg = cancelUnit === 'Kg' ? qty : qty * bagKg;
+      let pricePerKg = sale.unitType === 'Kg' ? sale.unitPrice : (sale.unitPrice / bagKg);
+      let refundValue = roundMoney(qtyKg * pricePerKg);
+
+      document.getElementById('cxInfoRefundPreview').innerHTML = '<span class="currency-symbol">৳</span>' + refundValue.toFixed(2);
+    }
+
+    function submitCancelPending() {
+      let saleId = document.getElementById('cancelSaleId').value;
+      let sale = salesHistory.find(s => s.id == saleId);
+      if (!sale) return;
+
+      let prod = products.find(p => p.id == sale.prodId);
+      let bagKg = (prod && prod.bagKg) || 50;
+
+      let cancelUnit = document.getElementById('cancelUnitType').value;
+      let qty = parseFloat(document.getElementById('cancelQtyInput').value);
+      let reason = document.getElementById('cancelReasonInput').value.trim();
+
+      if (!qty || qty <= 0) return alert(t("alertEnterValidCancelQty"));
+
+      let qtyKg = cancelUnit === 'Kg' ? qty : qty * bagKg;
+      let pendingKg = getDOPendingQtyKg(sale, prod);
+
+      if (qtyKg > pendingKg + 0.0001) {
+        return alert(t("alertCancelExceedsPending"));
+      }
+
+      let pricePerKg = sale.unitType === 'Kg' ? sale.unitPrice : (sale.unitPrice / bagKg);
+      let refundValue = roundMoney(qtyKg * pricePerKg);
+
+      // Same due/refund formula used everywhere else in the app — due never
+      // goes negative, any already-paid excess becomes a tracked refund.
+      // Physical stock is deliberately NOT touched: this quantity was never
+      // removed from the warehouse in the first place.
+      sale.total = roundMoney(sale.total - refundValue);
+      sale.due = roundMoney(Math.max(0, sale.total - sale.paid));
+      sale.refundOwed = roundMoney(Math.max(0, sale.paid - sale.total));
+
+      let cancelNo = "CX-" + Math.floor(1000 + Math.random() * 9000);
+      let newCancelId = Date.now();
+      orderCancellations.unshift({
+        id: newCancelId,
+        cancelNo,
+        saleId: sale.id,
+        invNo: sale.invNo,
+        prodId: sale.prodId,
+        prodName: sale.prodName,
+        unitType: cancelUnit,
+        qty,
+        qtyKg,
+        refundValue,
+        reason,
+        date: new Date().toISOString().split('T')[0],
+        createdBy: currentUserRole,
+        createdByName: document.getElementById('headerUserName') ? document.getElementById('headerUserName').innerText : currentUserRole,
+        reversed: false
+      });
+
+      saveData();
+      renderSales();
+      renderDashboard();
+      renderLedger();
+      renderProducts();
+      closeModal('cancelPendingModal');
+      viewCancellationReceipt(newCancelId);
+    }
+
+    function reverseCancellation(id) {
+      if (currentUserRole !== 'admin') return;
+      let cx = orderCancellations.find(c => c.id == id);
+      if (!cx || cx.reversed) return;
+      if (!confirm(t("confirmReverseCancellation"))) return;
+
+      let sale = salesHistory.find(s => s.id == cx.saleId);
+      if (sale) {
+        sale.total = roundMoney(sale.total + cx.refundValue);
+        sale.due = roundMoney(Math.max(0, sale.total - sale.paid));
+        sale.refundOwed = roundMoney(Math.max(0, sale.paid - sale.total));
+      }
+      cx.reversed = true;
+
+      saveData();
+      renderSales();
+      renderDashboard();
+      renderLedger();
+      alert(t("alertCancellationReversed"));
+    }
+
+    function viewCancellationReceipt(id) {
+      let cx = orderCancellations.find(c => c.id == id);
+      if (!cx) return;
+
+      let sale = salesHistory.find(s => s.id == cx.saleId);
+      let cust = sale ? (customers.find(c => c.id == sale.custId) || { name: sale.custName, phone: t('naLabel') }) : { name: t('naLabel'), phone: t('naLabel') };
+      let qtyDisplay = cx.unitType === 'Kg' ? `${cx.qty} ${t('unitKgLabel')}` : `${cx.qty} ${t('unitBagLabel')}`;
+
+      let html = `
+        <div class="invoice-header">
+          ${shopConfig.logoImage ? `<img class="invoice-logo" src="${shopConfig.logoImage}">` : ''}
+          <h2>${shopConfig.name}</h2>
+          <p>${shopConfig.tagline}</p>
+          <p style="font-size:12px; color:#64748b;">${t('lblDate')}: ${cx.date} | ${t('thCancelNo')}: <b>${cx.cancelNo}</b></p>
+        </div>
+
+        <div style="margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px;">
+          <h4>${t('custDetailsHeading')}</h4>
+          <p><strong>${t('lblNameShort')}:</strong> ${cust.name}</p>
+          <p><strong>${t('lblMobileShort')}:</strong> ${cust.phone}</p>
+          <p><strong>${t('thInvoice')}:</strong> #${cx.invNo}</p>
+        </div>
+
+        <div class="table-responsive">
+          <table style="margin-bottom: 15px;">
+            <thead>
+              <tr>
+                <th>${t('thProduct')}</th>
+                <th>${t('thReturnQty')}</th>
+                <th>${t('thRefundValue')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${cx.prodName}</td>
+                <td>${qtyDisplay}</td>
+                <td><b><span class="currency-symbol">৳</span>${cx.refundValue.toFixed(2)}</b></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        ${cx.reason ? `
+          <div style="background:#e2e8f0; padding: 12px; border-radius:6px; margin-bottom: 15px;">
+            <p><strong>${t('lblCancelReason')}</strong> ${cx.reason}</p>
+          </div>
+        ` : ''}
+
+        <p style="text-align:center; font-size:11px; color:#94a3b8; margin-top:20px;">${t('voucherFooterNote')}</p>
+      `;
+
+      document.getElementById('printableCancellationReceipt').innerHTML = html;
+      document.getElementById('viewCancellationModal').style.display = 'flex';
+    }
+
     function reverseReturn(id) {
       if (currentUserRole !== 'admin') return;
       let ret = salesReturns.find(r => r.id == id);
@@ -3265,9 +4076,9 @@
       ret.reversed = true;
 
       if (sale) {
-        sale.total += ret.refundValue;
-        sale.due = Math.max(0, sale.total - sale.paid);
-        sale.refundOwed = Math.max(0, sale.paid - sale.total);
+        sale.total = roundMoney(sale.total + ret.refundValue);
+        sale.due = roundMoney(Math.max(0, sale.total - sale.paid));
+        sale.refundOwed = roundMoney(Math.max(0, sale.paid - sale.total));
       }
       if (prod) prod.stock -= (ret.qtyKg / bagKg);
 
@@ -3354,6 +4165,10 @@
           </div>
         `;
 
+        let committedKg = getCommittedStockKg(p.id);
+        let committedBags = committedKg / ((p.bagKg) || 50);
+        let availableBags = getAvailableStockBags(p);
+
         tbody.innerHTML += `
           <tr>
             <td><b>#${p.id}</b></td>
@@ -3361,7 +4176,9 @@
             <td>${p.category}</td>
             <td><b><span class="currency-symbol">৳</span>${p.price}</b></td>
             <td>${p.stock.toFixed(1)}</td>
-            <td><span class="badge ${p.stock <= 20 ? 'badge-alert' : 'badge-ok'}">${p.stock <= 20 ? t('lowStockLabel') : t('stockOkLabel')}</span></td>
+            <td style="color:${committedBags > 0 ? '#2563eb' : 'inherit'};">${committedBags.toFixed(1)}</td>
+            <td><b>${availableBags.toFixed(1)}</b></td>
+            <td><span class="badge ${availableBags <= 20 ? 'badge-alert' : 'badge-ok'}">${availableBags <= 20 ? t('lowStockLabel') : t('stockOkLabel')}</span></td>
             <td>${actionsHtml}</td>
           </tr>
         `;
@@ -3512,13 +4329,20 @@
 
       custSales.forEach(sale => {
         let saleReturns = salesReturns.filter(r => r.saleId == sale.id && !r.reversed);
+        let saleCancellations = orderCancellations.filter(c => c.saleId == sale.id && !c.reversed);
+        let saleDeliveries = deliveries.filter(d => d.saleId == sale.id && !d.reversed);
+
         let returnedValue = saleReturns.reduce((sum, r) => sum + r.refundValue, 0);
-        let originalTotal = sale.total + returnedValue;
+        let cancelledValue = saleCancellations.reduce((sum, c) => sum + c.refundValue, 0);
+        let originalTotal = sale.total + returnedValue + cancelledValue;
+
+        let saleDesc = `${t('statementSaleLabel')} - ${sale.prodName}`;
+        if (sale.customerType === 'DO') saleDesc += ` (${t('optDOSalesShort')})`;
 
         lines.push({
           date: sale.date,
           ref: sale.invNo,
-          description: `${t('statementSaleLabel')} - ${sale.prodName}`,
+          description: saleDesc,
           debit: originalTotal,
           credit: 0
         });
@@ -3533,6 +4357,22 @@
           });
         }
 
+        // Deliveries carry no financial impact (already billed at booking)
+        // but they belong in the "full history" the customer needs to see —
+        // shown as zero-value info rows so the statement reads like a
+        // complete activity log, not just a money ledger.
+        saleDeliveries.forEach(del => {
+          let qtyDisplay = del.unitType === 'Kg' ? `${del.qty} ${t('unitKgLabel')}` : `${del.qty} ${t('unitBagLabel')}`;
+          lines.push({
+            date: del.date,
+            ref: del.challanNo,
+            description: `${t('statementDeliveryLabel')} - ${del.prodName} (${qtyDisplay})`,
+            debit: 0,
+            credit: 0,
+            infoOnly: true
+          });
+        });
+
         saleReturns.forEach(ret => {
           lines.push({
             date: ret.date,
@@ -3541,6 +4381,32 @@
             debit: 0,
             credit: ret.refundValue
           });
+        });
+
+        saleCancellations.forEach(cx => {
+          lines.push({
+            date: cx.date,
+            ref: cx.cancelNo,
+            description: `${t('statementCancelLabel')} - ${cx.prodName}`,
+            debit: 0,
+            credit: cx.refundValue
+          });
+        });
+      });
+
+      // Payments collected LATER (via the Due Ledger's "Pay" action) are
+      // customer-level, not tied to any single sale — added here so the
+      // full history is complete, not just the one-time amount paid at
+      // sale creation. Only Approved ones count toward the balance — a
+      // Pending or Declined payment must never silently reduce what's owed.
+      let custPayments = payments.filter(p => p.custId == custId && p.status === 'Approved' && !p.reversed);
+      custPayments.forEach(p => {
+        lines.push({
+          date: p.date,
+          ref: '-',
+          description: `${t('statementPaymentLabel')}${p.note ? ' - ' + p.note : ''}`,
+          debit: 0,
+          credit: p.amount
         });
       });
 
@@ -3650,28 +4516,275 @@
       }
     }
 
+    // A customer's true current balance accounts for payments made both AT
+    // sale time (sale.paid) and LATER, independently, via the Due Ledger's
+    // "Pay" action (payments array) — always summed fresh, never stored as
+    // a running total, so it can never drift.
+    function getCustomerPaymentsTotal(custId) {
+      return roundMoney(
+        payments.filter(p => p.custId == custId && p.status === 'Approved' && !p.reversed)
+          .reduce((sum, p) => sum + p.amount, 0)
+      );
+    }
+
+    function getCustomerTotalDue(custId) {
+      let cSales = salesHistory.filter(s => s.custId == custId && s.status === 'Approved');
+      let totalBilled = roundMoney(cSales.reduce((sum, s) => sum + s.total, 0));
+      let totalPaidAtSale = roundMoney(cSales.reduce((sum, s) => sum + s.paid, 0));
+      let totalPaymentsLater = getCustomerPaymentsTotal(custId);
+      let totalPaid = roundMoney(totalPaidAtSale + totalPaymentsLater);
+
+      return {
+        totalBilled,
+        totalPaid,
+        due: roundMoney(Math.max(0, totalBilled - totalPaid)),
+        refundOwed: roundMoney(Math.max(0, totalPaid - totalBilled))
+      };
+    }
+
     function renderLedger() {
       let tbody = document.querySelector('#dueLedgerTable tbody');
       if (!tbody) return;
       tbody.innerHTML = '';
 
       customers.forEach(c => {
-        let cSales = salesHistory.filter(s => s.custId == c.id && s.status === 'Approved');
-        let totalPur = cSales.reduce((acc, curr) => acc + curr.total, 0);
-        let totalPaid = cSales.reduce((acc, curr) => acc + curr.paid, 0);
-        let due = totalPur - totalPaid;
+        let { totalBilled, totalPaid, due, refundOwed } = getCustomerTotalDue(c.id);
+
+        let statusBadge = due > 0
+          ? `<span class="badge badge-alert">${t('dueExistsLabel')}</span>`
+          : (refundOwed > 0
+              ? `<span class="badge badge-pending">${t('statementCreditBalanceLabel')}</span>`
+              : `<span class="badge badge-ok">${t('fullyPaidLabel')}</span>`);
+
+        let dueCell = due > 0
+          ? `<span class="currency-symbol">৳</span>${due.toFixed(2)}`
+          : (refundOwed > 0
+              ? `<span class="currency-symbol">৳</span>${refundOwed.toFixed(2)} (${t('statementCreditBalanceLabel')})`
+              : `<span class="currency-symbol">৳</span>0.00`);
+
+        let actionsHtml = (currentUserRole === 'admin')
+          ? `<div style="text-align:center;">
+               ${due > 0 ? `<button onclick="openPaymentModal(${c.id})" class="btn-icon-action" style="color:#16a34a;" title="${t('titlePayDue')}">${SVG_PAY}</button>` : ''}
+               <button onclick="showCustomerStatement(${c.id})" class="btn-icon-action btn-view" title="${t('titleViewStatement')}">${SVG_VIEW}</button>
+             </div>`
+          : `<div style="text-align:center;">
+               <button onclick="showCustomerStatement(${c.id})" class="btn-icon-action btn-view" title="${t('titleViewStatement')}">${SVG_VIEW}</button>
+             </div>`;
 
         tbody.innerHTML += `
           <tr>
             <td><b>${c.name}</b></td>
             <td>${c.phone}</td>
-            <td><span class="currency-symbol">৳</span>${totalPur.toFixed(2)}</td>
+            <td><span class="currency-symbol">৳</span>${totalBilled.toFixed(2)}</td>
             <td style="color:#16a34a;"><span class="currency-symbol">৳</span>${totalPaid.toFixed(2)}</td>
-            <td style="color:${due > 0 ? '#dc2626' : '#16a34a'}; font-weight:bold;"><span class="currency-symbol">৳</span>${due.toFixed(2)}</td>
-            <td><span class="badge ${due > 0 ? 'badge-alert' : 'badge-ok'}">${due > 0 ? t('dueExistsLabel') : t('fullyPaidLabel')}</span></td>
+            <td style="color:${due > 0 ? '#dc2626' : (refundOwed > 0 ? '#2563eb' : '#16a34a')}; font-weight:bold;">${dueCell}</td>
+            <td>${statusBadge}</td>
+            <td>${actionsHtml}</td>
           </tr>
         `;
       });
+    }
+
+    // ================= PAYMENT COLLECTION (paying down due AFTER the sale) =================
+
+    function openPaymentModal(custId) {
+      let cust = customers.find(c => c.id == custId);
+      if (!cust) return;
+
+      let { due } = getCustomerTotalDue(custId);
+
+      document.getElementById('paymentCustId').value = custId;
+      document.getElementById('paymentEditId').value = '';
+      document.getElementById('pmInfoCustName').innerText = cust.name;
+      document.getElementById('pmInfoCurrentDue').innerHTML = '<span class="currency-symbol">৳</span>' + due.toFixed(2);
+
+      document.getElementById('paymentAmountInput').value = '';
+      document.getElementById('paymentMethodInput').value = 'Cash';
+      document.getElementById('paymentDateInput').value = new Date().toISOString().split('T')[0];
+      document.getElementById('paymentNoteInput').value = '';
+      document.getElementById('btnPaymentSave').innerText = t('btnSavePayment');
+
+      renderPaymentHistory(custId);
+      document.getElementById('paymentModal').style.display = 'flex';
+    }
+
+    function renderPaymentHistory(custId) {
+      let tbody = document.querySelector('#paymentHistoryTable tbody');
+      if (!tbody) return;
+
+      let custPayments = payments.filter(p => p.custId == custId && !p.reversed).sort((a, b) => b.date.localeCompare(a.date));
+
+      if (custPayments.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = custPayments.map(p => {
+        let declineNoteHtml = (p.status === 'Declined' && p.declineNote)
+          ? `<div style="font-size:11px; color:#dc2626; margin-top:2px;">${t('declineReasonLabel')}: ${p.declineNote}</div>`
+          : '';
+        let printBtn = (p.status === 'Approved')
+          ? `<button onclick="viewPaymentReceipt(${p.id})" class="btn-icon-action btn-view" title="${t('titlePrintView')}">${SVG_VIEW}</button>`
+          : '';
+        return `
+        <tr>
+          <td>${p.date}</td>
+          <td><b><span class="currency-symbol">৳</span>${p.amount.toFixed(2)}</b></td>
+          <td>${p.method}</td>
+          <td>${accStatusBadge(p.status)}${declineNoteHtml}</td>
+          <td style="text-align:center;">
+            ${printBtn}
+            ${currentUserRole === 'admin' ? `
+              <button onclick="editPayment(${p.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
+              <button onclick="deletePayment(${p.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>
+            ` : ''}
+          </td>
+        </tr>
+      `;
+      }).join('');
+    }
+
+    function editPayment(id) {
+      let p = payments.find(x => x.id == id);
+      if (!p) return;
+
+      document.getElementById('paymentEditId').value = p.id;
+      document.getElementById('paymentAmountInput').value = p.amount;
+      document.getElementById('paymentMethodInput').value = p.method;
+      document.getElementById('paymentDateInput').value = p.date;
+      document.getElementById('paymentNoteInput').value = p.note || '';
+      document.getElementById('btnPaymentSave').innerText = t('btnUpdateOnly');
+    }
+
+    function submitPayment() {
+      let custId = document.getElementById('paymentCustId').value;
+      let editId = document.getElementById('paymentEditId').value;
+      let amount = roundMoney(parseFloat(document.getElementById('paymentAmountInput').value) || 0);
+      let method = document.getElementById('paymentMethodInput').value;
+      let date = document.getElementById('paymentDateInput').value || new Date().toISOString().split('T')[0];
+      let note = document.getElementById('paymentNoteInput').value.trim();
+
+      if (!amount || amount <= 0) return alert(t("alertEnterValidAmount"));
+
+      let newPaymentId = null;
+
+      if (editId) {
+        let p = payments.find(x => x.id == editId);
+        if (p) { p.amount = amount; p.method = method; p.date = date; p.note = note; }
+      } else {
+        // Same pending-approval pattern used everywhere else in the app:
+        // Staff-collected payments must be verified by the Super User before
+        // they count toward the customer's due, or can be printed/handed
+        // to the customer as a receipt.
+        let initialStatus = (currentUserRole === 'staff') ? 'Pending' : 'Approved';
+        newPaymentId = Date.now();
+        payments.unshift({
+          id: newPaymentId,
+          custId,
+          amount, method, date, note,
+          status: initialStatus,
+          createdBy: currentUserRole,
+          createdByName: document.getElementById('headerUserName') ? document.getElementById('headerUserName').innerText : currentUserRole,
+          reversed: false
+        });
+      }
+
+      saveData();
+      renderLedger();
+      renderDashboard();
+      renderNotifications();
+
+      let { due } = getCustomerTotalDue(custId);
+      document.getElementById('pmInfoCurrentDue').innerHTML = '<span class="currency-symbol">৳</span>' + due.toFixed(2);
+      document.getElementById('paymentEditId').value = '';
+      document.getElementById('paymentAmountInput').value = '';
+      document.getElementById('paymentNoteInput').value = '';
+      document.getElementById('btnPaymentSave').innerText = t('btnSavePayment');
+
+      renderPaymentHistory(custId);
+
+      if (!editId && currentUserRole === 'staff') {
+        alert(t("alertPaymentSentApproval"));
+      } else {
+        alert(t("alertPaymentSaved"));
+      }
+
+      // Admin gets an immediate printable receipt for a freshly-approved
+      // payment; a staff-submitted one prints once the Super User approves
+      // it from Notifications (see approvePayment / viewPaymentReceipt).
+      if (!editId && newPaymentId && currentUserRole === 'admin') {
+        closeModal('paymentModal');
+        viewPaymentReceipt(newPaymentId);
+      }
+    }
+
+    function approvePayment(id) {
+      if (currentUserRole !== 'admin') return alert(t("alertOnlyAdminApproveOrder"));
+      let p = payments.find(x => x.id == id);
+      if (p) {
+        p.status = 'Approved';
+        saveData();
+        renderLedger();
+        renderDashboard();
+        renderNotifications();
+        alert(t("alertPaymentApproved"));
+      }
+    }
+
+    function viewPaymentReceipt(id) {
+      let p = payments.find(x => x.id == id);
+      if (!p) return;
+
+      let cust = customers.find(c => c.id == p.custId) || { name: t('naLabel'), phone: t('naLabel') };
+      let { due } = getCustomerTotalDue(p.custId);
+
+      let html = `
+        <div class="invoice-header">
+          ${shopConfig.logoImage ? `<img class="invoice-logo" src="${shopConfig.logoImage}">` : ''}
+          <h2>${shopConfig.name}</h2>
+          <p>${shopConfig.tagline}</p>
+          <p style="font-size:12px; color:#64748b;">${t('lblDate')}: ${p.date} | ${t('thPaymentReceiptNo')}: <b>PAY-${p.id.toString().slice(-4)}</b></p>
+        </div>
+
+        <div style="margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px;">
+          <h4>${t('custDetailsHeading')}</h4>
+          <p><strong>${t('lblNameShort')}:</strong> ${cust.name}</p>
+          <p><strong>${t('lblMobileShort')}:</strong> ${cust.phone}</p>
+        </div>
+
+        <table style="width:100%; margin-top:10px;">
+          <tr><td style="padding:6px 0;">${t('lblAccMethod')}</td><td style="text-align:right;"><b>${p.method}</b></td></tr>
+          ${p.note ? `<tr><td style="padding:6px 0;">${t('lblNote')}</td><td style="text-align:right;">${p.note}</td></tr>` : ''}
+          <tr><td style="padding:10px 0; font-size:16px; border-top:2px dashed var(--border-cool);">${t('lblPaymentAmount')}</td><td style="text-align:right; padding:10px 0; font-size:18px; border-top:2px dashed var(--border-cool);"><b><span class="currency-symbol">৳</span>${p.amount.toFixed(2)}</b></td></tr>
+          <tr><td style="padding:6px 0;">${t('thCurrDue')}</td><td style="text-align:right; color:${due > 0 ? '#dc2626' : '#16a34a'};"><b><span class="currency-symbol">৳</span>${due.toFixed(2)}</b></td></tr>
+        </table>
+
+        <p style="text-align:center; font-size:11px; color:#94a3b8; margin-top:20px;">${t('voucherFooterNote')}</p>
+      `;
+
+      document.getElementById('printablePaymentReceipt').innerHTML = html;
+      document.getElementById('viewPaymentReceiptModal').style.display = 'flex';
+    }
+
+    function deletePayment(id) {
+      if (currentUserRole !== 'admin') return;
+      if (!confirm(t("confirmDeletePayment"))) return;
+
+      let p = payments.find(x => x.id == id);
+      if (!p) return;
+      let custId = p.custId;
+
+      payments = payments.filter(x => x.id != id);
+
+      saveData();
+      renderLedger();
+      renderDashboard();
+      renderNotifications();
+
+      let { due } = getCustomerTotalDue(custId);
+      let dueEl = document.getElementById('pmInfoCurrentDue');
+      if (dueEl) dueEl.innerHTML = '<span class="currency-symbol">৳</span>' + due.toFixed(2);
+      renderPaymentHistory(custId);
     }
 
     function accStatusBadge(status) {
@@ -4014,6 +5127,9 @@
       localStorage.setItem('pos_accounts', JSON.stringify(accountTransactions));
       localStorage.setItem('pos_categories', JSON.stringify(categories));
       localStorage.setItem('pos_returns', JSON.stringify(salesReturns));
+      localStorage.setItem('pos_deliveries', JSON.stringify(deliveries));
+      localStorage.setItem('pos_cancellations', JSON.stringify(orderCancellations));
+      localStorage.setItem('pos_payments', JSON.stringify(payments));
       saveToFirestore();
     }
 
@@ -4257,6 +5373,16 @@
       } catch (err) {
         console.error('Firebase sync failed, continuing with local data.', err);
       }
+
+      // One-time migration: payments created before status-tracking existed
+      // have no `status` field — grandfather them in as Approved so they
+      // keep counting toward due, instead of silently vanishing into
+      // "Pending" and no longer reducing what the customer owes.
+      let neededMigration = false;
+      payments.forEach(p => {
+        if (!p.status) { p.status = 'Approved'; neededMigration = true; }
+      });
+      if (neededMigration) saveData();
 
       renderShopInfo();
       setLanguage(currentLang);
