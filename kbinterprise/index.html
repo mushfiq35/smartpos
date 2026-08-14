@@ -297,10 +297,6 @@
       button, .icon-btn, .btn-icon-action, .segment button, .sidebar-menu button { min-height: 38px; }
     }
 
-    /* Admin-only visibility — JS controls this, CSS ensures proper display type */
-    .admin-only { display: block; }
-    .staff-only { display: none; }
-    /* These are overridden by setUserRole() at runtime */
     .pr-tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 2px solid var(--border); padding-bottom: 0; }
     .pr-tab-btn { background: transparent; color: var(--muted); border: none; border-bottom: 3px solid transparent; border-radius: 0; padding: 10px 20px; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: -2px; transition: all 0.2s; width: auto; }
     .pr-tab-btn:hover { background: var(--paper); color: var(--ink); }
@@ -4089,21 +4085,19 @@
     function setUserRole(role) {
       currentUserRole = role;
 
-      let adminElements = document.querySelectorAll('.admin-only');
-      adminElements.forEach(el => {
-        el.style.display = (currentUserRole === 'staff') ? 'none' : '';
-        // Force block for card elements that might have lost display value
-        if (currentUserRole === 'admin' && el.classList.contains('card') && el.style.display === '') {
-          el.style.display = 'block';
+      document.querySelectorAll('.admin-only').forEach(el => {
+        if (role === 'staff') {
+          el.style.display = 'none';
+        } else {
+          el.style.removeProperty('display');
         }
       });
-
-      let staffOnlyElements = document.querySelectorAll('.staff-only');
-      staffOnlyElements.forEach(el => el.style.display = (currentUserRole === 'staff') ? '' : 'none');
-
-      // Sidebar admin-only li items
-      document.querySelectorAll('.sidebar-menu li.admin-only').forEach(el => {
-        el.style.display = (currentUserRole === 'staff') ? 'none' : 'block';
+      document.querySelectorAll('.staff-only').forEach(el => {
+        if (role === 'staff') {
+          el.style.removeProperty('display');
+        } else {
+          el.style.display = 'none';
+        }
       });
 
       let pill = document.getElementById('footerRolePill');
@@ -4192,8 +4186,6 @@
         document.getElementById('btnAccSave').innerText = t('btnSaveAcc');
       }
 
-      // Re-apply role visibility after language update rewrites data-key elements
-      setUserRole(currentUserRole || 'admin');
     }
 
     function closeModal(id) {
