@@ -7943,14 +7943,10 @@
   </script>
 
   <!-- FIREBASE (Cloud Data Storage) -->
-  <script type="module">
-    import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-    import {
-      getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
-      createUserWithEmailAndPassword
-    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyARujswLaRSqYYxzxPAo47jZ3c2vMGRpqw",
       authDomain: "kb-enterprise-8a6dd.firebaseapp.com",
@@ -7959,40 +7955,33 @@
       messagingSenderId: "279055179544",
       appId: "1:279055179544:web:0b8cfeb33f96356fa3486d"
     };
+    const _app  = firebase.initializeApp(firebaseConfig);
+    const _db   = firebase.firestore();
+    const _auth = firebase.auth();
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+    window.firestoreDB         = _db;
+    window.firestoreDoc        = (d,col,id) => ({_col:col,_id:id});
+    window.firestoreGetDoc     = async r => { let s=await _db.collection(r._col).doc(r._id).get(); return {exists:()=>s.exists,data:()=>s.data(),id:s.id}; };
+    window.firestoreSetDoc     = async (r,data) => _db.collection(r._col).doc(r._id).set(data);
+    window.firestoreDeleteDoc  = async r => _db.collection(r._col).doc(r._id).delete();
+    window.firestoreCollection = (d,col) => col;
+    window.firestoreGetDocs    = async col => { let s=await _db.collection(col).get(); return {docs:s.docs.map(d=>({id:d.id,data:()=>d.data()}))}; };
+    window.authSignIn          = (e,p) => _auth.signInWithEmailAndPassword(e,p);
+    window.authSignOut         = () => _auth.signOut();
 
-    window.firestoreDB = db;
-    window.firestoreDoc = doc;
-    window.firestoreGetDoc = getDoc;
-    window.firestoreSetDoc = setDoc;
-    window.firestoreDeleteDoc = deleteDoc;
-    window.firestoreCollection = collection;
-    window.firestoreGetDocs = getDocs;
-
-    window.authSignIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
-    window.authSignOut = () => signOut(auth);
-
-    onAuthStateChanged(auth, (user) => {
+    _auth.onAuthStateChanged(user => {
       window.currentAuthUser = user;
       window.dispatchEvent(new Event('authStateChanged'));
     });
 
     window.createSecondaryUser = async (email, password) => {
-      let secondaryApp = initializeApp(firebaseConfig, 'secondary-' + Date.now());
-      let secondaryAuth = getAuth(secondaryApp);
+      let sec = firebase.initializeApp(firebaseConfig, 'sec-' + Date.now());
+      let sa  = sec.auth();
       try {
-        let cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-        let uid = cred.user.uid;
-        await signOut(secondaryAuth);
-        await deleteApp(secondaryApp);
-        return uid;
-      } catch (err) {
-        try { await deleteApp(secondaryApp); } catch (e) {}
-        throw err;
-      }
+        let c = await sa.createUserWithEmailAndPassword(email, password);
+        let uid = c.user.uid;
+        await sa.signOut(); await sec.delete(); return uid;
+      } catch(err) { try{await sec.delete();}catch(e){} throw err; }
     };
 
     window.firebaseReady = true;
