@@ -22,7 +22,7 @@
   --sidebar-w:235px;
 }
 *{box-sizing:border-box;}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;overflow-x:hidden;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;overflow-x:hidden;max-width:100vw;}
 .app{display:flex;min-height:100vh;max-width:100vw;overflow-x:hidden;}
 
 /* Sidebar */
@@ -166,6 +166,36 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
   .sidebar-backdrop.open{display:block;}
   .main{margin-left:0;}
   .hamburger{display:block;}
+  .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .dash-two-col{grid-template-columns:1fr !important;}
+  .dash-summary-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .dash-banner-boxes{flex-direction:row;flex-wrap:wrap;}
+}
+@media (max-width:480px){
+  .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .dash-two-col{grid-template-columns:1fr !important;}
+  .dash-banner{padding:14px 12px !important;}
+  .dash-banner-title{font-size:16px !important;}
+  .stat-card .val{font-size:18px;}
+  .stat-card{padding:12px 10px !important;}
+  .content{padding:12px 10px 60px !important;}
+  .topbar{padding:0 10px !important;}
+  .panel{padding:12px 10px !important;}
+  table.data{font-size:11px;}
+  table.data th, table.data td{padding:6px 4px !important;}
+  .toolbar{flex-wrap:wrap;gap:6px !important;}
+  .toolbar input, .toolbar select{font-size:13px;}
+  .btn{padding:7px 10px;font-size:12px;}
+  .topbar-title{font-size:16px !important;}
+  .topbar-sub{font-size:11px !important;}
+}
+@media (max-width:360px){
+  .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .stat-card .val{font-size:16px;}
+  .stat-card .lbl{font-size:10px;}
+  .dash-banner-title{font-size:14px !important;}
+  .main{padding:8px 6px !important;}
+  .panel{padding:10px 8px !important;}
 }
 
 /* Logo + language switcher */
@@ -1341,7 +1371,7 @@ function pageDashboard(){
     </div>
 
     <!-- প্রধান stat cards — ২ সারি -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;">
+    <div class="dash-stat-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;">
       <div class="stat-card" style="background:#1B6B3A;">
         <div style="font-size:22px;margin-bottom:6px;">🤲</div>
         <div class="val">${custCount}</div>
@@ -1444,7 +1474,7 @@ function pageDashboard(){
     <!-- আজকের সারসংক্ষেপ -->
     <div class="panel" style="background:linear-gradient(135deg,#f4f9f4,#e8f4e8);border:1px solid var(--hajj-green-light);">
       <h3 style="display:flex;align-items:center;gap:8px;">📊 আজকের সারসংক্ষেপ</h3>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+      <div class="dash-summary-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
         <div style="background:#fff;border-radius:8px;padding:14px;border:1px solid var(--line);text-align:center;">
           <div style="font-size:20px;font-weight:700;color:#1B6B3A;font-family:'IBM Plex Mono',monospace;">৳${money(todaySales)}</div>
           <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">💵 আজকের বুকিং</div>
