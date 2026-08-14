@@ -774,6 +774,7 @@ const firebaseConfig = {
   appId: "1:1004775252708:web:e9c601633d495d9e2e42f1"
 };
 
+
 let useFirebase = false;
 let fsdb = null;
 let currentAuthUser = null;
@@ -1299,124 +1300,2477 @@ function pageDashboard(){
   const todayReturnsValue = db.returns.filter(r=>!r.cancelled && r.date===today).reduce((s,r)=>s+Number(r.value),0);
   const todaySales = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.total),0) - todayReturnsValue;
   const todayExpense = db.expenses.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.amount),0);
+  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0);
+  const todayIncome = todayProfit - todayExpense;
+  const lowStock = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold));
   const totalProductQty = Object.values(db.products).reduce((s,p)=>s+Number(p.qty),0);
   const totalBalance = computeTotalBalance();
   const totalDue = Object.values(db.customers).reduce((s,c)=>s+Number(c.due||0),0);
   const totalPaid = totalSales - totalDue;
   const todayBookings = db.sales.filter(x=>x.date===today).length;
-  const pendingCount = Object.values(db.customers).filter(c=>Number(c.due||0)>0).length;
-  const lowPackages = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold));
-  const recentSales = [...db.sales].sort((a,b)=>b.ts-a.ts).slice(0,5);
+  const pendingInstallments = Object.values(db.customers).filter(c=>Number(c.due||0)>0).length;
 
+  // গত ১৪ দিনের trend data
   const trendDays = [...Array(14)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(13-i)); return toISODate(d); });
   const trendVals = trendDays.map(d => db.sales.filter(x=>x.date===d).reduce((s,x)=>s+Number(x.total),0));
   const maxVal = Math.max(1, ...trendVals);
 
-  // nested template literal এড়াতে আগেই HTML বানাই
-  const trendHTML = trendDays.map(function(d,i){
-    const pct = (trendVals[i]/maxVal*100).toFixed(0);
-    const val = trendVals[i]>0 ? '৳'+money(trendVals[i]) : '—';
-    return '<div class="rbar-row" style="font-size:12px;">'
-      + '<div style="min-width:36px;">'+d.slice(5)+'</div>'
-      + '<div class="rbar-track" style="flex:1;"><div class="rbar-fill" style="width:'+pct+'%;transition:width 0.4s;"></div></div>'
-      + '<div style="text-align:right;min-width:55px;">'+val+'</div>'
-      + '</div>';
-  }).join('');
+  // সাম্প্রতিক বুকিং ৫টা
+  const recentSales = [...db.sales].sort((a,b)=>b.ts-a.ts).slice(0,5);
 
-  const recentHTML = recentSales.length===0
-    ? '<div class="empty" style="padding:30px 20px;"><div class="big">\uD83D\uDD4C</div><div>'+t('no_sales_yet')+'</div></div>'
-    : (function(){
-        const rows = recentSales.map(function(s){
-          const dueBadge = s.due>0
-            ? '<span class="pill red">৳'+money(s.due)+'</span>'
-            : '<span class="pill green">পরিশোধ</span>';
-          return '<tr>'
-            + '<td>'+escapeHtml(s.customerName||t('walk_in'))+'</td>'
-            + '<td>'+escapeHtml(s.productName)+'</td>'
-            + '<td>৳'+money(s.total)+'</td>'
-            + '<td>'+dueBadge+'</td>'
-            + '<td style="color:var(--ink-soft);font-size:12px;">'+formatDateDMY(s.date)+'</td>'
-            + '</tr>';
-        }).join('');
-        return '<table class="data"><thead><tr>'
-          + '<th>'+t('col_customer')+'</th><th>'+t('col_product')+'</th>'
-          + '<th>'+t('col_amount')+'</th><th>'+t('col_due')+'</th><th>'+t('col_date')+'</th>'
-          + '</tr></thead><tbody>'+rows+'</tbody></table>';
-      })();
-
-  const lowHTML = lowPackages.length===0 ? '' : (function(){
-    const rows = lowPackages.map(function(p){
-      return '<tr class="low"><td>'+escapeHtml(p.name)+'</td><td>'+escapeHtml(p.cat||'—')+'</td><td>'+p.qty+'</td><td>'+p.threshold+'</td></tr>';
-    }).join('');
-    return '<div class="panel" style="border-left:4px solid var(--red);background:#fff8f8;">'
-      + '<h3 style="color:var(--red);">&#9888;&#65039; '+t('low_stock_heading')+'</h3>'
-      + '<table class="data"><thead><tr><th>'+t('col_product')+'</th><th>'+t('f_cat')+'</th><th>'+t('col_stock')+'</th><th>'+t('f_threshold')+'</th></tr></thead>'
-      + '<tbody>'+rows+'</tbody></table></div>';
-  })();
-
-  const dateStr = new Date().toLocaleDateString(currentLang==='bn'?'bn-BD':'en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const balBg = totalBalance>=0 ? '#1B6B3A' : '#B4423A';
-  const balIcon = totalBalance>=0 ? '📈' : '📉';
+  // কম আসন প্যাকেজ
+  const lowPackages = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold));
 
   return `
-    <div style="background:linear-gradient(135deg,#0f3d20 0%,#1B6B3A 60%,#C49A2F 100%);border-radius:14px;padding:22px 28px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <!-- হজ্জ ব্যানার -->
+    <div style="background:linear-gradient(135deg,#0f3d20 0%,#1B6B3A 60%,#C49A2F 100%);border-radius:14px;padding:22px 28px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
       <div>
-        <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;">🕋 হজ্জ এজেন্সি ড্যাশবোর্ড</div>
-        <div style="color:rgba(255,255,255,0.75);font-size:13px;">${dateStr}</div>
+        <div style="font-family:'Roboto Slab',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;">🕋 হজ্জ এজেন্সি ড্যাশবোর্ড</div>
+        <div style="color:rgba(255,255,255,0.75);font-size:13px;">${new Date().toLocaleDateString(currentLang==='bn'?'bn-BD':'en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;">
         <div style="text-align:center;background:rgba(255,255,255,0.12);border-radius:10px;padding:12px 18px;">
-          <div style="font-size:24px;font-weight:700;color:#fff;">${todayBookings}</div>
+          <div style="font-size:24px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${todayBookings}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">আজকের বুকিং</div>
         </div>
         <div style="text-align:center;background:rgba(255,255,255,0.08);border-radius:10px;padding:12px 18px;">
-          <div style="font-size:24px;font-weight:700;color:#fff;">${pendingCount}</div>
+          <div style="font-size:24px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${pendingInstallments}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">বাকি আছে</div>
         </div>
       </div>
     </div>
 
+    <!-- প্রধান stat cards — ২ সারি -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;">
-      <div class="stat-card" style="background:#1B6B3A;"><div style="font-size:22px;margin-bottom:6px;">🤲</div><div class="val">${custCount}</div><div class="lbl">${t('stat_customer')}</div></div>
-      <div class="stat-card" style="background:#144d2a;"><div style="font-size:22px;margin-bottom:6px;">📦</div><div class="val">${prodCount}</div><div class="lbl">${t('stat_product')}</div></div>
-      <div class="stat-card" style="background:#2E6B8A;"><div style="font-size:22px;margin-bottom:6px;">🏢</div><div class="val">${suppCount}</div><div class="lbl">${t('stat_supplier')}</div></div>
-      <div class="stat-card" style="background:#C49A2F;color:#1A2E1A;"><div style="font-size:22px;margin-bottom:6px;">🎫</div><div class="val">${totalProductQty}</div><div class="lbl">${t('stat_total_qty')}</div></div>
+      <div class="stat-card" style="background:#1B6B3A;">
+        <div style="font-size:22px;margin-bottom:6px;">🤲</div>
+        <div class="val">${custCount}</div>
+        <div class="lbl">${t('stat_customer')}</div>
+      </div>
+      <div class="stat-card" style="background:#144d2a;">
+        <div style="font-size:22px;margin-bottom:6px;">📦</div>
+        <div class="val">${prodCount}</div>
+        <div class="lbl">${t('stat_product')}</div>
+      </div>
+      <div class="stat-card" style="background:#2E6B8A;">
+        <div style="font-size:22px;margin-bottom:6px;">🏢</div>
+        <div class="val">${suppCount}</div>
+        <div class="lbl">${t('stat_supplier')}</div>
+      </div>
+      <div class="stat-card" style="background:#C49A2F;color:#1A2E1A;">
+        <div style="font-size:22px;margin-bottom:6px;">🎫</div>
+        <div class="val">${totalProductQty}</div>
+        <div class="lbl">${t('stat_total_qty')}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+      <div class="stat-card" style="background:#1B6B3A;">
+        <div style="font-size:22px;margin-bottom:6px;">💰</div>
+        <div class="val">৳${money(totalSales)}</div>
+        <div class="lbl">${t('stat_sales')}</div>
+      </div>
+      <div class="stat-card" style="background:#144d2a;">
+        <div style="font-size:22px;margin-bottom:6px;">✅</div>
+        <div class="val">৳${money(totalPaid)}</div>
+        <div class="lbl">মোট পরিশোধিত</div>
+      </div>
+      <div class="stat-card" style="background:#B4423A;">
+        <div style="font-size:22px;margin-bottom:6px;">⏳</div>
+        <div class="val">৳${money(totalDue)}</div>
+        <div class="lbl">মোট বাকি</div>
+      </div>
+      <div class="stat-card" style="background:${totalBalance>=0?'#1B6B3A':'#B4423A'};">
+        <div style="font-size:22px;margin-bottom:6px;">${totalBalance>=0?'📈':'📉'}</div>
+        <div class="val">৳${money(Math.abs(totalBalance))}</div>
+        <div class="lbl">${t('summary_final')}</div>
+      </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;">
-      <div class="stat-card" style="background:#1B6B3A;"><div style="font-size:22px;margin-bottom:6px;">💰</div><div class="val">৳${money(totalSales)}</div><div class="lbl">${t('stat_sales')}</div></div>
-      <div class="stat-card" style="background:#144d2a;"><div style="font-size:22px;margin-bottom:6px;">✅</div><div class="val">৳${money(totalPaid)}</div><div class="lbl">মোট পরিশোধিত</div></div>
-      <div class="stat-card" style="background:#B4423A;"><div style="font-size:22px;margin-bottom:6px;">⏳</div><div class="val">৳${money(totalDue)}</div><div class="lbl">মোট বাকি</div></div>
-      <div class="stat-card" style="background:${balBg};"><div style="font-size:22px;margin-bottom:6px;">${balIcon}</div><div class="val">৳${money(Math.abs(totalBalance))}</div><div class="lbl">${t('summary_final')}</div></div>
+    <!-- ২ কলাম: Trend + সাম্প্রতিক বুকিং -->
+    <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:16px;margin-bottom:16px;">
+      <!-- Trend chart -->
+      <div class="panel" style="margin-bottom:0;">
+        <h3 style="display:flex;align-items:center;gap:8px;">${t('reports_trend')} <span style="font-size:11px;font-weight:400;color:var(--ink-soft);">গত ১৪ দিন</span></h3>
+        ${trendDays.map((d,i) => `
+          <div class="rbar-row">
+            <div style="font-size:12px;">${d.slice(5)}</div>
+            <div class="rbar-track"><div class="rbar-fill" style="width:${(trendVals[i]/maxVal*100).toFixed(0)}%;transition:width 0.4s;"></div></div>
+            <div style="text-align:right;font-size:12px;">${trendVals[i]>0?'৳'+money(trendVals[i]):'—'}</div>
+          </div>`).join('')}
+      </div>
+
+      <!-- সাম্প্রতিক বুকিং -->
+      <div class="panel" style="margin-bottom:0;">
+        <h3>${t('recent_sales_heading')}</h3>
+        ${recentSales.length===0
+          ? `<div class="empty" style="padding:30px 20px;"><div class="big">🕌</div><div>${t('no_sales_yet')}</div></div>`
+          : `<table class="data">
+              <thead><tr>
+                <th>${t('col_customer')}</th>
+                <th>${t('col_product')}</th>
+                <th>${t('col_amount')}</th>
+                <th>${t('col_due')}</th>
+                <th>${t('col_date')}</th>
+              </tr></thead>
+              <tbody>
+                ${recentSales.map(s=>`
+                  <tr>
+                    <td>${escapeHtml(s.customerName||t('walk_in'))}</td>
+                    <td>${escapeHtml(s.productName)}</td>
+                    <td>৳${money(s.total)}</td>
+                    <td>${s.due>0?'<span class="pill red">৳'+money(s.due)+'</span>':'<span class="pill green">পরিশোধ</span>'}</td>
+                    <td style="color:var(--ink-soft);font-size:12px;">${formatDateDMY(s.date)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>`
+        }
+      </div>
     </div>
 
-    <div class="panel" style="background:linear-gradient(135deg,#f4f9f4,#e8f4e8);border:1px solid var(--hajj-green-light);margin-bottom:16px;">
-      <h3>📊 আজকের সারসংক্ষেপ</h3>
+    <!-- কম আসন সতর্কতা -->
+    ${lowPackages.length>0 ? `
+      <div class="panel" style="border-left:4px solid var(--red);background:#fff8f8;">
+        <h3 style="color:var(--red);display:flex;align-items:center;gap:8px;">⚠️ ${t('low_stock_heading')}</h3>
+        <table class="data">
+          <thead><tr><th>${t('col_product')}</th><th>${t('f_cat')}</th><th>${t('col_stock')}</th><th>${t('f_threshold')}</th></tr></thead>
+          <tbody>
+            ${lowPackages.map(p=>`<tr class="low"><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.cat||'—')}</td><td>${p.qty}</td><td>${p.threshold}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : ''}
+
+    <!-- আজকের সারসংক্ষেপ -->
+    <div class="panel" style="background:linear-gradient(135deg,#f4f9f4,#e8f4e8);border:1px solid var(--hajj-green-light);">
+      <h3 style="display:flex;align-items:center;gap:8px;">📊 আজকের সারসংক্ষেপ</h3>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
         <div style="background:#fff;border-radius:8px;padding:14px;border:1px solid var(--line);text-align:center;">
-          <div style="font-size:20px;font-weight:700;color:#1B6B3A;font-family:monospace;">৳${money(todaySales)}</div>
+          <div style="font-size:20px;font-weight:700;color:#1B6B3A;font-family:'IBM Plex Mono',monospace;">৳${money(todaySales)}</div>
           <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">💵 আজকের বুকিং</div>
         </div>
         <div style="background:#fff;border-radius:8px;padding:14px;border:1px solid var(--line);text-align:center;">
-          <div style="font-size:20px;font-weight:700;color:#B4423A;font-family:monospace;">৳${money(todayExpense)}</div>
+          <div style="font-size:20px;font-weight:700;color:#B4423A;font-family:'IBM Plex Mono',monospace;">৳${money(todayExpense)}</div>
           <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">💸 আজকের খরচ</div>
         </div>
       </div>
     </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:16px;margin-bottom:16px;">
-      <div class="panel" style="margin-bottom:0;min-width:0;overflow:hidden;">
-        <h3>${t('reports_trend')} <span style="font-size:11px;font-weight:400;color:var(--ink-soft);">গত ১৪ দিন</span></h3>
-        ${trendHTML}
-      </div>
-      <div class="panel" style="margin-bottom:0;min-width:0;overflow:hidden;">
-        <h3>${t('recent_sales_heading')}</h3>
-        ${recentHTML}
-      </div>
-    </div>
-
-    ${lowHTML}
   `;
 }
 
+/* ---------- Reports ---------- */
+let reportsSubTab = 'overview';
+let reportsCustQuery = '';
+let reportsSuppQuery = '';
+let reportsSelectedCustId = null;
+let reportsSelectedSuppId = null;
+let overviewRange = 'last14';
+let overviewFrom = '';
+let overviewTo = '';
+let custReportYear = 'all';
+let custReportMonth = 'all';
+let suppReportYear = 'all';
+let suppReportMonth = 'all';
 
+function pad2(n){ return String(n).padStart(2,'0'); }
+function toISODate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+
+function getEarliestDate(){
+  const allDates = [...db.sales, ...db.purchases, ...db.expenses].map(x=>x.date).filter(Boolean).sort();
+  return allDates.length ? allDates[0] : todayStr();
+}
+
+function resolveRange(rangeKey, customFrom, customTo){
+  const today = new Date();
+  let from, to;
+  if(rangeKey==='last14'){
+    to = new Date(today); from = new Date(today); from.setDate(from.getDate()-13);
+  } else if(rangeKey==='thisMonth'){
+    from = new Date(today.getFullYear(), today.getMonth(), 1); to = today;
+  } else if(rangeKey==='thisYear'){
+    from = new Date(today.getFullYear(), 0, 1); to = today;
+  } else if(rangeKey==='allTime'){
+    from = new Date(getEarliestDate()); to = today;
+  } else {
+    from = customFrom ? new Date(customFrom) : new Date(today);
+    to = customTo ? new Date(customTo) : new Date(today);
+  }
+  return { fromStr: toISODate(from), toStr: toISODate(to) };
+}
+
+function aggregatePeriod(fromStr, toStr){
+  const from = new Date(fromStr), to = new Date(toStr);
+  const spanDays = Math.max(1, Math.round((to-from)/(24*3600*1000))+1);
+  const groupByMonth = spanDays > 31;
+  const buckets = {};
+  if(!groupByMonth){
+    for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)){
+      buckets[toISODate(d)] = {s:0,p:0,e:0};
+    }
+  } else {
+    let d = new Date(from.getFullYear(), from.getMonth(), 1);
+    const last = new Date(to.getFullYear(), to.getMonth(), 1);
+    while(d<=last){
+      buckets[`${d.getFullYear()}-${pad2(d.getMonth()+1)}`] = {s:0,p:0,e:0};
+      d.setMonth(d.getMonth()+1);
+    }
+  }
+  const bucketKey = (dateStr) => groupByMonth ? dateStr.slice(0,7) : dateStr;
+  const inRange = (dateStr) => dateStr >= fromStr && dateStr <= toStr;
+  db.sales.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].s += Number(x.total); } });
+  db.purchases.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].p += Number(x.total); } });
+  db.expenses.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].e += Number(x.amount); } });
+  const rows = Object.entries(buckets).map(([k,v]) => ({ d:k, s:v.s, p:v.p, e:v.e, net:v.s-v.p-v.e })).sort((a,b)=>b.d.localeCompare(a.d));
+  const totals = rows.reduce((a,r)=>({s:a.s+r.s,p:a.p+r.p,e:a.e+r.e,net:a.net+r.net}), {s:0,p:0,e:0,net:0});
+  return { rows, totals, groupByMonth };
+}
+
+function getAvailableYears(){
+  const dates = [...db.sales, ...db.purchases].map(x=>x.date).filter(Boolean);
+  const years = [...new Set(dates.map(d=>d.slice(0,4)))].sort((a,b)=>b.localeCompare(a));
+  return years;
+}
+function monthName(m){
+  try{
+    return new Date(2000, m-1, 1).toLocaleString(currentLang==='bn' ? 'bn-BD' : 'en-US', {month:'long'});
+  }catch(e){ return String(m); }
+}
+function matchesYearMonth(dateStr, year, month){
+  if(!dateStr) return false;
+  if(year!=='all' && dateStr.slice(0,4)!==year) return false;
+  if(month!=='all' && Number(dateStr.slice(5,7))!==Number(month)) return false;
+  return true;
+}
+
+/* ---------- Installments Page ---------- */
+let instPageQuery = '';
+let instPageSelectedCustId = null;
+
+function renderInstallmentsPage(){
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="toolbar">
+      <input type="text" id="instPageSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(instPageQuery)}">
+    </div>
+    <div id="instPageList"></div>
+  `;
+  document.getElementById('instPageSearch').addEventListener('input', (e) => {
+    instPageQuery = e.target.value;
+    renderInstList();
+  });
+
+  function renderInstList(){
+    const q = instPageQuery.trim().toLowerCase();
+    const historyIds = new Set(db.installments.map(i=>i.customerId));
+    const planIds = new Set(db.installmentPlans.map(p=>p.customerId));
+    function accountNumbersFor(custId){
+      return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
+    }
+    const entries = Object.entries(db.customers).filter(([id,cust]) => {
+      if(!(Number(cust.due)>0 || historyIds.has(id) || planIds.has(id))) return false;
+      if(!q) return true;
+      if(cust.name.toLowerCase().includes(q)) return true;
+      if(String(cust.displayId||'').includes(q)) return true;
+      if(cust.phone && cust.phone.toLowerCase().includes(q)) return true;
+      if(cust.passport && cust.passport.toLowerCase().includes(q)) return true;
+      if(accountNumbersFor(id).some(v=>v.toLowerCase().includes(q))) return true;
+      if(db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherTag||'').toLowerCase().includes(q))) return true;
+      return false;
+    });
+    const listEl = document.getElementById('instPageList');
+    if(entries.length===0){
+      listEl.innerHTML = `<div class="empty"><div class="big">${t('no_active_installments')}</div></div>`;
+      return;
+    }
+    listEl.innerHTML = `
+      <table class="data">
+        <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_voucher')}</th><th>${t('inst_remaining')}</th><th></th></tr></thead>
+        <tbody>
+          ${entries.map(([id,cust]) => {
+            const due = Number(cust.due);
+            const accNos = accountNumbersFor(id);
+            return `<tr>
+              <td>${cust.displayId?('#'+cust.displayId):'—'}</td>
+              <td>${escapeHtml(cust.name)}</td>
+              <td>${escapeHtml(cust.phone||'—')}</td>
+              <td>${accNos.length ? escapeHtml(accNos.join(', ')) : '—'}</td>
+              <td>${due>0 ? '৳'+money(due) : `<span class="pill green">${t('inst_paid')} ✓</span>`}</td>
+              <td class="actions-cell">
+                ${due>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
+                <button class="icon-btn" title="${t('installment_history_title')}" onclick="openInstallmentHistory('${id}')">📋</button>
+                <button class="icon-btn" title="${t('edit_title')}" onclick="openForm('customers','${id}')">✏️</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  renderInstList();
+}
+
+function renderReportsPage(){
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="tabs-sub no-print">
+      <button class="sub-tab ${reportsSubTab==='overview'?'active':''}" data-sub="overview">${t('reports_overview')}</button>
+      <button class="sub-tab ${reportsSubTab==='summary'?'active':''}" data-sub="summary">${t('reports_summary_tab')}</button>
+      <button class="sub-tab ${reportsSubTab==='salesrpt'?'active':''}" data-sub="salesrpt">${t('nav_sales')}</button>
+      <button class="sub-tab ${reportsSubTab==='returnsrpt'?'active':''}" data-sub="returnsrpt">${t('nav_returns')}</button>
+      <button class="sub-tab ${reportsSubTab==='installmentrpt'?'active':''}" data-sub="installmentrpt">${t('nav_installments')}</button>
+      <button class="sub-tab ${reportsSubTab==='customer'?'active':''}" data-sub="customer">${t('nav_customers')}</button>
+      <button class="sub-tab ${reportsSubTab==='supplier'?'active':''}" data-sub="supplier">${t('nav_suppliers')}</button>
+      <button class="sub-tab ${reportsSubTab==='stock'?'active':''}" data-sub="stock">${t('nav_products')}</button>
+    </div>
+    <div id="reportsBody"></div>
+  `;
+  document.querySelectorAll('.sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => { reportsSubTab = btn.dataset.sub; renderReportsPage(); });
+  });
+  const body = document.getElementById('reportsBody');
+  if(reportsSubTab==='overview') renderReportsOverview(body);
+  else if(reportsSubTab==='summary') renderSummaryReport(body);
+  else if(reportsSubTab==='salesrpt') renderSalesOnlyReport(body);
+  else if(reportsSubTab==='returnsrpt') renderReturnsOnlyReport(body);
+  else if(reportsSubTab==='installmentrpt') renderInstallmentOnlyReport(body);
+  else if(reportsSubTab==='customer') renderCustomerReport(body);
+  else if(reportsSubTab==='supplier') renderSupplierReport(body);
+  else if(reportsSubTab==='stock') renderStockReport(body);
+}
+
+let summaryRange = 'last14';
+let summaryFrom = '';
+let summaryTo = '';
+
+function renderSummaryReport(body){
+  body.innerHTML = `
+    <div class="toolbar no-print">
+      <select id="summaryRangeSelect">
+        <option value="last14">${t('range_last14')}</option>
+        <option value="thisMonth">${t('range_this_month')}</option>
+        <option value="thisYear">${t('range_this_year')}</option>
+        <option value="allTime">${t('range_all_time')}</option>
+        <option value="custom">${t('range_custom')}</option>
+      </select>
+      <input type="date" id="summaryFromDate" min="${SUMMARY_START_DATE}" style="display:none;">
+      <input type="date" id="summaryToDate" style="display:none;">
+      <button class="btn ghost" id="summaryPrintBtn" style="margin-left:auto;">${t('print_report')}</button>
+    </div>
+    <div id="summaryBody"></div>
+  `;
+  const rangeSelect = document.getElementById('summaryRangeSelect');
+  const fromInput = document.getElementById('summaryFromDate');
+  const toInput = document.getElementById('summaryToDate');
+  rangeSelect.value = summaryRange;
+  fromInput.value = summaryFrom || SUMMARY_START_DATE;
+  toInput.value = summaryTo || todayStr();
+  fromInput.style.display = summaryRange==='custom' ? '' : 'none';
+  toInput.style.display = summaryRange==='custom' ? '' : 'none';
+
+  function refresh(){
+    let { fromStr, toStr } = resolveRange(summaryRange, summaryFrom || fromInput.value, summaryTo || toInput.value);
+    if(fromStr < SUMMARY_START_DATE) fromStr = SUMMARY_START_DATE;
+    if(toStr < fromStr) toStr = fromStr;
+    const from = new Date(fromStr), to = new Date(toStr);
+    const buckets = {};
+    for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)) buckets[toISODate(d)] = {dp:0, de:0};
+    const bucketKey = (dateStr) => dateStr;
+    const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
+    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); } });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
+    db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
+    db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
+    let running = 0;
+    const rows = Object.entries(buckets).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v]) => {
+      running += v.dp - v.de;
+      return { d:k, dp:v.dp, de:v.de, s:running };
+    });
+    const periodColLabel = t('col_date');
+    const finalSummary = rows.length ? rows[rows.length-1].s : 0;
+    document.getElementById('summaryBody').innerHTML = `
+      <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="stat-card c4"><div class="val">৳${money(rows.reduce((s,r)=>s+r.dp,0))}</div><div class="lbl">${t('summary_dp')} (${t('totals_label')})</div></div>
+        <div class="stat-card c7"><div class="val">৳${money(rows.reduce((s,r)=>s+r.de,0))}</div><div class="lbl">${t('summary_de')} (${t('totals_label')})</div></div>
+        <div class="stat-card c8"><div class="val">৳${money(finalSummary)}</div><div class="lbl">${t('summary_final')}</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('reports_summary_tab')}</h3>
+        <table class="data">
+          <thead><tr><th>${periodColLabel}</th><th>${t('summary_dp')}</th><th>${t('summary_de')}</th><th>${t('summary_s')}</th></tr></thead>
+          <tbody>
+            ${rows.map(r=>`<tr><td>${formatDateDMY(r.d)}</td><td>৳${money(r.dp)}</td><td>৳${money(r.de)}</td><td style="font-weight:700;">৳${money(r.s)}</td></tr>`).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="font-weight:700;"><td>${t('totals_label')}</td><td>৳${money(rows.reduce((s,r)=>s+r.dp,0))}</td><td>৳${money(rows.reduce((s,r)=>s+r.de,0))}</td><td>৳${money(finalSummary)}</td></tr>
+          </tfoot>
+        </table>
+      </div>
+    `;
+  }
+
+  rangeSelect.addEventListener('change', () => {
+    summaryRange = rangeSelect.value;
+    fromInput.style.display = summaryRange==='custom' ? '' : 'none';
+    toInput.style.display = summaryRange==='custom' ? '' : 'none';
+    if(summaryRange==='custom'){ summaryFrom = fromInput.value; summaryTo = toInput.value; }
+    refresh();
+  });
+  fromInput.addEventListener('change', () => { summaryFrom = fromInput.value; refresh(); });
+  toInput.addEventListener('change', () => { summaryTo = toInput.value; refresh(); });
+  document.getElementById('summaryPrintBtn').addEventListener('click', () => window.print());
+  refresh();
+}
+
+/* ---------- Separate Sales / Returns / Installment Reports ---------- */
+let salesRptRange='last14', salesRptFrom='', salesRptTo='';
+let returnsRptRange='last14', returnsRptFrom='', returnsRptTo='';
+let instRptRange='last14', instRptFrom='', instRptTo='';
+
+function buildRangeToolbar(prefix, state){
+  return `
+    <div class="toolbar no-print">
+      <select id="${prefix}RangeSelect">
+        <option value="last14">${t('range_last14')}</option>
+        <option value="thisMonth">${t('range_this_month')}</option>
+        <option value="thisYear">${t('range_this_year')}</option>
+        <option value="allTime">${t('range_all_time')}</option>
+        <option value="custom">${t('range_custom')}</option>
+      </select>
+      <input type="date" id="${prefix}FromDate" style="display:none;">
+      <input type="date" id="${prefix}ToDate" style="display:none;">
+      <button class="btn ghost" id="${prefix}PrintBtn" style="margin-left:auto;">${t('print_report')}</button>
+    </div>
+    <div id="${prefix}Body"></div>
+  `;
+}
+function wireRangeToolbar(prefix, getState, setState, refresh){
+  const rangeSelect = document.getElementById(`${prefix}RangeSelect`);
+  const fromInput = document.getElementById(`${prefix}FromDate`);
+  const toInput = document.getElementById(`${prefix}ToDate`);
+  const st = getState();
+  rangeSelect.value = st.range;
+  fromInput.value = st.from || getEarliestDate();
+  toInput.value = st.to || todayStr();
+  fromInput.style.display = st.range==='custom' ? '' : 'none';
+  toInput.style.display = st.range==='custom' ? '' : 'none';
+  rangeSelect.addEventListener('change', () => {
+    const s = getState(); s.range = rangeSelect.value;
+    fromInput.style.display = s.range==='custom' ? '' : 'none';
+    toInput.style.display = s.range==='custom' ? '' : 'none';
+    if(s.range==='custom'){ s.from = fromInput.value; s.to = toInput.value; }
+    setState(s); refresh();
+  });
+  fromInput.addEventListener('change', () => { const s=getState(); s.from=fromInput.value; setState(s); refresh(); });
+  toInput.addEventListener('change', () => { const s=getState(); s.to=toInput.value; setState(s); refresh(); });
+  document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => window.print());
+}
+
+let salesRptQuery = '';
+function renderSalesOnlyReport(body){
+  body.innerHTML = buildRangeToolbar('salesRpt');
+  const toolbar = body.querySelector('.toolbar');
+  if(toolbar){
+    const srchInp = document.createElement('input');
+    srchInp.type='text'; srchInp.placeholder=t('search_placeholder');
+    srchInp.value=salesRptQuery; srchInp.style.flex='1'; srchInp.style.minWidth='160px';
+    srchInp.style.fontFamily='Inter'; srchInp.style.fontSize='14px';
+    srchInp.style.padding='9px 12px'; srchInp.style.border='1px solid var(--line)';
+    srchInp.style.borderRadius='6px'; srchInp.style.background='#fff';
+    toolbar.insertBefore(srchInp, toolbar.firstChild);
+    srchInp.addEventListener('input', e=>{ salesRptQuery=e.target.value; refresh(); });
+  }
+  function refresh(){
+    const st = {range:salesRptRange, from:salesRptFrom, to:salesRptTo};
+    const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('salesRptFromDate').value, st.to || document.getElementById('salesRptToDate').value);
+    const q = salesRptQuery.trim().toLowerCase();
+    const list = db.sales.filter(s=>{
+      if(!(s.date>=fromStr && s.date<=toStr)) return false;
+      if(!q) return true;
+      const cust = s.customerId ? db.customers[s.customerId] : null;
+      return (s.customerName||'').toLowerCase().includes(q)
+        || (s.productName||'').toLowerCase().includes(q)
+        || (s.voucherNo||'').toLowerCase().includes(q)
+        || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q));
+    }).sort((a,b)=>b.ts-a.ts);
+    const totalValue = list.reduce((s,x)=>s+Number(x.total),0);
+    const totalPaid = list.reduce((s,x)=>s+Number(x.paid),0);
+    const totalDue = list.reduce((s,x)=>s+Number(x.due),0);
+    document.getElementById('salesRptBody').innerHTML = `
+      <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="stat-card c4"><div class="val">৳${money(totalValue)}</div><div class="lbl">${t('col_total')}</div></div>
+        <div class="stat-card c5"><div class="val">৳${money(totalPaid)}</div><div class="lbl">${t('col_paid')}</div></div>
+        <div class="stat-card c7"><div class="val">৳${money(totalDue)}</div><div class="lbl">${t('col_due')}</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('nav_sales')}</h3>
+        <table class="data">
+          <thead><tr><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
+          <tbody>${list.map(s=>`<tr><td>${formatDateDMY(s.date)}</td><td>${escapeHtml(s.customerName||t('walk_in'))}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>৳${money(s.total)}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td></tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalValue)}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDue)}</td></tr></tfoot>
+        </table>
+      </div>
+    `;
+  }
+  wireRangeToolbar('salesRpt',
+    () => ({range:salesRptRange, from:salesRptFrom, to:salesRptTo}),
+    (s) => { salesRptRange=s.range; salesRptFrom=s.from; salesRptTo=s.to; },
+    refresh
+  );
+  refresh();
+}
+
+let returnsRptQuery = '';
+function renderReturnsOnlyReport(body){
+  body.innerHTML = buildRangeToolbar('returnsRpt');
+  const toolbar = body.querySelector('.toolbar');
+  if(toolbar){
+    const srchInp = document.createElement('input');
+    srchInp.type='text'; srchInp.placeholder=t('search_placeholder');
+    srchInp.value=returnsRptQuery; srchInp.style.flex='1'; srchInp.style.minWidth='160px';
+    srchInp.style.fontFamily='Inter'; srchInp.style.fontSize='14px';
+    srchInp.style.padding='9px 12px'; srchInp.style.border='1px solid var(--line)';
+    srchInp.style.borderRadius='6px'; srchInp.style.background='#fff';
+    toolbar.insertBefore(srchInp, toolbar.firstChild);
+    srchInp.addEventListener('input', e=>{ returnsRptQuery=e.target.value; refresh(); });
+  }
+  function refresh(){
+    const st = {range:returnsRptRange, from:returnsRptFrom, to:returnsRptTo};
+    const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('returnsRptFromDate').value, st.to || document.getElementById('returnsRptToDate').value);
+    const q = returnsRptQuery.trim().toLowerCase();
+    const list = db.returns.filter(r=>{
+      if(!(r.date>=fromStr && r.date<=toStr)) return false;
+      if(!q) return true;
+      const cust = r.customerId ? db.customers[r.customerId] : null;
+      return (r.customerName||'').toLowerCase().includes(q)
+        || (r.productName||'').toLowerCase().includes(q)
+        || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q));
+    }).sort((a,b)=>b.ts-a.ts);
+    const activeList = list.filter(r=>!r.cancelled);
+    const totalValue = activeList.reduce((s,x)=>s+Number(x.value),0);
+    const totalDueAdjust = activeList.reduce((s,x)=>s+Number(x.dueAdjust),0);
+    const totalRefund = activeList.reduce((s,x)=>s+Number(x.excessRefund),0);
+    document.getElementById('returnsRptBody').innerHTML = `
+      <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="stat-card c7"><div class="val">৳${money(totalValue)}</div><div class="lbl">${t('return_value')}</div></div>
+        <div class="stat-card c6"><div class="val">৳${money(totalDueAdjust)}</div><div class="lbl">${t('return_due_adjust')}</div></div>
+        <div class="stat-card c8"><div class="val">৳${money(totalRefund)}</div><div class="lbl">${t('return_excess_refund')}</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('nav_returns')}</h3>
+        <table class="data">
+          <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th></tr></thead>
+          <tbody>${list.map(r=>`<tr><td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td><td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td><td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td></tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;"><td colspan="5">${t('totals_label')} (${t('return_active')})</td><td>৳${money(totalValue)}</td><td></td></tr></tfoot>
+        </table>
+      </div>
+    `;
+  }
+  wireRangeToolbar('returnsRpt',
+    () => ({range:returnsRptRange, from:returnsRptFrom, to:returnsRptTo}),
+    (s) => { returnsRptRange=s.range; returnsRptFrom=s.from; returnsRptTo=s.to; },
+    refresh
+  );
+  refresh();
+}
+
+let instRptQuery = '';
+function renderInstallmentOnlyReport(body){
+  body.innerHTML = buildRangeToolbar('instRpt');
+  const toolbar = body.querySelector('.toolbar');
+  if(toolbar){
+    const srchInp = document.createElement('input');
+    srchInp.type='text'; srchInp.placeholder=t('search_placeholder');
+    srchInp.value=instRptQuery; srchInp.style.flex='1'; srchInp.style.minWidth='160px';
+    srchInp.style.fontFamily='Inter'; srchInp.style.fontSize='14px';
+    srchInp.style.padding='9px 12px'; srchInp.style.border='1px solid var(--line)';
+    srchInp.style.borderRadius='6px'; srchInp.style.background='#fff';
+    toolbar.insertBefore(srchInp, toolbar.firstChild);
+    srchInp.addEventListener('input', e=>{ instRptQuery=e.target.value; refresh(); });
+  }
+  function refresh(){
+    const st = {range:instRptRange, from:instRptFrom, to:instRptTo};
+    const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('instRptFromDate').value, st.to || document.getElementById('instRptToDate').value);
+    const q = instRptQuery.trim().toLowerCase();
+    const list = db.installments.filter(i=>{
+      if(!(i.date>=fromStr && i.date<=toStr)) return false;
+      if(!q) return true;
+      const cust = i.customerId ? db.customers[i.customerId] : null;
+      return (i.customerName||'').toLowerCase().includes(q)
+        || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q))
+        || (db.sales.filter(s=>s.customerId===i.customerId).some(s=>(s.voucherNo||'').toLowerCase().includes(q)));
+    }).sort((a,b)=>b.ts-a.ts);
+    const totalPaid = list.reduce((s,x)=>s+Number(x.amount),0);
+    const totalDiscount = list.reduce((s,x)=>s+Number(x.discount||0),0);
+    const totalNewDue = list.reduce((s,x)=>s+Number(x.newDue),0);
+    document.getElementById('instRptBody').innerHTML = `
+      <div class="stat-grid no-print" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px;">
+        <div class="stat-card c4"><div class="val">৳${money(totalPaid)}</div><div class="lbl">${t('inst_col_amount')} (${t('totals_label')})</div></div>
+        <div class="stat-card c7"><div class="val">৳${money(totalDiscount)}</div><div class="lbl">${t('inst_col_discount')} (${t('totals_label')})</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('nav_installments')}</h3>
+        <table class="data">
+          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('col_customer')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
+          <tbody>${list.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>${escapeHtml(i.customerName||'')}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td></tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalNewDue)}</td><td></td></tr></tfoot>
+        </table>
+      </div>
+    `;
+  }
+  wireRangeToolbar('instRpt',
+    () => ({range:instRptRange, from:instRptFrom, to:instRptTo}),
+    (s) => { instRptRange=s.range; instRptFrom=s.from; instRptTo=s.to; },
+    refresh
+  );
+  refresh();
+}
+
+function renderStockReport(body){
+  const categories = [...new Set([
+    ...Object.values(db.categories).map(c=>c.name).filter(Boolean),
+    ...Object.values(db.products).map(p=>p.cat).filter(Boolean)
+  ])].sort();
+  body.innerHTML = `
+    <div class="toolbar no-print">
+      <input type="text" id="stockSearch" placeholder="${t('search_placeholder')}" style="flex:1;min-width:160px;">
+      <select id="stockCatFilter"><option value="">${t('all_categories')}</option>${categories.map(cat=>`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('')}</select>
+      <button class="btn ghost" id="stockPrintBtn" style="margin-left:auto;">${t('print_report')}</button>
+    </div>
+    <div id="stockReportBody"></div>
+  `;
+  function refresh(){
+    const cat = document.getElementById('stockCatFilter').value;
+    const q = (document.getElementById('stockSearch').value||'').trim().toLowerCase();
+    const entries = Object.entries(db.products).filter(([id,p]) => (!cat || p.cat===cat) && (!q || p.name.toLowerCase().includes(q) || (p.cat||'').toLowerCase().includes(q)));
+    const totalStockValue = entries.reduce((s,[,p])=>s+Number(p.qty)*Number(p.cost||0),0);
+    const totalSaleValue = entries.reduce((s,[,p])=>s+Number(p.qty)*Number(p.price||0),0);
+    const totalPotentialProfit = totalSaleValue - totalStockValue;
+    const lowCount = entries.filter(([,p])=>Number(p.qty)<=Number(p.threshold)).length;
+    document.getElementById('stockReportBody').innerHTML = `
+      <div class="stat-grid no-print" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+        <div class="stat-card c2"><div class="val">${entries.length}</div><div class="lbl">${t('nav_products')}</div></div>
+        <div class="stat-card c6"><div class="val">৳${money(totalStockValue)}</div><div class="lbl">${t('stock_value_label')}</div></div>
+        <div class="stat-card c4"><div class="val">৳${money(totalSaleValue)}</div><div class="lbl">${t('stock_sale_value_label')}</div></div>
+        <div class="stat-card c7"><div class="val">${lowCount}</div><div class="lbl">${t('low_stock_label')}</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('stock_statement_title')}</h3>
+        <table class="data">
+          <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('f_cat')}</th><th>${t('col_qty')}</th><th>${t('col_cost')}</th><th>${t('col_price')}</th><th>${t('stock_value_label')}</th><th>${t('stock_sale_value_label')}</th></tr></thead>
+          <tbody>
+            ${entries.map(([id,p],i)=>{
+              const isLow = Number(p.qty)<=Number(p.threshold);
+              return `<tr class="${isLow?'low':''}"><td>${i+1}</td><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.cat||'—')}</td><td>${p.qty}</td><td>৳${money(p.cost)}</td><td>৳${money(p.price)}</td><td>৳${money(Number(p.qty)*Number(p.cost||0))}</td><td>৳${money(Number(p.qty)*Number(p.price||0))}</td></tr>`;
+            }).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>${entries.reduce((s,[,p])=>s+Number(p.qty),0)}</td><td colspan="2"></td><td>৳${money(totalStockValue)}</td><td>৳${money(totalSaleValue)}</td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="panel no-print">
+        <h3>${t('low_stock_heading')}</h3>
+        ${lowCount===0 ? `<div class="field-hint">${t('low_stock_ok')}</div>` :
+          `<table class="data"><thead><tr><th>${t('col_product')}</th><th>${t('f_cat')}</th><th>${t('col_stock')}</th><th>${t('f_threshold')}</th></tr></thead><tbody>
+            ${entries.filter(([,p])=>Number(p.qty)<=Number(p.threshold)).map(([,p])=>`<tr class="low"><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.cat||'—')}</td><td>${p.qty}</td><td>${p.threshold}</td></tr>`).join('')}
+          </tbody></table>`}
+      </div>
+    `;
+  }
+  document.getElementById('stockSearch').addEventListener('input', refresh);
+  document.getElementById('stockCatFilter').addEventListener('change', refresh);
+  document.getElementById('stockPrintBtn').addEventListener('click', () => window.print());
+  refresh();
+}
+
+function renderReportsOverview(body){
+  body.innerHTML = `
+    <div class="toolbar no-print">
+      <select id="ovRangeSelect">
+        <option value="last14">${t('range_last14')}</option>
+        <option value="thisMonth">${t('range_this_month')}</option>
+        <option value="thisYear">${t('range_this_year')}</option>
+        <option value="allTime">${t('range_all_time')}</option>
+        <option value="custom">${t('range_custom')}</option>
+      </select>
+      <input type="date" id="ovFromDate" style="display:none;">
+      <input type="date" id="ovToDate" style="display:none;">
+      <button class="btn ghost" id="printReportBtn" style="margin-left:auto;">${t('print_report')}</button>
+    </div>
+    <div id="ovBody"></div>
+  `;
+  const rangeSelect = document.getElementById('ovRangeSelect');
+  const fromInput = document.getElementById('ovFromDate');
+  const toInput = document.getElementById('ovToDate');
+  rangeSelect.value = overviewRange;
+  fromInput.value = overviewFrom || getEarliestDate();
+  toInput.value = overviewTo || todayStr();
+  fromInput.style.display = overviewRange==='custom' ? '' : 'none';
+  toInput.style.display = overviewRange==='custom' ? '' : 'none';
+
+  function refresh(){
+    const { fromStr, toStr } = resolveRange(overviewRange, overviewFrom || fromInput.value, overviewTo || toInput.value);
+    const { rows, totals, groupByMonth } = aggregatePeriod(fromStr, toStr);
+    const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.s,r.p,r.e)));
+    const periodColLabel = groupByMonth ? t('filter_month') : t('col_date');
+    document.getElementById('ovBody').innerHTML = `
+      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+        <div class="stat-card c4"><div class="val">৳${money(totals.s)}</div><div class="lbl">${t('rep_col_sales')} (${t('totals_label')})</div></div>
+        <div class="stat-card c6"><div class="val">৳${money(totals.p)}</div><div class="lbl">${t('rep_col_purchase')} (${t('totals_label')})</div></div>
+        <div class="stat-card c7"><div class="val">৳${money(totals.e)}</div><div class="lbl">${t('rep_col_expense')} (${t('totals_label')})</div></div>
+        <div class="stat-card c8"><div class="val">৳${money(totals.net)}</div><div class="lbl">${t('rep_col_net')} (${t('totals_label')})</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('reports_summary')}</h3>
+        <table class="data">
+          <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
+          <tbody>
+            ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h3>${t('reports_trend')}</h3>
+        ${rows.slice().reverse().map(r => `
+          <div class="rbar-row">
+            <div>${groupByMonth ? r.d : r.d.slice(5)}</div>
+            <div class="rbar-track"><div class="rbar-fill" style="width:${(r.s/maxVal*100).toFixed(0)}%"></div></div>
+            <div style="text-align:right;">৳${money(r.s)}</div>
+          </div>`).join('')}
+      </div>
+    `;
+  }
+
+  rangeSelect.addEventListener('change', () => {
+    overviewRange = rangeSelect.value;
+    fromInput.style.display = overviewRange==='custom' ? '' : 'none';
+    toInput.style.display = overviewRange==='custom' ? '' : 'none';
+    if(overviewRange==='custom'){ overviewFrom = fromInput.value; overviewTo = toInput.value; }
+    refresh();
+  });
+  fromInput.addEventListener('change', () => { overviewFrom = fromInput.value; refresh(); });
+  toInput.addEventListener('change', () => { overviewTo = toInput.value; refresh(); });
+  document.getElementById('printReportBtn').addEventListener('click', () => window.print());
+  refresh();
+}
+
+function renderCustomerReport(body){
+  const years = getAvailableYears();
+  body.innerHTML = `
+    <div class="toolbar no-print">
+      <input type="text" id="custReportSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(reportsCustQuery)}">
+      <select id="custYearSelect">
+        <option value="all">${t('all_years')}</option>
+        ${years.map(y=>`<option value="${y}" ${custReportYear===y?'selected':''}>${y}</option>`).join('')}
+      </select>
+      <select id="custMonthSelect">
+        <option value="all">${t('all_months')}</option>
+        ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(custReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
+      </select>
+    </div>
+    <div id="custReportList" class="no-print"></div>
+    <div id="custReportDetail"></div>
+  `;
+  document.getElementById('custYearSelect').value = custReportYear;
+  document.getElementById('custMonthSelect').value = custReportMonth;
+  document.getElementById('custReportSearch').addEventListener('input', (e) => {
+    reportsCustQuery = e.target.value;
+    renderCustList();
+  });
+  document.getElementById('custYearSelect').addEventListener('change', (e) => {
+    custReportYear = e.target.value;
+    renderCustDetail();
+  });
+  document.getElementById('custMonthSelect').addEventListener('change', (e) => {
+    custReportMonth = e.target.value;
+    renderCustDetail();
+  });
+  function renderCustList(){
+    const q = reportsCustQuery.trim().toLowerCase();
+    const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)) || db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherNo||'').toLowerCase().includes(q)) || (c.passport && c.passport.toLowerCase().includes(q)));
+    const listEl = document.getElementById('custReportList');
+    listEl.innerHTML = entries.length===0
+      ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
+      : `<table class="data">
+          <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_due_amt')}</th><th></th></tr></thead>
+          <tbody>${entries.map(([id,c]) => `
+            <tr style="${reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':''}">
+              <td>${c.displayId?('#'+c.displayId):'—'}</td>
+              <td>${escapeHtml(c.name)}</td>
+              <td>${escapeHtml(c.phone||'—')}</td>
+              <td>৳${money(c.due)}</td>
+              <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${id}" title="${t('view_title')}">👁</button></td>
+            </tr>`).join('')}</tbody>
+        </table>`;
+    listEl.querySelectorAll('.cust-pick-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        reportsSelectedCustId = b.dataset.id;
+        renderCustList();
+        renderCustDetail();
+      });
+    });
+  }
+  function renderCustDetail(){
+    const el = document.getElementById('custReportDetail');
+    const cust = reportsSelectedCustId ? db.customers[reportsSelectedCustId] : null;
+    if(!cust){ el.innerHTML = ''; return; }
+    const sales = db.sales
+      .filter(s=>s.customerId===reportsSelectedCustId && matchesYearMonth(s.date, custReportYear, custReportMonth))
+      .sort((a,b)=>b.ts-a.ts);
+    const payments = db.installments
+      .filter(p=>p.customerId===reportsSelectedCustId && matchesYearMonth(p.date, custReportYear, custReportMonth))
+      .sort((a,b)=>b.ts-a.ts);
+    const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+    const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
+    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+    el.innerHTML = `
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+          <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3><div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address? ' · '+escapeHtml(cust.address):''}</div></div>
+          <button class="btn ghost no-print" id="custPrintBtn">${t('print_report')}</button>
+        </div>
+        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
+        ${sales.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+        <table class="data">
+          <thead><tr><th>${t('col_invoice_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('return_already')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+          <tbody>${sales.map(s=>{
+            const profit = saleNetProfit(s);
+            const returned = saleReturnedQty(s.id);
+            return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
+          }).join('')}</tbody>
+        </table>`}
+      </div>
+      <div class="panel">
+        <h3>${t('installment_history_title')}</h3>
+        ${payments.length===0 ? `<div class="field-hint">${t('inst_no_history')}</div>` : `
+        <table class="data">
+          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
+          <tbody>${payments.map(p=>`<tr><td>${p.receiptNo?'#'+p.receiptNo:'—'}</td><td>${formatDateDMY(p.date)}</td><td>৳${money(p.previousDue)}</td><td>৳${money(p.amount)}</td><td>${Number(p.discount)>0?'৳'+money(p.discount):'—'}</td><td>৳${money(p.newDue)}</td><td>${escapeHtml(p.note||'—')}</td></tr>`).join('')}</tbody>
+        </table>`}
+      </div>
+    `;
+    document.getElementById('custPrintBtn').addEventListener('click', () => window.print());
+  }
+  renderCustList();
+  renderCustDetail();
+}
+
+function renderSupplierReport(body){
+  const years = getAvailableYears();
+  body.innerHTML = `
+    <div class="toolbar no-print">
+      <input type="text" id="suppReportSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(reportsSuppQuery)}">
+      <select id="suppYearSelect">
+        <option value="all">${t('all_years')}</option>
+        ${years.map(y=>`<option value="${y}" ${suppReportYear===y?'selected':''}>${y}</option>`).join('')}
+      </select>
+      <select id="suppMonthSelect">
+        <option value="all">${t('all_months')}</option>
+        ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(suppReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
+      </select>
+    </div>
+    <div id="suppReportList" class="no-print"></div>
+    <div id="suppReportDetail"></div>
+  `;
+  document.getElementById('suppYearSelect').value = suppReportYear;
+  document.getElementById('suppMonthSelect').value = suppReportMonth;
+  document.getElementById('suppReportSearch').addEventListener('input', (e) => {
+    reportsSuppQuery = e.target.value;
+    renderSuppList();
+  });
+  document.getElementById('suppYearSelect').addEventListener('change', (e) => {
+    suppReportYear = e.target.value;
+    renderSuppDetail();
+  });
+  document.getElementById('suppMonthSelect').addEventListener('change', (e) => {
+    suppReportMonth = e.target.value;
+    renderSuppDetail();
+  });
+  function renderSuppList(){
+    const q = reportsSuppQuery.trim().toLowerCase();
+    const entries = Object.entries(db.suppliers).filter(([id,s]) => !q || s.name.toLowerCase().includes(q) || (s.phone && s.phone.toLowerCase().includes(q)));
+    const listEl = document.getElementById('suppReportList');
+    listEl.innerHTML = entries.length===0
+      ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
+      : `<table class="data">
+          <thead><tr><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_address')}</th><th></th></tr></thead>
+          <tbody>${entries.map(([id,s]) => `
+            <tr style="${reportsSelectedSuppId===id?'background:rgba(193,119,46,0.12);':''}">
+              <td>${escapeHtml(s.name)}</td>
+              <td>${escapeHtml(s.phone||'—')}</td>
+              <td>${escapeHtml(s.address||'—')}</td>
+              <td class="actions-cell"><button class="icon-btn supp-pick-btn" data-id="${id}" title="${t('view_title')}">👁</button></td>
+            </tr>`).join('')}</tbody>
+        </table>`;
+    listEl.querySelectorAll('.supp-pick-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        reportsSelectedSuppId = b.dataset.id;
+        renderSuppList();
+        renderSuppDetail();
+      });
+    });
+  }
+  function renderSuppDetail(){
+    const el = document.getElementById('suppReportDetail');
+    const supp = reportsSelectedSuppId ? db.suppliers[reportsSelectedSuppId] : null;
+    if(!supp){ el.innerHTML = ''; return; }
+    const purchases = db.purchases
+      .filter(p=>p.supplierId===reportsSelectedSuppId && matchesYearMonth(p.date, suppReportYear, suppReportMonth))
+      .sort((a,b)=>b.ts-a.ts);
+    const totalPurchased = purchases.reduce((s,x)=>s+Number(x.total),0);
+    el.innerHTML = `
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+          <div><h3 style="margin:0;">${escapeHtml(supp.name)}</h3><div class="field-hint">${escapeHtml(supp.phone||'')}${supp.address? ' · '+escapeHtml(supp.address):''}</div></div>
+          <button class="btn ghost no-print" id="suppPrintBtn">${t('print_report')}</button>
+        </div>
+        <div class="field-hint" style="margin:12px 0;">${t('rep_col_purchase')}: ৳${money(totalPurchased)}</div>
+        ${purchases.length===0 ? `<div class="empty"><div class="big">${t('no_data')}</div></div>` : `
+        <table class="data">
+          <thead><tr><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('col_unit_cost')}</th><th>${t('col_total')}</th></tr></thead>
+          <tbody>${purchases.map(p=>`<tr><td>${p.date}</td><td>${escapeHtml(p.productName)}</td><td>${p.qty}</td><td>৳${money(p.unitCost)}</td><td>৳${money(p.total)}</td></tr>`).join('')}</tbody>
+        </table>`}
+      </div>
+    `;
+    document.getElementById('suppPrintBtn').addEventListener('click', () => window.print());
+  }
+  renderSuppList();
+  renderSuppDetail();
+}
+
+/* ---------- Generic List Pages ---------- */
+const CONFIG = {
+  customers: {
+    titleKey:'title_customers', addLabelKey:'add_customers',
+    columns:[{k:'displayId',hKey:'col_id', fmt:v=>v?('#'+v):'—'},{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'passport',hKey:'col_passport', fmt:v=>v||'—'},{k:'email',hKey:'col_email', fmt:v=>v||'—'},{k:'address',hKey:'col_address'},{k:'due',hKey:'col_due_amt', fmt:v=>'৳'+money(v)}],
+    fields:[
+      {key:'name', labelKey:'f_name', type:'text', required:true, suggest:true},
+      {key:'phone', labelKey:'f_phone', type:'text', suggest:true},
+      {key:'passport', labelKey:'f_passport', type:'text', suggest:true},
+      {key:'email', labelKey:'f_email', type:'email', suggest:true},
+      {key:'address', labelKey:'f_address', type:'text', suggest:true},
+      {key:'note', labelKey:'f_note', type:'text', suggest:true},
+    ],
+    extraRowActions:(id,item)=> `
+      <button class="icon-btn" title="${t('history_title')}" onclick="openCustomerHistory('${id}')">🧾</button>
+      <button class="icon-btn" title="${t('installment_history_title')}" onclick="openInstallmentHistory('${id}')">📋</button>
+      ${item.due>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
+    `,
+    isObj:true
+  },
+  suppliers: {
+    titleKey:'title_suppliers', addLabelKey:'add_suppliers',
+    columns:[{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'address',hKey:'col_address'}],
+    fields:[
+      {key:'name', labelKey:'f_name', type:'text', required:true, suggest:true},
+      {key:'phone', labelKey:'f_phone', type:'text', suggest:true},
+      {key:'address', labelKey:'f_address', type:'text', suggest:true},
+    ],
+    isObj:true
+  },
+  categories: {
+    titleKey:'title_categories', addLabelKey:'add_categories',
+    columns:[{k:'name',hKey:'col_name'}],
+    fields:[
+      {key:'name', labelKey:'f_category_name', type:'text', required:true, suggest:true},
+    ],
+    isObj:true
+  },
+  products: {
+    titleKey:'title_products', addLabelKey:'add_products',
+    columns:[
+      {k:'name',hKey:'col_name'},{k:'cat',hKey:'col_cat'},
+      {k:'qty',hKey:'col_stock', rowClassLow:true},
+      {k:'cost',hKey:'col_cost', fmt:v=>'৳'+money(v)},
+      {k:'price',hKey:'col_price', fmt:v=>'৳'+money(v)},
+      {k:'supplierId', hKey:'col_supplier', fmt:v=> v && db.suppliers[v] ? escapeHtml(db.suppliers[v].name) : '—'}
+    ],
+    fields:[
+      {key:'name', labelKey:'f_product_name', type:'text', required:true, suggest:true},
+      {key:'cat', labelKey:'f_cat', type:'text', suggest:true, suggestFromCategories:true},
+      {key:'qty', labelKey:'f_current_stock', type:'number'},
+      {key:'threshold', labelKey:'f_threshold', type:'number', default:5},
+      {key:'cost', labelKey:'f_cost', type:'number'},
+      {key:'price', labelKey:'f_price', type:'number'},
+      {key:'supplierId', labelKey:'f_supplier', type:'select', optionsFrom:'suppliers'},
+    ],
+    isObj:true,
+    isLow:(item)=>Number(item.qty)<=Number(item.threshold)
+  },
+  purchases: {
+    titleKey:'title_purchases', addLabelKey:'add_purchases',
+    columns:[{k:'date',hKey:'col_date'},{k:'supplierName',hKey:'col_supplier'},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'unitCost',hKey:'col_unit_cost',fmt:v=>'৳'+money(v)},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)}],
+    fields:[
+      {key:'supplierId', labelKey:'f_supplier_select', type:'select', optionsFrom:'suppliers', required:true, quickAdd:'suppliers'},
+      {key:'productId', labelKey:'f_product_select', type:'select', optionsFrom:'products', required:true, quickAdd:'products'},
+      {key:'qty', labelKey:'f_qty', type:'number', required:true},
+      {key:'unitCost', labelKey:'f_unit_cost', type:'number', required:true},
+      {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
+    ],
+    isObj:false,
+    noEdit:true
+  },
+  sales: {
+    titleKey:'title_sales', addLabelKey:'add_sales',
+    columns:[{k:'invoiceNo',hKey:'col_invoice_no',fmt:v=>v?('#'+v):'—'},{k:'voucherNo',hKey:'col_voucher',fmt:v=>v||'—'},{k:'date',hKey:'col_date'},{k:'customerName',hKey:'col_customer',fmt:v=>v||t('walk_in')},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)},{k:'discount',hKey:'col_discount',fmt:v=>Number(v)>0?'৳'+money(v):'—'},{k:'paid',hKey:'col_paid',fmt:v=>'৳'+money(v)},{k:'due',hKey:'col_due',fmt:v=>v>0?'৳'+money(v):'—'},{k:'paymentSystem',hKey:'col_payment_system',fmt:v=>{const k=paymentSystemKey(v); return k?t(k):'—';}},{k:'voucherTag',hKey:'col_voucher_tag',fmt:v=>v||'—'}],
+    fields:[
+      {key:'customerId', labelKey:'f_customer_opt', type:'select', optionsFrom:'customers', allowEmptyKey:'walk_in', quickAdd:'customers'},
+      {key:'productId', labelKey:'f_product_select', type:'select', optionsFrom:'products', required:true, quickAdd:'products'},
+      {key:'qty', labelKey:'f_qty', type:'number', required:true},
+      {key:'unitPrice', labelKey:'f_unit_price', type:'number', required:true},
+      {key:'discount', labelKey:'f_discount', type:'number'},
+      {key:'paid', labelKey:'f_paid', type:'number'},
+      {key:'installmentCount', labelKey:'f_installment_count', type:'number'},
+      {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
+    ],
+    isObj:false,
+    extraRowActions:(id,item)=> `<button class="icon-btn" title="${t('view_title')}" onclick="openSaleView('${id}')">👁</button>${!item._groupIds && (Number(item.qty)-saleReturnedQty(id))>0 ? `<button class="icon-btn" title="${t('return_new')}" onclick="openReturnForm('${id}')">↩️</button>` : (item._groupIds ? `<button class="icon-btn" title="${t('return_new')}" onclick="openSaleView('${id}')">↩️</button>` : '')}`
+  },
+  expenses: {
+    titleKey:'title_expenses', addLabelKey:'add_expenses',
+    columns:[{k:'date',hKey:'col_date'},{k:'category',hKey:'col_cat'},{k:'note',hKey:'col_note'},{k:'amount',hKey:'col_amount',fmt:v=>'৳'+money(v)}],
+    fields:[
+      {key:'category', labelKey:'f_expense_cat', type:'text', required:true, suggest:true},
+      {key:'amount', labelKey:'f_amount', type:'number', required:true},
+      {key:'note', labelKey:'f_note', type:'text', suggest:true},
+      {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
+      {key:'isOldEntry', labelKey:'f_is_old_entry', type:'checkbox'},
+    ],
+    isObj:false,
+    noEdit:true
+  }
+};
+
+function groupSalesForDisplay(rawItems){
+  // rawItems: [id, saleRecord][] — merge records sharing the same invoiceId into one display row
+  const seen = new Set();
+  const out = [];
+  rawItems.forEach(([id, item]) => {
+    if(seen.has(id)) return;
+    if(!item.invoiceId){
+      out.push([id, item]);
+      return;
+    }
+    const group = rawItems.filter(([,x]) => x.invoiceId===item.invoiceId);
+    group.forEach(([gid]) => seen.add(gid));
+    const names = group.map(([,x]) => x.productName).join(', ');
+    const merged = {
+      ...item,
+      productName: names,
+      qty: t('items_count')(group.length),
+      total: group.reduce((s,[,x])=>s+Number(x.total),0),
+      discount: group.reduce((s,[,x])=>s+Number(x.discount||0),0),
+      paid: group.reduce((s,[,x])=>s+Number(x.paid),0),
+      due: group.reduce((s,[,x])=>s+Number(x.due),0),
+      _groupIds: group.map(([gid])=>gid),
+    };
+    out.push([id, merged]);
+  });
+  return out;
+}
+
+function renderListPage(tab){
+  const cfg = CONFIG[tab];
+  const c = document.getElementById('content');
+  let items = cfg.isObj ? Object.entries(db[tab]) : db[tab].map(x=>[x.id, x]).reverse();
+  if(tab==='sales') items = groupSalesForDisplay(items);
+
+  const isProducts = tab==='products';
+  const categories = isProducts ? [...new Set([
+    ...Object.values(db.categories).map(c=>c.name).filter(Boolean),
+    ...Object.values(db.products).map(p=>p.cat).filter(Boolean)
+  ])].sort() : [];
+
+  c.innerHTML = `
+    <div class="toolbar">
+      <input type="text" id="pgSearch" placeholder="${t('search_placeholder')}">
+      ${isProducts ? `<select id="pgCatFilter"><option value="">${t('all_categories')}</option>${categories.map(cat=>`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('')}</select>` : ''}
+      <button class="btn amber" id="pgAddBtn">${t(cfg.addLabelKey)}</button>
+    </div>
+    <div id="pgTableWrap"></div>
+  `;
+
+  function applyFilters(){
+    const search = document.getElementById('pgSearch').value.trim().toLowerCase();
+    const cat = isProducts ? document.getElementById('pgCatFilter').value : '';
+    let filteredItems = items;
+    if(cat) filteredItems = filteredItems.filter(([id,item]) => item.cat===cat);
+    renderTable(tab, filteredItems, search);
+  }
+
+  applyFilters();
+  document.getElementById('pgSearch').addEventListener('input', applyFilters);
+  if(isProducts) document.getElementById('pgCatFilter').addEventListener('change', applyFilters);
+  document.getElementById('pgAddBtn').addEventListener('click', () => {
+    if(tab==='sales') openMultiSale(); else openForm(tab, null);
+  });
+}
+
+function renderTable(tab, items, search){
+  const cfg = CONFIG[tab];
+  let filtered = items;
+  if(search){
+    filtered = items.filter(([id,item]) => JSON.stringify(item).toLowerCase().includes(search));
+  }
+  const wrap = document.getElementById('pgTableWrap');
+  if(filtered.length===0){
+    wrap.innerHTML = `<div class="empty"><div class="big">${t('no_data')}</div>${t('no_data_hint')}</div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="data">
+      <thead><tr>${cfg.columns.map(c=>`<th>${t(c.hKey)}</th>`).join('')}<th></th></tr></thead>
+      <tbody>
+        ${filtered.map(([id,item]) => {
+          const isLow = cfg.isLow && cfg.isLow(item);
+          const isGroup = !!item._groupIds;
+          return `<tr class="${isLow?'low':''}">
+            ${cfg.columns.map(c => `<td>${c.fmt ? c.fmt(item[c.k], item) : escapeHtml(item[c.k]==null?'—':item[c.k])}</td>`).join('')}
+            <td class="actions-cell">
+              ${cfg.extraRowActions ? cfg.extraRowActions(id,item) : ''}
+              ${!cfg.noEdit ? `<button class="icon-btn" title="${t('edit_title')}" onclick="${isGroup ? `openMultiSale('${item.invoiceId}')` : `openForm('${tab}','${id}')`}">✏️</button>` : ''}
+              <button class="icon-btn" title="${t('delete_title')}" onclick="${isGroup ? `deleteInvoiceGroup('${id}')` : `deleteItem('${tab}','${id}')`}">🗑️</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ---------- Generic Form Modal ---------- */
+let formCtx = null; // {tab, id}
+function openForm(tab, id){
+  const cfg = CONFIG[tab];
+  formCtx = {tab, id};
+  const item = id ? (cfg.isObj ? db[tab][id] : db[tab].find(x=>x.id===id)) : {};
+  document.getElementById('formTitle').textContent = (id? t('edit_prefix'):t('new_prefix')) + t(cfg.titleKey);
+  document.getElementById('formCancelBtn').textContent = t('cancel');
+  document.getElementById('formSaveBtn').textContent = t('save');
+  document.getElementById('formFields').innerHTML = cfg.fields.map(f => {
+    const val = item[f.key] !== undefined ? item[f.key] : (f.default !== undefined ? f.default : '');
+    if(f.type==='select'){
+      const srcObj = db[f.optionsFrom];
+      const opts = Object.entries(srcObj).map(([oid,o]) => `<option value="${oid}" ${String(val)===oid?'selected':''}>${escapeHtml(o.name)}</option>`).join('');
+      const selectHtml = `<select data-key="${f.key}">
+        ${f.allowEmptyKey ? `<option value="">${t(f.allowEmptyKey)}</option>`:''}${opts}
+      </select>`;
+      if(f.quickAdd){
+        return `<div class="field"><label>${t(f.labelKey)}</label>
+          <div class="select-row">${selectHtml}<button type="button" class="qa-btn" title="+" onclick="openQuickAdd('${f.quickAdd}','${f.key}')">+</button></div>
+        </div>`;
+      }
+      return `<div class="field"><label>${t(f.labelKey)}</label>${selectHtml}</div>`;
+    }
+    if(f.suggest){
+      const collection = cfg.isObj ? Object.values(db[tab]) : db[tab];
+      let suggestions = [...new Set(collection.map(it=>it[f.key]).filter(Boolean))];
+      if(f.suggestFromCategories){
+        const catNames = Object.values(db.categories).map(c=>c.name).filter(Boolean);
+        suggestions = [...new Set([...catNames, ...suggestions])];
+      }
+      const listId = `dl-${tab}-${f.key}`;
+      return `<div class="field"><label>${t(f.labelKey)}</label>
+        <input type="${f.type}" data-key="${f.key}" value="${escapeHtml(val)}" list="${listId}" autocomplete="off">
+        <datalist id="${listId}">${suggestions.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist>
+      </div>`;
+    }
+    if(f.type==='checkbox'){
+      return `<div class="field" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" data-key="${f.key}" ${val?'checked':''} style="width:auto;">
+        <label style="margin:0;text-transform:none;font-size:13px;">${t(f.labelKey)}</label>
+      </div>`;
+    }
+    return `<div class="field"><label>${t(f.labelKey)}</label><input type="${f.type}" data-key="${f.key}" value="${escapeHtml(val)}"></div>`;
+  }).join('');
+  document.getElementById('formOverlay').classList.add('open');
+}
+document.getElementById('formCancelBtn').addEventListener('click', () => {
+  document.getElementById('formOverlay').classList.remove('open'); formCtx=null;
+});
+setupOverlayBackdropClose('formOverlay', () => { formCtx=null; });
+
+document.getElementById('formSaveBtn').addEventListener('click', async () => {
+  if(!formCtx) return;
+  const {tab, id} = formCtx;
+  const cfg = CONFIG[tab];
+  const values = {};
+  let missingRequired = false;
+  cfg.fields.forEach(f => {
+    const el = document.querySelector(`#formFields [data-key="${f.key}"]`);
+    let v = f.type==='checkbox' ? el.checked : el.value;
+    if(f.type==='number') v = Number(v)||0;
+    if(f.required && (v===''||v===0&&f.type==='number'&&f.key!=='paid')) { /* soft check below */ }
+    if(f.required && (v===''||v===null||v===undefined)) missingRequired = true;
+    values[f.key] = v;
+  });
+  if(missingRequired){ alert(t('required_fields')); return; }
+
+  await handleSave(tab, id, values);
+  document.getElementById('formOverlay').classList.remove('open');
+  formCtx = null;
+  renderNav();
+  renderPage();
+});
+
+async function handleSave(tab, id, values){
+  if(tab==='customers' || tab==='suppliers' || tab==='categories'){
+    const key = id || uid();
+    const existing = db[tab][key] || {};
+    const record = {...existing, ...values};
+    if(tab==='customers' || tab==='suppliers') record.due = existing.due || 0;
+    if(tab==='customers' && !id && !record.displayId){
+      record.displayId = nextCustomerDisplayId();
+    }
+    db[tab][key] = record;
+    await safePut(tab, key, record);
+  }
+  else if(tab==='products'){
+    const key = id || uid();
+    const record = {...(db.products[key]||{}), ...values};
+    db.products[key] = record;
+    await safePut('products', key, record);
+  }
+  else if(tab==='purchases'){
+    const supplier = db.suppliers[values.supplierId];
+    const product = db.products[values.productId];
+    if(!product){ alert(t('product_not_found')); return; }
+    const total = Number(values.qty) * Number(values.unitCost);
+    product.qty = Number(product.qty) + Number(values.qty);
+    product.cost = Number(values.unitCost);
+    const record = {
+      id: uid(), supplierId: values.supplierId, supplierName: supplier?supplier.name:'—',
+      productId: values.productId, productName: product.name,
+      qty: Number(values.qty), unitCost: Number(values.unitCost), total, date: values.date, ts: Date.now()
+    };
+    db.purchases.push(record);
+    await safePut('products', values.productId, product);
+    await safePut('purchases', record.id, record);
+  }
+  else if(tab==='sales'){
+    let existing = null;
+    const touchedCustomers = new Set();
+    const touchedProducts = new Set();
+    if(id){
+      existing = db.sales.find(x=>x.id===id);
+      if(existing){
+        // reverse previous effects before applying the edited values
+        const prevProduct = db.products[existing.productId];
+        if(prevProduct){ prevProduct.qty = Number(prevProduct.qty) + Number(existing.qty); touchedProducts.add(existing.productId); }
+        if(existing.customerId && db.customers[existing.customerId]){
+          db.customers[existing.customerId].due = Math.max(0, Number(db.customers[existing.customerId].due||0) - Number(existing.due||0));
+          touchedCustomers.add(existing.customerId);
+        }
+      }
+    }
+    const product = db.products[values.productId];
+    if(!product){ alert(t('product_not_found')); return; }
+    if(Number(values.qty) > Number(product.qty)){
+      if(!confirm(t('low_stock_more'))) return;
+    }
+    const rawTotal = Number(values.qty) * Number(values.unitPrice);
+    const discount = Number(values.discount)||0;
+    const total = Math.max(0, rawTotal - discount);
+    const paid = values.paid===''||values.paid===undefined ? total : Number(values.paid);
+    const due = Math.max(0, total - paid);
+    product.qty = Math.max(0, Number(product.qty) - Number(values.qty));
+    touchedProducts.add(values.productId);
+    let customerName = '';
+    if(values.customerId){
+      const cust = db.customers[values.customerId];
+      if(cust){ customerName = cust.name; cust.due = Number(cust.due||0) + due; touchedCustomers.add(values.customerId); }
+    }
+    const record = {
+      id: id || uid(), invoiceId: existing ? existing.invoiceId : null,
+      invoiceNo: existing ? (existing.invoiceNo || nextInvoiceNo()) : nextInvoiceNo(),
+      voucherNo: existing ? existing.voucherNo : '', voucherTag: existing ? existing.voucherTag : '',
+      paymentSystem: existing ? existing.paymentSystem : 'cash', isOldEntry: existing ? existing.isOldEntry : false,
+      customerId: values.customerId||null, customerName,
+      productId: values.productId, productName: product.name,
+      qty: Number(values.qty), unitPrice: Number(values.unitPrice), unitCost: Number(product.cost||0), discount,
+      total, paid, due, initialPaid: existing ? (existing.initialPaid!==undefined ? existing.initialPaid : paid) : paid,
+      date: values.date, ts: existing ? existing.ts : Date.now()
+    };
+    if(existing){
+      const idx = db.sales.findIndex(x=>x.id===id);
+      db.sales[idx] = record;
+    } else {
+      db.sales.push(record);
+    }
+    for(const pid of touchedProducts) await safePut('products', pid, db.products[pid]);
+    await safePut('sales', record.id, record);
+    for(const cid of touchedCustomers) await safePut('customers', cid, db.customers[cid]);
+
+    const instCount = Number(values.installmentCount)||0;
+    if(!existing && due>0 && instCount>=2){
+      const perAmount = Math.floor(due / instCount);
+      const items = [];
+      for(let i=0;i<instCount;i++){
+        const amt = (i===instCount-1) ? (due - perAmount*(instCount-1)) : perAmount;
+        items.push({ idx: i+1, amount: amt, status:'pending', paidDate:null });
+      }
+      const plan = {
+        id: uid(), saleId: record.id, customerId: values.customerId||null, customerName,
+        productName: product.name, totalDue: due, count: instCount, perAmount,
+        items, createdDate: values.date, ts: Date.now()
+      };
+      db.installmentPlans.push(plan);
+      await safePut('installmentPlans', plan.id, plan);
+    }
+    else if(existing){
+      // if this sale already has an installment plan, keep it in sync with any due change
+      // (e.g. adding/increasing a discount on edit) by adjusting the last pending installment
+      const plan = db.installmentPlans.find(p=>p.saleId===record.id);
+      if(plan){
+        const deltaDue = due - Number(existing.due||0);
+        if(deltaDue !== 0){
+          for(let i=plan.items.length-1;i>=0;i--){
+            if(plan.items[i].status==='pending'){
+              plan.items[i].amount = Math.max(0, Number(plan.items[i].amount) + deltaDue);
+              break;
+            }
+          }
+          plan.totalDue = Math.max(0, Number(plan.totalDue) + deltaDue);
+          plan.customerName = customerName || plan.customerName;
+          await safePut('installmentPlans', plan.id, plan);
+        }
+      }
+    }
+  }
+  else if(tab==='expenses'){
+    const record = { id: uid(), category: values.category, amount: Number(values.amount), note: values.note, date: values.date, isOldEntry: !!values.isOldEntry, ts: Date.now() };
+    db.expenses.push(record);
+    await safePut('expenses', record.id, record);
+  }
+}
+
+async function deleteInvoiceGroup(repId){
+  const rep = db.sales.find(s=>s.id===repId);
+  if(!rep) return;
+  if(!confirm(t('confirm_delete'))) return;
+  const groupIds = db.sales.filter(s=>s.invoiceId===rep.invoiceId).map(s=>s.id);
+  for(const gid of groupIds){
+    db.sales = db.sales.filter(s=>s.id!==gid);
+    await safeRemove('sales', gid);
+  }
+  const plan = db.installmentPlans.find(p=>p.invoiceId===rep.invoiceId);
+  if(plan){
+    db.installmentPlans = db.installmentPlans.filter(p=>p.id!==plan.id);
+    await safeRemove('installmentPlans', plan.id);
+  }
+  renderNav(); renderPage();
+}
+
+async function deleteItem(tab, id){
+  if(!confirm(t('confirm_delete'))) return;
+  const cfg = CONFIG[tab];
+  if(cfg.isObj) delete db[tab][id];
+  else db[tab] = db[tab].filter(x=>x.id!==id);
+  await safeRemove(tab, id);
+  renderNav(); renderPage();
+}
+
+function openCustomerHistory(custId){
+  const cust = db.customers[custId];
+  if(!cust) return;
+  const sales = db.sales.filter(s=>s.customerId===custId);
+  const payments = db.installments.filter(i=>i.customerId===custId);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
+
+  const timeline = [
+    ...sales.map(s => ({ ts:s.ts, date:s.date, type:'sale', label:s.productName, ref:s.voucherTag||s.voucherNo||'', amount:s.total, note:'' })),
+    ...payments.map(p => ({ ts:p.ts, date:p.date, type:'payment', label:t('installment_receipt_title'), ref:'', amount:p.amount+Number(p.discount||0), note:p.note||'' })),
+  ].sort((a,b)=>a.ts-b.ts);
+
+  document.getElementById('historyTitle').textContent = cust.name + ' — ' + t('history_title');
+  document.getElementById('historyBody').innerHTML = `
+    <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
+      ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
+    </div>
+    <div class="field-hint" style="margin-bottom:10px;">
+      ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
+    </div>
+    ${timeline.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+    <table class="data">
+      <thead><tr><th>${t('col_date')}</th><th>${t('history_type_label')}</th><th>${t('col_product')}</th><th>${t('col_amount')}</th><th>${t('f_note')}</th></tr></thead>
+      <tbody>
+        ${timeline.map(x=>`<tr><td>${formatDateDMY(x.date)}</td><td>${x.type==='sale'?t('history_type_sale'):t('history_type_payment')}</td><td>${escapeHtml(x.label)}${x.ref?' ('+escapeHtml(x.ref)+')':''}</td><td>৳${money(x.amount)}</td><td>${escapeHtml(x.note||'—')}</td></tr>`).join('')}
+      </tbody>
+    </table>`}
+  `;
+  document.getElementById('historyCloseBtn').textContent = t('close');
+  document.getElementById('historyPrintBtn').textContent = t('print_report');
+  document.getElementById('historyOverlay').classList.add('open');
+}
+document.getElementById('historyCloseBtn').addEventListener('click', () => {
+  document.getElementById('historyOverlay').classList.remove('open');
+});
+document.getElementById('historyPrintBtn').addEventListener('click', () => window.print());
+setupOverlayBackdropClose('historyOverlay');
+
+/* ---------- Quick Add (inline create from within another form) ---------- */
+let quickAddCtx = null; // {kind, fieldKey}
+function openQuickAdd(kind, fieldKey){
+  quickAddCtx = {kind, fieldKey};
+  document.getElementById('quickAddTitle').textContent = kind==='customers' ? t('quick_add_customer') : t('quick_add_product');
+  document.getElementById('quickAddCancelBtn').textContent = t('cancel');
+  document.getElementById('quickAddSaveBtn').textContent = t('save');
+  const fieldsEl = document.getElementById('quickAddFields');
+  if(kind==='customers'){
+    const nameSugg = [...new Set(Object.values(db.customers).map(c=>c.name).filter(Boolean))];
+    const addrSugg = [...new Set(Object.values(db.customers).map(c=>c.address).filter(Boolean))];
+    fieldsEl.innerHTML = `
+      <div class="field"><label>${t('qa_name')}</label>
+        <input type="text" id="qaName" list="dl-qa-custname" autocomplete="off">
+        <datalist id="dl-qa-custname">${nameSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist>
+      </div>
+      <div class="field"><label>${t('qa_phone')}</label><input type="text" id="qaPhone" autocomplete="off"></div>
+      <div class="field"><label>${t('f_passport')}</label><input type="text" id="qaPassport" autocomplete="off"></div>
+      <div class="field"><label>${t('f_email')}</label><input type="email" id="qaEmail" autocomplete="off"></div>
+      <div class="field"><label>${t('f_address')}</label>
+        <input type="text" id="qaAddress" list="dl-qa-custaddr" autocomplete="off">
+        <datalist id="dl-qa-custaddr">${addrSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist>
+      </div>
+    `;
+  } else {
+    const nameSuggestions = [...new Set(Object.values(db.products).map(p=>p.name).filter(Boolean))];
+    const catSuggestions = [...new Set(Object.values(db.products).map(p=>p.cat).filter(Boolean))];
+    const supplierOpts = Object.entries(db.suppliers).map(([sid,s]) => `<option value="${sid}">${escapeHtml(s.name)}</option>`).join('');
+    fieldsEl.innerHTML = `
+      <div class="field"><label>${t('f_product_name')}</label>
+        <input type="text" id="qaName" list="dl-qa-name" autocomplete="off">
+        <datalist id="dl-qa-name">${nameSuggestions.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist>
+      </div>
+      <div class="field"><label>${t('f_cat')}</label>
+        <input type="text" id="qaCat" list="dl-qa-cat" autocomplete="off">
+        <datalist id="dl-qa-cat">${catSuggestions.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>${t('f_current_stock')}</label><input type="number" id="qaQty" value="0"></div>
+        <div class="field"><label>${t('f_threshold')}</label><input type="number" id="qaThreshold" value="5"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>${t('qa_cost')}</label><input type="number" id="qaCost" value="0"></div>
+        <div class="field"><label>${t('qa_price')}</label><input type="number" id="qaPrice" value="0"></div>
+      </div>
+      <div class="field"><label>${t('f_supplier')}</label>
+        <select id="qaSupplier"><option value="">—</option>${supplierOpts}</select>
+      </div>
+    `;
+  }
+  document.getElementById('quickAddOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('qaName').focus(), 50);
+}
+function closeQuickAdd(){
+  document.getElementById('quickAddOverlay').classList.remove('open');
+  quickAddCtx = null;
+}
+document.getElementById('quickAddCancelBtn').addEventListener('click', closeQuickAdd);
+setupOverlayBackdropClose('quickAddOverlay', closeQuickAdd);
+document.getElementById('quickAddSaveBtn').addEventListener('click', async () => {
+  if(!quickAddCtx) return;
+  const { kind, fieldKey } = quickAddCtx;
+  const name = document.getElementById('qaName').value.trim();
+  if(!name){ alert(t('qa_name_required')); return; }
+  const key = uid();
+  if(kind==='customers'){
+    const phone = document.getElementById('qaPhone').value.trim();
+    const passport = document.getElementById('qaPassport').value.trim();
+    const email = document.getElementById('qaEmail').value.trim();
+    const address = document.getElementById('qaAddress').value.trim();
+    const record = { name, phone, passport, email, address, due:0, displayId: nextCustomerDisplayId() };
+    db.customers[key] = record;
+    await safePut('customers', key, record);
+  } else {
+    const cat = document.getElementById('qaCat').value.trim();
+    const qty = Number(document.getElementById('qaQty').value)||0;
+    const threshold = Number(document.getElementById('qaThreshold').value)||0;
+    const cost = Number(document.getElementById('qaCost').value)||0;
+    const price = Number(document.getElementById('qaPrice').value)||0;
+    const supplierId = document.getElementById('qaSupplier').value || '';
+    const record = { name, cat, qty, threshold, cost, price, supplierId };
+    db.products[key] = record;
+    await safePut('products', key, record);
+  }
+  closeQuickAdd();
+  // insert & select the new option in the still-open parent form, without resetting other fields
+  const msProductMatch = fieldKey.match(/^ms-product-(.+)$/);
+  if(kind==='products' && msProductMatch){
+    selectMsProduct(msProductMatch[1], key);
+  } else if(kind==='customers' && fieldKey==='msCustomerId'){
+    selectMsCustomer(key);
+  } else {
+    let selectEl = document.getElementById(fieldKey);
+    if(!selectEl || selectEl.tagName!=='SELECT'){
+      selectEl = document.querySelector(`#formFields select[data-key="${fieldKey}"]`);
+    }
+    if(selectEl){
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = name;
+      selectEl.appendChild(opt);
+      selectEl.value = key;
+      selectEl.dispatchEvent(new Event('change'));
+    }
+  }
+  renderNav();
+});
+
+function renderInstallmentPlanHtml(plan){
+  if(!plan) return '';
+  const remaining = plan.items.filter(it=>it.status==='pending').reduce((s,it)=>s+Number(it.amount),0);
+  return `
+    <div style="margin-top:16px;">
+      <h3 style="font-family:'Roboto Slab',serif;font-size:15px;margin:0 0 8px;">${t('installment_plan_title')} — ${t('inst_plan_summary')(plan.count, plan.perAmount)}</h3>
+      <table class="data">
+        <thead><tr><th>${t('inst_no')}</th><th>${t('col_total')}</th><th>${t('inst_status')}</th><th class="no-print"></th></tr></thead>
+        <tbody>
+          ${plan.items.map(it => `
+            <tr>
+              <td>${it.idx}/${plan.count}</td>
+              <td>৳${money(it.amount)}</td>
+              <td><span class="pill ${it.status==='paid'?'green':'red'}">${it.status==='paid'?t('inst_paid'):t('inst_pending')}</span></td>
+              <td class="no-print">${it.status==='pending' ? `<button class="btn amber small" onclick="markInstallmentPaid('${plan.id}',${it.idx})">${t('inst_pay_btn')}</button>` : ''}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="field-hint" style="margin-top:8px;">${t('inst_remaining')}: ৳${money(remaining)}</div>
+    </div>
+  `;
+}
+
+async function markInstallmentPaid(planId, idx){
+  const plan = db.installmentPlans.find(p=>p.id===planId);
+  if(!plan) return;
+  const item = plan.items.find(it=>it.idx===idx);
+  if(!item || item.status==='paid') return;
+  item.status = 'paid';
+  item.paidDate = todayStr();
+  await safePut('installmentPlans', plan.id, plan);
+
+  // keep the sale record(s) own paid/due fields in sync with installment payments.
+  // for multi-product invoices, distribute this installment amount across all
+  // line items proportionally to their remaining due.
+  const groupSales = plan.invoiceId
+    ? db.sales.filter(s=>s.invoiceId===plan.invoiceId)
+    : db.sales.filter(s=>s.id===plan.saleId);
+  const groupDueTotal = groupSales.reduce((s,x)=>s+Number(x.due||0),0);
+  let remainingToApply = Number(item.amount);
+  groupSales.forEach((sale, i) => {
+    const isLast = i===groupSales.length-1;
+    const share = groupDueTotal>0 ? Number(sale.due||0)/groupDueTotal : (isLast?1:0);
+    const applyAmt = isLast ? remainingToApply : Math.min(Number(sale.due||0), Math.round(Number(item.amount)*share));
+    remainingToApply -= applyAmt;
+    sale.paid = Number(sale.paid||0) + applyAmt;
+    sale.due = Math.max(0, Number(sale.due||0) - applyAmt);
+  });
+  for(const sale of groupSales) await safePut('sales', sale.id, sale);
+
+  if(plan.customerId && db.customers[plan.customerId]){
+    const cust = db.customers[plan.customerId];
+    const previousDue = Number(cust.due);
+    cust.due = Math.max(0, previousDue - Number(item.amount));
+    await safePut('customers', plan.customerId, cust);
+    const instRecord = {
+      id: uid(), receiptNo: nextReceiptNo(), customerId: plan.customerId, customerName: plan.customerName,
+      amount: Number(item.amount), discount: 0, previousDue, newDue: cust.due,
+      date: todayStr(), ts: Date.now(), planId: plan.id, installmentNo: idx
+    };
+    db.installments.push(instRecord);
+    await safePut('installments', instRecord.id, instRecord);
+    openInstallmentReceipt(instRecord);
+  }
+  renderPage();
+  // refresh whichever view is currently showing this plan
+  if(document.getElementById('saleViewOverlay').classList.contains('open')) openSaleView(plan.saleId);
+  if(document.getElementById('instHistoryOverlay').classList.contains('open') && plan.customerId) openInstallmentHistory(plan.customerId);
+  if(currentTab==='installments') renderInstallmentsPage();
+}
+
+/* ---------- Sales Returns ---------- */
+function renderReturnHistoryHtml(saleIds){
+  const list = db.returns.filter(r=>saleIds.includes(r.saleId)).sort((a,b)=>b.ts-a.ts);
+  if(list.length===0) return '';
+  return `
+    <div style="margin-top:16px;">
+      <h3 style="font-family:'Roboto Slab',serif;font-size:15px;margin:0 0 8px;">${t('return_history')}</h3>
+      <table class="data">
+        <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th><th class="no-print"></th></tr></thead>
+        <tbody>
+          ${list.map(r => `<tr>
+            <td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.productName)}</td>
+            <td>${r.qty}</td><td>৳${money(r.value)}</td>
+            <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
+            <td class="no-print">
+              ${!r.cancelled ? `<button class="icon-btn" title="${t('return_cancel_action')}" onclick="cancelReturn('${r.id}')">↩️</button>` : ''}
+              <button class="icon-btn" title="${t('delete_title')}" onclick="deleteReturn('${r.id}')">🗑️</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+let returnCtx = null; // saleId
+function openReturnForm(saleId){
+  const sale = db.sales.find(s=>s.id===saleId);
+  if(!sale) return;
+  const alreadyReturned = saleReturnedQty(saleId);
+  const remaining = Number(sale.qty) - alreadyReturned;
+  if(remaining<=0) return;
+  returnCtx = saleId;
+  document.getElementById('returnTitle').textContent = t('return_new');
+  document.getElementById('returnLineInfo').innerHTML = `
+    <b>${escapeHtml(sale.productName)}</b><br>
+    ${t('return_original_qty')}: ${sale.qty} · ${t('return_already')}: ${alreadyReturned} · ${t('return_remaining')}: ${remaining}
+  `;
+  document.getElementById('returnQtyLabel').textContent = t('return_qty_label');
+  document.getElementById('returnDateLabel').textContent = t('f_date');
+  document.getElementById('returnNoteLabel').textContent = t('return_note');
+  document.getElementById('returnCancelBtn').textContent = t('cancel');
+  document.getElementById('returnConfirmBtn').textContent = t('return_confirm');
+  const qtyInput = document.getElementById('returnQtyInput');
+  qtyInput.max = remaining;
+  qtyInput.value = 1;
+  document.getElementById('returnDateInput').value = todayStr();
+  document.getElementById('returnNoteInput').value = '';
+  const noteSugg = [...new Set(db.returns.map(r=>r.note).filter(Boolean))];
+  document.getElementById('dl-return-note').innerHTML = noteSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('');
+  updateReturnCalcInfo();
+  document.getElementById('returnOverlay').classList.add('open');
+}
+function invoiceDueTotal(sale){
+  const group = sale.invoiceId ? db.sales.filter(s=>s.invoiceId===sale.invoiceId) : [sale];
+  return group.reduce((s,x)=>s+Number(x.due),0);
+}
+function updateReturnCalcInfo(){
+  if(!returnCtx) return;
+  const sale = db.sales.find(s=>s.id===returnCtx);
+  if(!sale) return;
+  const qty = Number(document.getElementById('returnQtyInput').value)||0;
+  const perUnitValue = Number(sale.qty)>0 ? Number(sale.total)/Number(sale.qty) : 0;
+  const returnValue = qty*perUnitValue;
+  const dueAdjust = Math.min(returnValue, invoiceDueTotal(sale));
+  const excessRefund = Math.max(0, returnValue - dueAdjust);
+  document.getElementById('returnCalcInfo').innerHTML = `
+    ${t('return_value')}: ৳${money(returnValue)}<br>
+    ${t('return_due_adjust')}: ৳${money(dueAdjust)}<br>
+    ${t('return_excess_refund')}: ৳${money(excessRefund)}
+  `;
+}
+document.getElementById('returnQtyInput').addEventListener('input', updateReturnCalcInfo);
+document.getElementById('returnCancelBtn').addEventListener('click', () => {
+  document.getElementById('returnOverlay').classList.remove('open');
+  returnCtx = null;
+});
+setupOverlayBackdropClose('returnOverlay', () => { returnCtx = null; });
+
+document.getElementById('returnConfirmBtn').addEventListener('click', async () => {
+  if(!returnCtx) return;
+  const sale = db.sales.find(s=>s.id===returnCtx);
+  if(!sale) return;
+  const qty = Number(document.getElementById('returnQtyInput').value)||0;
+  const alreadyReturned = saleReturnedQty(returnCtx);
+  const remaining = Number(sale.qty) - alreadyReturned;
+  if(qty<=0 || qty>remaining){ alert(t('return_qty_invalid')); return; }
+  const date = document.getElementById('returnDateInput').value || todayStr();
+  const note = document.getElementById('returnNoteInput').value.trim();
+
+  const perUnitValue = Number(sale.qty)>0 ? Number(sale.total)/Number(sale.qty) : 0;
+  const returnValue = qty*perUnitValue;
+  const groupSales = sale.invoiceId ? db.sales.filter(s=>s.invoiceId===sale.invoiceId) : [sale];
+  const invoiceDue = groupSales.reduce((s,x)=>s+Number(x.due),0);
+  const dueAdjust = Math.min(returnValue, invoiceDue);
+  const excessRefund = Math.max(0, returnValue - dueAdjust);
+
+  const product = db.products[sale.productId];
+  if(product){ product.qty = Number(product.qty) + qty; await safePut('products', sale.productId, product); }
+
+  // distribute the due reduction across the invoice: the returned line first, then other lines
+  let remainingAdjust = dueAdjust;
+  const adjustments = [];
+  const ownReduce = Math.min(Number(sale.due), remainingAdjust);
+  if(ownReduce>0){ sale.due = Number(sale.due) - ownReduce; remainingAdjust -= ownReduce; adjustments.push({saleId: sale.id, amount: ownReduce}); }
+  await safePut('sales', sale.id, sale);
+  for(const otherSale of groupSales){
+    if(remainingAdjust<=0) break;
+    if(otherSale.id===sale.id) continue;
+    const reduce = Math.min(Number(otherSale.due), remainingAdjust);
+    if(reduce>0){
+      otherSale.due = Number(otherSale.due) - reduce;
+      remainingAdjust -= reduce;
+      adjustments.push({saleId: otherSale.id, amount: reduce});
+      await safePut('sales', otherSale.id, otherSale);
+    }
+  }
+
+  if(sale.customerId && db.customers[sale.customerId]){
+    const cust = db.customers[sale.customerId];
+    cust.due = Math.max(0, Number(cust.due) - dueAdjust);
+    cust.refundOwed = Number(cust.refundOwed||0) + excessRefund;
+    await safePut('customers', sale.customerId, cust);
+  }
+
+  const record = {
+    id: uid(), returnNo: nextReturnNo(), saleId: sale.id, invoiceId: sale.invoiceId||null,
+    productId: sale.productId, productName: sale.productName,
+    customerId: sale.customerId||null, customerName: sale.customerName||'',
+    qty, unitValue: perUnitValue, value: returnValue, dueAdjust, excessRefund, adjustments,
+    date, note, cancelled:false, ts: Date.now()
+  };
+  db.returns.push(record);
+  await safePut('returns', record.id, record);
+
+  document.getElementById('returnOverlay').classList.remove('open');
+  returnCtx = null;
+  renderNav();
+  renderPage();
+  if(document.getElementById('saleViewOverlay').classList.contains('open')) openSaleView(sale.id);
+});
+
+async function cancelReturn(returnId){
+  const rec = db.returns.find(r=>r.id===returnId);
+  if(!rec || rec.cancelled) return;
+  if(!confirm(t('return_confirm_cancel'))) return;
+  rec.cancelled = true;
+  await safePut('returns', rec.id, rec);
+
+  const product = db.products[rec.productId];
+  if(product){ product.qty = Math.max(0, Number(product.qty) - rec.qty); await safePut('products', rec.productId, product); }
+
+  const adjustments = rec.adjustments && rec.adjustments.length ? rec.adjustments : [{saleId: rec.saleId, amount: rec.dueAdjust}];
+  for(const adj of adjustments){
+    const s = db.sales.find(x=>x.id===adj.saleId);
+    if(s){ s.due = Number(s.due) + Number(adj.amount); await safePut('sales', s.id, s); }
+  }
+  const sale = db.sales.find(s=>s.id===rec.saleId);
+  if(sale && sale.customerId && db.customers[sale.customerId]){
+    const cust = db.customers[sale.customerId];
+    cust.due = Number(cust.due) + Number(rec.dueAdjust);
+    cust.refundOwed = Math.max(0, Number(cust.refundOwed||0) - Number(rec.excessRefund));
+    await safePut('customers', sale.customerId, cust);
+  }
+  renderNav();
+  renderPage();
+  if(document.getElementById('saleViewOverlay').classList.contains('open') && sale) openSaleView(sale.id);
+}
+
+async function deleteReturn(returnId){
+  const rec = db.returns.find(r=>r.id===returnId);
+  if(!rec) return;
+  if(!confirm(t('confirm_delete'))) return;
+
+  if(!rec.cancelled){
+    // still active — reverse its stock/due effects first, same as cancelling
+    const product = db.products[rec.productId];
+    if(product){ product.qty = Math.max(0, Number(product.qty) - rec.qty); await safePut('products', rec.productId, product); }
+
+    const adjustments = rec.adjustments && rec.adjustments.length ? rec.adjustments : [{saleId: rec.saleId, amount: rec.dueAdjust}];
+    for(const adj of adjustments){
+      const s = db.sales.find(x=>x.id===adj.saleId);
+      if(s){ s.due = Number(s.due) + Number(adj.amount); await safePut('sales', s.id, s); }
+    }
+    const sale = db.sales.find(s=>s.id===rec.saleId);
+    if(sale && sale.customerId && db.customers[sale.customerId]){
+      const cust = db.customers[sale.customerId];
+      cust.due = Number(cust.due) + Number(rec.dueAdjust);
+      cust.refundOwed = Math.max(0, Number(cust.refundOwed||0) - Number(rec.excessRefund));
+      await safePut('customers', sale.customerId, cust);
+    }
+  }
+
+  db.returns = db.returns.filter(r=>r.id!==returnId);
+  await safeRemove('returns', returnId);
+  renderNav();
+  renderPage();
+  if(document.getElementById('saleViewOverlay').classList.contains('open')){
+    const sale = db.sales.find(s=>s.id===rec.saleId);
+    if(sale) openSaleView(sale.id);
+  }
+}
+
+/* ---------- Returns List Page ---------- */
+let returnsPageQuery = '';
+function renderReturnsPage(){
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="toolbar">
+      <input type="text" id="returnsPageSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(returnsPageQuery)}">
+    </div>
+    <div id="returnsPageList"></div>
+  `;
+  document.getElementById('returnsPageSearch').addEventListener('input', (e) => {
+    returnsPageQuery = e.target.value;
+    renderList();
+  });
+  function renderList(){
+    const q = returnsPageQuery.trim().toLowerCase();
+    const list = db.returns.filter(r => {
+      if(!q) return true;
+      return String(r.returnNo).includes(q) || r.productName.toLowerCase().includes(q) ||
+        (r.customerName||'').toLowerCase().includes(q);
+    }).sort((a,b)=>b.ts-a.ts);
+    const listEl = document.getElementById('returnsPageList');
+    if(list.length===0){
+      listEl.innerHTML = `<div class="empty"><div class="big">${t('return_no_history')}</div></div>`;
+      return;
+    }
+    listEl.innerHTML = `
+      <table class="data">
+        <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th><th></th></tr></thead>
+        <tbody>
+          ${list.map(r => `<tr class="${r.cancelled?'':''}">
+            <td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td>
+            <td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td>
+            <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
+            <td class="actions-cell">
+              <button class="icon-btn" title="${t('view_title')}" onclick="openSaleView('${r.saleId}')">👁</button>
+              ${!r.cancelled ? `<button class="icon-btn" title="${t('return_cancel_action')}" onclick="cancelReturn('${r.id}')">↩️</button>` : ''}
+              <button class="icon-btn" title="${t('delete_title')}" onclick="deleteReturn('${r.id}')">🗑️</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+  renderList();
+}
+
+function openSaleView(id){
+  const sale = db.sales.find(s=>s.id===id);
+  if(!sale) return;
+  const custRecord = sale.customerId ? db.customers[sale.customerId] : null;
+  const groupItems = sale.invoiceId ? db.sales.filter(s=>s.invoiceId===sale.invoiceId) : [sale];
+  const plan = sale.invoiceId
+    ? db.installmentPlans.find(p=>p.invoiceId===sale.invoiceId)
+    : db.installmentPlans.find(p=>p.saleId===id);
+  const grandTotal = groupItems.reduce((s,x)=>s+Number(x.total),0);
+  const grandPaid = groupItems.reduce((s,x)=>s+Number(x.paid),0);
+  const grandDue = groupItems.reduce((s,x)=>s+Number(x.due),0);
+  document.getElementById('saleViewTitle').textContent = (sale.invoiceId ? t('invoice_label') : t('view_title')) + (sale.invoiceNo ? ' #'+sale.invoiceNo : '');
+  document.getElementById('saleViewCloseBtn').textContent = t('close');
+  document.getElementById('saleViewPrintBtn').textContent = t('print_report');
+  document.getElementById('saleViewBody').innerHTML = `
+    <table class="data">
+      <tbody>
+        ${sale.invoiceNo ? `<tr><td>${t('col_invoice_no')}</td><td>#${sale.invoiceNo}</td></tr>` : ''}
+        <tr><td>${t('col_date')}</td><td>${sale.date}</td></tr>
+        <tr><td>${t('col_customer')}</td><td>${escapeHtml(sale.customerName||t('walk_in'))}</td></tr>
+        ${custRecord && custRecord.phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml(custRecord.phone)}</td></tr>` : ''}
+        ${sale.voucherTag ? `<tr><td>${t('col_voucher_tag')}</td><td>${escapeHtml(sale.voucherTag)}</td></tr>` : ''}
+        ${sale.voucherNo ? `<tr><td>${t('col_voucher')}</td><td>${escapeHtml(sale.voucherNo)}</td></tr>` : ''}
+        ${paymentSystemKey(sale.paymentSystem) ? `<tr><td>${t('col_payment_system')}</td><td>${t(paymentSystemKey(sale.paymentSystem))}</td></tr>` : ''}
+      </tbody>
+    </table>
+    <table class="data" style="margin-top:10px;">
+      <thead><tr><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('f_unit_price')}</th><th>${t('col_discount')}</th><th>${t('col_total')}</th><th>${t('return_already')}</th><th>${t('return_remaining')}</th><th class="no-print"></th></tr></thead>
+      <tbody>
+        ${groupItems.map(it => {
+          const returned = saleReturnedQty(it.id);
+          const remaining = Number(it.qty) - returned;
+          return `<tr><td>${escapeHtml(it.productName)}</td><td>${it.qty}</td><td>৳${money(it.unitPrice)}</td><td>${Number(it.discount)>0?'৳'+money(it.discount):'—'}</td><td>৳${money(it.total)}</td><td>${returned>0?returned:'—'}</td><td>${remaining}</td><td class="no-print">${remaining>0?`<button class="btn ghost small" onclick="openReturnForm('${it.id}')">↩️ ${t('return_new')}</button>`:''}</td></tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    <table class="data" style="margin-top:10px;">
+      <tbody>
+        <tr><td>${t('grand_total')}</td><td>৳${money(grandTotal)}</td></tr>
+        <tr><td>${t('col_paid')}</td><td>৳${money(grandPaid)}</td></tr>
+        <tr><td>${t('col_due')}</td><td>${grandDue>0?'৳'+money(grandDue):'—'}</td></tr>
+      </tbody>
+    </table>
+    ${renderInstallmentPlanHtml(plan)}
+    ${renderReturnHistoryHtml(groupItems.map(x=>x.id))}
+  `;
+  document.getElementById('saleViewOverlay').classList.add('open');
+}
+document.getElementById('saleViewCloseBtn').addEventListener('click', () => {
+  document.getElementById('saleViewOverlay').classList.remove('open');
+});
+document.getElementById('saleViewPrintBtn').addEventListener('click', () => window.print());
+setupOverlayBackdropClose('saleViewOverlay');
+
+/* ---------- Multi-Item Sale Builder ---------- */
+let msRowSeq = 0;
+let msRows = []; // [{rowId}]
+let msEditInvoiceId = null;
+let msEditInvoiceNo = null;
+
+function openMultiSale(editInvoiceId){
+  msRows = [];
+  msRowSeq = 0;
+  msEditInvoiceId = editInvoiceId || null;
+  document.getElementById('multiSaleTitle').textContent = msEditInvoiceId ? t('edit_title') + ' — ' + t('invoice_label') : t('new_sale_invoice_title');
+  document.getElementById('msCustomerLabel').textContent = t('f_customer_opt');
+  document.getElementById('msCustomer').placeholder = t('walk_in');
+  const voucherTagSugg = [...new Set(db.sales.map(s=>s.voucherTag).filter(Boolean))];
+  const voucherNoSugg = [...new Set(db.sales.map(s=>s.voucherNo).filter(Boolean))];
+  document.getElementById('dl-ms-vouchertag').innerHTML = voucherTagSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('');
+  document.getElementById('dl-ms-voucher').innerHTML = voucherNoSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('');
+  document.getElementById('msGrandLabel').textContent = t('grand_total');
+  document.getElementById('msPaidLabel').textContent = t('f_paid');
+  document.getElementById('msInstLabel').textContent = t('f_installment_count');
+  document.getElementById('msDateLabel').textContent = t('f_date');
+  document.getElementById('msVoucherLabel').textContent = t('f_voucher');
+  document.getElementById('msVoucherTagLabel').textContent = t('f_voucher_tag');
+  document.getElementById('msPaymentSystemLabel').textContent = t('f_payment_system');
+  document.getElementById('msIsOldEntryLabel').textContent = t('f_is_old_entry');
+  const paySel = document.getElementById('msPaymentSystem');
+  const prevPayVal = paySel.value || 'cash';
+  paySel.innerHTML = `
+    <option value="cash">${t('payment_cash')}</option>
+    <option value="bank">${t('payment_bank')}</option>
+    <option value="mobile_banking">${t('payment_mobile_banking')}</option>
+  `;
+  paySel.value = prevPayVal;
+  document.getElementById('msCancelBtn').textContent = t('cancel');
+  document.getElementById('msSaveBtn').textContent = t('save');
+  document.getElementById('msAddRowBtn').textContent = t('ms_add_row');
+
+  document.getElementById('msCustomer').value = '';
+  document.getElementById('msCustomerId').value = '';
+  const custResultsEl = document.getElementById('msCustomerResults');
+  if(custResultsEl){ custResultsEl.classList.remove('open'); custResultsEl.innerHTML=''; }
+
+  document.getElementById('msRows').innerHTML = '';
+
+  if(msEditInvoiceId){
+    const groupSales = db.sales.filter(s=>s.invoiceId===msEditInvoiceId);
+    if(groupSales.length===0){ msEditInvoiceId = null; }
+    else{
+      const plan = db.installmentPlans.find(p=>p.invoiceId===msEditInvoiceId);
+      const hasPaidInstallments = plan && plan.items.some(it=>it.status==='paid');
+      if(hasPaidInstallments){
+        alert(t('inst_already_started'));
+        msEditInvoiceId = null;
+      } else {
+        const first = groupSales[0];
+        msEditInvoiceNo = first.invoiceNo || null;
+        selectMsCustomer(first.customerId || '');
+        document.getElementById('msDate').value = first.date;
+        document.getElementById('msVoucher').value = first.voucherNo || '';
+        document.getElementById('msVoucherTag').value = first.voucherTag || '';
+        document.getElementById('msPaymentSystem').value = first.paymentSystem || 'cash';
+        document.getElementById('msIsOldEntry').checked = !!first.isOldEntry;
+        document.getElementById('msPaid').value = groupSales.reduce((s,x)=>s+Number(x.paid),0);
+        document.getElementById('msInstCount').value = plan ? plan.count : '';
+        groupSales.forEach(sale => addMultiSaleRow(sale));
+        document.getElementById('multiSaleOverlay').classList.add('open');
+        return;
+      }
+    }
+  }
+  msEditInvoiceNo = null;
+  document.getElementById('msPaid').value = 0;
+  document.getElementById('msInstCount').value = '';
+  document.getElementById('msDate').value = todayStr();
+  document.getElementById('msVoucher').value = '';
+  document.getElementById('msVoucherTag').value = '';
+  document.getElementById('msPaymentSystem').value = 'cash';
+  document.getElementById('msIsOldEntry').checked = false;
+  addMultiSaleRow();
+  document.getElementById('multiSaleOverlay').classList.add('open');
+}
+
+function addMultiSaleRow(existingSale){
+  const rowId = 'r' + (msRowSeq++);
+  msRows.push(rowId);
+  const rowHtml = `
+    <div class="ms-row" id="row-${rowId}" ${existingSale ? `data-saleid="${existingSale.id}"` : ''}>
+      <div class="field">
+        <label>${t('f_product_select')}</label>
+        <div class="select-row" style="position:relative;">
+          <input type="text" id="ms-product-${rowId}" autocomplete="off" placeholder="${t('search_placeholder')}" oninput="onMsProductSearch('${rowId}')" onfocus="onMsProductSearch('${rowId}')">
+          <input type="hidden" id="ms-productid-${rowId}" value="${existingSale?existingSale.productId:''}">
+          <button type="button" class="qa-btn" onclick="openQuickAdd('products','ms-product-${rowId}')">+</button>
+          <div class="ms-product-results" id="ms-product-results-${rowId}"></div>
+        </div>
+      </div>
+      <div class="field"><label>${t('f_qty')}</label><input type="number" id="ms-qty-${rowId}" value="${existingSale?existingSale.qty:1}" oninput="recalcMultiSaleTotal()"></div>
+      <div class="field"><label>${t('f_unit_price')}</label><input type="number" id="ms-price-${rowId}" value="${existingSale?existingSale.unitPrice:0}" oninput="recalcMultiSaleTotal()"></div>
+      <div class="field"><label>${t('f_discount')}</label><input type="number" id="ms-discount-${rowId}" value="${existingSale?(existingSale.discount||0):0}" oninput="recalcMultiSaleTotal()"></div>
+      <button type="button" class="ms-remove" onclick="removeMultiSaleRow('${rowId}')">🗑</button>
+    </div>
+  `;
+  document.getElementById('msRows').insertAdjacentHTML('beforeend', rowHtml);
+  if(existingSale){
+    const product = db.products[existingSale.productId];
+    document.getElementById(`ms-product-${rowId}`).value = product ? product.name : '';
+  }
+  recalcMultiSaleTotal();
+}
+
+function removeMultiSaleRow(rowId){
+  if(msRows.length<=1) return; // keep at least one row
+  msRows = msRows.filter(r=>r!==rowId);
+  const el = document.getElementById('row-'+rowId);
+  if(el) el.remove();
+  recalcMultiSaleTotal();
+}
+
+function onMsCustomerSearch(){
+  const input = document.getElementById('msCustomer');
+  const resultsEl = document.getElementById('msCustomerResults');
+  if(!input || !resultsEl) return;
+  const q = input.value.trim().toLowerCase();
+  const entries = Object.entries(db.customers);
+  const matches = q
+    ? entries.filter(([cid,c]) => c.name.toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || String(c.displayId||'').includes(q)).slice(0,10)
+    : entries.slice(0,10);
+  if(matches.length===0){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; return; }
+  resultsEl.innerHTML = matches.map(([cid,c]) => `<div class="ms-product-result-item" onclick="selectMsCustomer('${cid}')">${escapeHtml(c.name)} <span style="color:var(--ink-soft);font-size:11px;">${c.phone?escapeHtml(c.phone):''}${Number(c.due)>0?' · ৳'+money(c.due):''}</span></div>`).join('');
+  resultsEl.classList.add('open');
+}
+function selectMsCustomer(cid){
+  const cust = cid ? db.customers[cid] : null;
+  document.getElementById('msCustomer').value = cust ? cust.name : '';
+  document.getElementById('msCustomerId').value = cid || '';
+  const resultsEl = document.getElementById('msCustomerResults');
+  if(resultsEl){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; }
+}
+document.addEventListener('click', (e) => {
+  const el = document.getElementById('msCustomerResults');
+  if(el && el.classList.contains('open') && !el.parentElement.contains(e.target)) el.classList.remove('open');
+});
+
+function onMsProductSearch(rowId){
+  const input = document.getElementById(`ms-product-${rowId}`);
+  const resultsEl = document.getElementById(`ms-product-results-${rowId}`);
+  if(!input || !resultsEl) return;
+  const q = input.value.trim().toLowerCase();
+  if(!q){
+    const matches = Object.entries(db.products).slice(0,10);
+    resultsEl.innerHTML = matches.map(([pid,p]) => `<div class="ms-product-result-item" onclick="selectMsProduct('${rowId}','${pid}')">${escapeHtml(p.name)} <span style="color:var(--ink-soft);font-size:11px;">${escapeHtml(p.cat||'')} · ${t('col_stock')}:${p.qty}</span></div>`).join('');
+    resultsEl.classList.toggle('open', matches.length>0);
+    return;
+  }
+  const matches = Object.entries(db.products).filter(([pid,p]) =>
+    p.name.toLowerCase().includes(q) || (p.cat||'').toLowerCase().includes(q)
+  ).slice(0,10);
+  if(matches.length===0){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; return; }
+  resultsEl.innerHTML = matches.map(([pid,p]) => `<div class="ms-product-result-item" onclick="selectMsProduct('${rowId}','${pid}')">${escapeHtml(p.name)} <span style="color:var(--ink-soft);font-size:11px;">${escapeHtml(p.cat||'')} · ${t('col_stock')}:${p.qty}</span></div>`).join('');
+  resultsEl.classList.add('open');
+}
+function selectMsProduct(rowId, pid){
+  const product = db.products[pid];
+  if(!product) return;
+  document.getElementById(`ms-product-${rowId}`).value = product.name;
+  document.getElementById(`ms-productid-${rowId}`).value = pid;
+  document.getElementById(`ms-price-${rowId}`).value = product.price || 0;
+  const resultsEl = document.getElementById(`ms-product-results-${rowId}`);
+  if(resultsEl){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; }
+  recalcMultiSaleTotal();
+}
+document.addEventListener('click', (e) => {
+  document.querySelectorAll('.ms-product-results.open').forEach(el => {
+    if(!el.parentElement.contains(e.target)) el.classList.remove('open');
+  });
+});
+
+function recalcMultiSaleTotal(){
+  let grand = 0;
+  msRows.forEach(rowId => {
+    const qtyEl = document.getElementById(`ms-qty-${rowId}`);
+    const priceEl = document.getElementById(`ms-price-${rowId}`);
+    const discEl = document.getElementById(`ms-discount-${rowId}`);
+    if(!qtyEl || !priceEl) return;
+    const qty = Number(qtyEl.value)||0;
+    const price = Number(priceEl.value)||0;
+    const disc = discEl ? (Number(discEl.value)||0) : 0;
+    grand += Math.max(0, qty*price - disc);
+  });
+  document.getElementById('msGrandValue').textContent = '৳' + money(grand);
+  return grand;
+}
+
+document.getElementById('msAddRowBtn').addEventListener('click', () => addMultiSaleRow());
+document.getElementById('msCancelBtn').addEventListener('click', () => {
+  document.getElementById('multiSaleOverlay').classList.remove('open');
+  msEditInvoiceId = null;
+  msEditInvoiceNo = null;
+});
+setupOverlayBackdropClose('multiSaleOverlay', () => { msEditInvoiceId = null; msEditInvoiceNo = null; });
+
+document.getElementById('msSaveBtn').addEventListener('click', async () => {
+  const customerId = document.getElementById('msCustomerId').value || null;
+  const cust = customerId ? db.customers[customerId] : null;
+  const customerName = cust ? cust.name : '';
+  const date = document.getElementById('msDate').value || todayStr();
+  const voucherNo = document.getElementById('msVoucher').value.trim();
+  const voucherTag = document.getElementById('msVoucherTag').value.trim();
+  const paymentSystem = document.getElementById('msPaymentSystem').value;
+  const isOldEntry = document.getElementById('msIsOldEntry').checked;
+  const instCount = Number(document.getElementById('msInstCount').value)||0;
+
+  const rowsData = [];
+  for(const rowId of msRows){
+    const pid = document.getElementById(`ms-productid-${rowId}`).value;
+    if(!pid) continue;
+    const product = db.products[pid];
+    if(!product) continue;
+    const qty = Number(document.getElementById(`ms-qty-${rowId}`).value)||0;
+    const price = Number(document.getElementById(`ms-price-${rowId}`).value)||0;
+    const disc = Number(document.getElementById(`ms-discount-${rowId}`).value)||0;
+    if(qty<=0) continue;
+    if(qty > Number(product.qty)){
+      if(!confirm(t('low_stock_more'))) return;
+    }
+    rowsData.push({ pid, product, qty, price, disc, rowTotal: Math.max(0, qty*price - disc) });
+  }
+  if(rowsData.length===0){ alert(t('product_not_found')); return; }
+
+  // if editing, first reverse the old invoice's stock/due effects
+  if(msEditInvoiceId){
+    const oldSales = db.sales.filter(s=>s.invoiceId===msEditInvoiceId);
+    const oldDueTotal = oldSales.reduce((s,x)=>s+Number(x.due||0),0);
+    for(const old of oldSales){
+      const p = db.products[old.productId];
+      if(p){ p.qty = Number(p.qty) + Number(old.qty); await safePut('products', old.productId, p); }
+      db.sales = db.sales.filter(s=>s.id!==old.id);
+      await safeRemove('sales', old.id);
+    }
+    const oldPlan = db.installmentPlans.find(p=>p.invoiceId===msEditInvoiceId);
+    if(oldPlan){
+      db.installmentPlans = db.installmentPlans.filter(p=>p.id!==oldPlan.id);
+      await safeRemove('installmentPlans', oldPlan.id);
+    }
+    if(oldSales[0] && oldSales[0].customerId && db.customers[oldSales[0].customerId]){
+      const oldCust = db.customers[oldSales[0].customerId];
+      oldCust.due = Math.max(0, Number(oldCust.due) - oldDueTotal);
+      await safePut('customers', oldSales[0].customerId, oldCust);
+    }
+  }
+
+  const grandTotal = rowsData.reduce((s,r)=>s+r.rowTotal,0);
+  const paidInput = document.getElementById('msPaid').value;
+  const overallPaid = paidInput===''? grandTotal : Math.min(grandTotal, Number(paidInput)||0);
+  const overallDue = Math.max(0, grandTotal - overallPaid);
+
+  const invoiceId = rowsData.length>1 ? (msEditInvoiceId || uid()) : null;
+  const invoiceNo = msEditInvoiceNo || nextInvoiceNo();
+  const saleRecords = [];
+  let remainingPaid = overallPaid;
+  let remainingDue = overallDue;
+
+  rowsData.forEach((r, i) => {
+    const isLast = i===rowsData.length-1;
+    const share = grandTotal>0 ? r.rowTotal/grandTotal : 0;
+    const rowPaid = isLast ? remainingPaid : Math.min(r.rowTotal, Math.round(overallPaid*share));
+    const rowDue = isLast ? remainingDue : Math.max(0, r.rowTotal - rowPaid);
+    remainingPaid -= rowPaid;
+    remainingDue -= rowDue;
+    const saleId = uid();
+    const record = {
+      id: saleId, invoiceId, invoiceNo, voucherNo, voucherTag, paymentSystem, isOldEntry, customerId, customerName,
+      productId: r.pid, productName: r.product.name,
+      qty: r.qty, unitPrice: r.price, unitCost: Number(r.product.cost||0), discount: r.disc,
+      total: r.rowTotal, paid: rowPaid, due: rowDue, initialPaid: rowPaid, date, ts: Date.now()
+    };
+    saleRecords.push(record);
+    r.product.qty = Math.max(0, Number(r.product.qty) - r.qty);
+  });
+
+  for(const r of rowsData) await safePut('products', r.pid, r.product);
+  for(const rec of saleRecords){ db.sales.push(rec); await safePut('sales', rec.id, rec); }
+  if(customerId && cust){
+    cust.due = Number(cust.due||0) + overallDue;
+    await safePut('customers', customerId, cust);
+  }
+
+  if(overallDue>0 && instCount>=2){
+    const perAmount = Math.floor(overallDue / instCount);
+    const items = [];
+    for(let i=0;i<instCount;i++){
+      const amt = (i===instCount-1) ? (overallDue - perAmount*(instCount-1)) : perAmount;
+      items.push({ idx: i+1, amount: amt, status:'pending', paidDate:null });
+    }
+    const productNames = rowsData.map(r=>r.product.name).join(', ');
+    const plan = {
+      id: uid(), saleId: saleRecords[0].id, invoiceId, customerId, customerName,
+      productName: productNames, totalDue: overallDue, count: instCount, perAmount,
+      items, createdDate: date, ts: Date.now()
+    };
+    db.installmentPlans.push(plan);
+    await safePut('installmentPlans', plan.id, plan);
+  }
+
+  document.getElementById('multiSaleOverlay').classList.remove('open');
+  msEditInvoiceId = null;
+  msEditInvoiceNo = null;
+  renderNav();
+  renderPage();
+});
+
+let dueCtx = null;
+function openPayDue(custId){
+  const cust = db.customers[custId];
+  if(!cust) return;
+  dueCtx = custId;
+  document.getElementById('dueTitle').textContent = t('pay_due_title');
+  document.getElementById('dueCurrentInfo').textContent = t('pay_due_current')(cust.name, cust.due);
+  const noteSugg = [...new Set(db.installments.map(i=>i.note).filter(Boolean))];
+  document.getElementById('dl-due-note').innerHTML = noteSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('');
+  document.getElementById('dueAmountLabel').textContent = t('pay_amount');
+  document.getElementById('dueDiscountLabel').textContent = t('pay_discount');
+  document.getElementById('dueDateLabel').textContent = t('f_date');
+  document.getElementById('dueNoteLabel').textContent = t('f_note');
+  document.getElementById('dueNoteInput').value = '';
+  document.getElementById('dueIsOldEntry').checked = false;
+  document.getElementById('dueIsOldEntryLabel').textContent = t('f_is_old_entry');
+  document.getElementById('duePaidInput').value = cust.due;
+  document.getElementById('dueDiscountInput').value = 0;
+  document.getElementById('dueDateInput').value = todayStr();
+  document.getElementById('dueCancelBtn').textContent = t('cancel');
+  document.getElementById('dueConfirmBtn').textContent = t('confirm');
+  updateDueResultInfo();
+  document.getElementById('dueOverlay').classList.add('open');
+}
+function updateDueResultInfo(){
+  const cust = dueCtx ? db.customers[dueCtx] : null;
+  if(!cust) return;
+  const paid = Number(document.getElementById('duePaidInput').value)||0;
+  const discount = Number(document.getElementById('dueDiscountInput').value)||0;
+  const remaining = Math.max(0, Number(cust.due) - (paid+discount));
+  document.getElementById('dueResultInfo').textContent = t('pay_due_remaining')(remaining);
+}
+document.getElementById('duePaidInput').addEventListener('input', updateDueResultInfo);
+document.getElementById('dueDiscountInput').addEventListener('input', updateDueResultInfo);
+document.getElementById('dueCancelBtn').addEventListener('click', () => {
+  document.getElementById('dueOverlay').classList.remove('open');
+  dueCtx = null;
+});
+setupOverlayBackdropClose('dueOverlay', () => { dueCtx = null; });
+document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
+  if(!dueCtx) return;
+  const cust = db.customers[dueCtx];
+  if(!cust) return;
+  const paid = Number(document.getElementById('duePaidInput').value)||0;
+  const discount = Number(document.getElementById('dueDiscountInput').value)||0;
+  const payDate = document.getElementById('dueDateInput').value || todayStr();
+  const note = document.getElementById('dueNoteInput').value.trim();
+  const isOldEntry = document.getElementById('dueIsOldEntry').checked;
+  if(paid<=0 && discount<=0) return;
+  const previousDue = Number(cust.due);
+  const newDue = Math.max(0, previousDue - (paid+discount));
+  cust.due = newDue;
+  await safePut('customers', dueCtx, cust);
+
+  // distribute this payment across the customer's outstanding sales (oldest first)
+  // so each sale's own paid/due fields stay accurate too
+  let toApply = paid + discount;
+  const openSales = db.sales.filter(s=>s.customerId===dueCtx && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
+  for(const sale of openSales){
+    if(toApply<=0) break;
+    const applyAmt = Math.min(Number(sale.due), toApply);
+    sale.paid = Number(sale.paid||0) + applyAmt;
+    sale.due = Math.max(0, Number(sale.due) - applyAmt);
+    toApply -= applyAmt;
+    await safePut('sales', sale.id, sale);
+  }
+
+  const instRecord = {
+    id: uid(), receiptNo: nextReceiptNo(), customerId: dueCtx, customerName: cust.name,
+    amount: paid, discount, previousDue, newDue, note, isOldEntry,
+    date: payDate, ts: new Date(payDate).getTime() || Date.now()
+  };
+  db.installments.push(instRecord);
+  await safePut('installments', instRecord.id, instRecord);
+  document.getElementById('dueOverlay').classList.remove('open');
+  dueCtx = null;
+  renderPage();
+  openInstallmentReceipt(instRecord);
+});
+
+function openInstallmentReceipt(rec){
+  const custRecord = rec.customerId ? db.customers[rec.customerId] : null;
+  document.getElementById('instReceiptTitle').textContent = t('installment_receipt_title') + (rec.receiptNo ? ' #'+rec.receiptNo : '');
+  document.getElementById('instReceiptCloseBtn').textContent = t('close');
+  document.getElementById('instReceiptPrintBtn').textContent = t('print_report');
+  document.getElementById('instReceiptBody').innerHTML = `
+    <table class="data">
+      <tbody>
+        ${rec.receiptNo ? `<tr><td>${t('col_receipt_no')}</td><td>#${rec.receiptNo}</td></tr>` : ''}
+        <tr><td>${t('col_customer')}</td><td>${escapeHtml(rec.customerName)}</td></tr>
+        ${custRecord && custRecord.phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml(custRecord.phone)}</td></tr>` : ''}
+        <tr><td>${t('inst_col_date')}</td><td>${formatDateDMY(rec.date)}</td></tr>
+        <tr><td>${t('inst_col_previous_due')}</td><td>৳${money(rec.previousDue)}</td></tr>
+        <tr><td>${t('inst_col_amount')}</td><td>৳${money(rec.amount)}</td></tr>
+        ${Number(rec.discount)>0 ? `<tr><td>${t('inst_col_discount')}</td><td>৳${money(rec.discount)}</td></tr>` : ''}
+        <tr><td>${t('inst_col_new_due')}</td><td>৳${money(rec.newDue)}</td></tr>
+        ${rec.note ? `<tr><td>${t('f_note')}</td><td>${escapeHtml(rec.note)}</td></tr>` : ''}
+      </tbody>
+    </table>
+  `;
+  document.getElementById('instReceiptOverlay').classList.add('open');
+}
+document.getElementById('instReceiptCloseBtn').addEventListener('click', () => {
+  document.getElementById('instReceiptOverlay').classList.remove('open');
+});
+document.getElementById('instReceiptPrintBtn').addEventListener('click', () => window.print());
+setupOverlayBackdropClose('instReceiptOverlay');
+
+function openInstallmentHistory(custId){
+  const cust = db.customers[custId];
+  if(!cust) return;
+  const list = db.installments.filter(x=>x.customerId===custId).sort((a,b)=>b.ts-a.ts);
+  const totalPaid = list.reduce((s,x)=>s+Number(x.amount)+Number(x.discount||0),0);
+  const plans = db.installmentPlans.filter(p=>p.customerId===custId).sort((a,b)=>b.ts-a.ts);
+  document.getElementById('instHistoryTitle').textContent = cust.name + ' — ' + t('installment_history_title');
+  document.getElementById('instHistoryCloseBtn').textContent = t('close');
+  document.getElementById('instHistoryPrintBtn').textContent = t('print_report');
+  document.getElementById('instHistoryBody').innerHTML = `
+    <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
+      ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
+    </div>
+    <div class="field-hint" style="margin-bottom:10px;">${t('inst_total_paid')}: ৳${money(totalPaid)} · ${t('col_due')}: ৳${money(cust.due)}</div>
+    ${plans.length>0 ? plans.map(p=>`
+      <div class="panel">
+        <div style="font-weight:700;margin-bottom:6px;">${escapeHtml(p.productName||'')} — ${t('inst_plan_summary')(p.count, p.perAmount)}</div>
+        ${renderInstallmentPlanHtml(p)}
+      </div>`).join('') : ''}
+    ${list.length===0 ? `<div class="empty"><div class="big">${t('inst_no_history')}</div></div>` : `
+    <table class="data">
+      <thead><tr><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
+      <tbody>${list.map(r=>`<tr><td>${formatDateDMY(r.date)}</td><td>৳${money(r.previousDue)}</td><td>৳${money(r.amount)}</td><td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td><td>৳${money(r.newDue)}</td><td>${escapeHtml(r.note||'—')}</td></tr>`).join('')}</tbody>
+    </table>`}
+  `;
+  document.getElementById('instHistoryOverlay').classList.add('open');
+}
+document.getElementById('instHistoryCloseBtn').addEventListener('click', () => {
+  document.getElementById('instHistoryOverlay').classList.remove('open');
+});
+document.getElementById('instHistoryPrintBtn').addEventListener('click', () => window.print());
+setupOverlayBackdropClose('instHistoryOverlay');
+
+function attachPageEvents(){ /* per-page listeners are wired inside each render function */ }
+
+document.getElementById('quickSaleBtn').addEventListener('click', () => openMultiSale());
+
+/* ---------- Auth Gate ---------- */
+function showLoginScreen(){
+  document.getElementById('loginScreen').classList.add('open');
+  document.getElementById('appRoot').style.display = 'none';
+  document.getElementById('logoutRow').style.display = 'none';
+}
+function showApp(){
+  document.getElementById('loginScreen').classList.remove('open');
+  document.getElementById('appRoot').style.display = '';
+  document.getElementById('logoutRow').style.display = useFirebase ? 'block' : 'none';
+}
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if(!email || !pass){ errEl.textContent = t('login_error'); return; }
+  try{
+    await firebase.auth().signInWithEmailAndPassword(email, pass);
+  }catch(e){
+    console.error('login failed', e);
+    errEl.textContent = t('login_error');
+  }
+});
+document.getElementById('loginPassword').addEventListener('keydown', (e) => {
+  if(e.key==='Enter') document.getElementById('loginBtn').click();
+});
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  if(useFirebase) firebase.auth().signOut();
+});
+document.getElementById('backupBtn').addEventListener('click', backupToDrive);
+document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
+
+async function clearAllData(){
+  const step1 = confirm(t('clear_all_confirm1'));
+  if(!step1) return;
+  const typed = prompt(t('clear_all_confirm2'));
+  if(typed !== t('clear_all_confirm_word')) { alert(t('clear_all_aborted')); return; }
+
+  const collections = ['customers','suppliers','products','purchases','sales','expenses','installments','installmentPlans','returns'];
+  for(const name of collections){
+    const items = db[name];
+    const ids = Array.isArray(items) ? items.map(x=>x.id) : Object.keys(items);
+    for(const id of ids){ await safeRemove(name, id); }
+  }
+  db.customers = {}; db.suppliers = {}; db.products = {};
+  db.purchases = []; db.sales = []; db.expenses = [];
+  db.installments = []; db.installmentPlans = []; db.returns = [];
+  try{ await storageSet(K.logo, null); }catch(e){}
+  logoData = null;
+
+  renderNav();
+  renderPage();
+  renderLogo();
+  showToast(t('clear_all_done'));
+}
+document.getElementById('restoreBtn').addEventListener('click', restoreFromDrive);
+
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+function safeShowAppOrLogin(){
+  if(useFirebase && !currentAuthUser){
+    showLoginScreen();
+  } else {
+    showApp();
+    loadAll();
+  }
+}
+
+window.addEventListener('error', (ev) => {
+  console.error('uncaught error', ev.error || ev.message);
+  const appRoot = document.getElementById('appRoot');
+  const loginScreen = document.getElementById('loginScreen');
+  const stillBlank = appRoot && appRoot.style.display === 'none' && loginScreen && !loginScreen.classList.contains('open');
+  if(stillBlank){
+    console.warn('Recovering from blank screen after uncaught error');
+    try{ safeShowAppOrLogin(); }catch(e){ /* nothing more we can do */ }
+  }
+});
+window.addEventListener('unhandledrejection', (ev) => {
+  console.error('unhandled promise rejection', ev.reason);
+});
+
+function bootstrapApp(){
+  try{
+    initStorage();
+    initGoogleDrive();
+    renderLangSwitch();
+    renderBrandTexts();
+    if(useFirebase && window.firebase && firebase.auth){
+      firebase.auth().onAuthStateChanged(user => {
+        currentAuthUser = user;
+        try{
+          if(user){ showApp(); loadAll(); }
+          else { showLoginScreen(); }
+        }catch(innerErr){
+          console.error('post-auth render failed', innerErr);
+          safeShowAppOrLogin();
+        }
+      }, (authErr) => {
+        console.error('auth state listener error', authErr);
+        currentAuthUser = null;
+        showLoginScreen();
+      });
+    } else {
+      // No Firebase configured — can't gate access without a backend, so just show the app.
+      showApp();
+      loadAll();
+    }
+  }catch(e){
+    console.error('bootstrap failed', e);
+    try{ safeShowAppOrLogin(); }catch(e2){ console.error('fallback also failed', e2); }
+  }
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', () => { bootstrapApp(); });
+} else {
+  bootstrapApp();
+}
+</script>
+</body>
+</html>
