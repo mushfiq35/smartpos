@@ -1869,9 +1869,7 @@
     </div>
 
     <div class="app-credit no-print">© <span id="creditYear">2026</span> <b>Piconet IT</b>. <span data-key="footerAllRightsReserved">All rights reserved.</span></div>
-  </div>
-
-  </div><!-- /#appWrapper -->
+  <!-- /#appWrapper -->
 
   <!-- FIREBASE (Cloud Data Storage) -->
 
@@ -7395,8 +7393,7 @@
           th, td { white-space:normal !important; word-break:break-word; font-size:12px !important; padding:5px 6px !important; }
           .card { box-shadow:none !important; }
         </style>
-      </head><body>${header}${el.outerHTML}
-</body></html>`);
+      </head><body>${header}${el.outerHTML}</body></html>`);
       doc.close();
 
       printFrame.onload = () => {
@@ -7405,7 +7402,6 @@
         setTimeout(() => document.body.removeChild(printFrame), 1000);
       };
     }
-
 
     function setAppHeight() {
       let vh = window.innerHeight;
@@ -7946,7 +7942,7 @@
     };
   </script>
 
-    <!-- FIREBASE (Cloud Data Storage) -->
+  <!-- FIREBASE (Cloud Data Storage) -->
   <script type="module">
     import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
