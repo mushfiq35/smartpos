@@ -283,7 +283,9 @@
       .stat-card .value { font-size: 17px; }
       .card h3 { font-size: 15px; }
       .btn-action { padding: 9px 12px; font-size: 12.5px; }
-      table { font-size: 12px; min-width: 460px; }
+      table { font-size: 12px; }
+      .table-responsive table { min-width: 460px; }
+      #accounts-tab table, #unit-config-tab table { min-width: unset !important; width: 100% !important; }
       th, td { padding: 8px 8px; }
     }
 
@@ -315,6 +317,120 @@
     .bank-chip { display: inline-flex; align-items: center; gap: 5px; background: #dbeafe; color: #1d4ed8; border-radius: 20px; padding: 3px 10px; font-size: 11.5px; font-weight: 700; }
     .profit-loss-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 600px) { .profit-loss-row { grid-template-columns: 1fr; } }
+
+    /* ── EXTRA RESPONSIVE FIXES ── */
+
+    /* Report sub-tab buttons — scroll horizontally on small screens */
+    #reportSubTabSwitch {
+      display: flex; gap: 6px; flex-wrap: nowrap;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px; scrollbar-width: none;
+    }
+    #reportSubTabSwitch::-webkit-scrollbar { display: none; }
+    #reportSubTabSwitch button { white-space: nowrap; flex-shrink: 0; }
+
+    /* Payment Ledger — form + table stack on mobile */
+    @media (max-width: 992px) {
+      /* Payment Ledger — form stacks above table */
+      #pr-payable-section .grid,
+      #pr-receivable-section .grid { grid-template-columns: 1fr !important; }
+
+      /* Accounts, Unit Config, Settings — single col */
+      #accounts-tab .grid,
+      #unit-config-tab .grid,
+      #settings-tab .grid { grid-template-columns: 1fr !important; }
+
+      /* Accounts + Unit Config table — no horizontal scroll, fit to width */
+      #accounts-tab .table-responsive,
+      #unit-config-tab .table-responsive {
+        overflow-x: visible !important;
+      }
+      #accounts-tab table,
+      #unit-config-tab table {
+        min-width: unset !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+        font-size: 12px !important;
+      }
+      #accounts-tab th, #accounts-tab td,
+      #unit-config-tab th, #unit-config-tab td {
+        padding: 6px 6px !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      /* Payment Ledger form — full width, no overflow */
+      #payable-receivable-tab { overflow-x: hidden; }
+      #pr-payable-section, #pr-receivable-section { overflow-x: hidden; }
+
+      /* PR filter dropdowns */
+      #pr-payable-section [style*="display:grid"],
+      #pr-receivable-section [style*="display:grid"] {
+        grid-template-columns: 1fr 1fr !important;
+      }
+
+      /* PR tabs */
+      .pr-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+      .pr-tab-btn { padding: 8px 14px; font-size: 13px; flex-shrink: 0; }
+
+      /* Summary banner — 2 cols */
+      .summary-banner { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+      .summary-tile { padding: 10px 12px; }
+      .summary-tile .tile-val { font-size: 16px; }
+
+      /* Settings head management */
+      #settings-tab [style*="grid-template-columns:1fr 1fr"],
+      #settings-tab [style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Reports filter grid */
+      .filter-grid { grid-template-columns: 1fr 1fr !important; }
+
+      /* Final Ledger summary strip */
+      .ml-summary-strip { grid-template-columns: 1fr 1fr 1fr !important; }
+      .ml-strip-card { padding: 8px 10px; }
+      .ml-strip-card .sv { font-size: 14px; }
+      .ml-net-bar { flex-direction: column; gap: 8px; text-align: center; }
+      .ml-net-bar .value { font-size: 20px; }
+
+      /* Bank account item */
+      .bank-account-item { flex-wrap: wrap; gap: 8px; }
+
+      /* Input-plus-group */
+      .input-plus-group { display: flex; gap: 6px; }
+      .input-plus-group select { flex: 1; margin-bottom: 0; }
+      .btn-plus { flex-shrink: 0; }
+
+      /* PR payable/receivable table — fit to width */
+      #payableTable, #receivableTable {
+        min-width: unset !important;
+        font-size: 12px !important;
+        table-layout: fixed !important;
+      }
+      #payableTable th, #payableTable td,
+      #receivableTable th, #receivableTable td {
+        padding: 6px 5px !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .summary-banner { grid-template-columns: 1fr 1fr !important; }
+      .ml-summary-strip { grid-template-columns: 1fr 1fr !important; }
+      .filter-grid { grid-template-columns: 1fr !important; }
+      #pr-payable-section [style*="display:grid"],
+      #pr-receivable-section [style*="display:grid"] {
+        grid-template-columns: 1fr !important;
+      }
+      .pl-box { padding: 12px; }
+      .pl-row { font-size: 12px; }
+      .bank-account-item { padding: 8px 10px; }
+      .bank-account-item .bank-name { font-size: 12.5px; }
+    }
     .pl-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
     .pl-box h4 { font-size: 13px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
     .pl-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
@@ -1169,7 +1285,8 @@
       <div id="reports-tab" class="tab-content">
         <div class="card" style="margin-bottom:15px;">
           <h3 style="border:none; padding:0; margin:0 0 12px;" data-key="titleReports">📊 রিপোর্টস</h3>
-          <div class="segment" id="reportSubTabSwitch" style="display:inline-flex;">
+          <div style="overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:16px; padding-bottom:2px;">
+          <div class="segment" id="reportSubTabSwitch" style="display:inline-flex; min-width:max-content;">
             <button type="button" class="lang-btn active" data-report-tab="overview" onclick="openReportSubTab('overview')" data-key="reportTabOverview">ওভারভিউ</button>
             <button type="button" class="lang-btn" data-report-tab="sales" onclick="openReportSubTab('sales')" data-key="reportTabSales">বিক্রয়</button>
             <button type="button" class="lang-btn" data-report-tab="customers" onclick="openReportSubTab('customers')" data-key="reportTabCustomers">কাস্টমার</button>
@@ -1177,7 +1294,7 @@
             <button type="button" class="lang-btn" data-report-tab="payment-ledger" onclick="openReportSubTab('payment-ledger')" data-key="reportTabPaymentLedger">Payment Ledger</button>
             <button type="button" class="lang-btn" data-report-tab="master-ledger" onclick="openReportSubTab('master-ledger')" data-key="reportTabMasterLedger">📒 Final Ledger</button>
           </div>
-        </div>
+          </div><!-- /scroll-wrapper -->
 
         <!-- OVERVIEW SUB-TAB -->
         <div id="report-overview" class="report-subtab" style="display:block;">
@@ -1611,14 +1728,21 @@
           <label data-key="lblUserEmail">ইমেইল:</label>
           <input type="email" id="newUserEmail" placeholder="staff@example.com">
           <label data-key="lblUserPassword">পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর):</label>
-          <input type="password" id="newUserPassword" placeholder="••••••••">
+          <div style="position:relative; margin-bottom:14px;">
+            <input type="password" id="newUserPassword" placeholder="••••••••" style="margin-bottom:0; padding-right:44px;">
+            <button type="button" onclick="togglePasswordVisibility('newUserPassword', this)"
+              style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                background:none; border:none; cursor:pointer; color:var(--muted); padding:4px; width:auto; height:auto;">
+              👁️
+            </button>
+          </div>
           <label data-key="lblUserRole">রোল সিলেক্ট করুন:</label>
           <select id="newUserRole">
             <option value="staff" data-key="optRoleStaff">স্টাফ (Staff)</option>
             <option value="admin" data-key="optRoleAdmin">সুপার ইউজার (Admin)</option>
           </select>
           <button onclick="createNewUser()" class="btn-success" id="btnCreateUser" data-key="btnCreateUser">ব্যবহারকারী তৈরি করুন</button>
-          <div id="createUserMsg" style="font-size:12.5px; margin-top:8px;"></div>
+          <div id="createUserMsg" style="font-size:12.5px; margin-top:8px; padding:8px 12px; border-radius:6px; display:none;"></div>
         </div>
 
         <div class="card">
@@ -7602,47 +7726,67 @@
     });
 
     // ================= USER MANAGEMENT (Super User only) =================
+    function togglePasswordVisibility(inputId, btn) {
+      let inp = document.getElementById(inputId);
+      if (!inp) return;
+      if (inp.type === 'password') { inp.type = 'text'; btn.innerText = '🙈'; }
+      else { inp.type = 'password'; btn.innerText = '👁️'; }
+    }
+
     async function createNewUser() {
-      let name = document.getElementById('newUserName').value.trim();
-      let email = document.getElementById('newUserEmail').value.trim();
+      let name     = document.getElementById('newUserName').value.trim();
+      let email    = document.getElementById('newUserEmail').value.trim();
       let password = document.getElementById('newUserPassword').value;
-      let role = document.getElementById('newUserRole').value;
-      let msgEl = document.getElementById('createUserMsg');
+      let role     = document.getElementById('newUserRole').value;
+      let msgEl    = document.getElementById('createUserMsg');
 
-      msgEl.style.color = '';
-      msgEl.innerText = '';
-
-      if (!name || !email || !password) {
-        msgEl.style.color = '#dc2626';
-        msgEl.innerText = t('alertFillAllFields');
-        return;
-      }
-      if (password.length < 6) {
-        msgEl.style.color = '#dc2626';
-        msgEl.innerText = t('alertPasswordTooShort');
-        return;
+      function showMsg(msg, isError) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = isError ? '#fff0f0' : '#f0fdf4';
+        msgEl.style.color      = isError ? '#dc2626' : '#16a34a';
+        msgEl.style.border     = isError ? '1px solid #fecaca' : '1px solid #bbf7d0';
+        msgEl.innerText = msg;
       }
 
-      document.getElementById('btnCreateUser').disabled = true;
+      showMsg('', false); msgEl.style.display = 'none';
+
+      if (!name || !email || !password) return showMsg(t('alertFillAllFields'), true);
+      if (password.length < 6) return showMsg(t('alertPasswordTooShort'), true);
+      if (!email.includes('@')) return showMsg('সঠিক ইমেইল ঠিকানা দিন।', true);
+
+      let btn = document.getElementById('btnCreateUser');
+      btn.disabled = true;
+      btn.innerText = '⏳ তৈরি হচ্ছে...';
+
       try {
+        await waitForFirebase(5000);
+        if (!window.createSecondaryUser) throw new Error('Firebase not ready');
+
         let uid = await window.createSecondaryUser(email, password);
+
         let docRef = window.firestoreDoc(window.firestoreDB, 'users', uid);
         await window.firestoreSetDoc(docRef, {
           name, email, role, createdAt: new Date().toISOString()
         });
 
-        msgEl.style.color = '#16a34a';
-        msgEl.innerText = t('alertUserCreated');
+        showMsg(`✅ "${name}" সফলভাবে তৈরি হয়েছে। Email: ${email}`, false);
         document.getElementById('newUserName').value = '';
         document.getElementById('newUserEmail').value = '';
         document.getElementById('newUserPassword').value = '';
         renderUsersTable();
+
       } catch (err) {
         console.error('Create user error:', err);
-        msgEl.style.color = '#dc2626';
-        msgEl.innerText = (err.code === 'auth/email-already-in-use') ? t('alertEmailInUse') : t('alertUserCreateFailed');
+        let errMsg = t('alertUserCreateFailed');
+        if (err.code === 'auth/email-already-in-use') errMsg = '❌ এই ইমেইল আগে থেকেই ব্যবহৃত।';
+        else if (err.code === 'auth/invalid-email')   errMsg = '❌ ইমেইল ঠিকানাটি সঠিক নয়।';
+        else if (err.code === 'auth/weak-password')   errMsg = '❌ পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে।';
+        else if (err.code === 'auth/network-request-failed') errMsg = '❌ ইন্টারনেট সংযোগ নেই। আবার চেষ্টা করুন।';
+        else if (err.message) errMsg = '❌ ' + err.message;
+        showMsg(errMsg, true);
       } finally {
-        document.getElementById('btnCreateUser').disabled = false;
+        btn.disabled = false;
+        btn.innerText = t('btnCreateUser') || 'ব্যবহারকারী তৈরি করুন';
       }
     }
 
