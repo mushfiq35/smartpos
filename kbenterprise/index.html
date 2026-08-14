@@ -69,7 +69,8 @@
     .shop-info h2 { font-size: 17px; color: var(--ink); font-weight: 800; line-height: 1.25; }
     .shop-info p { font-size: 12.5px; color: var(--muted); }
 
-    .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+    .header-right > * { flex-shrink: 0; }
 
     .icon-btn { position: relative; background: var(--paper); border: 1px solid var(--border); border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0; color: var(--ink); overflow: visible; }
     .icon-btn svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.8; }
@@ -255,11 +256,14 @@
       .menu-toggle { display: block; }
       .header-left { gap: 8px; }
       .shop-logo { width: 36px; height: 36px; font-size: 17px; }
+      #displayShopTagline { display: none; }
+      .header-right { flex-wrap: nowrap; gap: 6px; }
+      .header-right .segment { display: flex; }
       .shop-info h2 { font-size: 15px; max-width: 46vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .shop-info p { display: none; }
-      .header-right { width: 100%; justify-content: space-between; margin-top: 4px; }
+      .header-right { justify-content: flex-end; gap: 6px; }
       .segment button { padding: 7px 10px; font-size: 12px; }
-      .dashboard-cards { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+      .dashboard-cards { grid-template-columns: 1fr 1fr; gap: 10px; }
       .stat-card { padding: 14px; }
       .stat-card .value { font-size: 19px; }
       .card { padding: 14px; }
@@ -275,9 +279,12 @@
     @media (max-width: 480px) {
       .header { padding: 8px 10px; }
       .shop-info h2 { max-width: 38vw; font-size: 13.5px; }
-      .icon-btn { width: 36px; height: 36px; }
+      .icon-btn { width: 50px; height: 36px; }
       .icon-btn svg { width: 17px; height: 17px; }
-      .segment button { padding: 6px 8px; font-size: 11px; }
+      .segment button { padding: 5px 7px; font-size: 11px; }
+      #displayShopName { font-size: 12px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      #headerUserName { display: none; }
+      #headerUserName { max-width: 50px; font-size: 11px; }
       .sidebar-menu button { padding: 10px 12px; font-size: 13.5px; }
       .content { padding: 10px; }
       .dashboard-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -297,7 +304,8 @@
     }
 
     @media (hover: none) and (pointer: coarse) {
-      button, .icon-btn, .btn-icon-action, .segment button, .sidebar-menu button { min-height: 38px; }
+      .sidebar-menu button { min-height: 38px; }
+      .sidebar-menu button { min-height: 38px; }
     }
 
     /* Role-based visibility — used by setUserRole() */
@@ -319,7 +327,7 @@
     .summary-tile.profit-tile { border-top: 3px solid var(--gold); }
     .summary-tile.net-tile { border-top: 3px solid #6366f1; }
     .head-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; background: var(--amber-soft); color: var(--amber); }
-    .bank-chip { display: inline-flex; align-items: center; gap: 5px; background: #dbeafe; color: #1d4ed8; border-radius: 20px; padding: 3px 10px; font-size: 11.5px; font-weight: 700; }
+    .bank-chip { display: inline-flex; align-items: center; gap: 4px; background: #dbeafe; color: #1d4ed8; border-radius: 8px; padding: 2px 6px; font-size: 10.5px; font-weight: 700; max-width: 100%; word-break: break-word; white-space: normal; }
     .profit-loss-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 600px) { .profit-loss-row { grid-template-columns: 1fr; } }
 
@@ -419,15 +427,29 @@
       /* PR payable/receivable table — fit to width */
       #payableTable, #receivableTable {
         min-width: unset !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
         table-layout: fixed !important;
+        width: 100% !important;
       }
       #payableTable th, #payableTable td,
       #receivableTable th, #receivableTable td {
-        padding: 6px 5px !important;
+        padding: 5px 4px !important;
         word-break: break-word !important;
         white-space: normal !important;
       }
+      /* Column widths for mobile */
+      #payableTable th:nth-child(1), #payableTable td:nth-child(1),
+      #receivableTable th:nth-child(1), #receivableTable td:nth-child(1) { width: 20%; } /* Date */
+      #payableTable th:nth-child(2), #payableTable td:nth-child(2),
+      #receivableTable th:nth-child(2), #receivableTable td:nth-child(2) { width: 18%; } /* Head */
+      #payableTable th:nth-child(3), #payableTable td:nth-child(3),
+      #receivableTable th:nth-child(3), #receivableTable td:nth-child(3) { width: 22%; } /* Method */
+      #payableTable th:nth-child(4), #payableTable td:nth-child(4),
+      #receivableTable th:nth-child(4), #receivableTable td:nth-child(4) { display: none; } /* Note - hide */
+      #payableTable th:nth-child(5), #payableTable td:nth-child(5),
+      #receivableTable th:nth-child(5), #receivableTable td:nth-child(5) { width: 22%; white-space: nowrap; text-align: right; } /* Amount */
+      #payableTable th:nth-child(6), #payableTable td:nth-child(6),
+      #receivableTable th:nth-child(6), #receivableTable td:nth-child(6) { width: 18%; } /* Action */
     }
 
     @media (max-width: 480px) {
@@ -556,7 +578,7 @@
     <div class="header">
       <div class="header-left">
         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <div class="shop-logo" id="displayShopLogo">B</div>
+        <div class="shop-logo" id="displayShopLogo" style="overflow:hidden; padding:2px;"><img id="displayShopLogoImg" style="width:100%;height:100%;object-fit:contain;border-radius:6px;display:none;"><span id="displayShopLogoText" style="font-size:20px;">B</span></div>
         <div class="shop-info">
           <h2 id="displayShopName">Business Trading POS</h2>
           <p id="displayShopTagline">পাইকারি সার, সিমেন্ট ও খাদ্যশস্য বিক্রেতা</p>
@@ -564,7 +586,7 @@
       </div>
 
       <div class="header-right">
-        <button type="button" class="icon-btn" id="notifBellBtn" title="নোটিফিকেশন" onclick="openTab('order-notifications-tab')" style="align-self:center;">
+        <button type="button" class="icon-btn" id="notifBellBtn" title="নোটিফিকেশন" onclick="openTab('order-notifications-tab')">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-4-5.66V4a2 2 0 1 0-4 0v1.34A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="notification-badge" id="headerBadge">0</span>
         </button>
@@ -574,12 +596,12 @@
           <button type="button" class="lang-btn active" data-lang="EN" onclick="setLanguage('EN')">EN</button>
         </div>
 
-        <div style="display:flex; align-items:center; gap:6px; padding:4px 10px; background:var(--paper); border:1px solid var(--border); border-radius:20px;">
+        <div style="display:flex; align-items:center; gap:4px; padding:3px 8px; background:var(--paper); border:1px solid var(--border); border-radius:20px; white-space:nowrap; flex-shrink:0;">
           <span id="headerUserName" style="font-size:12.5px; font-weight:700; color:var(--ink); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">-</span>
-          <span id="headerUserRolePill" class="role-pill-badge role-admin">-</span>
+          <span id="headerUserRolePill" class="role-pill-badge role-admin" style="white-space:nowrap;">-</span>
         </div>
         <button type="button" onclick="doLogout()" title="Logout"
-          style="display:flex; align-items:center; gap:6px; padding:6px 12px; background:#fff0f0; border:1.5px solid #fca5a5; border-radius:8px; cursor:pointer; color:#dc2626; font-size:12px; font-weight:700; width:auto; height:40px; transition:all 0.2s; flex-shrink:0;"
+          style="display:flex; align-items:center; justify-content:center; gap:6px; padding:0 12px; background:#fff0f0; border:1.5px solid #fca5a5; border-radius:8px; cursor:pointer; color:#dc2626; font-size:12px; font-weight:700; width:auto; height:40px; transition:all 0.2s; flex-shrink:0;"
           onmouseover="this.style.background='#fca5a5';this.style.color='#fff'"
           onmouseout="this.style.background='#fff0f0';this.style.color='#dc2626'">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -1176,8 +1198,8 @@
                     <tbody></tbody>
                     <tfoot>
                       <tr>
-                        <td colspan="4" style="text-align:right; font-weight:700;" data-key="prTotalLabel">মোট:</td>
-                        <td id="payableTableTotal" style="font-weight:800; color:var(--red); font-size:15px;"><span class="currency-symbol">৳</span>0.00</td>
+                        <td colspan="3" style="text-align:right; font-weight:700;" data-key="prTotalLabel">মোট:</td>
+                        <td id="payableTableTotal" style="font-weight:800; color:var(--red); font-size:13px; white-space:nowrap; text-align:right;"><span class="currency-symbol">৳</span>0.00</td>
                         <td></td>
                       </tr>
                     </tfoot>
@@ -1278,8 +1300,8 @@
                     <tbody></tbody>
                     <tfoot>
                       <tr>
-                        <td colspan="4" style="text-align:right; font-weight:700;" data-key="prTotalLabel">মোট:</td>
-                        <td id="receivableTableTotal" style="font-weight:800; color:var(--green); font-size:15px;"><span class="currency-symbol">৳</span>0.00</td>
+                        <td colspan="3" style="text-align:right; font-weight:700;" data-key="prTotalLabel">মোট:</td>
+                        <td id="receivableTableTotal" style="font-weight:800; color:var(--green); font-size:13px; white-space:nowrap; text-align:right;"><span class="currency-symbol">৳</span>0.00</td>
                         <td></td>
                       </tr>
                     </tfoot>
@@ -3925,7 +3947,7 @@
         ? filteredP.map(e => `<tr>
             <td>${e.date || '—'}</td>
             <td><span class="head-tag">${e.head}</span></td>
-            <td>${e.method === 'Bank' ? `<span class="bank-chip">🏦 ${e.bankName||'Bank'}</span>` : `<b>${e.method==='Mobile'?'📱 Mobile':'💵 Cash'}</b>`}</td>
+            <td>${e.method === 'Bank' ? `<span class="bank-chip" title="${e.bankName||'Bank'}">🏦 ${(e.bankName||'Bank').split(' ').slice(0,2).join(' ')}</span>` : `<b>${e.method==='Mobile'?'📱 Mobile':'💵 Cash'}</b>`}</td>
             <td>${e.note || '—'}</td>
             <td>${e.status === 'Approved' ? `<span class="badge badge-ok">Approved</span>` : e.status === 'Declined' ? `<span class="badge badge-alert">Declined</span>` : `<span class="badge badge-pending">Pending</span>`}</td>
             <td style="font-weight:700; color:var(--red);"><span class="currency-symbol">৳</span>${e.amount.toFixed(2)}</td>
@@ -3940,7 +3962,7 @@
         ? filteredR.map(e => `<tr>
             <td>${e.date || '—'}</td>
             <td><span class="head-tag" style="background:var(--green-soft);color:var(--green);">${e.head}</span></td>
-            <td>${e.method === 'Bank' ? `<span class="bank-chip">🏦 ${e.bankName||'Bank'}</span>` : `<b>${e.method==='Mobile'?'📱 Mobile':'💵 Cash'}</b>`}</td>
+            <td>${e.method === 'Bank' ? `<span class="bank-chip" title="${e.bankName||'Bank'}">🏦 ${(e.bankName||'Bank').split(' ').slice(0,2).join(' ')}</span>` : `<b>${e.method==='Mobile'?'📱 Mobile':'💵 Cash'}</b>`}</td>
             <td>${e.note || '—'}</td>
             <td>${e.status === 'Approved' ? `<span class="badge badge-ok">Approved</span>` : e.status === 'Declined' ? `<span class="badge badge-alert">Declined</span>` : `<span class="badge badge-pending">Pending</span>`}</td>
             <td style="font-weight:700; color:var(--green);"><span class="currency-symbol">৳</span>${e.amount.toFixed(2)}</td>
@@ -4228,7 +4250,18 @@
     function renderShopInfo() {
       document.getElementById('displayShopName').innerText = shopConfig.name;
       document.getElementById('displayShopTagline').innerText = shopConfig.tagline;
-      document.getElementById('displayShopLogo').innerText = shopConfig.logo || 'B';
+
+      // Header logo — show image if available, hide "B" text
+      let hLogoBox = document.getElementById('displayShopLogo');
+      let hLogoImg = document.getElementById('displayShopLogoImg');
+      let hLogoTxt = document.getElementById('displayShopLogoText');
+      if (shopConfig.logoImage) {
+        if (hLogoImg) { hLogoImg.src = shopConfig.logoImage; hLogoImg.style.display = 'block'; }
+        if (hLogoTxt) hLogoTxt.style.display = 'none';
+      } else {
+        if (hLogoImg) hLogoImg.style.display = 'none';
+        if (hLogoTxt) { hLogoTxt.style.display = ''; hLogoTxt.innerText = shopConfig.logo || 'B'; }
+      }
 
       let currentYear = new Date().getFullYear();
       document.getElementById('creditYear').innerText = currentYear;
