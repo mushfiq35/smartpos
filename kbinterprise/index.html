@@ -297,6 +297,9 @@
       button, .icon-btn, .btn-icon-action, .segment button, .sidebar-menu button { min-height: 38px; }
     }
 
+    /* Role-based visibility — used by setUserRole() */
+    .role-hidden { display: none !important; }
+
     .pr-tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 2px solid var(--border); padding-bottom: 0; }
     .pr-tab-btn { background: transparent; color: var(--muted); border: none; border-bottom: 3px solid transparent; border-radius: 0; padding: 10px 20px; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: -2px; transition: all 0.2s; width: auto; }
     .pr-tab-btn:hover { background: var(--paper); color: var(--ink); }
@@ -339,20 +342,31 @@
       #unit-config-tab .grid,
       #settings-tab .grid { grid-template-columns: 1fr !important; }
 
-      /* Accounts + Unit Config table — no horizontal scroll, fit to width */
+      /* Users tab table */
+      #users-tab .table-responsive { overflow-x: visible !important; }
+      #users-tab table { min-width: unset !important; width: 100% !important; table-layout: fixed !important; font-size: 12px !important; }
+      #users-tab th, #users-tab td { padding: 6px 6px !important; word-break: break-word !important; white-space: normal !important; }
+
+      /* Accounts + Unit Config + Users + Settings table — no horizontal scroll */
       #accounts-tab .table-responsive,
-      #unit-config-tab .table-responsive {
+      #unit-config-tab .table-responsive,
+      #users-tab .table-responsive,
+      #settings-tab .table-responsive {
         overflow-x: visible !important;
       }
       #accounts-tab table,
-      #unit-config-tab table {
+      #unit-config-tab table,
+      #users-tab table,
+      #settings-tab table {
         min-width: unset !important;
         width: 100% !important;
         table-layout: fixed !important;
         font-size: 12px !important;
       }
       #accounts-tab th, #accounts-tab td,
-      #unit-config-tab th, #unit-config-tab td {
+      #unit-config-tab th, #unit-config-tab td,
+      #users-tab th, #users-tab td,
+      #settings-tab th, #settings-tab td {
         padding: 6px 6px !important;
         word-break: break-word !important;
         white-space: normal !important;
@@ -379,11 +393,8 @@
       .summary-tile { padding: 10px 12px; }
       .summary-tile .tile-val { font-size: 16px; }
 
-      /* Settings head management */
-      #settings-tab [style*="grid-template-columns:1fr 1fr"],
-      #settings-tab [style*="grid-template-columns: 1fr 1fr"] {
-        grid-template-columns: 1fr !important;
-      }
+      /* Head management grid — mobile single col */
+      #headMgmtGrid { grid-template-columns: 1fr !important; }
 
       /* Reports filter grid */
       .filter-grid { grid-template-columns: 1fr 1fr !important; }
@@ -430,14 +441,6 @@
       .bank-account-item { padding: 8px 10px; }
       .bank-account-item .bank-name { font-size: 12.5px; }
     }
-    .pl-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-    .pl-box h4 { font-size: 13px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
-    .pl-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
-    .pl-row:last-child { border: none; font-weight: 800; font-size: 14px; padding-top: 10px; }
-    .bank-account-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--paper); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
-    .bank-account-item .bank-name { font-weight: 700; font-size: 13.5px; }
-    .bank-account-item .bank-num { font-size: 12px; color: var(--muted); }
-
     .ml-income  { background:#f0fdf4; border-left: 4px solid #16a34a; }
     .ml-expense { background:#fff5f5; border-left: 4px solid #dc2626; }
     .ml-neutral { background:#f8f6f1; border-left: 4px solid #94a3b8; }
@@ -790,7 +793,7 @@
       <div id="unit-config-tab" class="tab-content">
         <div class="grid">
           
-          <div class="card admin-only">
+          <div class="card">
             <h3 data-key="titleUnitConfig">⚙️ পৃথক ইউনিট সেটআপ</h3>
             <label data-key="lblSelectProd">প্রোডাক্ট নির্বাচন করুন:</label>
             <select id="unitProductSelect" onchange="loadUnitConfigForProduct()">
@@ -949,7 +952,7 @@
             </div>
           </div>
 
-          <div class="card admin-only" id="accountsPrintArea">
+          <div class="card" id="accountsPrintArea">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
               <h3 data-key="titleAccReport">📊 অ্যাকাউন্টস হিস্ট্রি ও ফিল্টার রিপোর্ট</h3>
               <button onclick="printDiv('accountsPrintArea')" class="btn-action btn-warning no-print" data-key="btnPrintReport">🖨️ প্রিন্ট</button>
@@ -1720,7 +1723,7 @@
 
       <!-- USER MANAGEMENT TAB (Super User only) -->
       <div id="users-tab" class="tab-content">
-        <div class="card admin-only" style="margin-bottom:15px;">
+        <div class="card" style="margin-bottom:15px;">
           <h3 data-key="titleCreateUser">➕ নতুন ব্যবহারকারী তৈরি করুন</h3>
           <label data-key="lblUserName">নাম:</label>
           <input type="text" id="newUserName" placeholder="করিম উদ্দিন">
@@ -1766,7 +1769,7 @@
       <div id="settings-tab" class="tab-content">
         <div class="grid">
           
-          <div class="card admin-only">
+          <div class="card">
             <h3 data-key="titleShopSettings">🏪 দোকানের তথ্য পরিবর্তন করুন</h3>
             <label data-key="lblShopName">দোকানের নাম:</label>
             <input type="text" id="settingShopName" placeholder="Business Trading POS">
@@ -1793,7 +1796,7 @@
           </div>
 
 
-          <div class="card admin-only">
+          <div class="card">
             <h3 data-key="titleBackup">💾 ডাটা ব্যাকআপ ও রিস্টোর</h3>
             <p style="font-size: 13px; color: #475569; margin-bottom: 15px;" data-key="backupDownloadNote">ব্যাকআপ ডাউনলোড করে রাখুন।</p>
             
@@ -1848,7 +1851,7 @@
               <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span data-key="headMgmtTitle">Head ম্যানেজমেন্ট (Payable ও Receivable)</span>
             </h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+<div id="headMgmtGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
               <div>
                 <label style="color:var(--red); margin-bottom:8px;" data-key="headPayableLabel">💸 Payable Heads:</label>
                 <div style="display:flex; gap:6px; margin-bottom:10px;">
@@ -4085,19 +4088,12 @@
     function setUserRole(role) {
       currentUserRole = role;
 
+      // Use class toggle — more reliable than inline style across browsers/devices
       document.querySelectorAll('.admin-only').forEach(el => {
-        if (role === 'staff') {
-          el.style.display = 'none';
-        } else {
-          el.style.removeProperty('display');
-        }
+        el.classList.toggle('role-hidden', role === 'staff');
       });
       document.querySelectorAll('.staff-only').forEach(el => {
-        if (role === 'staff') {
-          el.style.removeProperty('display');
-        } else {
-          el.style.display = 'none';
-        }
+        el.classList.toggle('role-hidden', role !== 'staff');
       });
 
       let pill = document.getElementById('footerRolePill');
