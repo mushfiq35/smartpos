@@ -31,8 +31,8 @@
       --shadow: 0 1px 2px rgba(20,20,10,0.05), 0 4px 14px rgba(20,20,10,0.05);
     }
     * { box-sizing: border-box; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-serif; margin: 0; padding: 0; }
-    body { background: var(--paper); color: var(--ink); display: flex; height: 100vh; overflow: hidden; font-size: 15px; }
-    #appWrapper { display: flex; width: 100%; height: 100%; }
+    body { background: var(--paper); color: var(--ink); display: flex; overflow-x: hidden; font-size: 15px; }
+    #appWrapper { display: flex; width: 100%; min-height: 100vh; }
     #appWrapper.auth-hidden { display: none; }
     ::selection { background: var(--gold-soft); }
     :focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
@@ -247,9 +247,9 @@
       #appWrapper { display: block; width: 100%; min-height: 100vh; }
       .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: min(280px, 82vw); transform: translateX(-100%); z-index: 100; }
       .sidebar.active { transform: translateX(0); }
-      .main-wrapper { display: block; width: 100%; min-height: 100vh; }
-      .header { position: sticky; top: 0; z-index: 50; padding: 10px 12px; }
-      .content { display: block; overflow: visible; height: auto; padding: 12px; }
+      .main-wrapper { display: block; overflow-x: visible; overflow-y: visible; height: auto; width: 100%; }
+      .header { padding: 10px 12px; }
+      .content { display: block; overflow-x: visible; overflow-y: visible; height: auto; flex-grow: 0; padding: 12px; }
       .app-footer { justify-content: center; text-align: center; padding: 10px 12px; }
       /* ─── UI adjustments ─── */
       .menu-toggle { display: block; }
@@ -342,8 +342,7 @@
 
       /* Accounts, Unit Config, Settings — single col */
       #accounts-tab .grid,
-      #unit-config-tab .grid,
-      #settings-tab .grid { grid-template-columns: 1fr !important; }
+      #unit-config-tab .grid { grid-template-columns: 1fr !important; }
 
       /* Users tab table */
       #users-tab .table-responsive { overflow-x: visible !important; }
@@ -1724,6 +1723,8 @@
           </div><!-- /mlPrintArea -->
         </div><!-- /report-master-ledger -->
 
+      </div><!-- /reports-tab -->
+
       <!-- USER MANAGEMENT TAB (Super User only) -->
       <div id="users-tab" class="tab-content">
         <div style="max-width:700px; margin:0 auto;">
@@ -1770,10 +1771,10 @@
 
       <!-- SETTINGS TAB -->
       <div id="settings-tab" class="tab-content">
-        <div style="max-width:900px; margin:0 auto;">
+        <div style="max-width:1400px; margin:0 auto;">
 
           <!-- Row 1: Shop Info + Backup -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:20px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-bottom:20px;">
 
             <div class="card" style="margin-bottom:0;">
               <h3 data-key="titleShopSettings">🏪 দোকানের তথ্য</h3>
@@ -1814,7 +1815,7 @@
           </div>
 
           <!-- Row 2: Bank Accounts + Head Management -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;">
 
             <div class="card" style="margin-bottom:0;">
               <h3><span data-key="bankMgmtTitle">ব্যাংক অ্যাকাউন্ট ম্যানেজমেন্ট</span></h3>
@@ -7455,6 +7456,23 @@
       }, 500);
     }
 
+
+    function setAppHeight() {
+      let vh = window.innerHeight;
+      document.body.style.height = vh + 'px';
+      let header = document.querySelector('.header');
+      let footer = document.querySelector('.app-footer');
+      let headerH = header ? header.offsetHeight : 0;
+      let footerH = footer ? footer.offsetHeight : 0;
+      let contentH = vh - headerH - footerH;
+      let contentEl = document.querySelector('.content');
+      if (contentEl) {
+        contentEl.style.height = contentH + 'px';
+        contentEl.style.overflowY = 'auto';
+      }
+    }
+    window.addEventListener('resize', setAppHeight);
+
     function filterAccounts() {
 
       let fromDate = document.getElementById('filterFromDate').value;
@@ -7933,6 +7951,7 @@
 
       // Set initial tab display
       openTab('dashboard-tab', null);
+      setAppHeight();
     }
 
     window.onload = async function() {
