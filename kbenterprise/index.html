@@ -7362,45 +7362,25 @@
     function printDiv(divId) {
       const el = document.getElementById(divId);
       if (!el) return;
-
       const needsHeader = !INVOICE_DIVS.has(divId);
       const header = needsHeader ? shopPrintHeader() : '';
-
-      // Get all CSS from style tags
       let styles = '';
       document.querySelectorAll('style').forEach(s => { styles += s.innerHTML; });
-
-      const printFrame = document.createElement('iframe');
-      printFrame.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:none;';
-      document.body.appendChild(printFrame);
-
-      const doc = printFrame.contentDocument || printFrame.contentWindow.document;
-      doc.open();
-      doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-        <style>
-          * { box-sizing:border-box; font-family:'Segoe UI','Noto Sans Bengali',Arial,sans-serif; margin:0; padding:0; }
-          body { padding:20px; color:#1c2430; font-size:13px; }
-          :root {
-            --navy:#111a27; --gold:#b9791f; --gold-soft:#fbe9d0; --paper:#f4f1ea;
-            --border:#e3ddd0; --border-cool:#dcd9d2; --ink:#1c2430; --muted:#6d7480;
-            --green:#187a4c; --green-soft:#d9f0e2; --red:#b23b3b; --red-soft:#f9dede;
-            --amber:#a8681a; --amber-soft:#fbe9cf; --radius:10px;
-          }
-          ${styles}
-          .no-print { display:none !important; }
-          .table-responsive { overflow:visible !important; width:100% !important; }
-          table { width:100% !important; table-layout:auto !important; border-collapse:collapse; }
-          th, td { white-space:normal !important; word-break:break-word; font-size:12px !important; padding:5px 6px !important; }
-          .card { box-shadow:none !important; }
-        </style>
-      </head><body>${header}${el.outerHTML}</body></html>`);
-      doc.close();
-
-      setTimeout(() => {
-        printFrame.contentWindow.focus();
-        printFrame.contentWindow.print();
-        setTimeout(() => { if (document.body.contains(printFrame)) document.body.removeChild(printFrame); }, 2000);
-      }, 800);
+      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+        *{box-sizing:border-box;font-family:'Segoe UI','Noto Sans Bengali',Arial,sans-serif;margin:0;padding:0}
+        body{padding:20px;color:#1c2430;font-size:13px}
+        :root{--navy:#111a27;--gold:#b9791f;--gold-soft:#fbe9d0;--paper:#f4f1ea;--border:#e3ddd0;--border-cool:#dcd9d2;--ink:#1c2430;--muted:#6d7480;--green:#187a4c;--green-soft:#d9f0e2;--red:#b23b3b;--red-soft:#f9dede;--amber:#a8681a;--amber-soft:#fbe9cf;--radius:10px}
+        ${styles}
+        .no-print{display:none!important}.table-responsive{overflow:visible!important;width:100%!important}
+        table{width:100%!important;border-collapse:collapse}th,td{white-space:normal!important;word-break:break-word;font-size:12px!important;padding:5px 6px!important}
+        .card{box-shadow:none!important}
+      </style></head><body>${header}${el.outerHTML}</body></html>`;
+      const w = window.open('', '_blank');
+      if (!w) { alert('Popup blocked! Please allow popups for this site.'); return; }
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+      setTimeout(() => { w.focus(); w.print(); }, 1000);
     }
 
     function setAppHeight() {
