@@ -1874,126 +1874,61 @@
   </div><!-- /#appWrapper -->
 
   <!-- FIREBASE (Cloud Data Storage) -->
-  <script>
-    // ── Firebase: load from CDN if online, fallback to localStorage offline ──
-    (function() {
-      const FIREBASE_CONFIG = {
-        apiKey: "AIzaSyARujswLaRSqYYxzxPAo47jZ3c2vMGRpqw",
-        authDomain: "kb-enterprise-8a6dd.firebaseapp.com",
-        projectId: "kb-enterprise-8a6dd",
-        storageBucket: "kb-enterprise-8a6dd.firebasestorage.app",
-        messagingSenderId: "279055179544",
-        appId: "1:279055179544:web:0b8cfeb33f96356fa3486d"
-      };
+  <!-- FIREBASE (Cloud Data Storage) -->
+  <script type="module">
+    import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+    import {
+      getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+      createUserWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
-      function initFirebase() {
-        try {
-          const app    = firebase.initializeApp(FIREBASE_CONFIG);
-          const db     = firebase.firestore();
-          const auth   = firebase.auth();
+    const firebaseConfig = {
+      apiKey: "AIzaSyARujswLaRSqYYxzxPAo47jZ3c2vMGRpqw",
+      authDomain: "kb-enterprise-8a6dd.firebaseapp.com",
+      projectId: "kb-enterprise-8a6dd",
+      storageBucket: "kb-enterprise-8a6dd.firebasestorage.app",
+      messagingSenderId: "279055179544",
+      appId: "1:279055179544:web:0b8cfeb33f96356fa3486d"
+    };
 
-          window.firestoreDB         = db;
-          window.firestoreDoc        = (d, col, id) => ({ _col: col, _id: id });
-          window.firestoreGetDoc     = async (ref) => { let s = await db.collection(ref._col).doc(ref._id).get(); return { exists: ()=>s.exists, data: ()=>s.data(), id: s.id }; };
-          window.firestoreSetDoc     = async (ref, data) => db.collection(ref._col).doc(ref._id).set(data);
-          window.firestoreDeleteDoc  = async (ref) => db.collection(ref._col).doc(ref._id).delete();
-          window.firestoreCollection = (d, col) => col;
-          window.firestoreGetDocs    = async (col) => { let s = await db.collection(col).get(); return { docs: s.docs.map(d=>({ id: d.id, data: ()=>d.data() })) }; };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-          window.authSignIn  = (e, p) => auth.signInWithEmailAndPassword(e, p);
-          window.authSignOut = () => auth.signOut();
+    window.firestoreDB = db;
+    window.firestoreDoc = doc;
+    window.firestoreGetDoc = getDoc;
+    window.firestoreSetDoc = setDoc;
+    window.firestoreDeleteDoc = deleteDoc;
+    window.firestoreCollection = collection;
+    window.firestoreGetDocs = getDocs;
 
-          window.createSecondaryUser = async (email, password) => {
-            let sec = firebase.initializeApp(FIREBASE_CONFIG, 'sec-' + Date.now());
-            let sa  = sec.auth();
-            try { let c = await sa.createUserWithEmailAndPassword(email, password); let uid = c.user.uid; await sa.signOut(); await sec.delete(); return uid; }
-            catch(err) { try { await sec.delete(); } catch(e){} throw err; }
-          };
+    window.authSignIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
+    window.authSignOut = () => signOut(auth);
 
-          auth.onAuthStateChanged((user) => {
-            window.currentAuthUser = user;
-            window.dispatchEvent(new Event('authStateChanged'));
-          });
+    onAuthStateChanged(auth, (user) => {
+      window.currentAuthUser = user;
+      window.dispatchEvent(new Event('authStateChanged'));
+    });
 
-          console.log('✅ Firebase online mode');
-        } catch(e) {
-          console.warn('Firebase init failed, offline mode:', e);
-          setupOfflineMode();
-        }
+    window.createSecondaryUser = async (email, password) => {
+      let secondaryApp = initializeApp(firebaseConfig, 'secondary-' + Date.now());
+      let secondaryAuth = getAuth(secondaryApp);
+      try {
+        let cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        let uid = cred.user.uid;
+        await signOut(secondaryAuth);
+        await deleteApp(secondaryApp);
+        return uid;
+      } catch (err) {
+        try { await deleteApp(secondaryApp); } catch (e) {}
+        throw err;
       }
+    };
 
-      function setupOfflineMode() {
-        // Offline: auto-login with stored credentials
-        window.firestoreDB = null;
-        window.firestoreDoc = () => ({});
-        window.firestoreGetDoc = async () => ({ exists: ()=>false, data: ()=>null });
-        window.firestoreSetDoc = async () => {};
-        window.firestoreDeleteDoc = async () => {};
-        window.firestoreCollection = () => null;
-        window.firestoreGetDocs = async () => ({ docs: [] });
-        window.authSignIn = async (email, pw) => {
-          // Set default admin if none stored
-          if (!localStorage.getItem('pos_offline_user')) {
-            localStorage.setItem('pos_offline_user', JSON.stringify({
-              uid: 'offline_admin', email: 'admin@kbtrading.com', pw: btoa('admin123'), role: 'admin', name: 'Admin'
-            }));
-          }
-          let stored = JSON.parse(localStorage.getItem('pos_offline_user') || 'null');
-          if (stored && stored.email === email && stored.pw === btoa(pw)) {
-            window.currentAuthUser = { uid: stored.uid, email: stored.email };
-            localStorage.setItem('pos_offline_session', JSON.stringify(window.currentAuthUser));
-            window.dispatchEvent(new Event('authStateChanged'));
-            return { user: window.currentAuthUser };
-          }
-          throw new Error('Invalid email or password (offline mode)');
-        };
-        window.authSignOut = async () => {
-          window.currentAuthUser = null;
-          localStorage.removeItem('pos_offline_session');
-          window.dispatchEvent(new Event('authStateChanged'));
-        };
-        window.createSecondaryUser = async (email, pw) => {
-          let uid = 'offline_' + Date.now();
-          localStorage.setItem('pos_offline_user', JSON.stringify({ uid, email, pw: btoa(pw) }));
-          return uid;
-        };
-
-        // Check existing session
-        let session = localStorage.getItem('pos_offline_session');
-        if (session) {
-          try {
-            window.currentAuthUser = JSON.parse(session);
-            setTimeout(() => window.dispatchEvent(new Event('authStateChanged')), 100);
-          } catch(e) {}
-        } else {
-          setTimeout(() => window.dispatchEvent(new Event('authStateChanged')), 100);
-        }
-        console.warn('⚠️ Offline mode — data saved to localStorage only');
-      }
-
-      // Try loading Firebase SDK from CDN
-      if (location.protocol === 'file:') {
-        // file:// protocol — skip CDN, go straight to offline mode
-        setupOfflineMode();
-        window.firebaseReady = true;
-        window.dispatchEvent(new Event('firebaseReady'));
-      } else {
-        // http/https — load Firebase SDKs then init
-        let loaded = 0;
-        const sdks = [
-          'https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js',
-          'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js',
-          'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js'
-        ];
-        sdks.forEach(src => {
-          let s = document.createElement('script');
-          s.src = src;
-          s.onload = () => { if (++loaded === sdks.length) { initFirebase(); window.firebaseReady = true; window.dispatchEvent(new Event('firebaseReady')); } };
-          s.onerror = () => { setupOfflineMode(); window.firebaseReady = true; window.dispatchEvent(new Event('firebaseReady')); };
-          document.head.appendChild(s);
-        });
-      }
-    })();
+    window.firebaseReady = true;
+    window.dispatchEvent(new Event('firebaseReady'));
   </script>
 
   <!-- SVG ICONS -->
