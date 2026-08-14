@@ -211,11 +211,15 @@
     .user-current-tag { font-size: 11.5px; color: var(--gold); font-weight: 700; }
     #quickCustomerModal, #quickProductModal, #quickCategoryModal { z-index: 1100; }
 
-    .currency-symbol { font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'Segoe UI', Arial, sans-serif; font-weight: 700; font-size: 0.85em; letter-spacing: 0; margin-right: 3px; display: inline-block; vertical-align: 0.02em; }
+    .currency-symbol { font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'Segoe UI', Arial, sans-serif; font-weight: 700; font-size: 1em; letter-spacing: 0; margin-right: 1px; vertical-align: baseline; line-height: 1; }
     .modal-content h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 16.5px; color: var(--ink); }
     .modal-content h3 svg { width: 19px; height: 19px; stroke: var(--gold); fill: none; stroke-width: 2; }
 
     .invoice-box { border: 1px solid var(--border-cool); padding: 18px; background: #fff; border-radius: 8px; line-height: 1.6; }
+    .invoice-box table { width: 100%; border-collapse: collapse; }
+    .invoice-box table td, .invoice-box table th { padding: 6px 8px; border-bottom: 1px solid #f0ece4; font-size: 13px; }
+    .invoice-box table td:last-child, .invoice-box table th:last-child { white-space: nowrap; text-align: right; }
+    .invoice-box .inv-amount { white-space: nowrap; }
     .invoice-header { text-align: center; border-bottom: 2px dashed var(--border-cool); padding-bottom: 12px; margin-bottom: 15px; }
     .invoice-header img.invoice-logo { max-height: 64px; max-width: 220px; object-fit: contain; margin: 0 auto 10px; display: block; }
 
@@ -319,6 +323,27 @@
     .bank-account-item .bank-name { font-weight: 700; font-size: 13.5px; }
     .bank-account-item .bank-num { font-size: 12px; color: var(--muted); }
 
+    .ml-income  { background:#f0fdf4; border-left: 4px solid #16a34a; }
+    .ml-expense { background:#fff5f5; border-left: 4px solid #dc2626; }
+    .ml-neutral { background:#f8f6f1; border-left: 4px solid #94a3b8; }
+    .ml-type-pill { display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+    .ml-sale     { background:#dcfce7; color:#15803d; }
+    .ml-payment  { background:#dbeafe; color:#1d4ed8; }
+    .ml-return   { background:#fef9c3; color:#a16207; }
+    .ml-account-in  { background:#d1fae5; color:#065f46; }
+    .ml-account-out { background:#fee2e2; color:#991b1b; }
+    .ml-payable  { background:#ffe4e6; color:#be123c; }
+    .ml-receivable { background:#d1fae5; color:#065f46; }
+    .ml-monthly-header { background:var(--navy); color:#fff; font-weight:800; font-size:13px; padding:10px 14px; }
+    .ml-summary-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:20px; }
+    .ml-strip-card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px 14px; text-align:center; }
+    .ml-strip-card h6 { font-size:10px; text-transform:uppercase; color:var(--muted); font-weight:700; letter-spacing:.4px; margin-bottom:4px; }
+    .ml-strip-card .sv { font-size:17px; font-weight:800; }
+    .ml-net-bar { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-radius:10px; margin-bottom:16px; background:var(--paper); border:1px solid var(--border); }
+    .ml-net-bar .label { font-size:14px; font-weight:700; color:var(--muted); }
+    .ml-net-bar .value { font-size:24px; font-weight:900; }
+
+
     @media print {
       body * { visibility: hidden; }
       .active-print, .active-print * { visibility: visible; }
@@ -392,15 +417,15 @@
     <ul class="sidebar-menu">
       <li><button class="active" onclick="openTab('dashboard-tab', this)"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-5 3 3 5-7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuDashboard">ড্যাশবোর্ড</span></button></li>
       <li><button onclick="openTab('order-notifications-tab', this)"><svg viewBox="0 0 24 24"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-4-5.66V4a2 2 0 1 0-4 0v1.34A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuOrderNotifications">অর্ডার নোটিফিকেশন</span> <span class="notification-badge" id="sidebarBadge" style="position:static; margin-left: auto;">0</span></button></li>
+      <li><button onclick="openTab('sales-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.6L21 8H7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="21" r="1"/><circle cx="17" cy="21" r="1"/></svg><span class="menu-label" data-key="menuSales">বিক্রয়</span></button></li>
+      <li><button onclick="openTab('payable-receivable-tab', this)"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuPaymentLedger">Payment Ledger</span></button></li>
       <li><button onclick="openTab('customers-tab', this)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuCustomers">কাস্টমার তালিকা</span></button></li>
       <li><button onclick="openTab('products-tab', this)"><svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.3 7.6L12 12.5l8.7-4.9M12 21.4V12.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuProducts">পণ্য তালিকা</span></button></li>
       <li><button onclick="openTab('categories-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuCategories">ক্যাটাগরি তালিকা</span></button></li>
-      <li><button onclick="openTab('sales-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.6L21 8H7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="21" r="1"/><circle cx="17" cy="21" r="1"/></svg><span class="menu-label" data-key="menuSales">বিক্রয়</span></button></li>
       <li><button onclick="openTab('returns-tab', this)"><svg viewBox="0 0 24 24"><path d="M3 7v6h6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13a9 9 0 1 0 3-6.7L3 9" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuReturns">রিটার্ন</span></button></li>
       <li><button onclick="openTab('accounts-tab', this)"><svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuAccounts">অ্যাকাউন্টস</span></button></li>
-      <li><button onclick="openTab('payable-receivable-tab', this)"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuPaymentLedger">Payment Ledger</span></button></li>
-      <li class="admin-only"><button onclick="openTab('reports-tab', this)"><svg viewBox="0 0 24 24"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 15l4-5 3 3 5-7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="15" r="1.2"/><circle cx="11" cy="10" r="1.2"/><circle cx="14" cy="13" r="1.2"/><circle cx="19" cy="6" r="1.2"/></svg><span class="menu-label" data-key="menuReports">রিপোর্টস</span></button></li>
       <li><button onclick="openTab('ledger-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuLedger">বকেয়া খাতা</span></button></li>
+      <li class="admin-only"><button onclick="openTab('reports-tab', this)"><svg viewBox="0 0 24 24"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 15l4-5 3 3 5-7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="15" r="1.2"/><circle cx="11" cy="10" r="1.2"/><circle cx="14" cy="13" r="1.2"/><circle cx="19" cy="6" r="1.2"/></svg><span class="menu-label" data-key="menuReports">রিপোর্টস</span></button></li>
       <li><button onclick="openTab('unit-config-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 21V14M4 10V3M12 21v-8M12 9V3M20 21v-5M20 12V3M1 14h6M9 9h6M17 12h6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuUnitConfig">ইউনিট কনফিগারেশন</span></button></li>
       <li class="admin-only"><button onclick="openTab('users-tab', this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21c0-3.5 3.5-6 8-6s8 2.5 8 6" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 3.5a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuUsers">ব্যবহারকারী ব্যবস্থাপনা</span></button></li>
       <li><button onclick="openTab('settings-tab', this)"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuSettings">সেটিং</span></button></li>
@@ -881,7 +906,7 @@
       <div id="payable-receivable-tab" class="tab-content">
 
         <!-- Summary Banner -->
-        <div class="summary-banner" id="prSummaryBanner">
+        <div class="summary-banner no-print" id="prSummaryBanner">
           <div class="summary-tile payable-tile">
             <h5 data-key="prTotalPayableLabel">মোট পরিশোধযোগ্য</h5>
             <div class="tile-val" id="prTotalPayable" style="color:var(--red);">৳0.00</div>
@@ -965,6 +990,9 @@
                 <label data-key="prAmountLabel">পরিমাণ (Amount):</label>
                 <input type="number" id="payableAmount" placeholder="0.00" min="0" step="0.01">
 
+                <label data-key="lblDate">তারিখ (Date):</label>
+                <input type="date" id="payableDate">
+
                 <label data-key="prNoteLabel">নোট (Note):</label>
                 <input type="text" id="payableNote" data-key-placeholder="prNotePlaceholderPayable" placeholder="যেমন: মে মাসের বেতন, ইন্টারনেট বিল">
 
@@ -976,13 +1004,34 @@
 
               <!-- PAYABLE TABLE -->
               <div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                  <h3 style="margin-bottom:0;" data-key="prPayableTableTitle">📋 Payable তালিকা</h3>
-                  <div style="display:flex; gap:6px;">
-                    <input type="date" id="payableFilterFrom" style="width:130px; margin-bottom:0; font-size:12px; padding:6px 8px;">
-                    <input type="date" id="payableFilterTo" style="width:130px; margin-bottom:0; font-size:12px; padding:6px 8px;">
-                    <button onclick="filterPayable()" class="btn-action btn-warning" style="width:auto; padding:6px 12px; font-size:12px;" data-key="prFilterBtn">ফিল্টার</button>
+                <div style="margin-bottom:12px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                    <h3 style="margin-bottom:0;" data-key="prPayableTableTitle">📋 Payable তালিকা</h3>
+                    <div style="display:flex; gap:6px;">
+                      <button onclick="printDiv('payablePrintArea')" class="btn-action btn-warning" style="width:auto; padding:5px 12px; font-size:12px;">🖨️</button>
+                      <button onclick="resetPayableFilter()" class="btn-action" style="width:auto; padding:5px 12px; font-size:12px; background:var(--paper); color:var(--muted);" data-key="btnResetFilter">✕ রিসেট</button>
+                    </div>
                   </div>
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:6px;">
+                    <input type="date" id="payableFilterFrom" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                    <input type="date" id="payableFilterTo" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                    <select id="payableFilterBank" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                      <option value="">🏦 সকল ব্যাংক</option>
+                    </select>
+                    <select id="payableFilterHead" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                      <option value="">📌 সকল Head</option>
+                    </select>
+                    <select id="payableFilterMethod" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                      <option value="">💳 সকল মেথড</option>
+                      <option value="Cash">💵 Cash</option>
+                      <option value="Mobile">📱 Mobile</option>
+                      <option value="Bank">🏦 Bank</option>
+                    </select>
+                    <button onclick="filterPayable()" class="btn-action btn-warning" style="width:auto; padding:6px 12px; font-size:12px;" data-key="prFilterBtn">🔍 ফিল্টার</button>
+                  </div>
+                  <div id="payablePrintArea">
+                  <!-- Bank Summary -->
+                  <div class="no-print" id="payableBankSummary" style="display:none; margin-top:10px; padding:10px 14px; background:var(--paper); border-radius:8px; border:1px solid var(--border); font-size:12.5px;"></div>
                 </div>
                 <div class="table-responsive">
                   <table id="payableTable">
@@ -1006,6 +1055,7 @@
                     </tfoot>
                   </table>
                 </div>
+                </div><!-- /payablePrintArea -->
               </div>
             </div>
           </div>
@@ -1042,6 +1092,9 @@
                 <label data-key="prAmountLabel">পরিমাণ (Amount):</label>
                 <input type="number" id="receivableAmount" placeholder="0.00" min="0" step="0.01">
 
+                <label data-key="lblDate">তারিখ (Date):</label>
+                <input type="date" id="receivableDate">
+
                 <label data-key="prNoteLabel">নোট (Note):</label>
                 <input type="text" id="receivableNote" data-key-placeholder="prNotePlaceholderReceivable" placeholder="যেমন: পণ্য বিক্রয়, সার্ভিস চার্জ">
 
@@ -1053,13 +1106,34 @@
 
               <!-- RECEIVABLE TABLE -->
               <div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                  <h3 style="margin-bottom:0;" data-key="prReceivableTableTitle">📋 Receivable তালিকা</h3>
-                  <div style="display:flex; gap:6px;">
-                    <input type="date" id="receivableFilterFrom" style="width:130px; margin-bottom:0; font-size:12px; padding:6px 8px;">
-                    <input type="date" id="receivableFilterTo" style="width:130px; margin-bottom:0; font-size:12px; padding:6px 8px;">
-                    <button onclick="filterReceivable()" class="btn-action btn-warning" style="width:auto; padding:6px 12px; font-size:12px;" data-key="prFilterBtn">ফিল্টার</button>
+                <div style="margin-bottom:12px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                    <h3 style="margin-bottom:0;" data-key="prReceivableTableTitle">📋 Receivable তালিকা</h3>
+                    <div style="display:flex; gap:6px;">
+                      <button onclick="printDiv('receivablePrintArea')" class="btn-action btn-warning" style="width:auto; padding:5px 12px; font-size:12px;">🖨️</button>
+                      <button onclick="resetReceivableFilter()" class="btn-action" style="width:auto; padding:5px 12px; font-size:12px; background:var(--paper); color:var(--muted);" data-key="btnResetFilter">✕ রিসেট</button>
+                    </div>
                   </div>
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:6px;">
+                    <input type="date" id="receivableFilterFrom" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                    <input type="date" id="receivableFilterTo" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                    <select id="receivableFilterBank" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                      <option value="">🏦 সকল ব্যাংক</option>
+                    </select>
+                    <select id="receivableFilterHead" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                      <option value="">📌 সকল Head</option>
+                    </select>
+                    <select id="receivableFilterMethod" style="margin-bottom:0; font-size:12px; padding:6px 8px;">
+                      <option value="">💳 সকল মেথড</option>
+                      <option value="Cash">💵 Cash</option>
+                      <option value="Mobile">📱 Mobile</option>
+                      <option value="Bank">🏦 Bank</option>
+                    </select>
+                    <button onclick="filterReceivable()" class="btn-action btn-warning" style="width:auto; padding:6px 12px; font-size:12px;" data-key="prFilterBtn">🔍 ফিল্টার</button>
+                  </div>
+                  <div id="receivablePrintArea">
+                  <!-- Bank Summary -->
+                  <div class="no-print" id="receivableBankSummary" style="display:none; margin-top:10px; padding:10px 14px; background:var(--paper); border-radius:8px; border:1px solid var(--border); font-size:12.5px;"></div>
                 </div>
                 <div class="table-responsive">
                   <table id="receivableTable">
@@ -1083,6 +1157,7 @@
                     </tfoot>
                   </table>
                 </div>
+                </div><!-- /receivablePrintArea -->
               </div>
             </div>
           </div>
@@ -1099,6 +1174,8 @@
             <button type="button" class="lang-btn" data-report-tab="sales" onclick="openReportSubTab('sales')" data-key="reportTabSales">বিক্রয়</button>
             <button type="button" class="lang-btn" data-report-tab="customers" onclick="openReportSubTab('customers')" data-key="reportTabCustomers">কাস্টমার</button>
             <button type="button" class="lang-btn" data-report-tab="products" onclick="openReportSubTab('products')" data-key="reportTabProducts">প্রোডাক্ট</button>
+            <button type="button" class="lang-btn" data-report-tab="payment-ledger" onclick="openReportSubTab('payment-ledger')" data-key="reportTabPaymentLedger">Payment Ledger</button>
+            <button type="button" class="lang-btn" data-report-tab="master-ledger" onclick="openReportSubTab('master-ledger')" data-key="reportTabMasterLedger">📒 Final Ledger</button>
           </div>
         </div>
 
@@ -1119,7 +1196,7 @@
               </div>
             </div>
           </div>
-          <div class="dashboard-cards">
+          <div class="dashboard-cards no-print">
             <div class="stat-card">
               <h4 data-key="lblTotalSales">আজকের মোট বিক্রয়</h4>
               <div class="value" id="ovTotalSales"><span class="currency-symbol">৳</span>0.00</div>
@@ -1144,7 +1221,44 @@
               <h4 data-key="reportInvoiceCountLabel">মোট ইনভয়েস</h4>
               <div class="value" id="ovInvoiceCount">0</div>
             </div>
+            <div class="stat-card" style="border-top:3px solid var(--red);">
+              <h4 data-key="prTotalPayableLabel">মোট Payable</h4>
+              <div class="value" id="ovTotalPayable" style="color:var(--red);"><span class="currency-symbol">৳</span>0.00</div>
+            </div>
+            <div class="stat-card" style="border-top:3px solid var(--green);">
+              <h4 data-key="prTotalReceivableLabel">মোট Receivable</h4>
+              <div class="value" id="ovTotalReceivable" style="color:var(--green);"><span class="currency-symbol">৳</span>0.00</div>
+            </div>
+            <div class="stat-card" style="border-top:3px solid #6366f1;">
+              <h4 data-key="prNetBalanceLabel">নেট P&L (Payable-Receivable)</h4>
+              <div class="value" id="ovNetPL" style="color:#6366f1;"><span class="currency-symbol">৳</span>0.00</div>
+            </div>
           </div>
+
+          <!-- P&L Breakdown Table -->
+          <div class="card no-print" style="margin-top:16px;">
+            <h3 style="margin-bottom:14px;">📊 <span data-key="plBreakdownTitle">Profit & Loss বিভাজন</span></h3>
+            <div class="profit-loss-row">
+              <div class="pl-box">
+                <h4 style="color:var(--green);" data-key="mlColIncome">💰 আয় (Income)</h4>
+                <div class="pl-row"><span data-key="lblTotalSales">মোট বিক্রয়</span><span id="plSales" style="color:var(--green); font-weight:700;">৳0.00</span></div>
+                <div class="pl-row"><span data-key="prTotalReceivableLabel">মোট Receivable</span><span id="plReceivable" style="color:var(--green); font-weight:700;">৳0.00</span></div>
+                <div class="pl-row"><span style="font-weight:800;" data-key="plTotalIncomeLabel">মোট আয়</span><span id="plTotalIncome" style="color:var(--green); font-weight:800; font-size:15px;">৳0.00</span></div>
+              </div>
+              <div class="pl-box">
+                <h4 style="color:var(--red);" data-key="mlColExpense">💸 ব্যয় (Expense)</h4>
+                <div class="pl-row"><span data-key="optAccKharoch">খরচ</span><span id="plExpense" style="color:var(--red); font-weight:700;">৳0.00</span></div>
+                <div class="pl-row"><span data-key="lblTotalReturns">মোট রিটার্ন</span><span id="plReturns" style="color:var(--red); font-weight:700;">৳0.00</span></div>
+                <div class="pl-row"><span data-key="prTotalPayableLabel">মোট Payable</span><span id="plPayable" style="color:var(--red); font-weight:700;">৳0.00</span></div>
+                <div class="pl-row"><span style="font-weight:800;" data-key="plTotalExpenseLabel">মোট ব্যয়</span><span id="plTotalExpense" style="color:var(--red); font-weight:800; font-size:15px;">৳0.00</span></div>
+              </div>
+            </div>
+            <div style="margin-top:16px; padding:16px; border-radius:10px; background:var(--paper); display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:15px; font-weight:800;" data-key="plNetProfitLabel">নেট লাভ / ক্ষতি (Net Profit/Loss)</span>
+              <span id="plNetProfit" style="font-size:22px; font-weight:900; color:#6366f1;">৳0.00</span>
+            </div>
+          </div>
+
         </div>
 
         <!-- SALES SUB-TAB -->
@@ -1235,6 +1349,258 @@
           </div>
         </div>
       </div>
+
+
+        <!-- PAYMENT LEDGER REPORT SUB-TAB -->
+        <div id="report-payment-ledger" class="report-subtab" style="display:none;">
+
+          <!-- Filter Bar -->
+          <div class="card no-print" style="margin-bottom:15px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; align-items:end;">
+              <div>
+                <label data-key="lblFromDate">From Date:</label>
+                <input type="date" id="rplFromDate" style="margin-bottom:0;">
+              </div>
+              <div>
+                <label data-key="lblToDate">To Date:</label>
+                <input type="date" id="rplToDate" style="margin-bottom:0;">
+              </div>
+              <div>
+                <label>🏦 Bank Account:</label>
+                <select id="rplBank" style="margin-bottom:0;">
+                  <option value="All">— সকল ব্যাংক —</option>
+                </select>
+              </div>
+              <div>
+                <label data-key="prHeadLabel">Head:</label>
+                <select id="rplHead" style="margin-bottom:0;">
+                  <option value="All">— All Heads —</option>
+                </select>
+              </div>
+              <div>
+                <label data-key="prPaymentSystemLabel">Payment System:</label>
+                <select id="rplMethod" style="margin-bottom:0;">
+                  <option value="All">— All Methods —</option>
+                  <option value="Cash" data-key="prCash">Cash</option>
+                  <option value="Mobile" data-key="prMobile">Mobile Banking</option>
+                  <option value="Bank" data-key="prBank">Bank Transfer</option>
+                </select>
+              </div>
+              <div>
+                <label>Search:</label>
+                <input type="text" id="rplSearch" placeholder="🔎 note, head..." style="margin-bottom:0;">
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button onclick="runPaymentLedgerReport()" class="btn-action btn-success" style="flex:1; height:38px;" data-key="btnRunReport">🔍 Run</button>
+                <button onclick="resetRplFilter()" class="btn-action" style="height:38px; width:auto; padding:0 10px; background:var(--paper); color:var(--muted);">✕</button>
+                <button onclick="printDiv('rplPrintArea')" class="btn-action btn-warning" style="height:38px; width:auto; padding:0 12px;">🖨️</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="rplPrintArea">
+
+          <!-- Bank Summary Bar (shown when bank filtered) -->
+          <div class="no-print" id="rplBankSummaryBar" style="display:none; margin-bottom:14px; padding:12px 16px;
+            background:var(--paper); border:1px solid var(--border); border-radius:10px;"></div>
+
+          <!-- Summary Tiles -->
+          <div class="summary-banner no-print" style="margin-bottom:16px;">
+            <div class="summary-tile payable-tile">
+              <h5 data-key="prTotalPayableLabel">মোট Payable</h5>
+              <div class="tile-val" id="rplTotalPayable" style="color:var(--red);">৳0.00</div>
+            </div>
+            <div class="summary-tile receivable-tile">
+              <h5 data-key="prTotalReceivableLabel">মোট Receivable</h5>
+              <div class="tile-val" id="rplTotalReceivable" style="color:var(--green);">৳0.00</div>
+            </div>
+            <div class="summary-tile net-tile">
+              <h5 data-key="prNetBalanceLabel">নেট ব্যালেন্স</h5>
+              <div class="tile-val" id="rplNetBalance" style="color:#6366f1;">৳0.00</div>
+            </div>
+            <div class="summary-tile profit-tile">
+              <h5 data-key="prProfitMarginLabel">Profit Margin</h5>
+              <div class="tile-val" id="rplMargin" style="color:var(--gold);">0%</div>
+            </div>
+          </div>
+
+          <!-- Payable Table -->
+          <div class="card" style="margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+              <h3 style="margin-bottom:0;">💸 <span data-key="prPayableSummaryTitle">Payable তালিকা</span></h3>
+              <span id="rplPayableCount" style="font-size:12px; color:var(--muted); background:var(--paper); padding:4px 10px; border-radius:20px;">0 entries</span>
+            </div>
+            <div class="table-responsive">
+              <table id="rplPayableTable">
+                <thead>
+                  <tr>
+                    <th data-key="lblDate">তারিখ</th>
+                    <th data-key="prHeadLabel">Head</th>
+                    <th data-key="prPaymentSystemLabel">মেথড</th>
+                    <th data-key="prNoteLabel">নোট</th>
+                    <th data-key="thStatus">স্ট্যাটাস</th>
+                    <th data-key="prAmountLabel">পরিমাণ</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="5" style="text-align:right; font-weight:700;" data-key="prTotalLabel">মোট:</td>
+                    <td id="rplPayableTotal" style="font-weight:800; color:var(--red); font-size:15px;"><span class="currency-symbol">৳</span>0.00</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Receivable Table -->
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+              <h3 style="margin-bottom:0;">💰 <span data-key="prReceivableSummaryTitle">Receivable তালিকা</span></h3>
+              <span id="rplReceivableCount" style="font-size:12px; color:var(--muted); background:var(--paper); padding:4px 10px; border-radius:20px;">0 entries</span>
+            </div>
+            <div class="table-responsive">
+              <table id="rplReceivableTable">
+                <thead>
+                  <tr>
+                    <th data-key="lblDate">তারিখ</th>
+                    <th data-key="prHeadLabel">Head</th>
+                    <th data-key="prPaymentSystemLabel">মেথড</th>
+                    <th data-key="prNoteLabel">নোট</th>
+                    <th data-key="thStatus">স্ট্যাটাস</th>
+                    <th data-key="prAmountLabel">পরিমাণ</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="5" style="text-align:right; font-weight:700;" data-key="prTotalLabel">মোট:</td>
+                    <td id="rplReceivableTotal" style="font-weight:800; color:var(--green); font-size:15px;"><span class="currency-symbol">৳</span>0.00</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          </div><!-- /rplPrintArea -->
+        </div>
+
+        <!-- MASTER / FINAL LEDGER REPORT -->
+        <div id="report-master-ledger" class="report-subtab" style="display:none;">
+
+          <!-- Filter Bar -->
+          <div class="card no-print" style="margin-bottom:14px;">
+            <div class="filter-grid">
+              <div>
+                <label>From Date:</label>
+                <input type="date" id="mlFrom" style="margin-bottom:0;">
+              </div>
+              <div>
+                <label>To Date:</label>
+                <input type="date" id="mlTo" style="margin-bottom:0;">
+              </div>
+              <div>
+                <label>View By:</label>
+                <select id="mlViewMode" style="margin-bottom:0;" onchange="runMasterLedger()">
+                  <option value="all">All Transactions</option>
+                  <option value="monthly">Monthly Summary</option>
+                </select>
+              </div>
+              <div>
+                <label>Type Filter:</label>
+                <select id="mlTypeFilter" style="margin-bottom:0;">
+                  <option value="all">All Types</option>
+                  <option value="sale">Sales</option>
+                  <option value="payment">Due Collection</option>
+                  <option value="return">Returns</option>
+                  <option value="account-in">Accounts (Income)</option>
+                  <option value="account-out">Accounts (Expense)</option>
+                  <option value="payable">Payable</option>
+                  <option value="receivable">Receivable</option>
+                </select>
+              </div>
+              <div>
+                <label>Search:</label>
+                <input type="text" id="mlSearch" placeholder="🔎 name, note, head..." style="margin-bottom:0;">
+              </div>
+              <div style="display:flex; align-items:flex-end; gap:6px;">
+                <button onclick="runMasterLedger()" class="btn-action btn-success" style="flex:1; height:38px;">Run</button>
+                <button onclick="printDiv('mlPrintArea')" class="btn-action btn-warning no-print" style="height:38px; width:auto; padding:0 12px;">🖨️</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="mlPrintArea">
+            <!-- Net P&L Bar -->
+            <div class="ml-net-bar" id="mlNetBar">
+              <div>
+                <div class="label" data-key="mlNetPLTitle">নেট লাভ / ক্ষতি</div>
+                <div style="font-size:11px; color:var(--muted); margin-top:2px;" id="mlPeriodLabel" data-key="mlAllPeriod">সকল সময়কাল</div>
+              </div>
+              <div class="value" id="mlNetValue" style="color:#6366f1;">৳0.00</div>
+            </div>
+
+            <!-- Summary Strip -->
+            <div class="ml-summary-strip no-print" id="mlSummaryStrip">
+              <div class="ml-strip-card">
+                <h6 data-key="mlSumSales">বিক্রয়</h6>
+                <div class="sv" id="mlSumSales" style="color:var(--green);">৳0</div>
+              </div>
+              <div class="ml-strip-card">
+                <h6 data-key="mlSumDue">Due আদায়</h6>
+                <div class="sv" id="mlSumPayment" style="color:#1d4ed8;">৳0</div>
+              </div>
+              <div class="ml-strip-card">
+                <h6>Receivable</h6>
+                <div class="sv" id="mlSumReceivable" style="color:var(--green);">৳0</div>
+              </div>
+              <div class="ml-strip-card">
+                <h6>A/C Income</h6>
+                <div class="sv" id="mlSumAccIn" style="color:var(--green);">৳0</div>
+              </div>
+              <div class="ml-strip-card" style="border-top:2px solid var(--green);">
+                <h6 data-key="mlSumTotalIn">মোট আয়</h6>
+                <div class="sv" id="mlSumTotalIn" style="color:var(--green); font-size:19px;">৳0</div>
+              </div>
+              <div class="ml-strip-card">
+                <h6 data-key="mlSumReturn">রিটার্ন</h6>
+                <div class="sv" id="mlSumReturn" style="color:var(--red);">৳0</div>
+              </div>
+              <div class="ml-strip-card">
+                <h6>Payable</h6>
+                <div class="sv" id="mlSumPayable" style="color:var(--red);">৳0</div>
+              </div>
+              <div class="ml-strip-card">
+                <h6>A/C Expense</h6>
+                <div class="sv" id="mlSumAccOut" style="color:var(--red);">৳0</div>
+              </div>
+              <div class="ml-strip-card" style="border-top:2px solid var(--red);">
+                <h6 data-key="mlSumTotalOut">মোট ব্যয়</h6>
+                <div class="sv" id="mlSumTotalOut" style="color:var(--red); font-size:19px;">৳0</div>
+              </div>
+            </div>
+
+            <!-- Transaction Table / Monthly View -->
+            <div class="card" id="mlTableWrap">
+              <div class="table-responsive">
+                <table id="mlTable" style="font-size:13px;">
+                  <thead>
+                    <tr>
+                      <th style="width:95px;" data-key="mlColDate">তারিখ</th>
+                      <th data-key="mlColType">ধরন</th>
+                      <th data-key="mlColDetail">বিবরণ</th>
+                      <th data-key="mlColMethod">মেথড</th>
+                      <th style="text-align:right; color:var(--green);" data-key="mlColIncome">আয় (+)</th>
+                      <th style="text-align:right; color:var(--red);" data-key="mlColExpense">ব্যয় (-)</th>
+                      <th style="text-align:right;" data-key="mlColBalance">ব্যালেন্স</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mlTableBody"></tbody>
+                  <tfoot id="mlTableFoot"></tfoot>
+                </table>
+              </div>
+            </div>
+          </div><!-- /mlPrintArea -->
+        </div><!-- /report-master-ledger -->
 
       <!-- USER MANAGEMENT TAB (Super User only) -->
       <div id="users-tab" class="tab-content">
@@ -2314,7 +2680,59 @@
         alertBankNameRequired: "ব্যাংকের নাম দিন।",
         dashPayableLabel: "মোট Payable",
         dashReceivableLabel: "মোট Receivable",
-        dashNetBalanceLabel: "নেট ব্যালেন্স (P&L)"
+        dashNetBalanceLabel: "নেট ব্যালেন্স (P&L)",
+        plBreakdownTitle: "Profit & Loss বিভাজন",
+        plTotalIncomeLabel: "মোট আয়",
+        plTotalExpenseLabel: "মোট ব্যয়",
+        plNetProfitLabel: "নেট লাভ / ক্ষতি",
+        reportTabPaymentLedger: "পেমেন্ট লেজার",
+        reportTabMasterLedger: "📒 চূড়ান্ত লেজার",
+        mlKindSale: "🛒 বিক্রয়",
+        mlKindPayment: "💳 Due আদায়",
+        mlKindReceivable: "💰 Receivable",
+        mlKindAccIn: "🏦 A/C আয়",
+        mlKindReturn: "↩ রিটার্ন",
+        mlKindPayable: "💸 Payable",
+        mlKindAccOut: "🏦 A/C খরচ",
+        mlLabelSale: "বিক্রয়",
+        mlLabelPayment: "Due আদায়",
+        mlLabelReturn: "রিটার্ন",
+        mlLabelAccJoma: "জমা",
+        mlLabelAccKroy: "ক্রয়",
+        mlLabelAccBikroy: "বিক্রয়",
+        mlLabelAccKharoch: "খরচ",
+        mlLabelPayable: "Payable",
+        mlLabelReceivable: "Receivable",
+        mlAllPeriod: "সকল সময়কাল",
+        mlFrom: "থেকে",
+        mlTo: "পর্যন্ত",
+        mlNoData: "কোনো transaction পাওয়া যায়নি।",
+        mlTotal: "মোট",
+        mlGrandTotal: "সর্বমোট",
+        mlColDate: "তারিখ",
+        btnResetFilter: "✕ ফিল্টার রিসেট",
+        mlColType: "ধরন",
+        mlColDetail: "বিবরণ",
+        mlColMethod: "মেথড",
+        mlColIncome: "আয় (+)",
+        mlColExpense: "ব্যয় (-)",
+        mlColBalance: "ব্যালেন্স",
+        mlNetPLTitle: "নেট লাভ / ক্ষতি",
+        mlSumSales: "বিক্রয়",
+        mlSumDue: "Due আদায়",
+        mlSumTotalIn: "মোট আয়",
+        mlSumReturn: "রিটার্ন",
+        mlSumTotalOut: "মোট ব্যয়",
+        mlMonthTotal: "মোট",
+        mlIncome: "আয়",
+        mlExpense: "ব্যয়",
+        mlNet: "নেট",
+        sigPrepared: "প্রস্তুতকারীর স্বাক্ষর",
+        sigPreparedEn: "Prepared By",
+        sigAuthorized: "অনুমোদনকারীর স্বাক্ষর",
+        sigAuthorizedEn: "Authorized By",
+        sigCustomer: "গ্রাহকের স্বাক্ষর",
+        sigCustomerEn: "Customer Signature"
       },
       EN: {
         brandName: "Wholesale Sales Manager",
@@ -2761,7 +3179,59 @@
         alertBankNameRequired: "Please enter a bank name.",
         dashPayableLabel: "Total Payable",
         dashReceivableLabel: "Total Receivable",
-        dashNetBalanceLabel: "Net Balance (P&L)"
+        dashNetBalanceLabel: "Net Balance (P&L)",
+        plBreakdownTitle: "Profit & Loss Breakdown",
+        plTotalIncomeLabel: "Total Income",
+        plTotalExpenseLabel: "Total Expense",
+        plNetProfitLabel: "Net Profit / Loss",
+        reportTabPaymentLedger: "Payment Ledger",
+        reportTabMasterLedger: "📒 Final Ledger",
+        mlKindSale: "🛒 Sale",
+        mlKindPayment: "💳 Due Collection",
+        mlKindReceivable: "💰 Receivable",
+        mlKindAccIn: "🏦 A/C Income",
+        mlKindReturn: "↩ Return",
+        mlKindPayable: "💸 Payable",
+        mlKindAccOut: "🏦 A/C Expense",
+        mlLabelSale: "Sale",
+        mlLabelPayment: "Due Collection",
+        mlLabelReturn: "Return",
+        mlLabelAccJoma: "Deposit",
+        mlLabelAccKroy: "Purchase",
+        mlLabelAccBikroy: "Sale",
+        mlLabelAccKharoch: "Expense",
+        mlLabelPayable: "Payable",
+        mlLabelReceivable: "Receivable",
+        mlAllPeriod: "All Periods",
+        mlFrom: "from",
+        mlTo: "to",
+        mlNoData: "No transactions found.",
+        mlTotal: "Total",
+        mlGrandTotal: "Grand Total",
+        mlColDate: "Date",
+        btnResetFilter: "✕ Reset Filter",
+        mlColType: "Type",
+        mlColDetail: "Detail",
+        mlColMethod: "Method",
+        mlColIncome: "Income (+)",
+        mlColExpense: "Expense (-)",
+        mlColBalance: "Balance",
+        mlNetPLTitle: "Net Profit / Loss",
+        mlSumSales: "Sales",
+        mlSumDue: "Due Collection",
+        mlSumTotalIn: "Total Income",
+        mlSumReturn: "Returns",
+        mlSumTotalOut: "Total Expense",
+        mlMonthTotal: "Total",
+        mlIncome: "Income",
+        mlExpense: "Expense",
+        mlNet: "Net",
+        sigPrepared: "প্রস্তুতকারীর স্বাক্ষর",
+        sigPreparedEn: "Prepared By",
+        sigAuthorized: "অনুমোদনকারীর স্বাক্ষর",
+        sigAuthorizedEn: "Authorized By",
+        sigCustomer: "গ্রাহকের স্বাক্ষর",
+        sigCustomerEn: "Customer Signature"
       }
     };
 
@@ -2892,6 +3362,11 @@
       localStorage.setItem('pos_deliveries', JSON.stringify(deliveries));
       localStorage.setItem('pos_cancellations', JSON.stringify(orderCancellations));
       localStorage.setItem('pos_payments', JSON.stringify(payments));
+      localStorage.setItem('pos_payable', JSON.stringify(payableEntries));
+      localStorage.setItem('pos_receivable', JSON.stringify(receivableEntries));
+      localStorage.setItem('pos_bank_accounts', JSON.stringify(bankAccounts));
+      localStorage.setItem('pos_payable_heads', JSON.stringify(payableHeads));
+      localStorage.setItem('pos_receivable_heads', JSON.stringify(receivableHeads));
     }
 
     function openTab(tabId, btn) {
@@ -2912,6 +3387,7 @@
 
       if (tabId === 'payable-receivable-tab') {
         populatePRDropdowns();
+        populatePRFilters();
         renderPayable();
         renderReceivable();
         renderPRSummary();
@@ -2938,6 +3414,8 @@
       if (btn) btn.classList.add('active');
 
       if (name === 'overview') runOverviewReport();
+      if (name === 'master-ledger') runMasterLedger();
+      if (name === 'payment-ledger') { populateRplHeadFilter(); runPaymentLedgerReport(); }
       if (name === 'sales') runSalesReport();
       if (name === 'customers') searchReportCustomers();
       if (name === 'products') runProductsReport();
@@ -2965,12 +3443,443 @@
       let totalPaid = salesInRange.reduce((sum, s) => sum + s.paid, 0) + paymentsInRange.reduce((sum, p) => sum + p.amount, 0);
       let totalExpense = accInRange.filter(a => a.type === 'Kharoch' || a.type === 'Kroy').reduce((sum, a) => sum + a.amount, 0);
 
-      document.getElementById('ovTotalSales').innerHTML = '<span class="currency-symbol">৳</span>' + totalSales.toFixed(2);
-      document.getElementById('ovTotalDue').innerHTML = '<span class="currency-symbol">৳</span>' + totalDue.toFixed(2);
-      document.getElementById('ovTotalReturns').innerHTML = '<span class="currency-symbol">৳</span>' + totalReturns.toFixed(2);
-      document.getElementById('ovTotalPaid').innerHTML = '<span class="currency-symbol">৳</span>' + totalPaid.toFixed(2);
-      document.getElementById('ovTotalExpense').innerHTML = '<span class="currency-symbol">৳</span>' + totalExpense.toFixed(2);
-      document.getElementById('ovInvoiceCount').innerText = salesInRange.length;
+      // Payment Ledger data in range (Approved only)
+      let payableInRange    = payableEntries.filter(e => e.status === 'Approved' && inRange(e.date));
+      let receivableInRange = receivableEntries.filter(e => e.status === 'Approved' && inRange(e.date));
+      let totalPayablePR    = payableInRange.reduce((sum, e) => sum + e.amount, 0);
+      let totalReceivablePR = receivableInRange.reduce((sum, e) => sum + e.amount, 0);
+      let netPL             = (totalSales + totalReceivablePR) - (totalExpense + totalReturns + totalPayablePR);
+
+      // stat cards
+      document.getElementById('ovTotalSales').innerHTML    = '<span class="currency-symbol">৳</span>' + totalSales.toFixed(2);
+      document.getElementById('ovTotalDue').innerHTML      = '<span class="currency-symbol">৳</span>' + totalDue.toFixed(2);
+      document.getElementById('ovTotalReturns').innerHTML  = '<span class="currency-symbol">৳</span>' + totalReturns.toFixed(2);
+      document.getElementById('ovTotalPaid').innerHTML     = '<span class="currency-symbol">৳</span>' + totalPaid.toFixed(2);
+      document.getElementById('ovTotalExpense').innerHTML  = '<span class="currency-symbol">৳</span>' + totalExpense.toFixed(2);
+      document.getElementById('ovInvoiceCount').innerText  = salesInRange.length;
+      document.getElementById('ovTotalPayable').innerHTML   = '<span class="currency-symbol">৳</span>' + totalPayablePR.toFixed(2);
+      document.getElementById('ovTotalReceivable').innerHTML= '<span class="currency-symbol">৳</span>' + totalReceivablePR.toFixed(2);
+      let netEl = document.getElementById('ovNetPL');
+      netEl.innerHTML = (netPL < 0 ? '-' : '') + '<span class="currency-symbol">৳</span>' + Math.abs(netPL).toFixed(2);
+      netEl.style.color = netPL < 0 ? 'var(--red)' : '#6366f1';
+
+      // P&L breakdown table
+      let totalIncome  = totalSales + totalReceivablePR;
+      let totalExpAll  = totalExpense + totalReturns + totalPayablePR;
+      let netProfit    = totalIncome - totalExpAll;
+      const fmt = v => '<span class="currency-symbol">৳</span>' + v.toFixed(2);
+
+      document.getElementById('plSales').innerHTML        = fmt(totalSales);
+      document.getElementById('plReceivable').innerHTML   = fmt(totalReceivablePR);
+      document.getElementById('plTotalIncome').innerHTML  = fmt(totalIncome);
+      document.getElementById('plExpense').innerHTML      = fmt(totalExpense);
+      document.getElementById('plReturns').innerHTML      = fmt(totalReturns);
+      document.getElementById('plPayable').innerHTML      = fmt(totalPayablePR);
+      document.getElementById('plTotalExpense').innerHTML = fmt(totalExpAll);
+      let npEl = document.getElementById('plNetProfit');
+      npEl.innerHTML = (netProfit < 0 ? '-' : '') + fmt(Math.abs(netProfit));
+      npEl.style.color = netProfit < 0 ? 'var(--red)' : '#16a34a';
+    }
+
+
+    function populateRplHeadFilter() {
+      let allHeads = [...new Set([...payableHeads, ...receivableHeads,
+        ...payableEntries.map(e => e.head), ...receivableEntries.map(e => e.head)])].filter(Boolean).sort();
+      let hsel = document.getElementById('rplHead');
+      if (hsel) {
+        let cur = hsel.value;
+        hsel.innerHTML = '<option value="All">— All Heads —</option>';
+        allHeads.forEach(h => hsel.innerHTML += `<option value="${h}" ${h===cur?'selected':''}>${h}</option>`);
+      }
+      // Bank dropdown
+      let bsel = document.getElementById('rplBank');
+      if (bsel) {
+        let cur = bsel.value;
+        bsel.innerHTML = '<option value="All">— সকল ব্যাংক —</option>';
+        bankAccounts.forEach(b => bsel.innerHTML += `<option value="${b.id}" ${String(b.id)===cur?'selected':''}>${b.name} (${b.number})</option>`);
+      }
+    }
+
+
+    // ═══════════════════════════════════════════════════
+    // MASTER / FINAL LEDGER
+    // ═══════════════════════════════════════════════════
+    function runMasterLedger() {
+      let from       = document.getElementById('mlFrom').value;
+      let to         = document.getElementById('mlTo').value;
+      let viewMode   = document.getElementById('mlViewMode').value;
+      let typeFilter = document.getElementById('mlTypeFilter').value;
+      let search     = document.getElementById('mlSearch').value.toLowerCase().trim();
+
+      let inRange = d => (!from || d >= from) && (!to || d <= to);
+
+      // ── Build unified transaction list ──────────────
+      let txns = [];
+
+      // 1. Sales (income)
+      salesHistory.filter(s => s.status === 'Approved' && inRange(s.date)).forEach(s => {
+        txns.push({
+          date: s.date, kind: 'sale',
+          label: `${t('mlLabelSale')} #${s.invNo}`,
+          detail: `${s.custName} — ${s.prodName} (${s.qty} ${unitLabel(s.unitType)})`,
+          method: s.method || '—',
+          income: s.total, expense: 0,
+          ref: s.invNo
+        });
+      });
+
+      // 2. Due Collections (income)
+      payments.filter(p => !p.reversed && inRange(p.date)).forEach(p => {
+        let cust = customers.find(c => c.id == p.custId);
+        txns.push({
+          date: p.date, kind: 'payment',
+          label: t('mlLabelPayment'),
+          detail: cust ? cust.name : '—',
+          method: p.method || '—',
+          income: p.amount, expense: 0,
+          ref: ''
+        });
+      });
+
+      // 3. Returns (expense)
+      salesReturns.filter(r => !r.reversed && inRange(r.date)).forEach(r => {
+        txns.push({
+          date: r.date, kind: 'return',
+          label: t('mlLabelReturn'),
+          detail: `${r.custName || '—'} — ${r.prodName || '—'}`,
+          method: '—',
+          income: 0, expense: r.refundValue,
+          ref: ''
+        });
+      });
+
+      // 4. Account Transactions
+      accountTransactions.filter(a => a.status === 'Approved' && inRange(a.date)).forEach(a => {
+        let isIn = (a.type === 'Joma' || a.type === 'Bikroy');
+        let typeMap = { Joma: t('mlLabelAccJoma'), Kroy: t('mlLabelAccKroy'), Bikroy: t('mlLabelAccBikroy'), Kharoch: t('mlLabelAccKharoch') };
+        txns.push({
+          date: a.date, kind: isIn ? 'account-in' : 'account-out',
+          label: `A/C — ${typeMap[a.type] || a.type}`,
+          detail: a.note || '—',
+          method: a.method || '—',
+          income: isIn ? a.amount : 0,
+          expense: isIn ? 0 : a.amount,
+          ref: ''
+        });
+      });
+
+      // 5. Payable (expense)
+      payableEntries.filter(e => e.status === 'Approved' && inRange(e.date)).forEach(e => {
+        txns.push({
+          date: e.date, kind: 'payable',
+          label: `Payable — ${e.head}`,
+          detail: e.note || '—',
+          method: e.method + (e.bankName ? ` (${e.bankName})` : ''),
+          income: 0, expense: e.amount,
+          ref: ''
+        });
+      });
+
+      // 6. Receivable (income)
+      receivableEntries.filter(e => e.status === 'Approved' && inRange(e.date)).forEach(e => {
+        txns.push({
+          date: e.date, kind: 'receivable',
+          label: `Receivable — ${e.head}`,
+          detail: e.note || '—',
+          method: e.method + (e.bankName ? ` (${e.bankName})` : ''),
+          income: e.amount, expense: 0,
+          ref: ''
+        });
+      });
+
+      // ── Sort by date ─────────────────────────────────
+      txns.sort((a, b) => a.date.localeCompare(b.date));
+
+      // ── Apply type & search filter ────────────────────
+      if (typeFilter !== 'all') txns = txns.filter(t => t.kind === typeFilter);
+      if (search) txns = txns.filter(t =>
+        t.label.toLowerCase().includes(search) ||
+        t.detail.toLowerCase().includes(search) ||
+        t.method.toLowerCase().includes(search) ||
+        (t.ref || '').toLowerCase().includes(search)
+      );
+
+      // ── Totals ───────────────────────────────────────
+      let totSales     = txns.filter(t=>t.kind==='sale').reduce((s,t)=>s+t.income,0);
+      let totPayment   = txns.filter(t=>t.kind==='payment').reduce((s,t)=>s+t.income,0);
+      let totReceivable= txns.filter(t=>t.kind==='receivable').reduce((s,t)=>s+t.income,0);
+      let totAccIn     = txns.filter(t=>t.kind==='account-in').reduce((s,t)=>s+t.income,0);
+      let totReturn    = txns.filter(t=>t.kind==='return').reduce((s,t)=>s+t.expense,0);
+      let totPayable   = txns.filter(t=>t.kind==='payable').reduce((s,t)=>s+t.expense,0);
+      let totAccOut    = txns.filter(t=>t.kind==='account-out').reduce((s,t)=>s+t.expense,0);
+
+      let totalIn  = totSales + totPayment + totReceivable + totAccIn;
+      let totalOut = totReturn + totPayable + totAccOut;
+      let netPL    = totalIn - totalOut;
+
+      const fmt = v => '<span class="currency-symbol">৳</span>' + v.toFixed(2);
+
+      const fmtS = v => '৳' + (v>=1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(0));
+
+      // ── Summary strip ────────────────────────────────
+      document.getElementById('mlSumSales').innerHTML      = fmtS(totSales);
+      document.getElementById('mlSumPayment').innerHTML    = fmtS(totPayment);
+      document.getElementById('mlSumReceivable').innerHTML = fmtS(totReceivable);
+      document.getElementById('mlSumAccIn').innerHTML      = fmtS(totAccIn);
+      document.getElementById('mlSumTotalIn').innerHTML    = fmtS(totalIn);
+      document.getElementById('mlSumReturn').innerHTML     = fmtS(totReturn);
+      document.getElementById('mlSumPayable').innerHTML    = fmtS(totPayable);
+      document.getElementById('mlSumAccOut').innerHTML     = fmtS(totAccOut);
+      document.getElementById('mlSumTotalOut').innerHTML   = fmtS(totalOut);
+
+      // ── Net P&L bar ──────────────────────────────────
+      let netEl = document.getElementById('mlNetValue');
+      netEl.innerHTML = (netPL < 0 ? '− ' : '+ ') + fmt(Math.abs(netPL));
+      netEl.style.color = netPL < 0 ? 'var(--red)' : '#16a34a';
+      document.getElementById('mlPeriodLabel').innerText =
+        from && to ? `${from} → ${to}` : from ? `${from} ${t('mlFrom')}` : to ? `${t('mlTo')} ${to}` : t('mlAllPeriod');
+
+      // ── Render ───────────────────────────────────────
+      if (viewMode === 'monthly') {
+        renderMasterLedgerMonthly(txns, totalIn, totalOut, netPL, fmt);
+      } else {
+        renderMasterLedgerAll(txns, fmt);
+      }
+    }
+
+    // ─── All Transactions view (running balance) ──────
+    function renderMasterLedgerAll(txns, fmt) {
+      let tbody = document.getElementById('mlTableBody');
+      let tfoot = document.getElementById('mlTableFoot');
+      let balance = 0;
+      let totalIn = 0, totalOut = 0;
+
+      const kindMeta = {
+        'sale':        { label: t('mlKindSale'),        cls: 'ml-sale',        row: 'ml-income'  },
+        'payment':     { label: t('mlKindPayment'),     cls: 'ml-payment',     row: 'ml-income'  },
+        'receivable':  { label: t('mlKindReceivable'),  cls: 'ml-receivable',  row: 'ml-income'  },
+        'account-in':  { label: t('mlKindAccIn'),       cls: 'ml-account-in',  row: 'ml-income'  },
+        'return':      { label: t('mlKindReturn'),      cls: 'ml-return',      row: 'ml-expense' },
+        'payable':     { label: t('mlKindPayable'),     cls: 'ml-payable',     row: 'ml-expense' },
+        'account-out': { label: t('mlKindAccOut'),      cls: 'ml-account-out', row: 'ml-expense' },
+      };
+
+      tbody.innerHTML = txns.length ? txns.map(t => {
+        balance += t.income - t.expense;
+        totalIn  += t.income;
+        totalOut += t.expense;
+        let m = kindMeta[t.kind] || { label: t.kind, cls: '', row: 'ml-neutral' };
+        return `<tr class="${m.row}">
+          <td style="font-size:12px; color:var(--muted); white-space:nowrap;">${t.date}</td>
+          <td><span class="ml-type-pill ${m.cls}">${m.label}</span></td>
+          <td style="max-width:220px; font-size:12.5px;">${t.label}<br><span style="color:var(--muted); font-size:11px;">${t.detail}</span></td>
+          <td style="font-size:12px; color:var(--muted);">${t.method}</td>
+          <td style="text-align:right; color:var(--green); font-weight:${t.income>0?'700':'400'}; white-space:nowrap;">${t.income>0 ? fmt(t.income) : '—'}</td>
+          <td style="text-align:right; color:var(--red); font-weight:${t.expense>0?'700':'400'}; white-space:nowrap;">${t.expense>0 ? fmt(t.expense) : '—'}</td>
+          <td style="text-align:right; font-weight:700; color:${balance>=0?'#16a34a':'var(--red)'}; white-space:nowrap;">${fmt(Math.abs(balance))}${balance<0?' ▼':''}</td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:30px;">${t('mlNoData')}</td></tr>`;
+
+      tfoot.innerHTML = `
+        <tr style="background:var(--navy); color:#fff; font-weight:800; font-size:13px;">
+          <td colspan="4" style="padding:10px 14px;">${t('mlTotal')}</td>
+          <td style="text-align:right; color:#86efac; padding:10px 8px;">${fmt(totalIn)}</td>
+          <td style="text-align:right; color:#fca5a5; padding:10px 8px;">${fmt(totalOut)}</td>
+          <td style="text-align:right; padding:10px 8px; color:${(totalIn-totalOut)>=0?'#86efac':'#fca5a5'};">
+            ${(totalIn-totalOut)>=0?'+':'−'}${fmt(Math.abs(totalIn-totalOut))}
+          </td>
+        </tr>`;
+    }
+
+    // ─── Monthly Summary view ─────────────────────────
+    function renderMasterLedgerMonthly(txns, totalIn, totalOut, netPL, fmt) {
+      let months = {};
+      txns.forEach(t => {
+        let mo = t.date ? t.date.substring(0,7) : '????-??';
+        if (!months[mo]) months[mo] = { income:0, expense:0, rows:[] };
+        months[mo].income  += t.income;
+        months[mo].expense += t.expense;
+        months[mo].rows.push(t);
+      });
+
+      const kindMeta = {
+        'sale':        { label: t('mlKindSale'),        cls: 'ml-sale',        row: 'ml-income'  },
+        'payment':     { label: t('mlKindPayment'),     cls: 'ml-payment',     row: 'ml-income'  },
+        'receivable':  { label: t('mlKindReceivable'),  cls: 'ml-receivable',  row: 'ml-income'  },
+        'account-in':  { label: t('mlKindAccIn'),       cls: 'ml-account-in',  row: 'ml-income'  },
+        'return':      { label: t('mlKindReturn'),      cls: 'ml-return',      row: 'ml-expense' },
+        'payable':     { label: t('mlKindPayable'),     cls: 'ml-payable',     row: 'ml-expense' },
+        'account-out': { label: t('mlKindAccOut'),      cls: 'ml-account-out', row: 'ml-expense' },
+      };
+
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+      let html = '';
+      Object.entries(months).sort().forEach(([mo, data]) => {
+        let [yr, mn] = mo.split('-');
+        let moLabel = (monthNames[parseInt(mn)-1] || mn) + ' ' + yr;
+        let net = data.income - data.expense;
+
+        html += `<tr>
+          <td colspan="7" class="ml-monthly-header">
+            📅 ${moLabel} &nbsp;|&nbsp;
+            ${t('mlIncome')}: <span style="color:#86efac;">${fmt(data.income)}</span> &nbsp;
+            ${t('mlExpense')}: <span style="color:#fca5a5;">${fmt(data.expense)}</span> &nbsp;
+            ${t('mlNet')}: <span style="color:${net>=0?'#86efac':'#fca5a5'};">${net>=0?'+':'−'}${fmt(Math.abs(net))}</span>
+          </td>
+        </tr>`;
+
+        data.rows.forEach(t => {
+          let m = kindMeta[t.kind] || { label: t.kind, cls: '', row: 'ml-neutral' };
+          html += `<tr class="${m.row}">
+            <td style="font-size:12px; color:var(--muted); padding-left:20px;">${t.date}</td>
+            <td><span class="ml-type-pill ${m.cls}">${m.label}</span></td>
+            <td style="max-width:200px; font-size:12.5px;">${t.label}<br><span style="color:var(--muted); font-size:11px;">${t.detail}</span></td>
+            <td style="font-size:12px; color:var(--muted);">${t.method}</td>
+            <td style="text-align:right; color:var(--green); font-weight:${t.income>0?'700':'400'}; white-space:nowrap;">${t.income>0 ? fmt(t.income) : '—'}</td>
+            <td style="text-align:right; color:var(--red); font-weight:${t.expense>0?'700':'400'}; white-space:nowrap;">${t.expense>0 ? fmt(t.expense) : '—'}</td>
+            <td></td>
+          </tr>`;
+        });
+
+        html += `<tr style="background:var(--paper); border-top:2px solid var(--border);">
+          <td colspan="4" style="text-align:right; font-weight:800; padding:8px 14px;">${moLabel} ${t('mlMonthTotal')}:</td>
+          <td style="text-align:right; color:var(--green); font-weight:800;">${fmt(data.income)}</td>
+          <td style="text-align:right; color:var(--red); font-weight:800;">${fmt(data.expense)}</td>
+          <td style="text-align:right; font-weight:900; color:${net>=0?'#16a34a':'var(--red)'};">${net>=0?'+':'−'}${fmt(Math.abs(net))}</td>
+        </tr><tr><td colspan="7" style="height:12px;"></td></tr>`;
+      });
+
+      if (!html) html = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:30px;">${t('mlNoData')}</td></tr>`;
+
+      document.getElementById('mlTableBody').innerHTML = html;
+      document.getElementById('mlTableFoot').innerHTML = `
+        <tr style="background:var(--navy); color:#fff; font-weight:800; font-size:13px;">
+          <td colspan="4" style="padding:10px 14px;">${t('mlGrandTotal')}</td>
+          <td style="text-align:right; color:#86efac; padding:10px 8px;">${fmt(totalIn)}</td>
+          <td style="text-align:right; color:#fca5a5; padding:10px 8px;">${fmt(totalOut)}</td>
+          <td style="text-align:right; padding:10px 8px; color:${netPL>=0?'#86efac':'#fca5a5'};">
+            ${netPL>=0?'+':'−'}${fmt(Math.abs(netPL))}
+          </td>
+        </tr>`;
+    }
+    // ═══════════════════════════════════════════════════
+
+    function resetRplFilter() {
+      ['rplFromDate','rplToDate','rplBank','rplHead','rplMethod','rplSearch']
+        .forEach(id => { let el = document.getElementById(id); if (el) el.value = el.tagName==='SELECT' ? (id==='rplHead'||id==='rplBank'?'All':'All') : ''; });
+      runPaymentLedgerReport();
+    }
+
+    function runPaymentLedgerReport() {
+      let from   = document.getElementById('rplFromDate').value;
+      let to     = document.getElementById('rplToDate').value;
+      let bankId = document.getElementById('rplBank')?.value || 'All';
+      let head   = document.getElementById('rplHead').value;
+      let method = document.getElementById('rplMethod').value;
+      let search = document.getElementById('rplSearch').value.toLowerCase().trim();
+
+      let inRange     = d => (!from || d >= from) && (!to || d <= to);
+      let matchBank   = e => bankId === 'All' || String(e.bankId||'') === bankId ||
+                             (bankId !== 'All' && e.bankName && bankAccounts.find(b=>String(b.id)===bankId)?.name &&
+                              e.bankName.includes(bankAccounts.find(b=>String(b.id)===bankId).name));
+      let matchHead   = e => head   === 'All' || e.head   === head;
+      let matchMethod = e => method === 'All' || e.method === method;
+      let matchSearch = e => !search || (e.note||'').toLowerCase().includes(search) || (e.head||'').toLowerCase().includes(search);
+
+      let filteredP = payableEntries.filter(e => inRange(e.date) && matchBank(e) && matchHead(e) && matchMethod(e) && matchSearch(e));
+      let filteredR = receivableEntries.filter(e => inRange(e.date) && matchBank(e) && matchHead(e) && matchMethod(e) && matchSearch(e));
+
+      let totalP = filteredP.reduce((s, e) => s + e.amount, 0);
+      let totalR = filteredR.reduce((s, e) => s + e.amount, 0);
+      let netBal = totalR - totalP;
+      let margin = totalR > 0 ? (netBal / totalR * 100) : 0;
+
+      // Bank summary bar
+      let rplBankBar = document.getElementById('rplBankSummaryBar');
+      if (rplBankBar) {
+        if (bankId !== 'All') {
+          let b = bankAccounts.find(x => String(x.id) === bankId);
+          let allFiltered = [...filteredP, ...filteredR];
+          let byHead = {};
+          allFiltered.forEach(e => { byHead[e.head] = (byHead[e.head]||0) + (filteredP.includes(e) ? -e.amount : e.amount); });
+          let headRows = Object.entries(byHead).map(([h,v]) =>
+            `<span style="background:var(--paper); border:1px solid var(--border); border-radius:20px; padding:3px 10px; font-size:12px; font-weight:700; margin:2px;">
+              ${h}: <span style="color:${v>=0?'var(--green)':'var(--red)'}; font-weight:800;"><span class="currency-symbol">৳</span>${Math.abs(v).toFixed(2)} ${v>=0?'▲':'▼'}</span>
+            </span>`
+          ).join('');
+          rplBankBar.style.display = 'block';
+          rplBankBar.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:space-between; margin-bottom:8px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:20px;">🏦</span>
+                <div>
+                  <div style="font-weight:800; font-size:15px;">${b ? b.name : '—'}</div>
+                  <div style="font-size:12px; color:var(--muted);">${b ? b.number : ''}</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                <div style="text-align:center;">
+                  <div style="font-size:11px; color:var(--muted);">Payable (Out)</div>
+                  <div style="font-weight:800; color:var(--red); font-size:16px;"><span class="currency-symbol">৳</span>${totalP.toFixed(2)}</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:11px; color:var(--muted);">Receivable (In)</div>
+                  <div style="font-weight:800; color:var(--green); font-size:16px;"><span class="currency-symbol">৳</span>${totalR.toFixed(2)}</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:11px; color:var(--muted);">Net</div>
+                  <div style="font-weight:900; color:${(totalR-totalP)>=0?'#6366f1':'var(--red)'}; font-size:16px;">
+                    ${(totalR-totalP)>=0?'+':'−'}<span class="currency-symbol">৳</span>${Math.abs(totalR-totalP).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:4px;">${headRows}</div>`;
+        } else {
+          rplBankBar.style.display = 'none';
+        }
+      }
+
+      // Summary tiles
+      document.getElementById('rplTotalPayable').innerHTML   = '<span class="currency-symbol">৳</span>' + totalP.toFixed(2);
+      document.getElementById('rplTotalReceivable').innerHTML = '<span class="currency-symbol">৳</span>' + totalR.toFixed(2);
+      let netEl = document.getElementById('rplNetBalance');
+      netEl.innerHTML = (netBal < 0 ? '-' : '') + '<span class="currency-symbol">৳</span>' + Math.abs(netBal).toFixed(2);
+      netEl.style.color = netBal < 0 ? 'var(--red)' : '#6366f1';
+      let mEl = document.getElementById('rplMargin');
+      mEl.innerText = margin.toFixed(1) + '%';
+      mEl.style.color = margin < 0 ? 'var(--red)' : 'var(--gold)';
+
+      // Payable table
+      let pbody = document.querySelector('#rplPayableTable tbody');
+      pbody.innerHTML = filteredP.length
+        ? filteredP.map(e => `<tr>
+            <td>${e.date || '—'}</td>
+            <td><span class="head-tag">${e.head}</span></td>
+            <td>${e.method === 'Bank' ? `<span class="bank-chip">🏦 ${e.bankName||'Bank'}</span>` : `<b>${e.method==='Mobile'?'📱 Mobile':'💵 Cash'}</b>`}</td>
+            <td>${e.note || '—'}</td>
+            <td>${e.status === 'Approved' ? `<span class="badge badge-ok">Approved</span>` : e.status === 'Declined' ? `<span class="badge badge-alert">Declined</span>` : `<span class="badge badge-pending">Pending</span>`}</td>
+            <td style="font-weight:700; color:var(--red);"><span class="currency-symbol">৳</span>${e.amount.toFixed(2)}</td>
+          </tr>`).join('')
+        : `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">${t('prNoData')}</td></tr>`;
+      document.getElementById('rplPayableTotal').innerHTML = '<span class="currency-symbol">৳</span>' + totalP.toFixed(2);
+      document.getElementById('rplPayableCount').innerText = filteredP.length + ' entries';
+
+      // Receivable table
+      let rbody = document.querySelector('#rplReceivableTable tbody');
+      rbody.innerHTML = filteredR.length
+        ? filteredR.map(e => `<tr>
+            <td>${e.date || '—'}</td>
+            <td><span class="head-tag" style="background:var(--green-soft);color:var(--green);">${e.head}</span></td>
+            <td>${e.method === 'Bank' ? `<span class="bank-chip">🏦 ${e.bankName||'Bank'}</span>` : `<b>${e.method==='Mobile'?'📱 Mobile':'💵 Cash'}</b>`}</td>
+            <td>${e.note || '—'}</td>
+            <td>${e.status === 'Approved' ? `<span class="badge badge-ok">Approved</span>` : e.status === 'Declined' ? `<span class="badge badge-alert">Declined</span>` : `<span class="badge badge-pending">Pending</span>`}</td>
+            <td style="font-weight:700; color:var(--green);"><span class="currency-symbol">৳</span>${e.amount.toFixed(2)}</td>
+          </tr>`).join('')
+        : `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">${t('prNoData')}</td></tr>`;
+      document.getElementById('rplReceivableTotal').innerHTML = '<span class="currency-symbol">৳</span>' + totalR.toFixed(2);
+      document.getElementById('rplReceivableCount').innerText = filteredR.length + ' entries';
     }
 
     function runSalesReport() {
@@ -3127,6 +4036,7 @@
       renderUsersTable();
       // Payable/Receivable re-render
       populatePRDropdowns();
+      populatePRFilters();
       renderPayable();
       renderReceivable();
       renderPRSummary();
@@ -5641,27 +6551,27 @@
         <table style="width:100%; margin-top:10px; border-collapse:collapse;">
           <tr style="background:#f8f6f1;">
             <td style="padding:8px 10px; font-weight:700; width:40%;">Voucher No</td>
-            <td style="padding:8px 10px; text-align:right;">${kind === 'payable' ? 'PAY' : 'RCV'}-${entry.id.toString().slice(-6)}</td>
+            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${kind === 'payable' ? 'PAY' : 'RCV'}-${entry.id.toString().slice(-6)}</td>
           </tr>
           <tr>
             <td style="padding:8px 10px; font-weight:700;">Head</td>
-            <td style="padding:8px 10px; text-align:right;">${entry.head}</td>
+            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.head}</td>
           </tr>
           <tr style="background:#f8f6f1;">
             <td style="padding:8px 10px; font-weight:700;">${t('prPaymentSystemLabel')}</td>
-            <td style="padding:8px 10px; text-align:right;">${entry.method}${entry.bankName ? ' — ' + entry.bankName : ''}</td>
+            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.method}${entry.bankName ? ' — ' + entry.bankName : ''}</td>
           </tr>
           ${entry.note ? `<tr>
             <td style="padding:8px 10px; font-weight:700;">${t('prNoteLabel')}</td>
-            <td style="padding:8px 10px; text-align:right;">${entry.note}</td>
+            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.note}</td>
           </tr>` : ''}
           <tr>
             <td style="padding:8px 10px; font-weight:700;">${t('lblDate')}</td>
-            <td style="padding:8px 10px; text-align:right;">${entry.date}</td>
+            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.date}</td>
           </tr>
           <tr>
             <td style="padding:8px 10px; font-weight:700;">Created By</td>
-            <td style="padding:8px 10px; text-align:right;">${entry.createdByName || entry.createdBy || '-'}</td>
+            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.createdByName || entry.createdBy || '-'}</td>
           </tr>
           <tr style="border-top:2px dashed #e2e8f0;">
             <td style="padding:12px 10px; font-size:15px; font-weight:800;">${t('prAmountLabel')}</td>
@@ -5775,13 +6685,13 @@
         bankName = b ? b.name + ' (' + b.number + ')' : '';
       }
 
-      let today = new Date().toISOString().split('T')[0];
+      let today = document.getElementById('payableDate').value || new Date().toISOString().split('T')[0];
       let prStatus = (currentUserRole === 'staff') ? 'Pending' : 'Approved';
 
       if (editId) {
         if (currentUserRole !== 'admin') return alert(t('alertOnlyAdminAddTransaction'));
         let entry = payableEntries.find(x => x.id == editId);
-        if (entry) { entry.head = head; entry.method = method; entry.bankName = bankName; entry.amount = amount; entry.note = note; }
+        if (entry) { entry.head = head; entry.method = method; entry.bankName = bankName; entry.amount = amount; entry.note = note; entry.date = today; }
         document.getElementById('editPayableId').value = '';
         document.getElementById('btnPayableCancel').style.display = 'none';
         saveData(); renderPayable(); renderPRSummary(); renderDashboard();
@@ -5791,7 +6701,9 @@
       }
 
       payableEntries.unshift({
-        id: Date.now(), date: today, head, method, bankName, amount, note,
+        id: Date.now(), date: today, head, method, bankName,
+        bankId: (method === 'Bank' && bankId) ? parseInt(bankId) : null,
+        amount, note,
         kind: 'payable', status: prStatus,
         createdBy: currentUserRole,
         createdByUid: window.currentAuthUser ? window.currentAuthUser.uid : null,
@@ -5824,13 +6736,13 @@
         bankName = b ? b.name + ' (' + b.number + ')' : '';
       }
 
-      let today = new Date().toISOString().split('T')[0];
+      let today = document.getElementById('receivableDate').value || new Date().toISOString().split('T')[0];
       let prStatus = (currentUserRole === 'staff') ? 'Pending' : 'Approved';
 
       if (editId) {
         if (currentUserRole !== 'admin') return alert(t('alertOnlyAdminAddTransaction'));
         let entry = receivableEntries.find(x => x.id == editId);
-        if (entry) { entry.head = head; entry.method = method; entry.bankName = bankName; entry.amount = amount; entry.note = note; }
+        if (entry) { entry.head = head; entry.method = method; entry.bankName = bankName; entry.amount = amount; entry.note = note; entry.date = today; }
         document.getElementById('editReceivableId').value = '';
         document.getElementById('btnReceivableCancel').style.display = 'none';
         saveData(); renderReceivable(); renderPRSummary(); renderDashboard();
@@ -5840,7 +6752,9 @@
       }
 
       receivableEntries.unshift({
-        id: Date.now(), date: today, head, method, bankName, amount, note,
+        id: Date.now(), date: today, head, method, bankName,
+        bankId: (method === 'Bank' && bankId) ? parseInt(bankId) : null,
+        amount, note,
         kind: 'receivable', status: prStatus,
         createdBy: currentUserRole,
         createdByUid: window.currentAuthUser ? window.currentAuthUser.uid : null,
@@ -5918,6 +6832,7 @@
       document.getElementById('payableHead').value = e.head;
       document.getElementById('payableMethod').value = e.method;
       document.getElementById('payableAmount').value = e.amount;
+      document.getElementById('payableDate').value = e.date || '';
       document.getElementById('payableNote').value = e.note;
       togglePayableBankSelect();
       document.getElementById('btnPayableCancel').style.display = 'inline-block';
@@ -5936,6 +6851,7 @@
       document.getElementById('receivableHead').value = e.head;
       document.getElementById('receivableMethod').value = e.method;
       document.getElementById('receivableAmount').value = e.amount;
+      document.getElementById('receivableDate').value = e.date || '';
       document.getElementById('receivableNote').value = e.note;
       toggleReceivableBankSelect();
       document.getElementById('btnReceivableCancel').style.display = 'inline-block';
@@ -5966,6 +6882,7 @@
       document.getElementById('payableHead').value = '';
       document.getElementById('payableMethod').value = 'Cash';
       document.getElementById('payableAmount').value = '';
+      document.getElementById('payableDate').value = '';
       document.getElementById('payableNote').value = '';
       document.getElementById('payableBankSelectWrap').style.display = 'none';
       document.getElementById('btnPayableCancel').style.display = 'none';
@@ -5976,23 +6893,163 @@
       document.getElementById('receivableHead').value = '';
       document.getElementById('receivableMethod').value = 'Cash';
       document.getElementById('receivableAmount').value = '';
+      document.getElementById('receivableDate').value = '';
       document.getElementById('receivableNote').value = '';
       document.getElementById('receivableBankSelectWrap').style.display = 'none';
       document.getElementById('btnReceivableCancel').style.display = 'none';
     }
 
+    function populatePRFilters() {
+      // Payable filters
+      let pb = document.getElementById('payableFilterBank');
+      let ph = document.getElementById('payableFilterHead');
+      if (pb) {
+        pb.innerHTML = '<option value="">🏦 সকল ব্যাংক</option>';
+        bankAccounts.forEach(b => pb.innerHTML += `<option value="${b.id}">${b.name} (${b.number})</option>`);
+      }
+      if (ph) {
+        ph.innerHTML = '<option value="">📌 সকল Head</option>';
+        [...new Set(payableEntries.map(e => e.head).filter(Boolean))].sort()
+          .forEach(h => ph.innerHTML += `<option value="${h}">${h}</option>`);
+      }
+      // Receivable filters
+      let rb = document.getElementById('receivableFilterBank');
+      let rh = document.getElementById('receivableFilterHead');
+      if (rb) {
+        rb.innerHTML = '<option value="">🏦 সকল ব্যাংক</option>';
+        bankAccounts.forEach(b => rb.innerHTML += `<option value="${b.id}">${b.name} (${b.number})</option>`);
+      }
+      if (rh) {
+        rh.innerHTML = '<option value="">📌 সকল Head</option>';
+        [...new Set(receivableEntries.map(e => e.head).filter(Boolean))].sort()
+          .forEach(h => rh.innerHTML += `<option value="${h}">${h}</option>`);
+      }
+    }
+
     function filterPayable() {
-      let from = document.getElementById('payableFilterFrom').value;
-      let to = document.getElementById('payableFilterTo').value;
-      let filtered = payableEntries.filter(e => (!from || e.date >= from) && (!to || e.date <= to));
+      let from   = document.getElementById('payableFilterFrom').value;
+      let to     = document.getElementById('payableFilterTo').value;
+      let bankId = document.getElementById('payableFilterBank').value;
+      let head   = document.getElementById('payableFilterHead').value;
+      let method = document.getElementById('payableFilterMethod').value;
+
+      let filtered = payableEntries.filter(e => {
+        let inDate   = (!from || e.date >= from) && (!to || e.date <= to);
+        let inBank   = !bankId || String(e.bankId || '') === bankId ||
+                       (bankId && e.bankName && bankAccounts.find(b => String(b.id) === bankId)?.name &&
+                        e.bankName.includes(bankAccounts.find(b => String(b.id) === bankId).name));
+        let inHead   = !head   || e.head === head;
+        let inMethod = !method || e.method === method;
+        return inDate && inBank && inHead && inMethod;
+      });
+
       renderPayable(filtered);
+      renderPRFilterSummary('payable', filtered, bankId, head, method);
     }
 
     function filterReceivable() {
-      let from = document.getElementById('receivableFilterFrom').value;
-      let to = document.getElementById('receivableFilterTo').value;
-      let filtered = receivableEntries.filter(e => (!from || e.date >= from) && (!to || e.date <= to));
+      let from   = document.getElementById('receivableFilterFrom').value;
+      let to     = document.getElementById('receivableFilterTo').value;
+      let bankId = document.getElementById('receivableFilterBank').value;
+      let head   = document.getElementById('receivableFilterHead').value;
+      let method = document.getElementById('receivableFilterMethod').value;
+
+      let filtered = receivableEntries.filter(e => {
+        let inDate   = (!from || e.date >= from) && (!to || e.date <= to);
+        let inBank   = !bankId || String(e.bankId || '') === bankId ||
+                       (bankId && e.bankName && bankAccounts.find(b => String(b.id) === bankId)?.name &&
+                        e.bankName.includes(bankAccounts.find(b => String(b.id) === bankId).name));
+        let inHead   = !head   || e.head === head;
+        let inMethod = !method || e.method === method;
+        return inDate && inBank && inHead && inMethod;
+      });
+
       renderReceivable(filtered);
+      renderPRFilterSummary('receivable', filtered, bankId, head, method);
+    }
+
+    function renderPRFilterSummary(type, filtered, bankId, head, method) {
+      let summaryEl = document.getElementById(type + 'BankSummary');
+      if (!summaryEl) return;
+      if (!bankId && !head && !method) { summaryEl.style.display = 'none'; return; }
+
+      let isPayable = type === 'payable';
+      let color     = isPayable ? 'var(--red)' : 'var(--green)';
+      let total     = filtered.reduce((s, e) => s + e.amount, 0);
+
+      // ── Bank info bar ──
+      let bankBar = '';
+      if (bankId) {
+        let b = bankAccounts.find(x => String(x.id) === bankId);
+        bankBar = `
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 14px;
+            background:${isPayable?'var(--red-soft)':'var(--green-soft)'};
+            border-radius:8px; margin-bottom:10px; flex-wrap:wrap;">
+            <span style="font-size:16px;">🏦</span>
+            <div>
+              <div style="font-weight:800; font-size:14px; color:${color};">
+                ${b ? b.name : '—'}
+              </div>
+              <div style="font-size:11.5px; color:var(--muted);">
+                ${b ? b.number : ''} &nbsp;·&nbsp; ${filtered.length} টি এন্ট্রি
+              </div>
+            </div>
+            <div style="margin-left:auto; text-align:right;">
+              <div style="font-size:11px; color:var(--muted);">${isPayable ? 'মোট পরিশোধ' : 'মোট প্রাপ্তি'}</div>
+              <div style="font-size:20px; font-weight:900; color:${color};">
+                <span class="currency-symbol">৳</span>${total.toFixed(2)}
+              </div>
+            </div>
+          </div>`;
+      }
+
+      // ── Head breakdown ──
+      let byHead = {};
+      filtered.forEach(e => { byHead[e.head] = (byHead[e.head]||0) + e.amount; });
+      let headRows = Object.entries(byHead).sort((a,b) => b[1]-a[1]).map(([h,a]) => `
+        <div style="display:flex; justify-content:space-between; padding:5px 0;
+          border-bottom:1px dashed var(--border); font-size:13px;">
+          <span class="head-tag" style="${isPayable
+            ? 'background:var(--red-soft);color:var(--red)'
+            : 'background:var(--green-soft);color:var(--green)'}">${h}</span>
+          <span style="font-weight:700; color:${color};">
+            <span class="currency-symbol">৳</span>${a.toFixed(2)}
+          </span>
+        </div>`).join('');
+
+      // ── Method breakdown ──
+      let byMethod = {};
+      filtered.forEach(e => { byMethod[e.method] = (byMethod[e.method]||0) + e.amount; });
+      let methodPills = Object.entries(byMethod).map(([m,a]) =>
+        `<span style="background:var(--paper); border:1px solid var(--border); border-radius:20px;
+          padding:3px 10px; font-size:12px; font-weight:700;">
+          ${m === 'Bank' ? '🏦' : m === 'Mobile' ? '📱' : '💵'} ${m}: <span style="color:${color};">
+          <span class="currency-symbol">৳</span>${a.toFixed(2)}</span>
+        </span>`
+      ).join(' ');
+
+      summaryEl.style.display = 'block';
+      summaryEl.innerHTML = `
+        ${bankBar}
+        ${headRows ? `<div style="margin-bottom:10px;">${headRows}</div>` : ''}
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+          <span style="font-size:12px; color:var(--muted); font-weight:600;">মেথড:</span>
+          ${methodPills || '—'}
+        </div>`;
+    }
+
+    function resetPayableFilter() {
+      ['payableFilterFrom','payableFilterTo','payableFilterBank','payableFilterHead','payableFilterMethod']
+        .forEach(id => { let el = document.getElementById(id); if (el) el.value = ''; });
+      document.getElementById('payableBankSummary').style.display = 'none';
+      renderPayable();
+    }
+
+    function resetReceivableFilter() {
+      ['receivableFilterFrom','receivableFilterTo','receivableFilterBank','receivableFilterHead','receivableFilterMethod']
+        .forEach(id => { let el = document.getElementById(id); if (el) el.value = ''; });
+      document.getElementById('receivableBankSummary').style.display = 'none';
+      renderReceivable();
     }
 
     function renderPRSummary() {
@@ -6018,7 +7075,7 @@
       if (psEl) {
         psEl.innerHTML = payableRows.length
           ? payableRows.map(([h, a]) => `<div class="pl-row"><span>${h}</span><span style="color:var(--red); font-weight:700;"><span class="currency-symbol">৳</span>${a.toFixed(2)}</span></div>`).join('')
-            + `<div class="pl-row"><span>${t('prTotalPayableSum')}/span><span style="color:var(--red);"><span class="currency-symbol">৳</span>${totalPayable.toFixed(2)}</span></div>`
+            + `<div class="pl-row"><span style="font-weight:800;">${t('prTotalPayableSum')}</span><span style="color:var(--red); font-weight:800;"><span class="currency-symbol">৳</span>${totalPayable.toFixed(2)}</span></div>`
           : `<div class="pl-row"><span style="color:var(--muted);">${t('prNoSummaryData')}</span><span>—</span></div>`;
       }
 
@@ -6170,16 +7227,16 @@
         <div style="margin-top:36px; padding-top:18px; border-top:1px solid #e2e8f0;">
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; text-align:center;">
             <div>
-              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">প্রস্তুতকারীর স্বাক্ষর</div>
-              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Prepared By</div>
+              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">${t('sigPrepared')}</div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${t('sigPreparedEn')}</div>
             </div>
             <div>
-              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">অনুমোদনকারীর স্বাক্ষর</div>
-              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Authorized By</div>
+              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">${t('sigAuthorized')}</div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${t('sigAuthorizedEn')}</div>
             </div>
             <div>
-              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">গ্রাহকের স্বাক্ষর</div>
-              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Customer Signature</div>
+              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">${t('sigCustomer')}</div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${t('sigCustomerEn')}</div>
             </div>
           </div>
         </div>
@@ -6191,12 +7248,12 @@
         <div style="margin-top:36px; padding-top:18px; border-top:1px solid #e2e8f0;">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px; text-align:center;">
             <div>
-              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">প্রস্তুতকারীর স্বাক্ষর</div>
-              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Prepared By</div>
+              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">${t('sigPrepared')}</div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${t('sigPreparedEn')}</div>
             </div>
             <div>
-              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">অনুমোদনকারীর স্বাক্ষর</div>
-              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Authorized By</div>
+              <div style="border-top:1.5px solid #334155; padding-top:8px; margin-top:40px; font-size:12px; color:#475569; font-weight:600;">${t('sigAuthorized')}</div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${t('sigAuthorizedEn')}</div>
             </div>
           </div>
         </div>
@@ -6206,30 +7263,57 @@
     // ==================== END PAYABLE / RECEIVABLE ====================
 
 
+    function shopPrintHeader() {
+      let logo = shopConfig.logoImage
+        ? `<img src="${shopConfig.logoImage}" style="height:52px;object-fit:contain;margin:0 auto 6px;display:block;">`
+        : `<div style="width:52px;height:52px;border-radius:50%;background:#b9791f;color:#fff;font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;">${(shopConfig.logo||shopConfig.name||'B')[0]}</div>`;
+      return `
+        <div style="text-align:center;padding-bottom:14px;margin-bottom:16px;border-bottom:2px solid #e3ddd0;">
+          ${logo}
+          <div style="font-size:20px;font-weight:900;color:#111a27;letter-spacing:.3px;">${shopConfig.name||'Business Trading POS'}</div>
+          ${shopConfig.tagline?`<div style="font-size:12.5px;color:#6d7480;margin-top:2px;">${shopConfig.tagline}</div>`:''}
+          ${shopConfig.address?`<div style="font-size:11.5px;color:#6d7480;margin-top:3px;">📍 ${shopConfig.address}</div>`:''}
+          ${shopConfig.contact?`<div style="font-size:11.5px;color:#6d7480;margin-top:2px;">📞 ${shopConfig.contact}</div>`:''}
+          <div style="font-size:11px;color:#94a3b8;margin-top:5px;border-top:1px dashed #e3ddd0;padding-top:5px;">
+            Print Date: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+          </div>
+        </div>`;
+    }
+
+    // These divs already have their own shop header — skip adding another
+    const INVOICE_DIVS = new Set([
+      'printableInvoice','printableAccountVoucher','printablePRVoucher',
+      'printableReturnReceipt','printableDeliveryChallan',
+      'printableCancellationReceipt','printablePaymentReceipt',
+      'printableCustomerStatement','accountsPrintArea'
+    ]);
+
     function printDiv(divId) {
       const el = document.getElementById(divId);
       if (!el) return;
 
-      // Clone the content and print in an isolated iframe
+      const needsHeader = !INVOICE_DIVS.has(divId);
+
       const printFrame = document.createElement('iframe');
       printFrame.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:800px;height:600px;border:none;';
       document.body.appendChild(printFrame);
 
       const doc = printFrame.contentDocument || printFrame.contentWindow.document;
 
-      // Copy all stylesheets from parent page
       const styles = Array.from(document.styleSheets).map(sheet => {
         try {
           return Array.from(sheet.cssRules).map(r => r.cssText).join('\n');
         } catch(e) { return ''; }
       }).join('\n');
 
+      const header = needsHeader ? shopPrintHeader() : '';
+
       doc.open();
       doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
         <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-          * { box-sizing: border-box; font-family: 'Segoe UI','Hind Siliguri','Noto Sans Bengali',Arial,sans-serif; margin:0; padding:0; }
-          body { padding: 20px; color: #1c2430; font-size: 14px; }
+          * { box-sizing:border-box; font-family:'Segoe UI','Hind Siliguri','Noto Sans Bengali',Arial,sans-serif; margin:0; padding:0; }
+          body { padding:20px; color:#1c2430; font-size:13px; }
           :root {
             --navy:#111a27; --gold:#b9791f; --gold-soft:#fbe9d0; --paper:#f4f1ea;
             --border:#e3ddd0; --border-cool:#dcd9d2; --ink:#1c2430; --muted:#6d7480;
@@ -6237,9 +7321,13 @@
             --amber:#a8681a; --amber-soft:#fbe9cf; --radius:10px;
           }
           ${styles}
-          @media print { body * { visibility: visible !important; } }
+          .table-responsive { overflow:visible !important; width:100% !important; border:none !important; }
+          table { width:100% !important; table-layout:auto !important; border-collapse:collapse; }
+          th, td { white-space:normal !important; word-break:break-word; font-size:12px !important; padding:5px 6px !important; }
+          .card { box-shadow:none !important; border:1px solid #e3ddd0 !important; }
+          @media print { .no-print { display:none !important; } }
         </style>
-      </head><body>${el.outerHTML}</body></html>`);
+      </head><body>${header}${el.outerHTML}</body></html>`);
       doc.close();
 
       printFrame.contentWindow.focus();
@@ -6682,8 +7770,22 @@
       renderDashboard();
       setUserRole(currentUserRole || 'staff');
 
+      // Core dropdowns & renders
+      populateDropdowns();
+      renderSales();
+      renderProducts();
+      renderCategories();
+      renderCustomers();
+      renderLedger();
+      renderAccounts();
+      renderReturns();
+      renderUsersTable();
+      renderUnitConfigTable();
+      renderNotifications();
+
       // Payable / Receivable initial render
       populatePRDropdowns();
+      populatePRFilters();
       renderPayable();
       renderReceivable();
       renderPRSummary();
@@ -6696,7 +7798,7 @@
       startSplashRevealTimer();
       setLanguage(currentLang); // applies default language to the login screen too
 
-      await waitForFirebase();
+      await waitForFirebase(6000);
       renderShopInfo(); // shows logo on the login screen too, if already set locally
       let loginImg = document.getElementById('loginLogoImg');
       let loginPlaceholder = document.getElementById('loginLogoPlaceholder');
@@ -6709,8 +7811,20 @@
         if (splashPlaceholder) splashPlaceholder.style.display = 'none';
       }
       document.getElementById('loginShopName').innerText = shopConfig.name || t('loginTitle');
-      // If Firebase already knows about a logged-in session, authStateChanged
-      // will fire on its own and take over from here.
+
+      // Safety fallback: if authStateChanged hasn't fired after 7 seconds,
+      // show the login screen anyway so the user isn't stuck on splash.
+      setTimeout(() => {
+        let splash = document.getElementById('authSplash');
+        let login  = document.getElementById('loginScreen');
+        let app    = document.getElementById('appWrapper');
+        if (splash && !splash.classList.contains('hidden')) {
+          hideSplash();
+        }
+        if (login && login.classList.contains('hidden') && app && app.classList.contains('auth-hidden')) {
+          login.classList.remove('hidden');
+        }
+      }, 7000);
     };
   </script>
 </body>
