@@ -7396,11 +7396,11 @@
       </head><body>${header}${el.outerHTML}</body></html>`);
       doc.close();
 
-      printFrame.onload = () => {
+      setTimeout(() => {
         printFrame.contentWindow.focus();
         printFrame.contentWindow.print();
-        setTimeout(() => document.body.removeChild(printFrame), 1000);
-      };
+        setTimeout(() => { if (document.body.contains(printFrame)) document.body.removeChild(printFrame); }, 2000);
+      }, 800);
     }
 
     function setAppHeight() {
