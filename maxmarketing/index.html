@@ -109,6 +109,18 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 .icon-btn:hover{border-color:var(--ink);}
 
 .empty{text-align:center;padding:50px 20px;color:var(--ink-soft);border:1px dashed var(--line);border-radius:10px;}
+.pagination-row{
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  padding:14px 4px 4px;font-size:13px;color:var(--ink-soft);
+}
+.pagination-btns{display:flex;align-items:center;gap:10px;}
+.pagination-page{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink);}
+.pagination-btns .btn:disabled{opacity:0.4;cursor:not-allowed;}
+.report-print-table{display:none;}
+@media print{
+  .report-screen-table{display:none !important;}
+  .report-print-table{display:block !important;}
+}
 .empty .big{font-family:'Roboto Slab',serif;font-size:18px;color:var(--ink);margin-bottom:6px;}
 
 /* Modal */
@@ -561,6 +573,8 @@ const I18N = {
     range_all_time:'সর্বকালীন', range_custom:'নির্দিষ্ট সময়সীমা', range_from:'থেকে', range_to:'পর্যন্ত',
     filter_year:'বছর', filter_month:'মাস', all_years:'সব বছর', all_months:'সব মাস',
     totals_label:'মোট',
+    pagination_showing:(start,end,total)=>`${start}–${end} দেখাচ্ছে, মোট ${total}টি`,
+    pagination_prev:'আগের', pagination_next:'পরের',
     rep_col_sales:'বিক্রি', rep_col_purchase:'ক্রয়', rep_col_expense:'খরচ', rep_col_net:'নিট',
     stat_customer:'Total Customer', stat_product:'Total Product', stat_supplier:'Total Supplier',
     stat_sales:'Total Sales', stat_today_sales:'Today Sales', stat_today_purchase:'Todays Purchase',
@@ -660,6 +674,8 @@ const I18N = {
     range_all_time:'All Time', range_custom:'Custom Range', range_from:'From', range_to:'To',
     filter_year:'Year', filter_month:'Month', all_years:'All Years', all_months:'All Months',
     totals_label:'Total',
+    pagination_showing:(start,end,total)=>`Showing ${start}–${end} of ${total}`,
+    pagination_prev:'Prev', pagination_next:'Next',
     rep_col_sales:'Sales', rep_col_purchase:'Purchase', rep_col_expense:'Expense', rep_col_net:'Net',
     stat_customer:'Total Customer', stat_product:'Total Product', stat_supplier:'Total Supplier',
     stat_sales:'Total Sales', stat_today_sales:'Today Sales', stat_today_purchase:'Todays Purchase',
@@ -1432,6 +1448,7 @@ function renderInstallmentsPage(){
   `;
   document.getElementById('instPageSearch').addEventListener('input', (e) => {
     instPageQuery = e.target.value;
+    pageNum['installments'] = 1;
     renderInstList();
   });
 
@@ -1456,11 +1473,15 @@ function renderInstallmentsPage(){
       listEl.innerHTML = `<div class="empty"><div class="big">${t('no_active_installments')}</div></div>`;
       return;
     }
+    const totalPages = Math.max(1, Math.ceil(entries.length/PAGE_SIZE));
+    if(!pageNum['installments'] || pageNum['installments']>totalPages) pageNum['installments'] = 1;
+    const cur = pageNum['installments'];
+    const pageEntries = entries.slice((cur-1)*PAGE_SIZE, cur*PAGE_SIZE);
     listEl.innerHTML = `
       <table class="data">
         <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_voucher')}</th><th>${t('inst_remaining')}</th><th></th></tr></thead>
         <tbody>
-          ${entries.map(([id,cust]) => {
+          ${pageEntries.map(([id,cust]) => {
             const due = Number(cust.due);
             const accNos = accountNumbersFor(id);
             return `<tr>
@@ -1478,7 +1499,9 @@ function renderInstallmentsPage(){
           }).join('')}
         </tbody>
       </table>
+      ${renderPaginationHtml(cur, totalPages, entries.length)}
     `;
+    wirePaginationEvents('installments', renderInstList);
   }
 
   renderInstList();
@@ -1640,6 +1663,31 @@ function wireRangeToolbar(prefix, getState, setState, refresh){
   document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => window.print());
 }
 
+const REPORT_PAGE_SIZE = 50;
+function renderReportTableWithPagination(prefix, rows, theadHtml, rowFn, footHtml){
+  const totalPages = Math.max(1, Math.ceil(rows.length/REPORT_PAGE_SIZE));
+  if(!pageNum[prefix] || pageNum[prefix]>totalPages) pageNum[prefix] = 1;
+  const cur = pageNum[prefix];
+  const pageRows = rows.slice((cur-1)*REPORT_PAGE_SIZE, cur*REPORT_PAGE_SIZE);
+  return `
+    <div class="report-screen-table">
+      <table class="data">
+        <thead>${theadHtml}</thead>
+        <tbody>${pageRows.map(rowFn).join('')}</tbody>
+        ${footHtml||''}
+      </table>
+      ${renderPaginationHtml(cur, totalPages, rows.length)}
+    </div>
+    <div class="report-print-table">
+      <table class="data">
+        <thead>${theadHtml}</thead>
+        <tbody>${rows.map(rowFn).join('')}</tbody>
+        ${footHtml||''}
+      </table>
+    </div>
+  `;
+}
+
 function renderSalesOnlyReport(body){
   body.innerHTML = buildRangeToolbar('salesRpt');
   function refresh(){
@@ -1657,13 +1705,14 @@ function renderSalesOnlyReport(body){
       </div>
       <div class="panel">
         <h3>${t('nav_sales')}</h3>
-        <table class="data">
-          <thead><tr><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
-          <tbody>${list.map(s=>`<tr><td>${formatDateDMY(s.date)}</td><td>${escapeHtml(s.customerName||t('walk_in'))}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>৳${money(s.total)}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td></tr>`).join('')}</tbody>
-          <tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalValue)}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDue)}</td></tr></tfoot>
-        </table>
+        ${renderReportTableWithPagination('salesRptTable', list,
+          `<tr><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr>`,
+          s=>`<tr><td>${formatDateDMY(s.date)}</td><td>${escapeHtml(s.customerName||t('walk_in'))}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>৳${money(s.total)}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td></tr>`,
+          `<tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalValue)}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDue)}</td></tr></tfoot>`
+        )}
       </div>
     `;
+    wirePaginationEvents('salesRptTable', refresh);
   }
   wireRangeToolbar('salesRpt',
     () => ({range:salesRptRange, from:salesRptFrom, to:salesRptTo}),
@@ -1691,13 +1740,14 @@ function renderReturnsOnlyReport(body){
       </div>
       <div class="panel">
         <h3>${t('nav_returns')}</h3>
-        <table class="data">
-          <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th></tr></thead>
-          <tbody>${list.map(r=>`<tr><td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td><td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td><td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td></tr>`).join('')}</tbody>
-          <tfoot><tr style="font-weight:700;"><td colspan="5">${t('totals_label')} (${t('return_active')})</td><td>৳${money(totalValue)}</td><td></td></tr></tfoot>
-        </table>
+        ${renderReportTableWithPagination('returnsRptTable', list,
+          `<tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th></tr>`,
+          r=>`<tr><td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td><td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td><td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td></tr>`,
+          `<tfoot><tr style="font-weight:700;"><td colspan="5">${t('totals_label')} (${t('return_active')})</td><td>৳${money(totalValue)}</td><td></td></tr></tfoot>`
+        )}
       </div>
     `;
+    wirePaginationEvents('returnsRptTable', refresh);
   }
   wireRangeToolbar('returnsRpt',
     () => ({range:returnsRptRange, from:returnsRptFrom, to:returnsRptTo}),
@@ -1723,13 +1773,14 @@ function renderInstallmentOnlyReport(body){
       </div>
       <div class="panel">
         <h3>${t('nav_installments')}</h3>
-        <table class="data">
-          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('col_customer')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
-          <tbody>${list.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>${escapeHtml(i.customerName||'')}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td></tr>`).join('')}</tbody>
-          <tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalNewDue)}</td><td></td></tr></tfoot>
-        </table>
+        ${renderReportTableWithPagination('instRptTable', list,
+          `<tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('col_customer')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr>`,
+          i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>${escapeHtml(i.customerName||'')}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td></tr>`,
+          `<tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalNewDue)}</td><td></td></tr></tfoot>`
+        )}
       </div>
     `;
+    wirePaginationEvents('instRptTable', refresh);
   }
   wireRangeToolbar('instRpt',
     () => ({range:instRptRange, from:instRptFrom, to:instRptTo}),
@@ -2205,6 +2256,7 @@ function renderListPage(tab){
     const cat = isProducts ? document.getElementById('pgCatFilter').value : '';
     let filteredItems = items;
     if(cat) filteredItems = filteredItems.filter(([id,item]) => item.cat===cat);
+    pageNum[tab] = 1;
     renderTable(tab, filteredItems, search);
   }
 
@@ -2215,6 +2267,9 @@ function renderListPage(tab){
     if(tab==='sales') openMultiSale(); else openForm(tab, null);
   });
 }
+
+let pageNum = {};
+const PAGE_SIZE = 20;
 
 function renderTable(tab, items, search){
   const cfg = CONFIG[tab];
@@ -2227,11 +2282,15 @@ function renderTable(tab, items, search){
     wrap.innerHTML = `<div class="empty"><div class="big">${t('no_data')}</div>${t('no_data_hint')}</div>`;
     return;
   }
+  const totalPages = Math.max(1, Math.ceil(filtered.length/PAGE_SIZE));
+  if(!pageNum[tab] || pageNum[tab]>totalPages) pageNum[tab] = 1;
+  const cur = pageNum[tab];
+  const pageItems = filtered.slice((cur-1)*PAGE_SIZE, cur*PAGE_SIZE);
   wrap.innerHTML = `
     <table class="data">
       <thead><tr>${cfg.columns.map(c=>`<th>${t(c.hKey)}</th>`).join('')}<th></th></tr></thead>
       <tbody>
-        ${filtered.map(([id,item]) => {
+        ${pageItems.map(([id,item]) => {
           const isLow = cfg.isLow && cfg.isLow(item);
           const isGroup = !!item._groupIds;
           return `<tr class="${isLow?'low':''}">
@@ -2244,7 +2303,32 @@ function renderTable(tab, items, search){
           </tr>`;
         }).join('')}
       </tbody>
-    </table>`;
+    </table>
+    ${renderPaginationHtml(cur, totalPages, filtered.length)}
+  `;
+  wirePaginationEvents(tab, () => renderTable(tab, items, search));
+}
+
+function renderPaginationHtml(cur, totalPages, totalCount){
+  if(totalPages<=1) return '';
+  const start = (cur-1)*PAGE_SIZE + 1;
+  const end = Math.min(cur*PAGE_SIZE, totalCount);
+  return `
+    <div class="pagination-row no-print">
+      <span class="pagination-info">${t('pagination_showing')(start, end, totalCount)}</span>
+      <div class="pagination-btns">
+        <button class="btn ghost small" id="pgPrevBtn" ${cur<=1?'disabled':''}>‹ ${t('pagination_prev')}</button>
+        <span class="pagination-page">${cur} / ${totalPages}</span>
+        <button class="btn ghost small" id="pgNextBtn" ${cur>=totalPages?'disabled':''}>${t('pagination_next')} ›</button>
+      </div>
+    </div>
+  `;
+}
+function wirePaginationEvents(tab, rerender){
+  const prevBtn = document.getElementById('pgPrevBtn');
+  const nextBtn = document.getElementById('pgNextBtn');
+  if(prevBtn) prevBtn.addEventListener('click', () => { pageNum[tab] = Math.max(1, (pageNum[tab]||1)-1); rerender(); });
+  if(nextBtn) nextBtn.addEventListener('click', () => { pageNum[tab] = (pageNum[tab]||1)+1; rerender(); });
 }
 
 /* ---------- Generic Form Modal ---------- */
@@ -2910,6 +2994,7 @@ function renderReturnsPage(){
   `;
   document.getElementById('returnsPageSearch').addEventListener('input', (e) => {
     returnsPageQuery = e.target.value;
+    pageNum['returns'] = 1;
     renderList();
   });
   function renderList(){
@@ -2924,11 +3009,15 @@ function renderReturnsPage(){
       listEl.innerHTML = `<div class="empty"><div class="big">${t('return_no_history')}</div></div>`;
       return;
     }
+    const totalPages = Math.max(1, Math.ceil(list.length/PAGE_SIZE));
+    if(!pageNum['returns'] || pageNum['returns']>totalPages) pageNum['returns'] = 1;
+    const cur = pageNum['returns'];
+    const pageItems = list.slice((cur-1)*PAGE_SIZE, cur*PAGE_SIZE);
     listEl.innerHTML = `
       <table class="data">
         <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th><th></th></tr></thead>
         <tbody>
-          ${list.map(r => `<tr class="${r.cancelled?'':''}">
+          ${pageItems.map(r => `<tr class="${r.cancelled?'':''}">
             <td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td>
             <td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td>
             <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
@@ -2940,7 +3029,9 @@ function renderReturnsPage(){
           </tr>`).join('')}
         </tbody>
       </table>
+      ${renderPaginationHtml(cur, totalPages, list.length)}
     `;
+    wirePaginationEvents('returns', renderList);
   }
   renderList();
 }
