@@ -279,7 +279,7 @@
     @media (max-width: 480px) {
       .header { padding: 8px 10px; }
       .shop-info h2 { max-width: 38vw; font-size: 13.5px; }
-      .icon-btn { width: 50px; height: 36px; }
+      .icon-btn { width: 36px; height: 36px; }
       .icon-btn svg { width: 17px; height: 17px; }
       .segment button { padding: 5px 7px; font-size: 11px; }
       #displayShopName { font-size: 12px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -864,6 +864,7 @@
                     <th data-key="thBagWeight">১ বস্তার ওজন (কেজি)</th>
                     <th data-key="thKgPrice">১ কেজির মূল্য (৳)</th>
                     <th data-key="thTotalBagPrice">১ বস্তার মোট মূল্য (৳)</th>
+                    <th>১ টনের মূল্য (৳)</th>
                     <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
                   </tr>
                 </thead>
@@ -1998,6 +1999,7 @@
       <select id="saleUnitType" onchange="updatePriceAndUnit()">
         <option value="Bag" data-key="optUnitBag">বস্তা</option>
         <option value="Kg" data-key="optUnitKg">কেজি</option>
+        <option value="Ton" data-key="optUnitTon">টন</option>
       </select>
 
       <label id="lblSaleQty" data-key="lblQty">পরিমাণ:</label>
@@ -2100,6 +2102,7 @@
       <select id="returnUnitType" onchange="updateReturnPreview()">
         <option value="Bag" data-key="optUnitBag">বস্তা</option>
         <option value="Kg" data-key="optUnitKg">কেজি</option>
+        <option value="Ton" data-key="optUnitTon">টন</option>
       </select>
 
       <label data-key="lblReturnQty">রিটার্ন পরিমাণ:</label>
@@ -2136,6 +2139,7 @@
       <select id="deliveryUnitType">
         <option value="Bag" data-key="optUnitBag">বস্তা</option>
         <option value="Kg" data-key="optUnitKg">কেজি</option>
+        <option value="Ton" data-key="optUnitTon">টন</option>
       </select>
 
       <label data-key="lblDeliveryQty">ডেলিভারি পরিমাণ:</label>
@@ -2183,6 +2187,7 @@
       <select id="cancelUnitType">
         <option value="Bag" data-key="optUnitBag">বস্তা</option>
         <option value="Kg" data-key="optUnitKg">কেজি</option>
+        <option value="Ton" data-key="optUnitTon">টন</option>
       </select>
 
       <label data-key="lblCancelQty">বাতিল পরিমাণ:</label>
@@ -2610,6 +2615,7 @@
         lblPaymentTypeColon: "পেমেন্ট মেথড:",
         optUnitBag: "বস্তা",
         optUnitKg: "কেজি",
+        optUnitTon: "টন",
         optPayCash: "নগদ পেমেন্ট",
         optPayDue: "বকেয়া",
         optPayBank: "ব্যাংক ট্রান্সফার",
@@ -3110,6 +3116,7 @@
         lblPaymentTypeColon: "Payment Method:",
         optUnitBag: "Bag",
         optUnitKg: "Kg",
+        optUnitTon: "Ton",
         optPayCash: "Cash Payment",
         optPayDue: "Due",
         optPayBank: "Bank Transfer",
@@ -3321,7 +3328,9 @@
     }
 
     function unitLabel(unitType) {
-      return unitType === 'Kg' ? t('unitKgLabel') : t('unitBagLabel');
+      if (unitType === 'Kg') return t('unitKgLabel');
+      if (unitType === 'Ton') return t('unitTonLabel');
+      return t('unitBagLabel');
     }
 
     // Rounds to 2 decimal places to stop floating-point drift from creeping
@@ -4594,7 +4603,7 @@
       // Available stock (physical − committed) must cover this order,
       // whether it's an Instant sale or a new DO booking reserving inventory.
       let bagKg = (prod && prod.bagKg) || 50;
-      let qtyKg = unitType === 'Kg' ? qty : qty * bagKg;
+      let qtyKg = unitType === 'Kg' ? qty : unitType === 'Ton' ? qty * 1000 : qty * bagKg;
       let availableKg = getAvailableStockBags(prod) * bagKg;
       // When editing an existing (unfulfilled) order, its own current reservation
       // shouldn't count against itself.
@@ -5918,6 +5927,7 @@
             <td><b>${bagKg} ${t('unitKgLabel')}</b></td>
             <td><b><span class="currency-symbol">৳</span>${perKg.toFixed(2)}</b></td>
             <td><b style="color:#2563eb;"><span class="currency-symbol">৳</span>${p.price.toFixed(2)}</b></td>
+            <td><b style="color:#7c3aed;"><span class="currency-symbol">৳</span>${(perKg * 1000).toFixed(2)}</b></td>
             <td>${actionsHtml}</td>
           </tr>
         `;
