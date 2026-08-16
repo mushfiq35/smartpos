@@ -63,6 +63,20 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 .content{padding:22px 24px 80px;}
 
 /* Stat cards */
+.dash-banner{
+  background:linear-gradient(135deg, var(--ink), var(--amber));
+  border-radius:12px;padding:20px 24px;margin-bottom:20px;color:#fff;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;
+}
+.dash-banner-title{font-family:'Roboto Slab',serif;font-size:19px;font-weight:700;}
+.dash-banner-date{font-size:13px;opacity:0.85;margin-top:2px;}
+.dash-banner-stats{display:flex;gap:12px;}
+.dash-banner-stat{background:rgba(255,255,255,0.16);border-radius:8px;padding:10px 18px;text-align:center;min-width:64px;}
+.dash-banner-stat .val{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;}
+.dash-banner-stat .lbl{font-size:11px;opacity:0.9;margin-top:2px;}
+@media (max-width:480px){
+  .dash-banner-stats{width:100%;justify-content:space-between;}
+}
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
 .stat-grid.cols-2{grid-template-columns:repeat(2,1fr);}
 .stat-grid.cols-3{grid-template-columns:repeat(3,1fr);}
@@ -623,6 +637,7 @@ const I18N = {
     stat_customer:'Total Customer', stat_product:'Total Product', stat_supplier:'Total Supplier',
     stat_sales:'Total Sales', stat_today_sales:'Today Sales', stat_today_purchase:'Todays Purchase',
     stat_today_expense:'Today Expense', stat_today_income:'Todays Income (লাভ)', stat_total_qty:'মোট পণ্যের পরিমাণ (Qty)',
+    dash_banner_title:'ড্যাশবোর্ড', dash_banner_today_sales:'আজকের বিক্রি', dash_banner_low_stock:'লো-স্টক',
     col_name:'নাম', col_phone:'ফোন', col_address:'ঠিকানা', col_due_amt:'বাকি (৳)',
     col_cat:'ক্যাটাগরি', col_stock:'স্টক', col_cost:'ক্রয়মূল্য', col_price:'বিক্রয়মূল্য', col_supplier:'সাপ্লায়ার',
     col_date:'তারিখ', col_customer:'কাস্টমার', col_product:'পণ্য', col_qty:'পরিমাণ', col_unit_cost:'একক মূল্য',
@@ -725,6 +740,7 @@ const I18N = {
     stat_customer:'Total Customer', stat_product:'Total Product', stat_supplier:'Total Supplier',
     stat_sales:'Total Sales', stat_today_sales:'Today Sales', stat_today_purchase:'Todays Purchase',
     stat_today_expense:'Today Expense', stat_today_income:'Todays Income (Profit)', stat_total_qty:'Total Product QTY',
+    dash_banner_title:'Dashboard', dash_banner_today_sales:"Today's Sales", dash_banner_low_stock:'Low Stock',
     col_name:'Name', col_phone:'Phone', col_address:'Address', col_due_amt:'Due (৳)',
     col_cat:'Category', col_stock:'Stock', col_cost:'Cost Price', col_price:'Sell Price', col_supplier:'Supplier',
     col_date:'Date', col_customer:'Customer', col_product:'Product', col_qty:'Qty', col_unit_cost:'Unit Cost',
@@ -1358,8 +1374,21 @@ function pageDashboard(){
   const lowStock = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold));
   const totalProductQty = Object.values(db.products).reduce((s,p)=>s+Number(p.qty),0);
   const totalBalance = computeTotalBalance();
+  const todaySalesCount = db.sales.filter(x=>x.date===today).length;
+  const localeCode = currentLang==='bn' ? 'bn-BD' : 'en-US';
+  const niceDate = new Date().toLocaleDateString(localeCode, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
   return `
+    <div class="dash-banner">
+      <div class="dash-banner-left">
+        <div class="dash-banner-title">📊 ${escapeHtml(SHOP_NAME)} ${t('dash_banner_title')}</div>
+        <div class="dash-banner-date">${niceDate}</div>
+      </div>
+      <div class="dash-banner-stats">
+        <div class="dash-banner-stat"><div class="val">${todaySalesCount}</div><div class="lbl">${t('dash_banner_today_sales')}</div></div>
+        <div class="dash-banner-stat"><div class="val">${lowStock.length}</div><div class="lbl">${t('dash_banner_low_stock')}</div></div>
+      </div>
+    </div>
     <div class="stat-grid">
       <div class="stat-card c1"><div class="val">${custCount}</div><div class="lbl">${t('stat_customer')}</div></div>
       <div class="stat-card c2"><div class="val">${prodCount}</div><div class="lbl">${t('stat_product')}</div></div>
