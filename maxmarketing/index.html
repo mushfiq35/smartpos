@@ -11,10 +11,10 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
-  --paper:#FAF6EC; --paper-card:#F1EAD8; --ink:#2B2620; --ink-soft:#6b6255;
-  --line:#D8CDB4; --amber:#C1772E; --amber-deep:#8f5720;
-  --green:#3F7D58; --green-bg:#E4EEE6; --red:#B4423A; --red-bg:#F6E4E2;
-  --blue:#3E6B8A; --blue-bg:#E2ECF2; --gold:#C9992F; --gold-bg:#F7EEDA;
+  --paper:#F6F8F7; --paper-card:#FFFFFF; --ink:#16302A; --ink-soft:#5F7A72;
+  --line:#DCE7E2; --amber:#1F7A4D; --amber-deep:#155C3A;
+  --green:#2E8B57; --green-bg:#DFF2E7; --red:#B5423A; --red-bg:#F7E1DE;
+  --blue:#3672A4; --blue-bg:#E1EDF6; --gold:#B08D2E; --gold-bg:#F4EDD8;
   --sidebar-w:230px;
 }
 *{box-sizing:border-box;}
@@ -64,6 +64,8 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 
 /* Stat cards */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-grid.cols-2{grid-template-columns:repeat(2,1fr);}
+.stat-grid.cols-3{grid-template-columns:repeat(3,1fr);}
 .dashboard-2col{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;}
 @media (max-width:900px){
   .dashboard-2col{grid-template-columns:1fr;}
@@ -168,12 +170,15 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 .rbar-fill{height:100%;background:var(--amber);}
 
 @media (max-width:900px){
-  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .stat-grid, .stat-grid.cols-2, .stat-grid.cols-3{grid-template-columns:repeat(2,1fr);}
   .sidebar{transform:translateX(-100%);}
   .sidebar.open{transform:translateX(0);}
   .sidebar-backdrop.open{display:block;}
   .main{margin-left:0;}
   .hamburger{display:block;}
+}
+@media (max-width:480px){
+  .stat-grid, .stat-grid.cols-2, .stat-grid.cols-3{grid-template-columns:1fr;}
 }
 
 /* Logo + language switcher */
@@ -289,6 +294,41 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 }
 .backup-row button:hover{background:rgba(250,246,236,0.08);}
 </style>
+<script>
+/* ============================================================
+   THEME SWITCHER — বদলাতে শুধু নিচের এক লাইন বদলান:
+   "terracotta" | "navy" | "emerald" | "slate_gold" | "charcoal"
+   ============================================================ */
+const ACTIVE_THEME = "emerald";
+
+const THEMES = {
+  terracotta:{ paper:'#FAF6EC', paperCard:'#F1EAD8', ink:'#2B2620', inkSoft:'#6b6255', line:'#D8CDB4', amber:'#C1772E', amberDeep:'#8f5720', green:'#3F7D58', greenBg:'#E4EEE6', red:'#B4423A', redBg:'#F6E4E2', blue:'#3E6B8A', blueBg:'#E2ECF2', gold:'#C9992F', goldBg:'#F7EEDA' },
+  navy:{ paper:'#FFFFFF', paperCard:'#F4F6F9', ink:'#132339', inkSoft:'#5A6B85', line:'#DCE3EC', amber:'#1E3A66', amberDeep:'#12233F', green:'#1F8A5A', greenBg:'#DFF3E8', red:'#C0392B', redBg:'#FBE0DD', blue:'#2E5FA3', blueBg:'#E3ECF7', gold:'#B8860B', goldBg:'#F7EFD9' },
+  emerald:{ paper:'#F6F8F7', paperCard:'#FFFFFF', ink:'#16302A', inkSoft:'#5F7A72', line:'#DCE7E2', amber:'#1F7A4D', amberDeep:'#155C3A', green:'#2E8B57', greenBg:'#DFF2E7', red:'#B5423A', redBg:'#F7E1DE', blue:'#3672A4', blueBg:'#E1EDF6', gold:'#B08D2E', goldBg:'#F4EDD8' },
+  slate_gold:{ paper:'#F4F4F5', paperCard:'#FFFFFF', ink:'#27272A', inkSoft:'#71717A', line:'#E4E4E7', amber:'#A6791E', amberDeep:'#7C5B15', green:'#3F7D58', greenBg:'#E4EEE6', red:'#B4423A', redBg:'#F6E4E2', blue:'#3E6B8A', blueBg:'#E2ECF2', gold:'#C9992F', goldBg:'#F7EEDA' },
+  charcoal:{ paper:'#FFFFFF', paperCard:'#F5F5F5', ink:'#1C1C1C', inkSoft:'#6B6B6B', line:'#E0E0E0', amber:'#C0392B', amberDeep:'#922B21', green:'#2E7D4F', greenBg:'#E1F0E6', red:'#C0392B', redBg:'#FADBD8', blue:'#34608D', blueBg:'#E3ECF3', gold:'#B8860B', goldBg:'#F5EAD0' }
+};
+
+(function applyTheme(){
+  const th = THEMES[ACTIVE_THEME] || THEMES.terracotta;
+  const root = document.documentElement.style;
+  root.setProperty('--paper', th.paper);
+  root.setProperty('--paper-card', th.paperCard);
+  root.setProperty('--ink', th.ink);
+  root.setProperty('--ink-soft', th.inkSoft);
+  root.setProperty('--line', th.line);
+  root.setProperty('--amber', th.amber);
+  root.setProperty('--amber-deep', th.amberDeep);
+  root.setProperty('--green', th.green);
+  root.setProperty('--green-bg', th.greenBg);
+  root.setProperty('--red', th.red);
+  root.setProperty('--red-bg', th.redBg);
+  root.setProperty('--blue', th.blue);
+  root.setProperty('--blue-bg', th.blueBg);
+  root.setProperty('--gold', th.gold);
+  root.setProperty('--gold-bg', th.goldBg);
+})();
+</script>
 </head>
 <body>
 <div class="login-screen" id="loginScreen">
@@ -638,6 +678,7 @@ const I18N = {
     col_invoice_no:'ইনভয়েস নং', col_receipt_no:'রসিদ নং',
     history_type_label:'ধরন', history_type_sale:'বিক্রি', history_type_payment:'কিস্তি পেমেন্ট',
     reports_summary_tab:'ব্যালেন্স', summary_dp:'দৈনিক প্রাপ্তি (DP)', summary_de:'দৈনিক খরচ (DE)',
+    first_booking_label:'প্রথম বুকিং',
     summary_s:'ব্যালেন্স (S)', summary_final:'মোট ব্যালেন্স',
     stock_value_label:'মোট স্টক মূল্য (ক্রয়মূল্যে)', stock_sale_value_label:'সম্ভাব্য বিক্রয় মূল্য',
     low_stock_label:'লো-স্টক', stock_statement_title:'স্টক স্টেটমেন্ট',
@@ -739,6 +780,7 @@ const I18N = {
     col_invoice_no:'Invoice No.', col_receipt_no:'Receipt No.',
     history_type_label:'Type', history_type_sale:'Sale', history_type_payment:'Installment Payment',
     reports_summary_tab:'Balance', summary_dp:'Daily Paid (DP)', summary_de:'Daily Expense (DE)',
+    first_booking_label:'First Booking',
     summary_s:'Balance (S)', summary_final:'Total Balance',
     stock_value_label:'Total Stock Value (at cost)', stock_sale_value_label:'Potential Sale Value',
     low_stock_label:'Low Stock', stock_statement_title:'Stock Statement',
@@ -1592,7 +1634,7 @@ function renderSummaryReport(body){
     const periodColLabel = t('col_date');
     const finalSummary = rows.length ? rows[rows.length-1].s : 0;
     document.getElementById('summaryBody').innerHTML = `
-      <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+      <div class="stat-grid no-print cols-3">
         <div class="stat-card c4"><div class="val">৳${money(rows.reduce((s,r)=>s+r.dp,0))}</div><div class="lbl">${t('summary_dp')} (${t('totals_label')})</div></div>
         <div class="stat-card c7"><div class="val">৳${money(rows.reduce((s,r)=>s+r.de,0))}</div><div class="lbl">${t('summary_de')} (${t('totals_label')})</div></div>
         <div class="stat-card c8"><div class="val">৳${money(finalSummary)}</div><div class="lbl">${t('summary_final')}</div></div>
@@ -1704,7 +1746,7 @@ function renderSalesOnlyReport(body){
     const totalPaid = list.reduce((s,x)=>s+Number(x.paid),0);
     const totalDue = list.reduce((s,x)=>s+Number(x.due),0);
     document.getElementById('salesRptBody').innerHTML = `
-      <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+      <div class="stat-grid no-print cols-3">
         <div class="stat-card c4"><div class="val">৳${money(totalValue)}</div><div class="lbl">${t('col_total')}</div></div>
         <div class="stat-card c5"><div class="val">৳${money(totalPaid)}</div><div class="lbl">${t('col_paid')}</div></div>
         <div class="stat-card c7"><div class="val">৳${money(totalDue)}</div><div class="lbl">${t('col_due')}</div></div>
@@ -1739,7 +1781,7 @@ function renderReturnsOnlyReport(body){
     const totalDueAdjust = activeList.reduce((s,x)=>s+Number(x.dueAdjust),0);
     const totalRefund = activeList.reduce((s,x)=>s+Number(x.excessRefund),0);
     document.getElementById('returnsRptBody').innerHTML = `
-      <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+      <div class="stat-grid no-print cols-3">
         <div class="stat-card c7"><div class="val">৳${money(totalValue)}</div><div class="lbl">${t('return_value')}</div></div>
         <div class="stat-card c6"><div class="val">৳${money(totalDueAdjust)}</div><div class="lbl">${t('return_due_adjust')}</div></div>
         <div class="stat-card c8"><div class="val">৳${money(totalRefund)}</div><div class="lbl">${t('return_excess_refund')}</div></div>
@@ -1773,7 +1815,7 @@ function renderInstallmentOnlyReport(body){
     const totalDiscount = list.reduce((s,x)=>s+Number(x.discount||0),0);
     const totalNewDue = list.reduce((s,x)=>s+Number(x.newDue),0);
     document.getElementById('instRptBody').innerHTML = `
-      <div class="stat-grid no-print" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px;">
+      <div class="stat-grid no-print cols-2">
         <div class="stat-card c4"><div class="val">৳${money(totalPaid)}</div><div class="lbl">${t('inst_col_amount')} (${t('totals_label')})</div></div>
         <div class="stat-card c7"><div class="val">৳${money(totalDiscount)}</div><div class="lbl">${t('inst_col_discount')} (${t('totals_label')})</div></div>
       </div>
@@ -1816,7 +1858,7 @@ function renderStockReport(body){
     const totalPotentialProfit = totalSaleValue - totalStockValue;
     const lowCount = entries.filter(([,p])=>Number(p.qty)<=Number(p.threshold)).length;
     document.getElementById('stockReportBody').innerHTML = `
-      <div class="stat-grid no-print" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+      <div class="stat-grid no-print">
         <div class="stat-card c2"><div class="val">${entries.length}</div><div class="lbl">${t('nav_products')}</div></div>
         <div class="stat-card c6"><div class="val">৳${money(totalStockValue)}</div><div class="lbl">${t('stock_value_label')}</div></div>
         <div class="stat-card c4"><div class="val">৳${money(totalSaleValue)}</div><div class="lbl">${t('stock_sale_value_label')}</div></div>
@@ -1882,29 +1924,31 @@ function renderReportsOverview(body){
     const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.s,r.p,r.e)));
     const periodColLabel = groupByMonth ? t('filter_month') : t('col_date');
     document.getElementById('ovBody').innerHTML = `
-      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+      <div class="stat-grid">
         <div class="stat-card c4"><div class="val">৳${money(totals.s)}</div><div class="lbl">${t('rep_col_sales')} (${t('totals_label')})</div></div>
         <div class="stat-card c6"><div class="val">৳${money(totals.p)}</div><div class="lbl">${t('rep_col_purchase')} (${t('totals_label')})</div></div>
         <div class="stat-card c7"><div class="val">৳${money(totals.e)}</div><div class="lbl">${t('rep_col_expense')} (${t('totals_label')})</div></div>
         <div class="stat-card c8"><div class="val">৳${money(totals.net)}</div><div class="lbl">${t('rep_col_net')} (${t('totals_label')})</div></div>
       </div>
-      <div class="panel">
-        <h3>${t('reports_summary')}</h3>
-        <table class="data">
-          <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
-          <tbody>
-            ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-      <div class="panel">
-        <h3>${t('reports_trend')}</h3>
-        ${rows.slice().reverse().map(r => `
-          <div class="rbar-row">
-            <div>${groupByMonth ? r.d : r.d.slice(5)}</div>
-            <div class="rbar-track"><div class="rbar-fill" style="width:${(r.s/maxVal*100).toFixed(0)}%"></div></div>
-            <div style="text-align:right;">৳${money(r.s)}</div>
-          </div>`).join('')}
+      <div class="dashboard-2col">
+        <div class="panel">
+          <h3>${t('reports_summary')}</h3>
+          <table class="data">
+            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
+            <tbody>
+              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <h3>${t('reports_trend')}</h3>
+          ${rows.slice().reverse().map(r => `
+            <div class="rbar-row">
+              <div>${groupByMonth ? r.d : r.d.slice(5)}</div>
+              <div class="rbar-track"><div class="rbar-fill" style="width:${(r.s/maxVal*100).toFixed(0)}%"></div></div>
+              <div style="text-align:right;">৳${money(r.s)}</div>
+            </div>`).join('')}
+        </div>
       </div>
     `;
   }
@@ -1991,13 +2035,14 @@ function renderCustomerReport(body){
     const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
     const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
     const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+    const firstSale = sales.length ? [...sales].sort((a,b)=>a.ts-b.ts)[0] : null;
     el.innerHTML = `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3><div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address? ' · '+escapeHtml(cust.address):''}</div></div>
           <button class="btn ghost no-print" id="custPrintBtn">${t('print_report')}</button>
         </div>
-        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
+        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}${firstSale ? ' · ' + t('first_booking_label') + ': ' + firstSale.date + (firstSale.invoiceNo ? ' (#'+firstSale.invoiceNo+')' : '') : ''}</div>
         ${sales.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
         <table class="data">
           <thead><tr><th>${t('col_invoice_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('return_already')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
