@@ -64,6 +64,10 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 
 /* Stat cards */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.dashboard-2col{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;}
+@media (max-width:900px){
+  .dashboard-2col{grid-template-columns:1fr;}
+}
 .stat-card{
   border-radius:10px;padding:16px 18px;color:#fff;box-shadow:0 1px 0 rgba(43,38,32,0.06);
 }
@@ -1324,28 +1328,30 @@ function pageDashboard(){
       <div class="stat-card c7"><div class="val">৳${money(todayExpense)}</div><div class="lbl">${t('stat_today_expense')}</div></div>
       <div class="stat-card c8"><div class="val">${totalProductQty}</div><div class="lbl">${t('stat_total_qty')}</div></div>
     </div>
-    <div class="panel">
-      <h3>${t('reports_trend')}</h3>
-      ${(() => {
-        const trendDays = [...Array(14)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(13-i)); return toISODate(d); });
-        const trendVals = trendDays.map(d => db.sales.filter(x=>x.date===d).reduce((s,x)=>s+Number(x.total),0));
-        const maxVal = Math.max(1, ...trendVals);
-        return trendDays.map((d,i) => `
-          <div class="rbar-row">
-            <div>${d.slice(5)}</div>
-            <div class="rbar-track"><div class="rbar-fill" style="width:${(trendVals[i]/maxVal*100).toFixed(0)}%"></div></div>
-            <div style="text-align:right;">৳${money(trendVals[i])}</div>
-          </div>`).join('');
-      })()}
-    </div>
-    <div class="panel">
-      <h3>${t('recent_sales_heading')}</h3>
-      ${db.sales.length===0 ? `<div class="field-hint">${t('no_sales_yet')}</div>` :
-        `<table class="data"><thead><tr><th>${t('col_product')}</th><th>${t('col_customer')}</th><th>${t('col_qty')}</th><th>${t('col_amount')}</th><th>${t('col_date')}</th></tr></thead><tbody>
-          ${[...db.sales].sort((a,b)=>b.ts-a.ts).slice(0,6).map(s=>`
-            <tr><td>${escapeHtml(s.productName)}</td><td>${escapeHtml(s.customerName||t('walk_in'))}</td><td>${s.qty}</td><td>৳${money(s.total)}</td><td>${s.date}</td></tr>
-          `).join('')}
-        </tbody></table>`}
+    <div class="dashboard-2col">
+      <div class="panel">
+        <h3>${t('reports_trend')}</h3>
+        ${(() => {
+          const trendDays = [...Array(14)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(13-i)); return toISODate(d); });
+          const trendVals = trendDays.map(d => db.sales.filter(x=>x.date===d).reduce((s,x)=>s+Number(x.total),0));
+          const maxVal = Math.max(1, ...trendVals);
+          return trendDays.map((d,i) => `
+            <div class="rbar-row">
+              <div>${d.slice(5)}</div>
+              <div class="rbar-track"><div class="rbar-fill" style="width:${(trendVals[i]/maxVal*100).toFixed(0)}%"></div></div>
+              <div style="text-align:right;">৳${money(trendVals[i])}</div>
+            </div>`).join('');
+        })()}
+      </div>
+      <div class="panel">
+        <h3>${t('recent_sales_heading')}</h3>
+        ${db.sales.length===0 ? `<div class="field-hint">${t('no_sales_yet')}</div>` :
+          `<table class="data"><thead><tr><th>${t('col_product')}</th><th>${t('col_customer')}</th><th>${t('col_qty')}</th><th>${t('col_amount')}</th><th>${t('col_date')}</th></tr></thead><tbody>
+            ${[...db.sales].sort((a,b)=>b.ts-a.ts).slice(0,6).map(s=>`
+              <tr><td>${escapeHtml(s.productName)}</td><td>${escapeHtml(s.customerName||t('walk_in'))}</td><td>${s.qty}</td><td>৳${money(s.total)}</td><td>${s.date}</td></tr>
+            `).join('')}
+          </tbody></table>`}
+      </div>
     </div>
   `;
 }
