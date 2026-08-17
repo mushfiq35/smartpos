@@ -603,7 +603,7 @@ const I18N = {
     stat_customer:'মোট হাজী', stat_product:'মোট প্যাকেজ', stat_supplier:'মোট ভেন্ডর',
     stat_sales:'মোট বুকিং', stat_today_sales:'আজকের বুকিং', stat_today_purchase:'আজকের ক্রয়',
     stat_today_expense:'আজকের খরচ', stat_today_income:'আজকের আয় (লাভ)', stat_total_qty:'মোট আসন সংখ্যা',
-    col_name:'নাম', col_phone:'ফোন', col_passport:'পাসপোর্ট', col_address:'ঠিকানা', col_due_amt:'বাকি (৳)',
+    col_name:'নাম', col_phone:'ফোন', col_passport:'পাসপোর্ট', col_tracking:'ট্র্যাকিং নং', col_address:'ঠিকানা', col_due_amt:'বাকি (৳)',
     col_cat:'প্যাকেজের ধরন', col_stock:'আসন সংখ্যা', col_cost:'খরচ মূল্য', col_price:'বিক্রয়মূল্য', col_supplier:'ভেন্ডর',
     col_date:'তারিখ', col_customer:'হাজী', col_product:'প্যাকেজ', col_qty:'পরিমাণ', col_unit_cost:'একক মূল্য',
     col_total:'মোট', col_paid:'প্রদানকৃত', col_due:'বাকি', col_profit:'লাভ', col_note:'নোট', col_amount:'টাকা',
@@ -611,7 +611,7 @@ const I18N = {
     add_purchases:'+ নতুন ক্রয়', add_sales:'+ নতুন বুকিং', add_expenses:'+ নতুন খরচ',
     title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
+    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_tracking:'ট্র্যাকিং নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
     login_subtitle:'চালিয়ে যেতে লগ ইন করুন', login_email:'ইমেইল', login_password:'পাসওয়ার্ড',
     login_btn:'লগ ইন করুন', login_error:'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে', logout:'লগ আউট',
     backup_btn:'☁️ ব্যাকআপ', restore_btn:'♻️ রিস্টোর',
@@ -702,7 +702,7 @@ const I18N = {
     stat_customer:'Total Hajji', stat_product:'Total Packages', stat_supplier:'Total Vendors',
     stat_sales:'Total Bookings', stat_today_sales:'Today Bookings', stat_today_purchase:'Today Purchase',
     stat_today_expense:'Today Expense', stat_today_income:'Today Income (Profit)', stat_total_qty:'Total Seats',
-    col_name:'Name', col_phone:'Phone', col_passport:'Passport', col_address:'Address', col_due_amt:'Due (৳)',
+    col_name:'Name', col_phone:'Phone', col_passport:'Passport', col_tracking:'Tracking No', col_address:'Address', col_due_amt:'Due (৳)',
     col_cat:'Package Type', col_stock:'Seats', col_cost:'Cost Price', col_price:'Sell Price', col_supplier:'Vendor',
     col_date:'Date', col_customer:'Hajji', col_product:'Package', col_qty:'Qty', col_unit_cost:'Unit Cost',
     col_total:'Total', col_paid:'Paid', col_due:'Due', col_profit:'Profit', col_note:'Note', col_amount:'Amount',
@@ -710,7 +710,7 @@ const I18N = {
     add_purchases:'+ New Purchase', add_sales:'+ New Booking', add_expenses:'+ New Expense',
     title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_address:'Address', f_email:'Email', col_email:'Email',
+    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_tracking:'Tracking Number', f_address:'Address', f_email:'Email', col_email:'Email',
     login_subtitle:'Please log in to continue', login_email:'Email', login_password:'Password',
     login_btn:'Login', login_error:'Incorrect email or password', logout:'Logout',
     backup_btn:'☁️ Backup', restore_btn:'♻️ Restore',
@@ -802,7 +802,7 @@ const firebaseConfig = {
   storageBucket: "muttaki-hajj-kafela.firebasestorage.app",
   messagingSenderId: "1004775252708",
   appId: "1:1004775252708:web:e9c601633d495d9e2e42f1"
-}
+};
 
 
 let useFirebase = false;
@@ -1603,6 +1603,7 @@ function renderInstallmentsPage(){
       if(String(cust.displayId||'').includes(q)) return true;
       if(cust.phone && cust.phone.toLowerCase().includes(q)) return true;
       if(cust.passport && cust.passport.toLowerCase().includes(q)) return true;
+      if(cust.tracking && cust.tracking.toLowerCase().includes(q)) return true;
       if(accountNumbersFor(id).some(v=>v.toLowerCase().includes(q))) return true;
       if(db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherTag||'').toLowerCase().includes(q))) return true;
       return false;
@@ -1822,7 +1823,8 @@ function renderSalesOnlyReport(body){
         || (s.productName||'').toLowerCase().includes(q)
         || (s.voucherNo||'').toLowerCase().includes(q)
         || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
-        || (cust && cust.passport && cust.passport.toLowerCase().includes(q));
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q))
+        || (cust && cust.tracking && cust.tracking.toLowerCase().includes(q));
     }).sort((a,b)=>b.ts-a.ts);
     const totalValue = list.reduce((s,x)=>s+Number(x.total),0);
     const totalPaid = list.reduce((s,x)=>s+Number(x.paid),0);
@@ -1876,7 +1878,8 @@ function renderReturnsOnlyReport(body){
       return (r.customerName||'').toLowerCase().includes(q)
         || (r.productName||'').toLowerCase().includes(q)
         || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
-        || (cust && cust.passport && cust.passport.toLowerCase().includes(q));
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q))
+        || (cust && cust.tracking && cust.tracking.toLowerCase().includes(q));
     }).sort((a,b)=>b.ts-a.ts);
     const activeList = list.filter(r=>!r.cancelled);
     const totalValue = activeList.reduce((s,x)=>s+Number(x.value),0);
@@ -1931,6 +1934,7 @@ function renderInstallmentOnlyReport(body){
       return (i.customerName||'').toLowerCase().includes(q)
         || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
         || (cust && cust.passport && cust.passport.toLowerCase().includes(q))
+        || (cust && cust.tracking && cust.tracking.toLowerCase().includes(q))
         || (db.sales.filter(s=>s.customerId===i.customerId).some(s=>(s.voucherNo||'').toLowerCase().includes(q)));
     }).sort((a,b)=>b.ts-a.ts);
     const totalPaid = list.reduce((s,x)=>s+Number(x.amount),0);
@@ -2121,7 +2125,7 @@ function renderCustomerReport(body){
   });
   function renderCustList(){
     const q = reportsCustQuery.trim().toLowerCase();
-    const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)) || db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherNo||'').toLowerCase().includes(q)) || (c.passport && c.passport.toLowerCase().includes(q)));
+    const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)) || db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherNo||'').toLowerCase().includes(q)) || (c.passport && c.passport.toLowerCase().includes(q)) || (c.tracking && c.tracking.toLowerCase().includes(q)));
     const listEl = document.getElementById('custReportList');
     listEl.innerHTML = entries.length===0
       ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
@@ -2276,11 +2280,12 @@ function renderSupplierReport(body){
 const CONFIG = {
   customers: {
     titleKey:'title_customers', addLabelKey:'add_customers',
-    columns:[{k:'displayId',hKey:'col_id', fmt:v=>v?('#'+v):'—'},{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'passport',hKey:'col_passport', fmt:v=>v||'—'},{k:'email',hKey:'col_email', fmt:v=>v||'—'},{k:'address',hKey:'col_address'},{k:'due',hKey:'col_due_amt', fmt:v=>'৳'+money(v)}],
+    columns:[{k:'displayId',hKey:'col_id', fmt:v=>v?('#'+v):'—'},{k:'name',hKey:'col_name'},{k:'passport',hKey:'col_passport', fmt:v=>v||'—'},{k:'phone',hKey:'col_phone'},{k:'tracking',hKey:'col_tracking', fmt:v=>v||'—'},{k:'email',hKey:'col_email', fmt:v=>v||'—'},{k:'address',hKey:'col_address'},{k:'due',hKey:'col_due_amt', fmt:v=>'৳'+money(v)}],
     fields:[
       {key:'name', labelKey:'f_name', type:'text', required:true, suggest:true},
       {key:'phone', labelKey:'f_phone', type:'text', suggest:true},
       {key:'passport', labelKey:'f_passport', type:'text', suggest:true},
+      {key:'tracking', labelKey:'f_tracking', type:'text', suggest:true},
       {key:'email', labelKey:'f_email', type:'email', suggest:true},
       {key:'address', labelKey:'f_address', type:'text', suggest:true},
       {key:'note', labelKey:'f_note', type:'text', suggest:true},
@@ -2760,6 +2765,7 @@ function openQuickAdd(kind, fieldKey){
       </div>
       <div class="field"><label>${t('qa_phone')}</label><input type="text" id="qaPhone" autocomplete="off"></div>
       <div class="field"><label>${t('f_passport')}</label><input type="text" id="qaPassport" autocomplete="off"></div>
+      <div class="field"><label>${t('f_tracking')}</label><input type="text" id="qaTracking" autocomplete="off"></div>
       <div class="field"><label>${t('f_email')}</label><input type="email" id="qaEmail" autocomplete="off"></div>
       <div class="field"><label>${t('f_address')}</label>
         <input type="text" id="qaAddress" list="dl-qa-custaddr" autocomplete="off">
@@ -2810,9 +2816,10 @@ document.getElementById('quickAddSaveBtn').addEventListener('click', async () =>
   if(kind==='customers'){
     const phone = document.getElementById('qaPhone').value.trim();
     const passport = document.getElementById('qaPassport').value.trim();
+    const tracking = document.getElementById('qaTracking').value.trim();
     const email = document.getElementById('qaEmail').value.trim();
     const address = document.getElementById('qaAddress').value.trim();
-    const record = { name, phone, passport, email, address, due:0, displayId: nextCustomerDisplayId() };
+    const record = { name, phone, passport, tracking, email, address, due:0, displayId: nextCustomerDisplayId() };
     db.customers[key] = record;
     await safePut('customers', key, record);
   } else {
