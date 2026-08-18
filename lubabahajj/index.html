@@ -10,24 +10,54 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" defer crossorigin="anonymous"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
+/* ============================================================
+   🎨 THEME CONFIG — এখানে ৫টা রং বদলালেই পুরো theme বদলে যাবে
+   ============================================================
+
+   C1 = Primary (sidebar, main buttons, stat cards)
+   C2 = Primary Dark (sidebar gradient top, dark cards)
+   C3 = Accent / Gold (highlight, active nav, CTA button)
+   C4 = Background (page background)
+   C5 = Surface (card/panel background)
+
+   উদাহরণ (বর্তমান — সবুজ+সোনালি হজ্জ থিম):
+   C1=#1B6B3A  C2=#0f3d20  C3=#C49A2F  C4=#F4F9F4  C5=#E8F4E8
+
+   নীল থিমের জন্য:
+   C1=#1a5fa8  C2=#0d3d75  C3=#f0a500  C4=#F0F6FF  C5=#E0EEFF
+
+   লাল থিমের জন্য:
+   C1=#b42020  C2=#7a1010  C3=#f0a500  C4=#FFF5F5  C5=#FFE8E8
+   ============================================================ */
+
 :root{
-  /* হজ্জ থিম — সবুজ + সোনালি + সাদা */
-  --paper:#F4F9F4; --paper-card:#E8F4E8; --ink:#1A2E1A; --ink-soft:#4a6741;
-  --line:#C3DEC3; --amber:#1B6B3A; --amber-deep:#144d2a;
-  --green:#1B6B3A; --green-bg:#D6EDDA; --red:#B4423A; --red-bg:#F6E4E2;
-  --blue:#2E6B8A; --blue-bg:#E2EEF2; --gold:#C49A2F; --gold-bg:#FDF3D6;
-  /* হজ্জ বিশেষ রং */
-  --hajj-green:#1B6B3A; --hajj-gold:#C49A2F; --hajj-green-dark:#144d2a;
-  --hajj-green-light:#D6EDDA; --hajj-gold-light:#FDF3D6;
+  --c1: #1B6B3A;   /* Primary */
+  --c2: #0f3d20;   /* Primary Dark */
+  --c3: #C49A2F;   /* Accent / Gold */
+  --c4: #F4F9F4;   /* Background */
+  --c5: #E8F4E8;   /* Surface / Card */
+
+  /* ── নিচের কিছু বদলাবেন না ── */
+  --c1-light: color-mix(in srgb, var(--c1) 20%, white);
+  --c1-dark: color-mix(in srgb, var(--c1) 80%, black);
+  --c3-light: color-mix(in srgb, var(--c3) 15%, white);
+
+  --paper:var(--c4); --paper-card:var(--c5); --ink:#1A2E1A; --ink-soft:#4a6741;
+  --line: color-mix(in srgb, var(--c1) 30%, white);
+  --amber:var(--c1); --amber-deep:var(--c2);
+  --green:var(--c1); --green-bg:var(--c5); --red:#B4423A; --red-bg:#F6E4E2;
+  --blue:#2E6B8A; --blue-bg:#E2EEF2; --gold:var(--c3); --gold-bg:var(--c3-light);
+  --hajj-green:var(--c1); --hajj-gold:var(--c3); --hajj-green-dark:var(--c2);
+  --hajj-green-light:var(--c5); --hajj-gold-light:var(--c3-light);
   --sidebar-w:235px;
 }
 *{box-sizing:border-box;}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;overflow-x:hidden;max-width:100vw;}
-.app{display:flex;min-height:100vh;max-width:100vw;overflow-x:hidden;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;overflow-x:hidden;max-width:100%;width:100%;}
+.app{display:flex;min-height:100vh;max-width:100%;overflow-x:hidden;width:100%;}
 
 /* Sidebar */
 .sidebar{
-  width:var(--sidebar-w);background:linear-gradient(180deg,#0f3d20 0%,#1B6B3A 100%);color:var(--paper);
+  width:var(--sidebar-w);background:linear-gradient(180deg,var(--c2) 0%,var(--c1) 100%);color:var(--paper);
   position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:40;
   transition:transform 0.25s ease;
 }
@@ -55,7 +85,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:35;}
 
 /* Main */
-.main{margin-left:var(--sidebar-w);flex:1;min-width:0;overflow-x:hidden;}
+.main{margin-left:var(--sidebar-w);flex:1;min-width:0;overflow-x:hidden;max-width:100%;box-sizing:border-box;}
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:16px 24px;border-bottom:1px solid var(--line);background:var(--paper);
@@ -64,7 +94,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 .topbar .page-title{font-family:'Roboto Slab',serif;font-size:22px;font-weight:700;}
 .topbar .crumb{font-size:12px;color:var(--ink-soft);margin-top:2px;}
 .hamburger{display:none;background:none;border:1px solid var(--line);border-radius:6px;width:36px;height:36px;font-size:16px;cursor:pointer;}
-.content{padding:22px 24px 80px;}
+.content{padding:22px 24px 80px;overflow-x:hidden;}
 
 /* Stat cards */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
@@ -73,9 +103,9 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 }
 .stat-card .val{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;line-height:1.1;}
 .stat-card .lbl{font-size:12px;opacity:0.9;margin-top:4px;}
-.stat-card.c1{background:#1B6B3A;} .stat-card.c2{background:#2E6B8A;}
-.stat-card.c3{background:#144d2a;} .stat-card.c4{background:#C49A2F;color:#1A2E1A;}
-.stat-card.c5{background:#1B6B3A;} .stat-card.c6{background:#2E6B8A;}
+.stat-card.c1{background:var(--c1);} .stat-card.c2{background:#2E6B8A;}
+.stat-card.c3{background:var(--c2);} .stat-card.c4{background:var(--c3);color:#1A2E1A;}
+.stat-card.c5{background:var(--c1);} .stat-card.c6{background:#2E6B8A;}
 .stat-card.c7{background:var(--red);} .stat-card.c8{background:#4a6741;}
 .stat-card.hajj-gold{background:var(--hajj-gold);color:#1A2E1A;}
 .stat-card.hajj-green{background:var(--hajj-green);}
@@ -120,15 +150,15 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 .empty .big{font-family:'Roboto Slab',serif;font-size:18px;color:var(--ink);margin-bottom:6px;}
 
 /* Modal */
-.overlay{position:fixed;inset:0;background:rgba(43,38,32,0.4);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;}
+.overlay{position:fixed;inset:0;background:rgba(43,38,32,0.4);display:none;align-items:center;justify-content:center;z-index:60;padding:16px;overflow-y:auto;}
 .overlay.open{display:flex;}
-.modal{background:var(--paper);border-radius:10px;padding:24px;width:100%;max-width:420px;border:1px solid var(--line);max-height:90vh;overflow-y:auto;overflow-x:auto;}
+.modal{background:var(--paper);border-radius:10px;padding:24px;width:100%;max-width:420px;border:1px solid var(--line);max-height:92vh;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;}
 .modal h2{font-family:'Roboto Slab',serif;margin:0 0 16px;font-size:19px;}
 .field{margin-bottom:12px;}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.03em;}
 .field input, .field select, .field textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;background:#fff;color:var(--ink);}
-.field-row{display:flex;gap:10px;}
-.field-row .field{flex:1;}
+.field-row{display:flex;gap:10px;flex-wrap:wrap;}
+.field-row .field{flex:1;min-width:120px;}
 .field-hint{font-size:12px;color:var(--ink-soft);margin-top:4px;}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
 
@@ -161,6 +191,7 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 
 @media (max-width:900px){
   .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .rpt-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
   .sidebar{transform:translateX(-100%);}
   .sidebar.open{transform:translateX(0);}
   .sidebar-backdrop.open{display:block;}
@@ -171,8 +202,22 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
   .dash-summary-grid{grid-template-columns:repeat(2,1fr) !important;}
   .dash-banner-boxes{flex-direction:row;flex-wrap:wrap;}
 }
+@media (max-width:800px){
+  .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .dash-two-col{grid-template-columns:1fr !important;}
+  .content{padding:16px 12px 60px;}
+  .rpt-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+}
+@media (max-width:600px){
+  .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .rpt-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .dash-two-col{grid-template-columns:1fr !important;}
+  .stat-card .val{font-size:20px;}
+  .content{padding:12px 10px 60px;}
+}
 @media (max-width:480px){
   .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .rpt-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
   .dash-two-col{grid-template-columns:1fr !important;}
   .dash-banner{padding:14px 12px !important;}
   .dash-banner-title{font-size:16px !important;}
@@ -188,14 +233,50 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
   .btn{padding:7px 10px;font-size:12px;}
   .topbar-title{font-size:16px !important;}
   .topbar-sub{font-size:11px !important;}
+  .ov-two-col{grid-template-columns:1fr !important;}
+  /* Group modals */
+  .modal{padding:16px !important;border-radius:8px;}
+  .modal h2{font-size:16px !important;}
+  #grpHajjiOverlay .modal{max-width:100% !important;}
+  #gmFormOverlay .modal, #grpFormOverlay .modal{max-width:100% !important;}
+  /* Group list tables overflow */
+  #gmBody, #grpBody, #grpRptBody{overflow-x:auto;}
+  /* Hajji manager popup */
+  #ghResults, #ghAssigned{max-height:150px !important;}
+}
+@media (max-width:440px){
+  .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .stat-card{padding:10px 8px !important;}
+  .stat-card .val{font-size:16px !important;}
+  .stat-card .lbl{font-size:10px !important;}
+  .stat-card div:first-child{font-size:18px !important;}
+  .content{padding:10px 8px 60px !important;}
+  .panel{padding:10px 8px !important;}
+}
+@media (max-width:390px){
+  .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .dash-banner-title{font-size:15px !important;}
+  .dash-banner{padding:12px 10px !important;}
+  .stat-card .val{font-size:15px !important;}
+  .stat-card{padding:8px !important;}
+  .content{padding:8px 8px 60px !important;}
+}
+@media (max-width:375px){
+  .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .stat-card .val{font-size:14px !important;}
+  .stat-card .lbl{font-size:9px !important;}
+  .stat-card{padding:8px 6px !important;}
+  .panel{padding:8px 6px !important;}
+  .content{padding:6px 6px 60px !important;}
 }
 @media (max-width:360px){
   .dash-stat-grid{grid-template-columns:repeat(2,1fr) !important;}
-  .stat-card .val{font-size:16px;}
-  .stat-card .lbl{font-size:10px;}
+  .stat-card .val{font-size:14px !important;}
+  .stat-card .lbl{font-size:9px !important;}
   .dash-banner-title{font-size:14px !important;}
-  .main{padding:8px 6px !important;}
-  .panel{padding:10px 8px !important;}
+  .main{padding:6px 4px !important;}
+  .content{padding:8px 6px 60px !important;}
+  .panel{padding:8px 6px !important;}
 }
 
 /* Logo + language switcher */
@@ -219,10 +300,19 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
   border-radius:6px;font-size:18px;font-weight:700;cursor:pointer;line-height:1;
 }
 .qa-btn:hover{background:#a07a1a;}
+.pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 0 4px;flex-wrap:wrap;}
+.pagination button{min-width:34px;height:34px;border:1px solid var(--line);background:#fff;border-radius:6px;
+  font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;color:var(--ink);padding:0 8px;}
+.pagination button:hover{background:var(--hajj-green-light);}
+.pagination button.active{background:var(--hajj-green);color:#fff;border-color:var(--hajj-green);font-weight:700;}
+.pagination button:disabled{opacity:0.35;cursor:default;}
+.pagination .pg-info{font-size:12px;color:var(--ink-soft);padding:0 6px;}
 .overlay.top{z-index:80;}
 
 @media print{
   .sidebar, .topbar, #storageBanner, .toast, #backdrop, .toolbar button, .actions-cell, .no-print{display:none !important;}
+  .panel{break-inside:avoid;box-shadow:none;border:1px solid #ccc;}
+  table.data{font-size:11px;}
   .main{margin-left:0 !important;}
   body{background:#fff;}
   .panel, table.data{border-color:#ccc;}
@@ -374,7 +464,7 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
     </div>
     <div id="storageBanner"></div>
     <div class="content" id="content"><div class="loading">লোড হচ্ছে...</div></div>
-    <div class="app-footer no-print">© <span id="footerYear"></span> হজ্জ এজেন্সি সিস্টেম। সর্বস্বত্ব সংরক্ষিত।</div>
+    <div class="app-footer no-print">© <span id="footerYear"></span> Piconet IT. All rights reserved.</div>
   </div>
 </div>
 
@@ -497,6 +587,14 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 <div class="overlay" id="multiSaleOverlay">
   <div class="modal" style="max-width:640px;">
     <h2 id="multiSaleTitle">New Sale</h2>
+    <div class="field" id="msGroupField">
+      <label>${t('f_select_group')} <span style="font-size:11px;color:var(--ink-soft);">(ঐচ্ছিক)</span></label>
+      <div class="select-row">
+        <select id="msGroupSelect" onchange="onMsGroupChange()" style="flex:1;">
+          <option value="">— কোনো গ্রুপ নেই —</option>
+        </select>
+      </div>
+    </div>
     <div class="field">
       <label id="msCustomerLabel">Customer</label>
       <div class="select-row" style="position:relative;">
@@ -534,10 +632,7 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
         </select>
       </div>
     </div>
-    <div class="field" style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" id="msIsOldEntry" style="width:auto;">
-      <label for="msIsOldEntry" id="msIsOldEntryLabel" style="margin:0;text-transform:none;font-size:13px;">Old entry (won't count in Summary)</label>
-    </div>
+    <input type="hidden" id="msIsOldEntry" value="false">
     <div class="modal-actions">
       <button class="btn ghost" id="msCancelBtn">Cancel</button>
       <button class="btn amber" id="msSaveBtn">Save</button>
@@ -563,9 +658,11 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 /* ---------- Storage Keys ---------- */
 const K = {
   customers:'pos-customers', suppliers:'pos-suppliers', products:'pos-products',
-  purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo'
+  purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo',
+  groupMembers:'pos-group-members', groups:'pos-groups',
+  vendorPayments:'pos-vendor-payments'
 };
-let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[] };
+let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], groupMembers:{}, groups:{}, vendorPayments:[] };
 let currentTab = 'dashboard';
 let logoData = null;
 
@@ -577,7 +674,7 @@ const I18N = {
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'হাজী', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর',
     title_categories:'প্যাকেজের ধরন', add_categories:'+ নতুন ধরন', f_category_name:'ধরনের নাম',
-    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট',
+    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট', nav_group_members:'গ্রুপ মেম্বার', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপ',
     reports_sales_returns_tab:'বুকিং ও বাতিল', sr_sales_count:'বুকিং সংখ্যা', sr_returns_count:'বাতিল সংখ্যা', sr_net_label:'নিট',
     return_title:'বুকিং বাতিল', return_new:'নতুন বাতিল', return_no:'বাতিল নং',
     return_original_qty:'মোট বুকড পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
@@ -611,7 +708,44 @@ const I18N = {
     add_purchases:'+ নতুন ক্রয়', add_sales:'+ নতুন বুকিং', add_expenses:'+ নতুন খরচ',
     title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_tracking:'ট্র্যাকিং নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
+    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_tracking:'ট্র্যাকিং নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল', f_member_no:'মেম্বার নম্বর', f_group_name:'গ্রুপ / লট নাম', f_group_member:'গ্রুপ মেম্বার (মোয়াল্লেম)', f_group_package:'প্যাকেজ', f_group_year:'বছর', f_group_hajjis:'হাজী সংখ্যা', col_member_no:'নম্বর', col_group:'গ্রুপ', f_select_group:'গ্রুপ নির্বাচন করুন',
+    grp_no_group:'— কোনো গ্রুপ নেই —', grp_add_btn:'+ নতুন গ্রুপ / লট', grp_add_member_btn:'+ নতুন গ্রুপ মেম্বার',
+    grp_edit_form:'গ্রুপ / লট সম্পাদনা', grp_new_form:'নতুন গ্রুপ / লট',
+    grp_edit_member:'গ্রুপ মেম্বার সম্পাদনা', grp_new_member:'নতুন গ্রুপ মেম্বার',
+    grp_del_member_confirm:'এই গ্রুপ মেম্বার মুছে ফেলবেন?', grp_del_confirm:'এই গ্রুপ মুছে ফেলবেন?',
+    grp_name_required:'গ্রুপ নাম ও মোয়াল্লেম আবশ্যক', grp_member_required:'নম্বর ও নাম আবশ্যক',
+    grp_no_members:'কোনো গ্রুপ মেম্বার নেই', grp_no_groups:'কোনো গ্রুপ নেই',
+    grp_no_lots:'এই মেম্বারের কোনো লট নেই', grp_no_bookings:'কোনো বুকিং নেই', grp_no_inst:'কোনো কিস্তি নেই',
+    grp_col_name:'গ্রুপ নাম', grp_col_moallem:'মোয়াল্লেম', grp_col_year:'বছর', grp_col_hajji:'হাজী', grp_col_total:'মোট বুকিং', grp_col_lot:'লট',
+    grp_col_lot_name:'লট নাম', grp_col_due:'বাকি',
+    grp_member_no_label:'মেম্বার নম্বর', grp_total_lots:'মোট লট', grp_inst_history:'কিস্তি ইতিহাস',
+    grp_back:'← গ্রুপে ফিরুন', grp_back_members:'← গ্রুপ মেম্বার', grp_paid:'পরিশোধিত',
+    grp_lot_label:'টি লট', grp_member_label:'মেম্বার নম্বর:', grp_lot_count:'টি লট',
+    grp_rpt_search:'গ্রুপ / মোয়াল্লেম খুঁজুন...', grp_name_placeholder:'যেমন: রফিক — হজ্জ ২০২৬ — লট ১',
+    grp_select_member:'— নির্বাচন করুন —', grp_moallem_label:'মোয়াল্লেম',
+    vnd_statement:'ভেন্ডর স্টেটমেন্ট', vnd_pay_btn:'+ পেমেন্ট দিন', vnd_return_btn:'+ রিটার্ন করুন',
+    vnd_total_purchase:'মোট ক্রয়', vnd_total_paid:'মোট পরিশোধ', vnd_due:'আমাদের দিতে হবে',
+    vnd_advance:'ভেন্ডর এগিয়ে আছে', vnd_clear:'ক্লিয়ার',
+    vnd_pay_title:'পেমেন্ট দিন', vnd_return_title:'পণ্য রিটার্ন',
+    vnd_return_cash:'নগদ ফেরত', vnd_return_adjust:'পরবর্তী ক্রয়ে সমন্বয়',
+    vnd_return_confirm:'এই রিটার্ন নিশ্চিত করবেন?',
+    vnd_pay_amount:'পরিশোধের পরিমাণ (৳)', vnd_pay_note:'নোট',
+    vnd_return_qty:'ফেরত পরিমাণ', vnd_return_unit:'একক মূল্য (৳)',
+    vnd_return_type:'ফেরতের ধরন', vnd_history:'লেনদেনের ইতিহাস',
+    vnd_type_purchase:'ক্রয়', vnd_type_payment:'পেমেন্ট', vnd_type_return:'রিটার্ন',
+    vnd_no_history:'কোনো লেনদেন নেই', vnd_del_payment:'এই পেমেন্ট মুছবেন?', col_debit:'ডেবিট', col_credit:'ক্রেডিট',
+    hdr_type:'ধরন', hdr_desc:'বিবরণ', hdr_balance:'ব্যালেন্স',
+    lbl_hajji_add:'🤲 হাজী যোগ —', lbl_sel_purchase:'ক্রয় নির্বাচন করুন',
+    lbl_hajji_col:'হাজী', lbl_passport_col:'পাসপোর্ট', lbl_total_booking:'মোট বুকিং',
+    lbl_paid_col:'পরিশোধ', lbl_due_col:'বাকি',
+    lbl_no_return:'এই ভেন্ডরের কোনো রিটার্নযোগ্য ক্রয় নেই',
+    lbl_return_total:'মোট ফেরত:', lbl_remaining:'অবশিষ্ট:',
+    lbl_clear:'ক্লিয়ার', lbl_advance:'অগ্রিম',
+    lbl_vendor_due_label:'আমাদের দিতে হবে (ভেন্ডর)',
+    lbl_today_booking:'আজকের বুকিং', lbl_today_expense:'আজকের খরচ',
+    lbl_recent_trend:'গত ১৪ দিন', lbl_two_col_recent:'সাম্প্রতিক বুকিং',
+    lbl_booking_col_header:'হাজী / বুকিং', lbl_lot_col_header:'লট',
+    lbl_pending:'বাকি আছে', lbl_todays_booking_count:'আজকের বুকিং',
     login_subtitle:'চালিয়ে যেতে লগ ইন করুন', login_email:'ইমেইল', login_password:'পাসওয়ার্ড',
     login_btn:'লগ ইন করুন', login_error:'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে', logout:'লগ আউট',
     backup_btn:'☁️ ব্যাকআপ', restore_btn:'♻️ রিস্টোর',
@@ -628,7 +762,7 @@ const I18N = {
     load_error_toast:'⚠️ কিছু ডেটা লোড হতে সমস্যা হয়েছে, ইন্টারনেট চেক করে আবার চেষ্টা করুন',
     f_product_name:'প্যাকেজের নাম', f_cat:'প্যাকেজের ধরন', f_current_stock:'মোট আসন সংখ্যা', f_threshold:'সর্বনিম্ন আসন সীমা',
     f_cost:'খরচ মূল্য (প্রতি প্যাকেজ)', f_price:'বিক্রয়মূল্য (প্রতি প্যাকেজ)', f_supplier:'ভেন্ডর',
-    f_supplier_select:'ভেন্ডর', f_product_select:'প্যাকেজ', f_qty:'যাত্রী সংখ্যা', f_unit_cost:'একক খরচ মূল্য (৳)', f_date:'তারিখ',
+    f_supplier_select:'ভেন্ডর', f_sector:'সেক্টর / বিষয়', f_pur_qty:'পরিমাণ (QTY)', f_product_select:'প্যাকেজ', f_qty:'যাত্রী সংখ্যা', f_unit_cost:'একক খরচ মূল্য (৳)', f_date:'তারিখ',
     f_customer_opt:'হাজী (ঐচ্ছিক)', f_unit_price:'একক বিক্রয়মূল্য (৳)', f_paid:'প্রদানকৃত টাকা (৳)', f_discount:'ছাড় (৳)', col_discount:'ছাড়',
     f_expense_cat:'ক্যাটাগরি', f_amount:'টাকা (৳)', f_note:'নোট',
     f_is_old_entry:'এটি পুরনো এন্ট্রি (Summary-তে গণনা হবে না)',
@@ -676,7 +810,7 @@ const I18N = {
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Hajji', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors',
     title_categories:'Package Types', add_categories:'+ New Type', f_category_name:'Type Name',
-    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports',
+    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports', nav_group_members:'Group Members', nav_groups:'Groups / Lots', rep_group_tab:'Group',
     reports_sales_returns_tab:'Bookings & Cancellations', sr_sales_count:'Bookings Count', sr_returns_count:'Cancellations Count', sr_net_label:'Net',
     return_title:'Cancellations', return_new:'New Cancellation', return_no:'Cancellation No.',
     return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
@@ -710,7 +844,44 @@ const I18N = {
     add_purchases:'+ New Purchase', add_sales:'+ New Booking', add_expenses:'+ New Expense',
     title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_tracking:'Tracking Number', f_address:'Address', f_email:'Email', col_email:'Email',
+    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_tracking:'Tracking Number', f_address:'Address', f_email:'Email', col_email:'Email', f_member_no:'Member No', f_group_name:'Group / Lot Name', f_group_member:'Group Member (Moallem)', f_group_package:'Package', f_group_year:'Year', f_group_hajjis:'No. of Hajjis', col_member_no:'No.', col_group:'Group', f_select_group:'Select Group',
+    grp_no_group:'— No Group —', grp_add_btn:'+ New Group / Lot', grp_add_member_btn:'+ New Group Member',
+    grp_edit_form:'Edit Group / Lot', grp_new_form:'New Group / Lot',
+    grp_edit_member:'Edit Group Member', grp_new_member:'New Group Member',
+    grp_del_member_confirm:'Delete this group member?', grp_del_confirm:'Delete this group?',
+    grp_name_required:'Group name and Moallem are required', grp_member_required:'Number and name are required',
+    grp_no_members:'No group members yet', grp_no_groups:'No groups yet',
+    grp_no_lots:'No lots for this member', grp_no_bookings:'No bookings', grp_no_inst:'No installments',
+    grp_col_name:'Group Name', grp_col_moallem:'Moallem', grp_col_year:'Year', grp_col_hajji:'Hajjis', grp_col_total:'Total Booking', grp_col_lot:'Lots',
+    grp_col_lot_name:'Lot Name', grp_col_due:'Due',
+    grp_member_no_label:'Member No', grp_total_lots:'Total Lots', grp_inst_history:'Installment History',
+    grp_back:'← Back to Group', grp_back_members:'← Group Members', grp_paid:'Paid',
+    grp_lot_label:'Lots', grp_member_label:'Member No:', grp_lot_count:'Lots',
+    grp_rpt_search:'Search group / moallem...', grp_name_placeholder:'e.g. Rafiq — Hajj 2026 — Lot 1',
+    grp_select_member:'— Select —', grp_moallem_label:'Moallem',
+    vnd_statement:'Vendor Statement', vnd_pay_btn:'+ Pay Vendor', vnd_return_btn:'+ Purchase Return',
+    vnd_total_purchase:'Total Purchase', vnd_total_paid:'Total Paid', vnd_due:'We Owe',
+    vnd_advance:'Vendor Advance', vnd_clear:'Clear',
+    vnd_pay_title:'Pay Vendor', vnd_return_title:'Purchase Return',
+    vnd_return_cash:'Cash Refund', vnd_return_adjust:'Adjust in Next Purchase',
+    vnd_return_confirm:'Confirm this return?',
+    vnd_pay_amount:'Payment Amount (৳)', vnd_pay_note:'Note',
+    vnd_return_qty:'Return Quantity', vnd_return_unit:'Unit Cost (৳)',
+    vnd_return_type:'Return Type', vnd_history:'Transaction History',
+    vnd_type_purchase:'Purchase', vnd_type_payment:'Payment', vnd_type_return:'Return',
+    vnd_no_history:'No transactions yet', vnd_del_payment:'Delete this payment?', col_debit:'Debit', col_credit:'Credit',
+    hdr_type:'Type', hdr_desc:'Description', hdr_balance:'Balance',
+    lbl_hajji_add:'🤲 Add Hajji —', lbl_sel_purchase:'Select Purchase',
+    lbl_hajji_col:'Hajji', lbl_passport_col:'Passport', lbl_total_booking:'Total Booking',
+    lbl_paid_col:'Paid', lbl_due_col:'Due',
+    lbl_no_return:'No returnable purchases for this vendor',
+    lbl_return_total:'Total Return:', lbl_remaining:'Remaining:',
+    lbl_clear:'Clear', lbl_advance:'Advance',
+    lbl_vendor_due_label:'We Owe (Vendor)',
+    lbl_today_booking:'Today Bookings', lbl_today_expense:'Today Expense',
+    lbl_recent_trend:'Last 14 Days', lbl_two_col_recent:'Recent Bookings',
+    lbl_booking_col_header:'Hajji / Booking', lbl_lot_col_header:'Lot',
+    lbl_pending:'Pending Due', lbl_todays_booking_count:'Today Bookings',
     login_subtitle:'Please log in to continue', login_email:'Email', login_password:'Password',
     login_btn:'Login', login_error:'Incorrect email or password', logout:'Logout',
     backup_btn:'☁️ Backup', restore_btn:'♻️ Restore',
@@ -727,7 +898,7 @@ const I18N = {
     load_error_toast:'⚠️ Some data failed to load, check your internet and try again',
     f_product_name:'Package Name', f_cat:'Package Type', f_current_stock:'Total Seats', f_threshold:'Min Seats Threshold',
     f_cost:'Cost Price (per package)', f_price:'Sell Price (per package)', f_supplier:'Vendor',
-    f_supplier_select:'Vendor', f_product_select:'Package', f_qty:'No. of Hajji', f_unit_cost:'Unit Cost Price (৳)', f_date:'Date',
+    f_supplier_select:'Vendor', f_sector:'Sector / Item', f_pur_qty:'Quantity (QTY)', f_product_select:'Package', f_qty:'No. of Hajji', f_unit_cost:'Unit Cost Price (৳)', f_date:'Date',
     f_customer_opt:'Hajji (optional)', f_unit_price:'Unit Sell Price (৳)', f_paid:'Amount Paid (৳)', f_discount:'Discount (৳)', col_discount:'Discount',
     f_expense_cat:'Category', f_amount:'Amount (৳)', f_note:'Note',
     f_is_old_entry:"Old entry (won't count in Summary)",
@@ -784,6 +955,7 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    ব্রাউজার ট্যাব টাইটেল, প্রিন্ট হেডার, ব্যাকআপ ফাইলের নাম) নিজে থেকেই বদলে যাবে।
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
+const SHOP_NAME = "Maowlana Masum Billah";
 const SHOP_NAME = "Abu Lubaba Hajj & Umrah Center";
 const SHOP_ADDRESS = "Noapara; Abhaynagar; Jashore-7460";
 const SHOP_EMAIL = "m.masumbillah246@gmail.com";
@@ -1092,6 +1264,8 @@ function showToast(msg){
 const NAV = [
   {id:'dashboard', ic:'📊', key:'nav_dashboard'},
   {id:'customers', ic:'👥', key:'nav_customers'},
+  {id:'group_members', ic:'👤', key:'nav_group_members'},
+  {id:'groups', ic:'🏘️', key:'nav_groups'},
   {id:'products', ic:'📦', key:'nav_products'},
   {id:'categories', ic:'🏷️', key:'nav_categories'},
   {id:'suppliers', ic:'🚚', key:'nav_suppliers'},
@@ -1168,8 +1342,8 @@ function paymentSystemKey(v){
 
 /* ---------- Load / Save ---------- */
 async function loadAll(){
-  const objTabs = ['customers','suppliers','products','categories'];
-  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns'];
+  const objTabs = ['customers','suppliers','products','categories','groupMembers','groups'];
+  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments'];
   let hadError = false;
   for(const key of [...objTabs, ...arrTabs]){
     try{
@@ -1303,6 +1477,8 @@ function renderPage(){
   else if(currentTab==='installments') renderInstallmentsPage();
   else if(currentTab==='expenses') renderListPage('expenses');
   else if(currentTab==='returns') renderReturnsPage();
+  else if(currentTab==='group_members') renderGroupMembersPage();
+  else if(currentTab==='groups') renderGroupsPage();
   else if(currentTab==='reports') renderReportsPage();
   attachPageEvents();
 }
@@ -1317,6 +1493,12 @@ function computeTotalBalance(){
   db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount)+Number(i.discount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
+  // Vendor payments: cash out (আমরা vendor কে দিলাম)
+  db.vendorPayments.forEach(vp => {
+    if(!inRange(vp.date)) return;
+    if(vp.type==='payment' || vp.type==='purchase_payment') de += Number(vp.amount||0);
+    if(vp.type==='purchase_return' && vp.returnType==='cash') dp += Number(vp.amount||0);
+  });
   return dp - de;
 }
 
@@ -1338,6 +1520,7 @@ function pageDashboard(){
   const totalDue = Object.values(db.customers).reduce((s,c)=>s+Number(c.due||0),0);
   const totalPaid = totalSales - totalDue;
   const todayBookings = db.sales.filter(x=>x.date===today).length;
+  const vendorDue = Object.values(db.suppliers).reduce((s,sup)=>s+Number(sup.due||0),0);
   const pendingInstallments = Object.values(db.customers).filter(c=>Number(c.due||0)>0).length;
 
   // গত ১৪ দিনের trend data
@@ -1353,7 +1536,7 @@ function pageDashboard(){
 
   return `
     <!-- হজ্জ ব্যানার -->
-    <div style="background:linear-gradient(135deg,#0f3d20 0%,#1B6B3A 60%,#C49A2F 100%);border-radius:14px;padding:22px 28px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div style="background:linear-gradient(135deg,var(--c2) 0%,var(--c1) 60%,var(--c3) 100%);border-radius:14px;padding:22px 28px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
       <div>
         <div style="font-family:'Roboto Slab',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;">🕋 হজ্জ এজেন্সি ড্যাশবোর্ড</div>
         <div style="color:rgba(255,255,255,0.75);font-size:13px;">${new Date().toLocaleDateString(currentLang==='bn'?'bn-BD':'en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
@@ -1361,23 +1544,23 @@ function pageDashboard(){
       <div style="display:flex;gap:16px;flex-wrap:wrap;">
         <div style="text-align:center;background:rgba(255,255,255,0.12);border-radius:10px;padding:12px 18px;">
           <div style="font-size:24px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${todayBookings}</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">আজকের বুকিং</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">${t('lbl_todays_booking_count')}</div>
         </div>
         <div style="text-align:center;background:rgba(255,255,255,0.08);border-radius:10px;padding:12px 18px;">
           <div style="font-size:24px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;">${pendingInstallments}</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">বাকি আছে</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">${t('lbl_pending')}</div>
         </div>
       </div>
     </div>
 
     <!-- প্রধান stat cards — ২ সারি -->
     <div class="dash-stat-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;">
-      <div class="stat-card" style="background:#1B6B3A;">
+      <div class="stat-card" style="background:var(--c1);">
         <div style="font-size:22px;margin-bottom:6px;">🤲</div>
         <div class="val">${custCount}</div>
         <div class="lbl">${t('stat_customer')}</div>
       </div>
-      <div class="stat-card" style="background:#144d2a;">
+      <div class="stat-card" style="background:var(--c2);">
         <div style="font-size:22px;margin-bottom:6px;">📦</div>
         <div class="val">${prodCount}</div>
         <div class="lbl">${t('stat_product')}</div>
@@ -1387,32 +1570,32 @@ function pageDashboard(){
         <div class="val">${suppCount}</div>
         <div class="lbl">${t('stat_supplier')}</div>
       </div>
-      <div class="stat-card" style="background:#C49A2F;color:#1A2E1A;">
+      <div class="stat-card" style="background:var(--c3);color:#1A2E1A;">
         <div style="font-size:22px;margin-bottom:6px;">🎫</div>
         <div class="val">${totalProductQty}</div>
         <div class="lbl">${t('stat_total_qty')}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
-      <div class="stat-card" style="background:#1B6B3A;">
+    <div class="dash-stat-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+      <div class="stat-card" style="background:var(--c1);">
         <div style="font-size:22px;margin-bottom:6px;">💰</div>
         <div class="val">৳${money(totalSales)}</div>
         <div class="lbl">${t('stat_sales')}</div>
       </div>
-      <div class="stat-card" style="background:#144d2a;">
+      <div class="stat-card" style="background:var(--c2);">
         <div style="font-size:22px;margin-bottom:6px;">✅</div>
         <div class="val">৳${money(totalPaid)}</div>
-        <div class="lbl">মোট পরিশোধিত</div>
+        <div class="lbl">${t('lbl_paid_col')}</div>
       </div>
       <div class="stat-card" style="background:#B4423A;">
         <div style="font-size:22px;margin-bottom:6px;">⏳</div>
         <div class="val">৳${money(totalDue)}</div>
-        <div class="lbl">মোট বাকি</div>
+        <div class="lbl">${t('grp_col_due')}</div>
       </div>
-      <div class="stat-card" style="background:${totalBalance>=0?'#1B6B3A':'#B4423A'};">
-        <div style="font-size:22px;margin-bottom:6px;">${totalBalance>=0?'📈':'📉'}</div>
-        <div class="val">৳${money(Math.abs(totalBalance))}</div>
-        <div class="lbl">${t('summary_final')}</div>
+      <div class="stat-card" style="background:${vendorDue>0?'#8f3a8f':'#4a6741'};">
+        <div style="font-size:22px;margin-bottom:6px;">🏢</div>
+        <div class="val">৳${money(Math.abs(vendorDue))}</div>
+        <div class="lbl">${vendorDue>0?t('vnd_due'):t('vnd_clear')}</div>
       </div>
     </div>
 
@@ -1420,7 +1603,7 @@ function pageDashboard(){
     <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:16px;margin-bottom:16px;">
       <!-- Trend chart -->
       <div class="panel" style="margin-bottom:0;">
-        <h3 style="display:flex;align-items:center;gap:8px;">${t('reports_trend')} <span style="font-size:11px;font-weight:400;color:var(--ink-soft);">গত ১৪ দিন</span></h3>
+        <h3 style="display:flex;align-items:center;gap:8px;">${t('reports_trend')} <span style="font-size:11px;font-weight:400;color:var(--ink-soft);">${t('lbl_recent_trend')}</span></h3>
         ${trendDays.map((d,i) => `
           <div class="rbar-row">
             <div style="font-size:12px;">${d.slice(5)}</div>
@@ -1434,26 +1617,27 @@ function pageDashboard(){
         <h3>${t('recent_sales_heading')}</h3>
         ${recentSales.length===0
           ? `<div class="empty" style="padding:30px 20px;"><div class="big">🕌</div><div>${t('no_sales_yet')}</div></div>`
-          : `<table class="data">
+          : `<div style="overflow-x:auto;"><table class="data" style="font-size:12px;">
               <thead><tr>
                 <th>${t('col_customer')}</th>
                 <th>${t('col_product')}</th>
                 <th>${t('col_amount')}</th>
                 <th>${t('col_due')}</th>
-                <th>${t('col_date')}</th>
               </tr></thead>
               <tbody>
-                ${recentSales.map(s=>`
-                  <tr>
-                    <td>${escapeHtml(s.customerName||t('walk_in'))}</td>
-                    <td>${escapeHtml(s.productName)}</td>
-                    <td>৳${money(s.total)}</td>
-                    <td>${s.due>0?'<span class="pill red">৳'+money(s.due)+'</span>':'<span class="pill green">পরিশোধ</span>'}</td>
-                    <td style="color:var(--ink-soft);font-size:12px;">${formatDateDMY(s.date)}</td>
-                  </tr>
-                `).join('')}
+                ${recentSales.map(s=>{
+                  const cn = (s.customerName||t('walk_in')); const pn = s.productName;
+                  const shortC = cn.length>13?cn.slice(0,11)+'…':cn;
+                  const shortP = pn.length>14?pn.slice(0,12)+'…':pn;
+                  return '<tr>'
+                    +'<td>'+escapeHtml(shortC)+'</td>'
+                    +'<td>'+escapeHtml(shortP)+'</td>'
+                    +'<td>৳'+money(s.total)+'</td>'
+                    +'<td>'+(s.due>0?'<span class="pill red">৳'+money(s.due)+'</span>':'<span class="pill green">✓</span>')+'</td>'
+                    +'</tr>';
+                }).join('')}
               </tbody>
-            </table>`
+            </table></div>`
         }
       </div>
     </div>
@@ -1477,17 +1661,828 @@ function pageDashboard(){
       <div class="dash-summary-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
         <div style="background:#fff;border-radius:8px;padding:14px;border:1px solid var(--line);text-align:center;">
           <div style="font-size:20px;font-weight:700;color:#1B6B3A;font-family:'IBM Plex Mono',monospace;">৳${money(todaySales)}</div>
-          <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">💵 আজকের বুকিং</div>
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${t('lbl_today_booking')}</div>
         </div>
         <div style="background:#fff;border-radius:8px;padding:14px;border:1px solid var(--line);text-align:center;">
           <div style="font-size:20px;font-weight:700;color:#B4423A;font-family:'IBM Plex Mono',monospace;">৳${money(todayExpense)}</div>
-          <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">💸 আজকের খরচ</div>
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${t('lbl_today_expense')}</div>
         </div>
       </div>
     </div>
   `;
 }
 
+/* ---------- Vendor / Purchase Ledger ---------- */
+
+function purchaseReturnedQty(purchaseId){
+  return db.vendorPayments
+    .filter(vp=>vp.type==='purchase_return' && vp.purchaseId===purchaseId)
+    .reduce((s,vp)=>s+Number(vp.qty||0), 0);
+}
+
+function openVendorStatement(supplierId){
+  const supplier = db.suppliers[supplierId];
+  if(!supplier) return;
+
+  // সব transaction: purchases + vendorPayments
+  const purchases = db.purchases.filter(p=>p.supplierId===supplierId).sort((a,b)=>a.ts-b.ts);
+  const payments = db.vendorPayments.filter(vp=>vp.supplierId===supplierId).sort((a,b)=>a.ts-b.ts);
+
+  // মোট হিসাব
+  const totalPurchased = purchases.reduce((s,p)=>s+Number(p.total),0);
+  const totalPaid = db.vendorPayments
+    .filter(vp=>vp.supplierId===supplierId && (vp.type==='payment'||vp.type==='purchase_payment'))
+    .reduce((s,vp)=>s+Number(vp.amount),0);
+  const totalReturn = db.vendorPayments
+    .filter(vp=>vp.supplierId===supplierId && vp.type==='purchase_return' && vp.returnType==='cash')
+    .reduce((s,vp)=>s+Number(vp.amount||0),0);
+  const due = Number(supplier.due||0);
+
+  // Unified timeline
+  const timeline = [
+    ...purchases.map(p=>({ts:p.ts, date:p.date, type:'purchase', label:escapeHtml(p.sector||p.productName||'—'), qty:p.qty, amount:p.total, debit:p.total, credit:0, id:p.id})),
+    ...payments.map(vp=>({ts:vp.ts, date:vp.date, type:vp.type, label:vp.note||'—', qty:vp.qty||'', amount:vp.amount||0,
+      debit: vp.type==='purchase_return'&&vp.returnType==='adjust' ? vp.amount : 0,
+      credit: vp.type==='payment'||vp.type==='purchase_payment' ? vp.amount : (vp.type==='purchase_return'&&vp.returnType==='cash' ? vp.amount : 0),
+      id:vp.id}))
+  ].sort((a,b)=>a.ts-b.ts);
+
+  // Running balance
+  let running = 0;
+  const rows = timeline.map(function(tx){
+    if(tx.type==='purchase'){ running += tx.amount; }
+    else if(tx.type==='payment'||tx.type==='purchase_payment'){ running -= tx.amount; }
+    else if(tx.type==='purchase_return'){
+      if(tx.returnType==='cash') running -= tx.amount||0;
+      else running -= tx.amount||0; // adjust also reduces
+    }
+    const typePill = tx.type==='purchase'
+      ? '<span class="pill" style="background:#2E6B8A;color:#fff;font-size:10px;">'+t('vnd_type_purchase')+'</span>'
+      : tx.type==='purchase_return'
+        ? '<span class="pill red" style="font-size:10px;">'+t('vnd_type_return')+'</span>'
+        : '<span class="pill green" style="font-size:10px;">'+t('vnd_type_payment')+'</span>';
+    const debitCell = tx.debit>0 ? '<span style="color:var(--red);">৳'+money(tx.debit)+'</span>' : '—';
+    const creditCell = tx.credit>0 ? '<span style="color:var(--green);">৳'+money(tx.credit)+'</span>' : '—';
+    const balCell = running>0
+      ? '<span style="color:var(--red);">৳'+money(running)+'</span>'
+      : running<0
+        ? '<span style="color:var(--green);">'+t('lbl_advance')+' ৳'+money(Math.abs(running))+'</span>'
+        : '<span style="color:var(--green);">'+t('lbl_clear')+'</span>';
+    const delBtn = (tx.type==='payment'||tx.type==='purchase_return')
+      ? '<button class="icon-btn" data-vpdel="'+tx.id+'" title="Delete" style="font-size:11px;">🗑️</button>' : '';
+    return '<tr>'
+      +'<td style="font-size:12px;">'+formatDateDMY(tx.date)+'</td>'
+      +'<td>'+typePill+'</td>'
+      +'<td style="font-size:12px;">'+tx.label+(tx.qty?' ('+tx.qty+')':'')+'</td>'
+      +'<td>'+debitCell+'</td>'
+      +'<td>'+creditCell+'</td>'
+      +'<td><strong>'+balCell+'</strong></td>'
+      +'<td class="actions-cell no-print">'+delBtn+'</td>'
+      +'</tr>';
+  }).join('');
+
+  const dueColor = due>0?'#B4423A':due<0?'#1B6B3A':'#4a6741';
+  const dueLabel = due>0?t('vnd_due'):due<0?t('vnd_advance'):t('vnd_clear');
+
+  const c = document.getElementById('content');
+  c.innerHTML =
+    '<div class="no-print" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">'
+    +'<button class="btn" onclick="renderListPage(\'suppliers\')">← '+t('nav_suppliers')+'</button>'
+    +'<button class="btn ghost" style="margin-left:auto;" onclick="window.print()">'+t('print_report')+'</button>'
+    +'</div>'
+
+    +'<div class="panel" style="background:linear-gradient(135deg,#0f3d20,#1B6B3A);color:#fff;margin-bottom:16px;">'
+    +'<div style="font-size:20px;font-weight:700;">🏢 '+escapeHtml(supplier.name)+'</div>'
+    +(supplier.phone?'<div style="opacity:0.75;font-size:13px;margin-top:4px;">📞 '+escapeHtml(supplier.phone)+'</div>':'')
+    +'<div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">'
+    +'<div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px 16px;text-align:center;">'
+    +'<div style="font-size:18px;font-weight:700;">৳'+money(totalPurchased)+'</div>'
+    +'<div style="font-size:11px;opacity:0.8;">'+t('vnd_total_purchase')+'</div></div>'
+    +'<div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px 16px;text-align:center;">'
+    +'<div style="font-size:18px;font-weight:700;">৳'+money(totalPaid+totalReturn)+'</div>'
+    +'<div style="font-size:11px;opacity:0.8;">'+t('vnd_total_paid')+'</div></div>'
+    +'<div style="background:'+(due>0?'rgba(180,66,58,0.6)':'rgba(27,107,58,0.5)')+';border-radius:8px;padding:10px 16px;text-align:center;">'
+    +'<div style="font-size:18px;font-weight:700;">৳'+money(Math.abs(due))+'</div>'
+    +'<div style="font-size:11px;opacity:0.8;">'+dueLabel+'</div></div>'
+    +'</div></div>'
+
+    +'<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;" class="no-print">'
+    +'<button class="btn amber" onclick="openVendorPayForm(\''+supplierId+'\')">'+t('vnd_pay_btn')+'</button>'
+    +'<button class="btn" style="border:1px solid var(--line);" onclick="openPurchaseReturnForVendor(\''+supplierId+'\')">'+t('vnd_return_btn')+'</button>'
+    +'</div>'
+
+    +'<div class="panel" style="overflow-x:auto;">'
+    +'<h3>'+t('vnd_history')+'</h3>'
+    +(timeline.length===0
+      ? '<div class="empty">'+t('vnd_no_history')+'</div>'
+      : '<table class="data"><thead><tr>'
+        +'<th>'+t('col_date')+'</th><th>'+t('hdr_type')+'</th><th>'+t('hdr_desc')+'</th>'
+        +'<th>'+t('col_debit')+'</th><th>'+t('col_credit')+'</th><th>'+t('hdr_balance')+'</th><th class="no-print"></th>'
+        +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    )
+    +'</div>';
+
+  // Delete payment/return
+  c.querySelector('.panel').onclick = async function(e){
+    const delBtn = e.target.closest('[data-vpdel]');
+    if(!delBtn) return;
+    if(!confirm(t('vnd_del_payment'))) return;
+    const vpId = delBtn.dataset.vpdel;
+    const vp = db.vendorPayments.find(x=>x.id===vpId);
+    if(!vp) return;
+    // Reverse effects
+    if(vp.type==='payment'||vp.type==='purchase_payment'){
+      supplier.due = Number(supplier.due||0) + Number(vp.amount);
+      await safePut('suppliers', supplierId, supplier);
+    } else if(vp.type==='purchase_return'){
+      // Stock ফিরিয়ে দাও
+      const prod = db.products[vp.productId];
+      if(prod){ prod.qty = Number(prod.qty) + Number(vp.qty||0); await safePut('products', vp.productId, prod); }
+      // due adjust
+      supplier.due = Number(supplier.due||0) + Number(vp.amount||0);
+      await safePut('suppliers', supplierId, supplier);
+      // purchase due restore
+      const pur = db.purchases.find(x=>x.id===vp.purchaseId);
+      if(pur){ pur.due = Number(pur.due||0) + Number(vp.amount||0); await safePut('purchases', pur.id, pur); }
+    }
+    db.vendorPayments = db.vendorPayments.filter(x=>x.id!==vpId);
+    await safeRemove('vendorPayments', vpId);
+    showToast(t('deleted_toast'));
+    openVendorStatement(supplierId);
+  };
+}
+
+function openVendorPayForm(supplierId){
+  const supplier = db.suppliers[supplierId];
+  if(!supplier) return;
+  const due = Number(supplier.due||0);
+
+  const html = '<div class="overlay open" id="vndPayOverlay" style="z-index:120;">'
+    +'<div class="modal" style="max-width:400px;">'
+    +'<h2>'+t('vnd_pay_title')+' — '+escapeHtml(supplier.name)+'</h2>'
+    +(due>0?'<div style="background:var(--red-bg);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:13px;">'+t('vnd_due')+': <strong>৳'+money(due)+'</strong></div>':'')
+    +(due<=0?'<div style="background:var(--green-bg);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:13px;">'+t('vnd_advance')+': <strong>৳'+money(Math.abs(due))+'</strong></div>':'')
+    +'<div class="field"><label>'+t('vnd_pay_amount')+' <span style="color:var(--red)">*</span></label>'
+    +'<input type="number" id="vndPayAmt" value="'+Math.max(0,due)+'" min="0" step="any"></div>'
+    +'<div class="field"><label>'+t('col_date')+'</label>'
+    +'<input type="date" id="vndPayDate" value="'+todayStr()+'"></div>'
+    +'<div class="field"><label>'+t('vnd_pay_note')+'</label>'
+    +'<input type="text" id="vndPayNote" placeholder="যেমন: বিকাশ, ব্যাংক ট্রান্সফার..."></div>'
+    +'<div style="display:flex;gap:10px;margin-top:16px;">'
+    +'<button class="btn" id="vndPayCancel">'+t('cancel')+'</button>'
+    +'<button class="btn amber" id="vndPaySave">'+t('save')+'</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('vndPayCancel').onclick = ()=>document.getElementById('vndPayOverlay').remove();
+  document.getElementById('vndPaySave').onclick = async function(){
+    const amt = Number(document.getElementById('vndPayAmt').value);
+    const date = document.getElementById('vndPayDate').value;
+    const note = document.getElementById('vndPayNote').value.trim();
+    if(!amt||amt<=0){ alert(t('qa_name_required')); return; }
+    // Supplier due কমাও
+    supplier.due = Number(supplier.due||0) - amt;
+    await safePut('suppliers', supplierId, supplier);
+    // Payment record
+    const vp = { id:uid(), supplierId, supplierName:supplier.name, type:'payment',
+      amount:amt, note:note||'Payment', date, ts:Date.now() };
+    db.vendorPayments.push(vp);
+    await safePut('vendorPayments', vp.id, vp);
+    document.getElementById('vndPayOverlay').remove();
+    showToast(t('saved_toast'));
+    openVendorStatement(supplierId);
+  };
+}
+
+function openPurchaseReturn(purchaseId){
+  const purchase = db.purchases.find(p=>p.id===purchaseId);
+  if(!purchase) return;
+  openPurchaseReturnForm(purchaseId, purchase.supplierId);
+}
+
+function openPurchaseReturnForVendor(supplierId){
+  // এই vendor এর সব purchase list দেখাও
+  const purchases = db.purchases.filter(p=>p.supplierId===supplierId && (Number(p.qty)-purchaseReturnedQty(p.id))>0);
+  if(purchases.length===0){ alert(t('lbl_no_return')); return; }
+  if(purchases.length===1){ openPurchaseReturnForm(purchases[0].id, supplierId); return; }
+
+  const html = '<div class="overlay open" id="vndSelOverlay" style="z-index:120;">'
+    +'<div class="modal" style="max-width:420px;">'
+    +'<h2>'+t('lbl_sel_purchase')+'</h2>'
+    +'<div style="max-height:300px;overflow-y:auto;">'
+    +purchases.map(p=>{
+      const rem = Number(p.qty)-purchaseReturnedQty(p.id);
+      return '<div style="padding:10px 12px;border:1px solid var(--line);border-radius:6px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="document.getElementById(\'vndSelOverlay\').remove();openPurchaseReturnForm(\''+p.id+'\',\''+supplierId+'\');">'
+        +'<div><strong>'+escapeHtml(p.productName)+'</strong><div style="font-size:12px;color:var(--ink-soft);">'+formatDateDMY(p.date)+' · '+t('lbl_remaining')+' '+rem+'</div></div>'
+        +'<span style="color:var(--hajj-green);font-size:18px;">›</span>'
+        +'</div>';
+    }).join('')
+    +'</div>'
+    +'<button class="btn" style="margin-top:12px;" onclick="document.getElementById(\'vndSelOverlay\').remove()">'+t('cancel')+'</button>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function openPurchaseReturnForm(purchaseId, supplierId){
+  const purchase = db.purchases.find(p=>p.id===purchaseId);
+  const supplier = db.suppliers[supplierId];
+  if(!purchase||!supplier) return;
+  const remainingQty = Number(purchase.qty) - purchaseReturnedQty(purchaseId);
+
+  const html = '<div class="overlay open" id="vndReturnOverlay" style="z-index:120;">'
+    +'<div class="modal" style="max-width:420px;">'
+    +'<h2>'+t('vnd_return_title')+'</h2>'
+    +'<div style="background:var(--paper-card);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:13px;">'
+    +escapeHtml(purchase.sector||purchase.productName||'—')+' · '+t('lbl_remaining')+' '+remainingQty+' · ৳'+money(purchase.unitCost)+'</div>'
+    +'<div class="field"><label>'+t('vnd_return_qty')+' <span style="color:var(--red)">*</span></label>'
+    +'<input type="number" id="vrQty" value="1" min="1" max="'+remainingQty+'" oninput="vrCalc()"></div>'
+    +'<div class="field"><label>'+t('vnd_return_unit')+'</label>'
+    +'<input type="number" id="vrUnit" value="'+purchase.unitCost+'" oninput="vrCalc()"></div>'
+    +'<div class="field"><label>'+t('vnd_return_type')+' <span style="color:var(--red)">*</span></label>'
+    +'<select id="vrType">'
+    +'<option value="cash">'+t('vnd_return_cash')+'</option>'
+    +'<option value="adjust">'+t('vnd_return_adjust')+'</option>'
+    +'</select></div>'
+    +'<div style="background:var(--gold-bg);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:13px;" id="vrTotal">'+t('lbl_return_total')+' ৳'+money(purchase.unitCost)+'</div>'
+    +'<div class="field"><label>'+t('col_date')+'</label>'
+    +'<input type="date" id="vrDate" value="'+todayStr()+'"></div>'
+    +'<div class="field"><label>নোট</label><input type="text" id="vrNote" placeholder="কারণ লিখুন..."></div>'
+    +'<div style="display:flex;gap:10px;margin-top:16px;">'
+    +'<button class="btn" id="vrCancel">'+t('cancel')+'</button>'
+    +'<button class="btn amber" id="vrSave">'+t('save')+'</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  window.vrCalc = function(){
+    const q = Number(document.getElementById('vrQty').value)||0;
+    const u = Number(document.getElementById('vrUnit').value)||0;
+    document.getElementById('vrTotal').textContent = t('lbl_return_total')+' ৳'+money(q*u);
+  };
+
+  document.getElementById('vrCancel').onclick = ()=>document.getElementById('vndReturnOverlay').remove();
+  document.getElementById('vrSave').onclick = async function(){
+    const qty = Number(document.getElementById('vrQty').value);
+    const unit = Number(document.getElementById('vrUnit').value);
+    const returnType = document.getElementById('vrType').value;
+    const date = document.getElementById('vrDate').value;
+    const note = document.getElementById('vrNote').value.trim();
+    if(!qty||qty<=0||qty>remainingQty){ alert(t('f_pur_qty')+': 1-'+remainingQty); return; }
+    if(!confirm(t('vnd_return_confirm'))) return;
+
+    const amount = qty * unit;
+
+    // Stock কমাও
+    const prod = db.products[purchase.productId];
+    if(prod){ prod.qty = Math.max(0, Number(prod.qty) - qty); await safePut('products', purchase.productId, prod); }
+
+    // Purchase due adjust করো
+    purchase.due = Math.max(0, Number(purchase.due||0) - amount);
+    await safePut('purchases', purchaseId, purchase);
+
+    // Supplier due adjust
+    if(returnType==='cash'){
+      // Vendor নগদ ফেরত দিলো → আমাদের balance বাড়ে, vendor due কমে
+      supplier.due = Number(supplier.due||0) - amount;
+    } else {
+      // পরের purchase এ adjust → vendor due কমে (advance হিসেবে)
+      supplier.due = Number(supplier.due||0) - amount;
+    }
+    await safePut('suppliers', supplierId, supplier);
+
+    // Return record
+    const vp = { id:uid(), supplierId, supplierName:supplier.name,
+      type:'purchase_return', returnType, purchaseId,
+      productId:purchase.productId, productName:purchase.productName,
+      qty, unitCost:unit, amount, note:note||'Purchase Return', date, ts:Date.now() };
+    db.vendorPayments.push(vp);
+    await safePut('vendorPayments', vp.id, vp);
+
+    document.getElementById('vndReturnOverlay').remove();
+    showToast(t('saved_toast'));
+    openVendorStatement(supplierId);
+  };
+}
+
+/* ---------- Group Members ---------- */
+function renderGroupMembersPage(){
+  const c = document.getElementById('content');
+  const members = Object.entries(db.groupMembers).sort((a,b)=>Number(a[1].memberNo)-Number(b[1].memberNo));
+  const q = '';
+
+  c.innerHTML = '<div class="toolbar">'
+    + '<input type="text" id="gmSearch" placeholder="'+t('search_placeholder')+'">'
+    + '<button class="btn amber" id="gmAddBtn">+ '+t('nav_group_members')+'</button>'
+    + '</div><div id="gmBody"></div>';
+
+  function renderGMList(){
+    const q2 = document.getElementById('gmSearch').value.trim().toLowerCase();
+    const filtered = members.filter(([id,m])=>
+      !q2 || m.name.toLowerCase().includes(q2)
+      || String(m.memberNo||'').includes(q2)
+      || (m.phone&&m.phone.toLowerCase().includes(q2))
+    );
+    const body = document.getElementById('gmBody');
+    if(filtered.length===0){
+      body.innerHTML = '<div class="empty"><div class="big">👤</div>'+t('grp_no_members')+'</div>';
+      return;
+    }
+    const rows = filtered.map(function([id,m]){
+      const lotCount = Object.values(db.groups).filter(g=>g.memberId===id).length;
+      return '<tr>'
+        +'<td><strong>#'+escapeHtml(String(m.memberNo||'—'))+'</strong></td>'
+        +'<td>'+escapeHtml(m.name)+'</td>'
+        +'<td>'+escapeHtml(m.phone||'—')+'</td>'
+        +'<td>'+escapeHtml(m.address||'—')+'</td>'
+        +'<td>'+lotCount+' '+t('grp_col_lot')+'</td>'
+        +'<td class="actions-cell">'
+        +'<button class="icon-btn" data-gmview="'+id+'">📋</button>'
+        +'<button class="icon-btn" data-gmedit="'+id+'">✏️</button>'
+        +'<button class="icon-btn" data-gmdel="'+id+'">🗑️</button>'
+        +'</td></tr>';
+    }).join('');
+    body.innerHTML = '<table class="data"><thead><tr>'
+      +'<th>'+t('col_member_no')+'</th><th>'+t('col_name')+'</th><th>'+t('col_phone')+'</th>'
+      +'<th>'+t('col_address')+'</th><th>'+t('grp_col_lot')+'</th><th></th>'
+      +'</tr></thead><tbody>'+rows+'</tbody></table>';
+
+    body.onclick = function(e){
+      const viewBtn = e.target.closest('[data-gmview]');
+      const editBtn = e.target.closest('[data-gmedit]');
+      const delBtn = e.target.closest('[data-gmdel]');
+      if(viewBtn) openGroupMemberReport(viewBtn.dataset.gmview);
+      else if(editBtn) openGroupMemberForm(editBtn.dataset.gmedit);
+      else if(delBtn) deleteGroupMember(delBtn.dataset.gmdel);
+    };
+  }
+  renderGMList();
+  document.getElementById('gmSearch').addEventListener('input', renderGMList);
+  document.getElementById('gmAddBtn').addEventListener('click', ()=>openGroupMemberForm(null));
+}
+
+function openGroupMemberForm(id){
+  const existing = id ? db.groupMembers[id] : {};
+  const title = id ? t('grp_edit_member') : t('grp_new_member');
+  const html = '<div class="overlay open" id="gmFormOverlay" style="z-index:120;">'
+    +'<div class="modal" style="max-width:420px;">'
+    +'<h2>'+title+'</h2>'
+    +'<div class="field"><label>'+t('col_member_no')+' <span style="color:var(--red)">*</span></label>'
+    +'<input type="number" id="gmNo" value="'+escapeHtml(String(existing.memberNo||''))+'" placeholder="যেমন: 1, 20, 35..."></div>'
+    +'<div class="field"><label>'+t('f_name')+' <span style="color:var(--red)">*</span></label>'
+    +'<input type="text" id="gmName" value="'+escapeHtml(existing.name||'')+'"></div>'
+    +'<div class="field"><label>'+t('f_phone')+'</label>'
+    +'<input type="text" id="gmPhone" value="'+escapeHtml(existing.phone||'')+'"></div>'
+    +'<div class="field"><label>'+t('f_address')+'</label>'
+    +'<input type="text" id="gmAddress" value="'+escapeHtml(existing.address||'')+'"></div>'
+    +'<div class="field"><label>'+t('f_note')+'</label>'
+    +'<input type="text" id="gmNote" value="'+escapeHtml(existing.note||'')+'"></div>'
+    +'<div style="display:flex;gap:10px;margin-top:16px;">'
+    +'<button class="btn" id="gmFormCancel">'+t('cancel')+'</button>'
+    +'<button class="btn amber" id="gmFormSave">'+t('save')+'</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('gmFormCancel').onclick = ()=>document.getElementById('gmFormOverlay').remove();
+  document.getElementById('gmFormSave').onclick = async ()=>{
+    const no = document.getElementById('gmNo').value.trim();
+    const name = document.getElementById('gmName').value.trim();
+    if(!no||!name){ alert(t('grp_member_required')); return; }
+    const key = id || uid();
+    const record = { memberNo:Number(no), name, phone:document.getElementById('gmPhone').value.trim(),
+      address:document.getElementById('gmAddress').value.trim(), note:document.getElementById('gmNote').value.trim() };
+    db.groupMembers[key] = record;
+    await safePut('groupMembers', key, record);
+    document.getElementById('gmFormOverlay').remove();
+    showToast(t('saved_toast'));
+    renderGroupMembersPage();
+  };
+}
+
+async function deleteGroupMember(id){
+  if(!confirm(t('grp_del_member_confirm'))) return;
+  delete db.groupMembers[id];
+  await safeRemove('groupMembers', id);
+  showToast(t('deleted_toast'));
+  renderGroupMembersPage();
+}
+
+function openGroupMemberReport(memberId){
+  currentTab = 'group_members';
+  const member = db.groupMembers[memberId];
+  if(!member) return;
+  const lots = Object.entries(db.groups).filter(([,g])=>g.memberId===memberId);
+  const c = document.getElementById('content');
+  let html = '<div class="no-print" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">'
+    +'<button class="btn" onclick="renderGroupMembersPage()">'+t('grp_back_members')+'</button>'
+    +'<button class="btn ghost" style="margin-left:auto;" onclick="window.print()">'+t('print_report')+'</button>'
+    +'</div>'
+    +'<div class="panel" style="background:linear-gradient(135deg,#0f3d20,#1B6B3A);color:#fff;margin-bottom:16px;">'
+    +'<div style="font-size:20px;font-weight:700;">👤 '+escapeHtml(member.name)+'</div>'
+    +'<div style="opacity:0.8;margin-top:4px;">'+t('grp_member_no_label')+': #'+member.memberNo+'  |  '+t('grp_total_lots')+': '+lots.length+'</div>'
+    +(member.phone?'<div style="opacity:0.7;font-size:13px;margin-top:2px;">📞 '+escapeHtml(member.phone)+'</div>':'')
+    +'</div>';
+
+  if(lots.length===0){
+    html += '<div class="empty"><div class="big">🏘️</div>'+t('grp_no_lots')+'</div>';
+  } else {
+    lots.forEach(([gid, grp])=>{
+      const grpSales = db.sales.filter(s=>s.groupId===gid);
+      const salesHajjiIds = [...new Set(grpSales.map(s=>s.customerId).filter(Boolean))];
+      const assignedHajjiIds = grp.hajjiIds||[];
+      const hajjiIds = [...new Set([...assignedHajjiIds, ...salesHajjiIds])];
+      const totalBooking = grpSales.reduce((s,x)=>s+Number(x.total),0);
+      const totalDue = hajjiIds.reduce((s,hid)=>s+Number((db.customers[hid]||{}).due||0),0);
+      html += '<div class="panel" style="margin-bottom:14px;border-left:4px solid var(--hajj-gold);">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'
+        +'<div><strong>🏘️ '+escapeHtml(grp.name)+'</strong>'
+        +(grp.year?' <span style="font-size:12px;color:var(--ink-soft);">'+grp.year+'</span>':'')+'</div>'
+        +'<div style="display:flex;gap:8px;">'
+        +'<span class="pill green">'+hajjiIds.length+' '+t('nav_customers')+'</span>'
+        +'<span class="pill">৳'+money(totalBooking)+'</span>'
+        +(totalDue>0?'<span class="pill red">বাকি ৳'+money(totalDue)+'</span>':'')
+        +'</div></div>';
+
+      // হাজীদের list
+      if(hajjiIds.length>0){
+        html += '<div style="margin-top:12px;overflow-x:auto;"><table class="data"><thead><tr>'
+          +'<th>'+t('lbl_hajji_col')+'</th><th>'+t('lbl_passport_col')+'</th><th>'+t('lbl_total_booking')+'</th><th>'+t('lbl_paid_col')+'</th><th>'+t('lbl_due_col')+'</th><th></th>'
+          +'</tr></thead><tbody>';
+        hajjiIds.forEach(hid=>{
+          const hajji = db.customers[hid];
+          if(!hajji) return;
+          const hSales = grpSales.filter(s=>s.customerId===hid);
+          const hTotal = hSales.reduce((s,x)=>s+Number(x.total),0);
+          const hDue = Number(hajji.due||0);
+          const hPaid = hTotal - hDue;
+          html += '<tr>'
+            +'<td>'+escapeHtml(hajji.name)+'</td>'
+            +'<td>'+(hajji.passport||'—')+'</td>'
+            +'<td>৳'+money(hTotal)+'</td>'
+            +'<td>৳'+money(hPaid)+'</td>'
+            +'<td>'+(hDue>0?'<span class="pill red">৳'+money(hDue)+'</span>':'<span class="pill green">পরিশোধ</span>')+'</td>'
+            +'<td><button class="icon-btn" onclick="openGroupHajjiDetail(\''+hid+'\',\''+gid+'\')">📋</button></td>'
+            +'</tr>';
+        });
+        html += '</tbody></table></div>';
+      }
+      html += '</div>';
+    });
+  }
+  c.innerHTML = html;
+}
+
+function openGroupHajjiDetail(hajjiId, groupId){
+  const hajji = db.customers[hajjiId];
+  const grp = db.groups[groupId];
+  if(!hajji||!grp) return;
+  const sales = db.sales.filter(s=>s.customerId===hajjiId && s.groupId===groupId);
+  const installs = db.installments.filter(i=>i.customerId===hajjiId);
+  const total = sales.reduce((s,x)=>s+Number(x.total),0);
+  const due = Number(hajji.due||0);
+  const paid = total - due;
+
+  const c = document.getElementById('content');
+  let html = '<div class="no-print" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">'
+    +'<button class="btn" onclick="openGroupMemberReport(\''+db.groups[groupId].memberId+'\')">'+ t('grp_back')+'</button>'
+    +'<button class="btn ghost" style="margin-left:auto;" onclick="window.print()">'+t('print_report')+'</button>'
+    +'</div>'
+    +'<div class="panel" style="background:linear-gradient(135deg,#1B6B3A,#144d2a);color:#fff;margin-bottom:14px;">'
+    +'<div style="font-size:18px;font-weight:700;">🤲 '+escapeHtml(hajji.name)+'</div>'
+    +'<div style="opacity:0.75;font-size:13px;margin-top:4px;">'
+    +(hajji.passport?'পাসপোর্ট: '+escapeHtml(hajji.passport)+'  ':'')+''
+    +(hajji.tracking?'ট্র্যাকিং: '+escapeHtml(hajji.tracking):'')+'</div>'
+    +'<div style="opacity:0.75;font-size:13px;">'+(hajji.phone||'')+'</div>'
+    +'<div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;">'
+    +'<div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 14px;text-align:center;">'
+    +'<div style="font-size:16px;font-weight:700;">৳'+money(total)+'</div><div style="font-size:11px;opacity:0.8;">'+t('lbl_total_booking')+'</div></div>'
+    +'<div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 14px;text-align:center;">'
+    +'<div style="font-size:16px;font-weight:700;">৳'+money(paid)+'</div><div style="font-size:11px;opacity:0.8;">'+t('lbl_paid_col')+'</div></div>'
+    +'<div style="background:'+(due>0?'rgba(180,66,58,0.6)':'rgba(255,255,255,0.15)')+';border-radius:8px;padding:8px 14px;text-align:center;">'
+    +'<div style="font-size:16px;font-weight:700;">৳'+money(due)+'</div><div style="font-size:11px;opacity:0.8;">বাকি</div></div>'
+    +'</div></div>';
+
+  // বুকিং
+  html += '<div class="panel" style="margin-bottom:14px;"><h3>'+t('nav_sales')+'</h3>';
+  if(sales.length===0){ html += '<div class="empty">'+t('grp_no_bookings')+'</div>'; }
+  else {
+    html += '<div style="overflow-x:auto;"><table class="data"><thead><tr><th>'+t('col_date')+'</th><th>'+t('col_product')+'</th><th>পরিমাণ</th><th>'+t('col_amount')+'</th><th>'+t('lbl_paid_col')+'</th><th>'+t('lbl_due_col')+'</th></tr></thead><tbody>';
+    sales.forEach(s=>{
+      html += '<tr><td>'+formatDateDMY(s.date)+'</td><td>'+escapeHtml(s.productName)+'</td>'
+        +'<td>'+s.qty+'</td><td>৳'+money(s.total)+'</td><td>৳'+money(s.paid)+'</td>'
+        +'<td>'+(s.due>0?'<span class="pill red">৳'+money(s.due)+'</span>':'<span class="pill green">পরিশোধ</span>')+'</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+
+  // কিস্তি ইতিহাস
+  html += '<div class="panel"><h3>💳 '+t('grp_inst_history')+'</h3>';
+  if(installs.length===0){ html += '<div class="empty">'+t('grp_no_inst')+'</div>'; }
+  else {
+    html += '<div style="overflow-x:auto;"><table class="data"><thead><tr><th>'+t('col_date')+'</th><th>'+t('lbl_paid_col')+'</th><th>'+t('col_discount')+'</th><th>'+t('lbl_due_col')+'</th><th>'+t('f_note')+'</th></tr></thead><tbody>';
+    installs.sort((a,b)=>a.ts-b.ts).forEach(i=>{
+      html += '<tr><td>'+formatDateDMY(i.date)+'</td><td>৳'+money(i.amount)+'</td>'
+        +'<td>'+(Number(i.discount)>0?'৳'+money(i.discount):'—')+'</td>'
+        +'<td>৳'+money(i.newDue)+'</td><td>'+escapeHtml(i.note||'—')+'</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+/* ---------- Groups / Lots ---------- */
+
+function openGroupHajjiManager(groupId){
+  const grp = db.groups[groupId];
+  if(!grp) return;
+
+  // এই Lot এ আগে assign করা হাজীরা
+  const assignedIds = new Set((grp.hajjiIds||[]).filter(Boolean));
+
+  const html = '<div class="overlay open" id="grpHajjiOverlay" style="z-index:120;">'
+    +'<div class="modal" style="max-width:560px;">'
+    +'<h2>'+t('lbl_hajji_add')+escapeHtml(grp.name)+'</h2>'
+
+    // search box
+    +'<div class="field"><label>হাজী খুঁজুন (নাম / পাসপোর্ট / ট্র্যাকিং / ফোন)</label>'
+    +'<input type="text" id="ghSearch" placeholder="টাইপ করুন..." autocomplete="off">'
+    +'</div>'
+
+    // search results
+    +'<div id="ghResults" style="max-height:min(220px,30vh);overflow-y:auto;border:1px solid var(--line);border-radius:6px;margin-bottom:14px;"></div>'
+
+    // currently assigned
+    +'<div style="font-weight:600;margin-bottom:8px;">'+t('grp_col_hajji')+' <span id="ghCount" style="font-size:12px;color:var(--ink-soft);"></span></div>'
+    +'<div id="ghAssigned" style="max-height:min(180px,25vh);overflow-y:auto;border:1px solid var(--line);border-radius:6px;margin-bottom:14px;"></div>'
+
+    +'<div style="display:flex;gap:10px;">'
+    +'<button class="btn" id="ghCancel">'+t('cancel')+'</button>'
+    +'<button class="btn" onclick="openQuickAddHajji(\''+groupId+'\')">'+t('add_customers')+'</button>'
+    +'<button class="btn amber" id="ghSave">'+t('save')+'</button>'
+    +'</div>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  let selected = new Set(assignedIds);
+
+  function renderAssigned(){
+    const el = document.getElementById('ghAssigned');
+    const cnt = document.getElementById('ghCount');
+    if(selected.size===0){
+      el.innerHTML = '<div style="padding:12px;color:var(--ink-soft);text-align:center;">'+t('grp_no_members')+'</div>';
+      cnt.textContent = '';
+      return;
+    }
+    cnt.textContent = '('+selected.size+' জন)';
+    el.innerHTML = [...selected].map(function(hid){
+      const h = db.customers[hid];
+      if(!h) return '';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line);">'
+        +'<div><strong>'+escapeHtml(h.name)+'</strong>'
+        +(h.passport?' <span style="font-size:11px;color:var(--ink-soft);">'+escapeHtml(h.passport)+'</span>':'')+'</div>'
+        +'<button style="border:none;background:none;cursor:pointer;color:var(--red);font-size:16px;" data-ghremove="'+hid+'" title="'+t('delete_title')+'">✕</button>'
+        +'</div>';
+    }).join('');
+    el.onclick = function(e){
+      const btn = e.target.closest('[data-ghremove]');
+      if(btn){ selected.delete(btn.dataset.ghremove); renderAssigned(); renderSearch(document.getElementById('ghSearch').value); }
+    };
+  }
+
+  function renderSearch(q){
+    const el = document.getElementById('ghResults');
+    if(!q){ el.innerHTML = '<div style="padding:10px 12px;color:var(--ink-soft);font-size:13px;">'+t('grp_rpt_search')+'</div>'; return; }
+    const ql = q.trim().toLowerCase();
+    const matches = Object.entries(db.customers).filter(function([hid,h]){
+      return !selected.has(hid) && (
+        h.name.toLowerCase().includes(ql)
+        || (h.passport&&h.passport.toLowerCase().includes(ql))
+        || (h.tracking&&h.tracking.toLowerCase().includes(ql))
+        || (h.phone&&h.phone.toLowerCase().includes(ql))
+      );
+    }).slice(0,10);
+    if(matches.length===0){
+      el.innerHTML = '<div style="padding:10px 12px;color:var(--ink-soft);font-size:13px;">কোনো হাজী পাওয়া যায়নি</div>'; return;
+    }
+    el.innerHTML = matches.map(function([hid,h]){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;" data-ghpick="'+hid+'">'
+        +'<div><strong>'+escapeHtml(h.name)+'</strong>'
+        +(h.passport?' · <span style="font-size:11px;color:var(--ink-soft);">'+escapeHtml(h.passport)+'</span>':'')
+        +(h.phone?' · <span style="font-size:11px;color:var(--ink-soft);">'+escapeHtml(h.phone)+'</span>':'')
+        +'</div>'
+        +'<button class="btn" style="padding:4px 10px;font-size:12px;" data-ghpick="'+hid+'">+ যোগ</button>'
+        +'</div>';
+    }).join('');
+    el.onclick = function(e){
+      const btn = e.target.closest('[data-ghpick]');
+      if(btn){ selected.add(btn.dataset.ghpick); document.getElementById('ghSearch').value=''; renderSearch(''); renderAssigned(); }
+    };
+  }
+
+  renderAssigned();
+  renderSearch('');
+
+  document.getElementById('ghSearch').addEventListener('input', function(e){ renderSearch(e.target.value); });
+  document.getElementById('ghCancel').onclick = function(){ document.getElementById('grpHajjiOverlay').remove(); };
+  document.getElementById('ghSave').onclick = async function(){
+    grp.hajjiIds = [...selected];
+    db.groups[groupId] = grp;
+    await safePut('groups', groupId, grp);
+    document.getElementById('grpHajjiOverlay').remove();
+    showToast(t('saved_toast'));
+    renderGroupsPage();
+  };
+}
+
+function openQuickAddHajji(groupId){
+  // overlay বন্ধ করো, QuickAdd খুলুন, সংরক্ষণের পর group এ assign করুন
+  const overlay = document.getElementById('grpHajjiOverlay');
+  if(overlay) overlay.remove();
+  openQuickAdd('customers', null, function(newId){
+    // নতুন হাজী তৈরির পর আবার hajji manager খুলুন
+    if(newId && db.groups[groupId]){
+      const grp = db.groups[groupId];
+      grp.hajjiIds = [...new Set([...(grp.hajjiIds||[]), newId])];
+      safePut('groups', groupId, grp);
+    }
+    openGroupHajjiManager(groupId);
+  });
+}
+
+function renderGroupsPage(){
+  const c = document.getElementById('content');
+  const groups = Object.entries(db.groups).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
+
+  c.innerHTML = '<div class="toolbar">'
+    +'<input type="text" id="grpSearch" placeholder="'+t('search_placeholder')+'">'
+    +'<button class="btn amber" id="grpAddBtn">'+t('grp_add_btn')+'</button>'
+    +'</div><div id="grpBody"></div>';
+
+  function renderGrpList(){
+    const q2 = document.getElementById('grpSearch').value.trim().toLowerCase();
+    const filtered = groups.filter(([,g])=>
+      !q2 || g.name.toLowerCase().includes(q2)
+      || (g.memberName&&g.memberName.toLowerCase().includes(q2))
+      || String(g.memberNo||'').includes(q2)
+      || (g.year&&String(g.year).includes(q2))
+    );
+    const body = document.getElementById('grpBody');
+    if(filtered.length===0){
+      body.innerHTML = '<div class="empty"><div class="big">🏘️</div>'+t('grp_no_groups')+'</div>'; return;
+    }
+    const rows = filtered.map(function([gid,g]){
+      const sales = db.sales.filter(s=>s.groupId===gid);
+      const hajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+      const total = sales.reduce((s,x)=>s+Number(x.total),0);
+      return '<tr>'
+        +'<td><strong>'+escapeHtml(g.name)+'</strong></td>'
+        +'<td>'+(g.memberNo?'#'+g.memberNo+' ':'')+escapeHtml(g.memberName||'—')+'</td>'
+        +'<td>'+(g.year||'—')+'</td>'
+        +'<td>'+hajjiIds.length+' জন</td>'
+        +'<td>৳'+money(total)+'</td>'
+        +'<td class="actions-cell">'
+        +'<button class="icon-btn" title="হাজী যোগ করুন" data-grphajji="'+gid+'">🤲</button>'
+        +'<button class="icon-btn" data-grpview="'+gid+'">📋</button>'
+        +'<button class="icon-btn" data-grpedit="'+gid+'">✏️</button>'
+        +'<button class="icon-btn" data-grpdel="'+gid+'">🗑️</button>'
+        +'</td></tr>';
+    }).join('');
+    body.innerHTML = '<table class="data"><thead><tr>'
+      +'<th>'+t('grp_col_name')+'</th><th>'+t('grp_col_moallem')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th></th>'
+      +'</tr></thead><tbody>'+rows+'</tbody></table>';
+    body.onclick = function(e){
+      const vb = e.target.closest('[data-grpview]');
+      const eb = e.target.closest('[data-grpedit]');
+      const db2 = e.target.closest('[data-grpdel]');
+      const hb = e.target.closest('[data-grphajji]');
+      if(hb) openGroupHajjiManager(hb.dataset.grphajji);
+      else if(vb) openGroupMemberReport(db.groups[vb.dataset.grpview].memberId);
+      else if(eb) openGroupForm(eb.dataset.grpedit);
+      else if(db2) deleteGroup(db2.dataset.grpdel);
+    };
+  }
+  renderGrpList();
+  document.getElementById('grpSearch').addEventListener('input', renderGrpList);
+  document.getElementById('grpAddBtn').addEventListener('click', ()=>openGroupForm(null));
+}
+
+function openGroupForm(id){
+  const existing = id ? db.groups[id] : {};
+  const title = id ? t('grp_edit_form') : t('grp_new_form');
+  const memberOpts = Object.entries(db.groupMembers)
+    .sort((a,b)=>Number(a[1].memberNo)-Number(b[1].memberNo))
+    .map(([mid,m])=>'<option value="'+mid+'" '+(existing.memberId===mid?'selected':'')+'>'+escapeHtml('#'+m.memberNo+' — '+m.name)+'</option>').join('');
+  const pkgOpts = Object.entries(db.products)
+    .map(([pid,p])=>'<option value="'+pid+'" '+(existing.packageId===pid?'selected':'')+'>'+escapeHtml(p.name)+'</option>').join('');
+
+  const html = '<div class="overlay open" id="grpFormOverlay" style="z-index:120;">'
+    +'<div class="modal" style="max-width:460px;">'
+    +'<h2>'+title+'</h2>'
+    +'<div class="field"><label>'+t('f_group_name')+' <span style="color:var(--red)">*</span></label>'
+    +'<input type="text" id="grpName" value="'+escapeHtml(existing.name||'')+'" placeholder="'+t('grp_name_placeholder')+'"></div>'
+    +'<div class="field"><label>'+t('f_group_member')+' <span style="color:var(--red)">*</span></label>'
+    +'<select id="grpMember"><option value="">'+t('grp_select_member')+'</option>'+memberOpts+'</select></div>'
+    +'<div class="field"><label>'+t('f_group_year')+'</label>'
+    +'<input type="text" id="grpYear" value="'+escapeHtml(String(existing.year||new Date().getFullYear()))+'" placeholder="২০২৬"></div>'
+    +'<div style="display:flex;gap:10px;margin-top:16px;">'
+    +'<button class="btn" id="grpFormCancel">'+t('cancel')+'</button>'
+    +'<button class="btn amber" id="grpFormSave">'+t('save')+'</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('grpFormCancel').onclick = ()=>document.getElementById('grpFormOverlay').remove();
+  document.getElementById('grpFormSave').onclick = async ()=>{
+    const name = document.getElementById('grpName').value.trim();
+    const memberId = document.getElementById('grpMember').value;
+    if(!name||!memberId){ alert(t('grp_name_required')); return; }
+    const member = db.groupMembers[memberId];
+    const key = id || uid();
+    const record = { name, memberId, memberName:member?member.name:'', memberNo:member?member.memberNo:'',
+      year:document.getElementById('grpYear').value.trim(), ts:Date.now() };
+    db.groups[key] = record;
+    await safePut('groups', key, record);
+    document.getElementById('grpFormOverlay').remove();
+    showToast(t('saved_toast'));
+    renderGroupsPage();
+  };
+}
+
+async function deleteGroup(id){
+  if(!confirm(t('grp_del_confirm'))) return;
+  delete db.groups[id];
+  await safeRemove('groups', id);
+  showToast(t('deleted_toast'));
+  renderGroupsPage();
+}
+
+function onMsGroupChange(){
+  // Group select করলে কিছু auto-fill করা যায় ভবিষ্যতে
+}
+
+
+function renderGroupReport(body){
+  body.innerHTML = '<div class="toolbar no-print">'
+    +'<input type="text" id="grpRptSearch" placeholder="'+t('grp_rpt_search')+'">'
+    +'<button class="btn ghost" id="grpRptPrintBtn" style="margin-left:auto;">'+t('print_report')+'</button>'
+    +'</div><div id="grpRptBody"></div>';
+
+  function refresh(){
+    const q = (document.getElementById('grpRptSearch').value||'').trim().toLowerCase();
+    const members = Object.entries(db.groupMembers)
+      .sort((a,b)=>Number(a[1].memberNo)-Number(b[1].memberNo))
+      .filter(([,m])=>!q||m.name.toLowerCase().includes(q)||String(m.memberNo).includes(q));
+    const rptBody = document.getElementById('grpRptBody');
+    if(members.length===0){
+      rptBody.innerHTML = '<div class="empty"><div class="big">👤</div>'+t('grp_no_members')+'</div>'; return;
+    }
+    let html = '';
+    members.forEach(function([mid,member]){
+      const lots = Object.entries(db.groups).filter(([,g])=>g.memberId===mid);
+      const allSales = db.sales.filter(s=>lots.some(([gid])=>s.groupId===gid));
+      const totalBooking = allSales.reduce((s,x)=>s+Number(x.total),0);
+      const hajjiIds = [...new Set(allSales.map(s=>s.customerId).filter(Boolean))];
+      const totalDue = hajjiIds.reduce((s,hid)=>s+Number((db.customers[hid]||{}).due||0),0);
+
+      html += '<div class="panel" style="margin-bottom:16px;border-left:4px solid var(--hajj-green);">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;" onclick="openGroupMemberReportFromReports(\''+mid+'\')">'
+        +'<div>'
+        +'<div style="font-size:16px;font-weight:700;">👤 '+escapeHtml(member.name)+'</div>'
+        +'<div style="font-size:12px;color:var(--ink-soft);">'+t('grp_member_no_label')+': #'+member.memberNo+' · '+lots.length+' '+t('grp_col_lot')+'</div>'
+        +'</div>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+        +'<span class="pill">'+hajjiIds.length+' '+t('nav_customers')+'</span>'
+        +'<span class="pill" style="background:var(--hajj-green);color:#fff;">৳'+money(totalBooking)+'</span>'
+        +(totalDue>0?'<span class="pill red">বাকি ৳'+money(totalDue)+'</span>':'<span class="pill green">পরিশোধ</span>')
+        +'<span style="font-size:18px;">›</span>'
+        +'</div></div>';
+
+      // Lots summary
+      if(lots.length>0){
+        html += '<div style="margin-top:10px;overflow-x:auto;"><table class="data" style="font-size:12px;"><thead><tr>'
+          +'<th>'+t('grp_col_lot_name')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th>'+t('grp_col_due')+'</th>'
+          +'</tr></thead><tbody>';
+        lots.forEach(function([gid,g]){
+          const ls = db.sales.filter(s=>s.groupId===gid);
+          const lh = [...new Set(ls.map(s=>s.customerId).filter(Boolean))];
+          const lt = ls.reduce((s,x)=>s+Number(x.total),0);
+          const ld = lh.reduce((s,hid)=>s+Number((db.customers[hid]||{}).due||0),0);
+          html += '<tr><td>'+escapeHtml(g.name)+'</td><td>'+(g.year||'—')+'</td>'
+            +'<td>'+lh.length+'</td><td>৳'+money(lt)+'</td>'
+            +'<td>'+(ld>0?'<span class="pill red">৳'+money(ld)+'</span>':'<span class="pill green">✓</span>')+'</td></tr>';
+        });
+        html += '</tbody></table></div>';
+      }
+      html += '</div>';
+    });
+    rptBody.innerHTML = html;
+  }
+  refresh();
+  document.getElementById('grpRptSearch').addEventListener('input', refresh);
+  document.getElementById('grpRptPrintBtn').addEventListener('click', ()=>window.print());
+}
+
+function openGroupMemberReportFromReports(memberId){
+  currentTab = 'group_members';
+  renderNav();
+  openGroupMemberReport(memberId);
+}
 /* ---------- Reports ---------- */
 let reportsSubTab = 'overview';
 let reportsCustQuery = '';
@@ -1548,8 +2543,18 @@ function aggregatePeriod(fromStr, toStr){
   const bucketKey = (dateStr) => groupByMonth ? dateStr.slice(0,7) : dateStr;
   const inRange = (dateStr) => dateStr >= fromStr && dateStr <= toStr;
   db.sales.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].s += Number(x.total); } });
+  // Purchase: মোট ক্রয় মূল্য (committed amount)
   db.purchases.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].p += Number(x.total); } });
   db.expenses.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].e += Number(x.amount); } });
+  // Vendor payments: actual cash paid out → purchase expense
+  db.vendorPayments.forEach(vp => {
+    if(!inRange(vp.date)) return;
+    const k = bucketKey(vp.date);
+    if(!buckets[k]) return;
+    // payment এবং purchase_payment → cash out (already counted in p as committed, skip double count)
+    // purchase return cash → cash in (reduce purchase cost)
+    if(vp.type==='purchase_return' && vp.returnType==='cash') buckets[k].p -= Number(vp.amount||0);
+  });
   const rows = Object.entries(buckets).map(([k,v]) => ({ d:k, s:v.s, p:v.p, e:v.e, net:v.s-v.p-v.e })).sort((a,b)=>b.d.localeCompare(a.d));
   const totals = rows.reduce((a,r)=>({s:a.s+r.s,p:a.p+r.p,e:a.e+r.e,net:a.net+r.net}), {s:0,p:0,e:0,net:0});
   return { rows, totals, groupByMonth };
@@ -1651,6 +2656,7 @@ function renderReportsPage(){
       <button class="sub-tab ${reportsSubTab==='returnsrpt'?'active':''}" data-sub="returnsrpt">${t('nav_returns')}</button>
       <button class="sub-tab ${reportsSubTab==='installmentrpt'?'active':''}" data-sub="installmentrpt">${t('nav_installments')}</button>
       <button class="sub-tab ${reportsSubTab==='customer'?'active':''}" data-sub="customer">${t('nav_customers')}</button>
+      <button class="sub-tab ${reportsSubTab==='group'?'active':''}" data-sub="group">${t('rep_group_tab')}</button>
       <button class="sub-tab ${reportsSubTab==='supplier'?'active':''}" data-sub="supplier">${t('nav_suppliers')}</button>
       <button class="sub-tab ${reportsSubTab==='stock'?'active':''}" data-sub="stock">${t('nav_products')}</button>
     </div>
@@ -1667,6 +2673,7 @@ function renderReportsPage(){
   else if(reportsSubTab==='installmentrpt') renderInstallmentOnlyReport(body);
   else if(reportsSubTab==='customer') renderCustomerReport(body);
   else if(reportsSubTab==='supplier') renderSupplierReport(body);
+  else if(reportsSubTab==='group') renderGroupReport(body);
   else if(reportsSubTab==='stock') renderStockReport(body);
 }
 
@@ -1712,6 +2719,14 @@ function renderSummaryReport(body){
     db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
+    // Vendor payments: cash out → de, cash return → dp
+    db.vendorPayments.forEach(vp => {
+      if(!inRange(vp.date)) return;
+      const k = bucketKey(vp.date);
+      if(!buckets[k]) return;
+      if(vp.type==='payment' || vp.type==='purchase_payment') buckets[k].de += Number(vp.amount||0);
+      if(vp.type==='purchase_return' && vp.returnType==='cash') buckets[k].dp += Number(vp.amount||0);
+    });
     let running = 0;
     const rows = Object.entries(buckets).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v]) => {
       running += v.dp - v.de;
@@ -1941,7 +2956,7 @@ function renderInstallmentOnlyReport(body){
     const totalDiscount = list.reduce((s,x)=>s+Number(x.discount||0),0);
     const totalNewDue = list.reduce((s,x)=>s+Number(x.newDue),0);
     document.getElementById('instRptBody').innerHTML = `
-      <div class="stat-grid no-print" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px;">
+      <div class="stat-grid rpt-stat-grid no-print" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px;">
         <div class="stat-card c4"><div class="val">৳${money(totalPaid)}</div><div class="lbl">${t('inst_col_amount')} (${t('totals_label')})</div></div>
         <div class="stat-card c7"><div class="val">৳${money(totalDiscount)}</div><div class="lbl">${t('inst_col_discount')} (${t('totals_label')})</div></div>
       </div>
@@ -1985,7 +3000,7 @@ function renderStockReport(body){
     const totalPotentialProfit = totalSaleValue - totalStockValue;
     const lowCount = entries.filter(([,p])=>Number(p.qty)<=Number(p.threshold)).length;
     document.getElementById('stockReportBody').innerHTML = `
-      <div class="stat-grid no-print" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+      <div class="stat-grid rpt-stat-grid no-print" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
         <div class="stat-card c2"><div class="val">${entries.length}</div><div class="lbl">${t('nav_products')}</div></div>
         <div class="stat-card c6"><div class="val">৳${money(totalStockValue)}</div><div class="lbl">${t('stock_value_label')}</div></div>
         <div class="stat-card c4"><div class="val">৳${money(totalSaleValue)}</div><div class="lbl">${t('stock_sale_value_label')}</div></div>
@@ -2052,29 +3067,31 @@ function renderReportsOverview(body){
     const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.s,r.p,r.e)));
     const periodColLabel = groupByMonth ? t('filter_month') : t('col_date');
     document.getElementById('ovBody').innerHTML = `
-      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+      <div class="stat-grid rpt-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
         <div class="stat-card c4"><div class="val">৳${money(totals.s)}</div><div class="lbl">${t('rep_col_sales')} (${t('totals_label')})</div></div>
         <div class="stat-card c6"><div class="val">৳${money(totals.p)}</div><div class="lbl">${t('rep_col_purchase')} (${t('totals_label')})</div></div>
         <div class="stat-card c7"><div class="val">৳${money(totals.e)}</div><div class="lbl">${t('rep_col_expense')} (${t('totals_label')})</div></div>
         <div class="stat-card c8"><div class="val">৳${money(totals.net)}</div><div class="lbl">${t('rep_col_net')} (${t('totals_label')})</div></div>
       </div>
-      <div class="panel">
-        <h3>${t('reports_summary')}</h3>
-        <table class="data">
-          <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
-          <tbody>
-            ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-      <div class="panel">
-        <h3>${t('reports_trend')}</h3>
-        ${rows.slice().reverse().map(r => `
-          <div class="rbar-row">
-            <div>${groupByMonth ? r.d : r.d.slice(5)}</div>
-            <div class="rbar-track"><div class="rbar-fill" style="width:${(r.s/maxVal*100).toFixed(0)}%"></div></div>
-            <div style="text-align:right;">৳${money(r.s)}</div>
-          </div>`).join('')}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="ov-two-col">
+        <div class="panel" style="margin-bottom:0;min-width:0;overflow-x:auto;">
+          <h3>${t('reports_summary')}</h3>
+          <table class="data">
+            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
+            <tbody>
+              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="panel" style="margin-bottom:0;min-width:0;">
+          <h3>${t('reports_trend')}</h3>
+          ${rows.slice().reverse().map(r => `
+            <div class="rbar-row">
+              <div>${groupByMonth ? r.d : r.d.slice(5)}</div>
+              <div class="rbar-track"><div class="rbar-fill" style="width:${(r.s/maxVal*100).toFixed(0)}%"></div></div>
+              <div style="text-align:right;">৳${money(r.s)}</div>
+            </div>`).join('')}
+        </div>
       </div>
     `;
   }
@@ -2159,32 +3176,86 @@ function renderCustomerReport(body){
       .filter(p=>p.customerId===reportsSelectedCustId && matchesYearMonth(p.date, custReportYear, custReportMonth))
       .sort((a,b)=>b.ts-a.ts);
     const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-    const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
+    const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const totalPaid = totalInitialPaid + totalInstPaid;
     const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+
+    // সব transaction একটা timeline এ — booking payment + installments
+    const allTx = [
+      ...sales.map(s=>({
+        ts: s.ts, date: s.date,
+        type: 'booking',
+        invoiceNo: s.invoiceNo,
+        label: escapeHtml(s.productName),
+        total: s.total,
+        amount: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+        due: s.due,
+        discount: s.discount||0,
+        note: t('col_paid') + ' (Booking)'
+      })),
+      ...payments.map(p=>({
+        ts: p.ts, date: p.date,
+        type: 'installment',
+        receiptNo: p.receiptNo,
+        label: '—',
+        total: 0,
+        amount: Number(p.amount),
+        due: p.newDue,
+        discount: p.discount||0,
+        note: p.note||'—'
+      }))
+    ].sort((a,b)=>a.ts-b.ts);
+
     el.innerHTML = `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
-          <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3><div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address? ' · '+escapeHtml(cust.address):''}</div></div>
+          <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3>
+          <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
           <button class="btn ghost no-print" id="custPrintBtn">${t('print_report')}</button>
         </div>
         <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
+
+        <!-- Bookings table -->
+        <h3 style="margin:14px 0 8px;">📦 ${t('nav_sales')}</h3>
         ${sales.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
-        <table class="data">
+        <div style="overflow-x:auto;"><table class="data">
           <thead><tr><th>${t('col_invoice_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('return_already')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
           <tbody>${sales.map(s=>{
             const profit = saleNetProfit(s);
             const returned = saleReturnedQty(s.id);
-            return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
+            return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.initialPaid!==undefined?s.initialPaid:s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
           }).join('')}</tbody>
-        </table>`}
+        </table></div>`}
       </div>
+
+      <!-- Unified payment history -->
       <div class="panel">
-        <h3>${t('installment_history_title')}</h3>
-        ${payments.length===0 ? `<div class="field-hint">${t('inst_no_history')}</div>` : `
-        <table class="data">
-          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
-          <tbody>${payments.map(p=>`<tr><td>${p.receiptNo?'#'+p.receiptNo:'—'}</td><td>${formatDateDMY(p.date)}</td><td>৳${money(p.previousDue)}</td><td>৳${money(p.amount)}</td><td>${Number(p.discount)>0?'৳'+money(p.discount):'—'}</td><td>৳${money(p.newDue)}</td><td>${escapeHtml(p.note||'—')}</td></tr>`).join('')}</tbody>
-        </table>`}
+        <h3>💳 ${t('installment_history_title')}</h3>
+        ${allTx.length===0 ? `<div class="field-hint">${t('inst_no_history')}</div>` : `
+        <div style="overflow-x:auto;"><table class="data">
+          <thead><tr>
+            <th>${t('col_date')}</th>
+            <th>ধরন</th>
+            <th>${t('f_note')}</th>
+            <th>${t('inst_col_amount')}</th>
+            <th>${t('inst_col_discount')}</th>
+            <th>${t('inst_col_new_due')}</th>
+          </tr></thead>
+          <tbody>${allTx.map(tx=>{
+            const typePill = tx.type==='booking'
+              ? '<span class="pill" style="background:#2E6B8A;color:#fff;font-size:10px;">'+t('nav_sales')+'</span>'
+              : '<span class="pill green" style="font-size:10px;">'+t('nav_installments')+'</span>';
+            return `<tr>
+              <td>${formatDateDMY(tx.date)}</td>
+              <td>${typePill}</td>
+              <td>${tx.note}</td>
+              <td>৳${money(tx.amount)}</td>
+              <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+              <td>${tx.due>=0?'৳'+money(tx.due):'—'}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>`}
       </div>
     `;
     document.getElementById('custPrintBtn').addEventListener('click', () => window.print());
@@ -2265,8 +3336,8 @@ function renderSupplierReport(body){
         <div class="field-hint" style="margin:12px 0;">${t('rep_col_purchase')}: ৳${money(totalPurchased)}</div>
         ${purchases.length===0 ? `<div class="empty"><div class="big">${t('no_data')}</div></div>` : `
         <table class="data">
-          <thead><tr><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('col_unit_cost')}</th><th>${t('col_total')}</th></tr></thead>
-          <tbody>${purchases.map(p=>`<tr><td>${p.date}</td><td>${escapeHtml(p.productName)}</td><td>${p.qty}</td><td>৳${money(p.unitCost)}</td><td>৳${money(p.total)}</td></tr>`).join('')}</tbody>
+          <thead><tr><th>${t('col_date')}</th><th>${t('f_sector')}</th><th>${t('col_qty')}</th><th>${t('col_unit_cost')}</th><th>${t('col_total')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
+          <tbody>${purchases.map(p=>`<tr><td>${p.date}</td><td>${escapeHtml(p.sector||p.productName||'—')}</td><td>${p.qty}</td><td>৳${money(p.unitCost)}</td><td>৳${money(p.total)}</td><td>৳${money(p.paid||0)}</td><td>${Number(p.due||0)>0?'<span class="pill red">৳'+money(p.due)+'</span>':'<span class="pill green">'+t('lbl_clear')+'</span>'}</td></tr>`).join('')}</tbody>
         </table>`}
       </div>
     `;
@@ -2299,13 +3370,15 @@ const CONFIG = {
   },
   suppliers: {
     titleKey:'title_suppliers', addLabelKey:'add_suppliers',
-    columns:[{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'address',hKey:'col_address'}],
+    columns:[{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'address',hKey:'col_address'},{k:'due',hKey:'col_due_amt',fmt:v=>Number(v||0)>0?'<span class="pill red">৳'+money(v)+'</span>':'<span class="pill green">ক্লিয়ার</span>'}],
     fields:[
       {key:'name', labelKey:'f_name', type:'text', required:true, suggest:true},
       {key:'phone', labelKey:'f_phone', type:'text', suggest:true},
       {key:'address', labelKey:'f_address', type:'text', suggest:true},
+      {key:'note', labelKey:'f_note', type:'text', suggest:true},
     ],
-    isObj:true
+    isObj:true,
+    extraRowActions:(id,item)=>'<button class="icon-btn" title="Statement" data-vndstmt="'+id+'">📋</button>'
   },
   categories: {
     titleKey:'title_categories', addLabelKey:'add_categories',
@@ -2338,16 +3411,31 @@ const CONFIG = {
   },
   purchases: {
     titleKey:'title_purchases', addLabelKey:'add_purchases',
-    columns:[{k:'date',hKey:'col_date'},{k:'supplierName',hKey:'col_supplier'},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'unitCost',hKey:'col_unit_cost',fmt:v=>'৳'+money(v)},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)}],
+    columns:[
+      {k:'date',hKey:'col_date'},
+      {k:'supplierName',hKey:'col_supplier'},
+      {k:'sector',hKey:'f_sector',fmt:v=>v||'—'},
+      {k:'qty',hKey:'f_pur_qty'},
+      {k:'unitCost',hKey:'col_unit_cost',fmt:v=>'৳'+money(v)},
+      {k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)},
+      {k:'paid',hKey:'col_paid',fmt:v=>'৳'+money(v||0)},
+      {k:'due',hKey:'col_due',fmt:v=>Number(v||0)>0?'<span class="pill red">৳'+money(v)+'</span>':'<span class="pill green">ক্লিয়ার</span>'}
+    ],
     fields:[
       {key:'supplierId', labelKey:'f_supplier_select', type:'select', optionsFrom:'suppliers', required:true, quickAdd:'suppliers'},
-      {key:'productId', labelKey:'f_product_select', type:'select', optionsFrom:'products', required:true, quickAdd:'products'},
-      {key:'qty', labelKey:'f_qty', type:'number', required:true},
+      {key:'sector', labelKey:'f_sector', type:'text', suggest:true, suggestFromPurchases:'sector', required:true},
+      {key:'qty', labelKey:'f_pur_qty', type:'number', required:true},
       {key:'unitCost', labelKey:'f_unit_cost', type:'number', required:true},
+      {key:'paid', labelKey:'f_paid', type:'number'},
       {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
+      {key:'note', labelKey:'f_note', type:'text', suggest:true},
     ],
     isObj:false,
-    noEdit:true
+    extraRowActions:(id,item)=>{
+      const canReturn = (Number(item.qty) - purchaseReturnedQty(id)) > 0;
+      return '<button class="icon-btn" title="Statement" data-vndstmt="'+item.supplierId+'">📋</button>'
+        +(canReturn?'<button class="icon-btn" title="Return" data-purreturn="'+id+'">↩️</button>':'');
+    }
   },
   sales: {
     titleKey:'title_sales', addLabelKey:'add_sales',
@@ -2373,7 +3461,7 @@ const CONFIG = {
       {key:'amount', labelKey:'f_amount', type:'number', required:true},
       {key:'note', labelKey:'f_note', type:'text', suggest:true},
       {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
-      {key:'isOldEntry', labelKey:'f_is_old_entry', type:'checkbox'},
+      {key:'isOldEntry', labelKey:'f_is_old_entry', type:'checkbox', hidden:true},
     ],
     isObj:false,
     noEdit:true
@@ -2434,6 +3522,7 @@ function renderListPage(tab){
     const cat = isProducts ? document.getElementById('pgCatFilter').value : '';
     let filteredItems = items;
     if(cat) filteredItems = filteredItems.filter(([id,item]) => item.cat===cat);
+    _pgState[tab] = 1; // search করলে page 1 এ ফিরে যাও
     renderTable(tab, filteredItems, search);
   }
 
@@ -2445,6 +3534,9 @@ function renderListPage(tab){
   });
 }
 
+const PAGE_SIZE = 25;
+const _pgState = {}; // tab → current page
+
 function renderTable(tab, items, search){
   const cfg = CONFIG[tab];
   let filtered = items;
@@ -2453,27 +3545,98 @@ function renderTable(tab, items, search){
   }
   const wrap = document.getElementById('pgTableWrap');
   if(filtered.length===0){
-    wrap.innerHTML = `<div class="empty"><div class="big">${t('no_data')}</div>${t('no_data_hint')}</div>`;
+    wrap.innerHTML = '<div class="empty"><div class="big">'+t('no_data')+'</div>'+t('no_data_hint')+'</div>';
+    _pgState[tab] = 1;
     return;
   }
-  wrap.innerHTML = `
-    <table class="data">
-      <thead><tr>${cfg.columns.map(c=>`<th>${t(c.hKey)}</th>`).join('')}<th></th></tr></thead>
-      <tbody>
-        ${filtered.map(([id,item]) => {
-          const isLow = cfg.isLow && cfg.isLow(item);
-          const isGroup = !!item._groupIds;
-          return `<tr class="${isLow?'low':''}">
-            ${cfg.columns.map(c => `<td>${c.fmt ? c.fmt(item[c.k], item) : escapeHtml(item[c.k]==null?'—':item[c.k])}</td>`).join('')}
-            <td class="actions-cell">
-              ${cfg.extraRowActions ? cfg.extraRowActions(id,item) : ''}
-              ${!cfg.noEdit ? `<button class="icon-btn" title="${t('edit_title')}" onclick="${isGroup ? `openMultiSale('${item.invoiceId}')` : `openForm('${tab}','${id}')`}">✏️</button>` : ''}
-              <button class="icon-btn" title="${t('delete_title')}" onclick="${isGroup ? `deleteInvoiceGroup('${id}')` : `deleteItem('${tab}','${id}')`}">🗑️</button>
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
+
+  // pagination
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(!_pgState[tab] || _pgState[tab] > totalPages) _pgState[tab] = 1;
+  const page = _pgState[tab];
+  const start = (page-1)*PAGE_SIZE;
+  const pageItems = filtered.slice(start, start+PAGE_SIZE);
+
+  // table rows
+  const rows = pageItems.map(function(entry){
+    const id = entry[0]; const item = entry[1];
+    const isLow = cfg.isLow && cfg.isLow(item);
+    const isGroup = !!item._groupIds;
+    const cells = cfg.columns.map(function(c){
+      return '<td>'+(c.fmt ? c.fmt(item[c.k], item) : escapeHtml(item[c.k]==null?'—':item[c.k]))+'</td>';
+    }).join('');
+    const editBtn = !cfg.noEdit
+      ? '<button class="icon-btn" title="'+t('edit_title')+'" data-action="edit" data-tab="'+tab+'" data-id="'+id+'" data-group="'+(isGroup?item.invoiceId:'')+'" data-isgroup="'+(isGroup?'1':'0')+'">✏️</button>'
+      : '';
+    const delBtn = '<button class="icon-btn" title="'+t('delete_title')+'" data-action="del" data-tab="'+tab+'" data-id="'+id+'" data-isgroup="'+(isGroup?'1':'0')+'">🗑️</button>';
+    const extra = cfg.extraRowActions ? cfg.extraRowActions(id,item) : '';
+    return '<tr class="'+(isLow?'low':'')+'">'+cells+'<td class="actions-cell">'+extra+editBtn+delBtn+'</td></tr>';
+  }).join('');
+
+  // pagination buttons
+  function pgBtn(p, label, disabled, active){
+    return '<button '+(disabled?'disabled ':'')+( active?'class="active" ':'')+' data-pgaction="'+tab+'" data-pgnum="'+p+'">'+label+'</button>';
+  }
+  let pgBtns = pgBtn(page-1,'&#8249;', page===1, false);
+  const delta = 2;
+  for(let p=1; p<=totalPages; p++){
+    if(p===1 || p===totalPages || (p>=page-delta && p<=page+delta)){
+      pgBtns += pgBtn(p, p, false, p===page);
+    } else if(p===page-delta-1 || p===page+delta+1){
+      pgBtns += '<span class="pg-info">…</span>';
+    }
+  }
+  pgBtns += pgBtn(page+1,'&#8250;', page===totalPages, false);
+
+  const info = '<span class="pg-info">'+(start+1)+'-'+Math.min(start+PAGE_SIZE,total)+' / '+total+'</span>';
+
+  wrap.innerHTML = '<table class="data">'
+    + '<thead><tr>'+cfg.columns.map(function(c){return '<th>'+t(c.hKey)+'</th>';}).join('')+'<th></th></tr></thead>'
+    + '<tbody>'+rows+'</tbody>'
+    + '</table>'
+    + '<div class="pagination">'+pgBtns+info+'</div>';
+
+  // event delegation for edit/delete buttons
+  wrap.onclick = function(e){
+    // pagination button
+    const pgBtn2 = e.target.closest('[data-pgaction]');
+    if(pgBtn2 && !pgBtn2.disabled){
+      pgGo(pgBtn2.dataset.pgaction, Number(pgBtn2.dataset.pgnum));
+      return;
+    }
+    // vendor statement
+    const vndBtn = e.target.closest('[data-vndstmt]');
+    if(vndBtn){ openVendorStatement(vndBtn.dataset.vndstmt); return; }
+    // purchase return
+    const purRet = e.target.closest('[data-purreturn]');
+    if(purRet){ openPurchaseReturn(purRet.dataset.purreturn); return; }
+    const btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    const action = btn.dataset.action;
+    const t2 = btn.dataset.tab;
+    const id2 = btn.dataset.id;
+    const isGroup = btn.dataset.isgroup === '1';
+    const groupId = btn.dataset.group;
+    if(action==='edit'){
+      if(isGroup) openMultiSale(groupId); else openForm(t2, id2);
+    } else if(action==='del'){
+      if(isGroup) deleteInvoiceGroup(id2); else deleteItem(t2, id2);
+    }
+  };
+}
+
+function pgGo(tab, page){
+  _pgState[tab] = page;
+  const pgSearch = document.getElementById('pgSearch');
+  const search = pgSearch ? pgSearch.value.trim().toLowerCase() : '';
+  const cfg = CONFIG[tab];
+  let items = cfg.isObj ? Object.entries(db[tab]) : db[tab].map(x=>[x.id,x]).reverse();
+  if(tab==='sales') items = groupSalesForDisplay(items);
+  const cat = document.getElementById('pgCatFilter') ? document.getElementById('pgCatFilter').value : '';
+  if(cat) items = items.filter(([id,item]) => item.cat===cat);
+  renderTable(tab, items, search);
+  document.getElementById('pgTableWrap').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 /* ---------- Generic Form Modal ---------- */
@@ -2507,12 +3670,17 @@ function openForm(tab, id){
         const catNames = Object.values(db.categories).map(c=>c.name).filter(Boolean);
         suggestions = [...new Set([...catNames, ...suggestions])];
       }
+      if(f.suggestFromPurchases){
+        const purSuggestions = [...new Set(db.purchases.map(p=>p[f.suggestFromPurchases]).filter(Boolean))];
+        suggestions = [...new Set([...purSuggestions, ...suggestions])];
+      }
       const listId = `dl-${tab}-${f.key}`;
       return `<div class="field"><label>${t(f.labelKey)}</label>
         <input type="${f.type}" data-key="${f.key}" value="${escapeHtml(val)}" list="${listId}" autocomplete="off">
         <datalist id="${listId}">${suggestions.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist>
       </div>`;
     }
+    if(f.hidden) return '';
     if(f.type==='checkbox'){
       return `<div class="field" style="display:flex;align-items:center;gap:8px;">
         <input type="checkbox" data-key="${f.key}" ${val?'checked':''} style="width:auto;">
@@ -2571,19 +3739,56 @@ async function handleSave(tab, id, values){
   }
   else if(tab==='purchases'){
     const supplier = db.suppliers[values.supplierId];
-    const product = db.products[values.productId];
-    if(!product){ alert(t('product_not_found')); return; }
     const total = Number(values.qty) * Number(values.unitCost);
-    product.qty = Number(product.qty) + Number(values.qty);
-    product.cost = Number(values.unitCost);
-    const record = {
-      id: uid(), supplierId: values.supplierId, supplierName: supplier?supplier.name:'—',
-      productId: values.productId, productName: product.name,
-      qty: Number(values.qty), unitCost: Number(values.unitCost), total, date: values.date, ts: Date.now()
-    };
-    db.purchases.push(record);
-    await safePut('products', values.productId, product);
-    await safePut('purchases', record.id, record);
+    const paidNow = Math.min(Number(values.paid||0), total);
+    const dueAmt = total - paidNow;
+
+    if(id){
+      // ── EDIT: পুরানো effect reverse করো ──
+      const existing = db.purchases.find(x=>x.id===id);
+      if(existing && existing.supplierId){
+        const oldSup = db.suppliers[existing.supplierId];
+        if(oldSup){
+          oldSup.due = Number(oldSup.due||0) - Number(existing.due||0);
+          await safePut('suppliers', existing.supplierId, oldSup);
+        }
+        const oldVp = db.vendorPayments.find(vp=>vp.purchaseId===id && vp.type==='purchase_payment');
+        if(oldVp){
+          db.vendorPayments = db.vendorPayments.filter(vp=>vp.id!==oldVp.id);
+          await safeRemove('vendorPayments', oldVp.id);
+        }
+      }
+      const updatedRecord = { ...(existing||{}), supplierId:values.supplierId,
+        supplierName:supplier?supplier.name:'—', sector:values.sector||'—',
+        note:values.note||'', qty:Number(values.qty), unitCost:Number(values.unitCost),
+        total, paid:paidNow, due:dueAmt, date:values.date };
+      const eidx = db.purchases.findIndex(x=>x.id===id);
+      if(eidx>=0) db.purchases[eidx] = updatedRecord;
+      await safePut('purchases', id, updatedRecord);
+      if(supplier){ supplier.due = Number(supplier.due||0) + dueAmt; await safePut('suppliers', values.supplierId, supplier); }
+      if(paidNow>0){
+        const vp = { id:uid(), supplierId:values.supplierId, supplierName:supplier?supplier.name:'—',
+          type:'purchase_payment', amount:paidNow, purchaseId:id, note:'Payment', date:values.date, ts:Date.now() };
+        db.vendorPayments.push(vp); await safePut('vendorPayments', vp.id, vp);
+      }
+    } else {
+      // ── NEW purchase ──
+      if(supplier){ supplier.due = Number(supplier.due||0) + dueAmt; await safePut('suppliers', values.supplierId, supplier); }
+      const record = {
+        id: uid(), supplierId: values.supplierId, supplierName: supplier?supplier.name:'—',
+        sector: values.sector||'—', note: values.note||'',
+        qty: Number(values.qty), unitCost: Number(values.unitCost),
+        total, paid: paidNow, due: dueAmt, date: values.date, ts: Date.now()
+      };
+      db.purchases.push(record);
+      await safePut('purchases', record.id, record);
+      if(paidNow > 0){
+        const vp = { id:uid(), supplierId:values.supplierId, supplierName:supplier?supplier.name:'—',
+          type:'purchase_payment', amount:paidNow, purchaseId:record.id,
+          note:'Initial payment for purchase', date:values.date, ts:Date.now() };
+        db.vendorPayments.push(vp); await safePut('vendorPayments', vp.id, vp);
+      }
+    }
   }
   else if(tab==='sales'){
     let existing = null;
@@ -2702,6 +3907,20 @@ async function deleteInvoiceGroup(repId){
 async function deleteItem(tab, id){
   if(!confirm(t('confirm_delete'))) return;
   const cfg = CONFIG[tab];
+  // Purchase delete হলে supplier.due reverse করো
+  if(tab==='purchases'){
+    const pur = db.purchases.find(x=>x.id===id);
+    if(pur && pur.supplierId && db.suppliers[pur.supplierId]){
+      db.suppliers[pur.supplierId].due = Number(db.suppliers[pur.supplierId].due||0) - Number(pur.due||0);
+      await safePut('suppliers', pur.supplierId, db.suppliers[pur.supplierId]);
+    }
+    // Initial purchase payment record সরাও
+    const oldVp = db.vendorPayments.find(vp=>vp.purchaseId===id && vp.type==='purchase_payment');
+    if(oldVp){
+      db.vendorPayments = db.vendorPayments.filter(vp=>vp.id!==oldVp.id);
+      await safeRemove('vendorPayments', oldVp.id);
+    }
+  }
   if(cfg.isObj) delete db[tab][id];
   else db[tab] = db[tab].filter(x=>x.id!==id);
   await safeRemove(tab, id);
@@ -2751,7 +3970,7 @@ setupOverlayBackdropClose('historyOverlay');
 let quickAddCtx = null; // {kind, fieldKey}
 function openQuickAdd(kind, fieldKey){
   quickAddCtx = {kind, fieldKey};
-  document.getElementById('quickAddTitle').textContent = kind==='customers' ? t('quick_add_customer') : t('quick_add_product');
+  document.getElementById('quickAddTitle').textContent = kind==='customers' ? t('quick_add_customer') : kind==='suppliers' ? t('nav_suppliers') : t('quick_add_product');
   document.getElementById('quickAddCancelBtn').textContent = t('cancel');
   document.getElementById('quickAddSaveBtn').textContent = t('save');
   const fieldsEl = document.getElementById('quickAddFields');
@@ -2771,6 +3990,13 @@ function openQuickAdd(kind, fieldKey){
         <input type="text" id="qaAddress" list="dl-qa-custaddr" autocomplete="off">
         <datalist id="dl-qa-custaddr">${addrSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist>
       </div>
+    `;
+  } else if(kind==='suppliers'){
+    fieldsEl.innerHTML = `
+      <div class="field"><label>${t('f_name')} *</label><input type="text" id="qaName" autocomplete="off"></div>
+      <div class="field"><label>${t('f_phone')}</label><input type="text" id="qaPhone" autocomplete="off"></div>
+      <div class="field"><label>${t('f_address')}</label><input type="text" id="qaAddress" autocomplete="off"></div>
+      <div class="field"><label>${t('f_note')}</label><input type="text" id="qaNote" autocomplete="off"></div>
     `;
   } else {
     const nameSuggestions = [...new Set(Object.values(db.products).map(p=>p.name).filter(Boolean))];
@@ -2822,6 +4048,26 @@ document.getElementById('quickAddSaveBtn').addEventListener('click', async () =>
     const record = { name, phone, passport, tracking, email, address, due:0, displayId: nextCustomerDisplayId() };
     db.customers[key] = record;
     await safePut('customers', key, record);
+  } else if(kind==='suppliers'){
+    const phone = document.getElementById('qaPhone') ? document.getElementById('qaPhone').value.trim() : '';
+    const address = document.getElementById('qaAddress') ? document.getElementById('qaAddress').value.trim() : '';
+    const note = document.getElementById('qaNote') ? document.getElementById('qaNote').value.trim() : '';
+    const record = { name, phone, address, note, due:0 };
+    db.suppliers[key] = record;
+    await safePut('suppliers', key, record);
+    // dropdown এ নতুন vendor select করো
+    closeQuickAdd();
+    showToast(t('saved_toast'));
+    // form এর supplierId select update করো
+    if(fieldKey){
+      const sel = document.querySelector(`[data-key="${fieldKey}"]`);
+      if(sel && sel.tagName==='SELECT'){
+        const opt = document.createElement('option');
+        opt.value = key; opt.text = name; opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }
+    return;
   } else {
     const cat = document.getElementById('qaCat').value.trim();
     const qty = Number(document.getElementById('qaQty').value)||0;
@@ -3273,6 +4519,13 @@ function openMultiSale(editInvoiceId){
   document.getElementById('msCustomerId').value = '';
   const custResultsEl = document.getElementById('msCustomerResults');
   if(custResultsEl){ custResultsEl.classList.remove('open'); custResultsEl.innerHTML=''; }
+  // Group dropdown populate
+  const gsEl = document.getElementById('msGroupSelect');
+  if(gsEl){
+    const grpOpts = Object.entries(db.groups).map(([gid,g])=>'<option value="'+gid+'">'+escapeHtml(g.name)+(g.memberName?' ('+escapeHtml(g.memberName)+')':'')+'</option>').join('');
+    gsEl.innerHTML = '<option value="">'+t('grp_no_group')+'</option>'+grpOpts;
+    gsEl.value = '';
+  }
 
   document.getElementById('msRows').innerHTML = '';
 
@@ -3293,7 +4546,7 @@ function openMultiSale(editInvoiceId){
         document.getElementById('msVoucher').value = first.voucherNo || '';
         document.getElementById('msVoucherTag').value = first.voucherTag || '';
         document.getElementById('msPaymentSystem').value = first.paymentSystem || 'cash';
-        document.getElementById('msIsOldEntry').checked = !!first.isOldEntry;
+        // msIsOldEntry always false (old entry hidden)
         document.getElementById('msPaid').value = groupSales.reduce((s,x)=>s+Number(x.paid),0);
         document.getElementById('msInstCount').value = plan ? plan.count : '';
         groupSales.forEach(sale => addMultiSaleRow(sale));
@@ -3309,7 +4562,7 @@ function openMultiSale(editInvoiceId){
   document.getElementById('msVoucher').value = '';
   document.getElementById('msVoucherTag').value = '';
   document.getElementById('msPaymentSystem').value = 'cash';
-  document.getElementById('msIsOldEntry').checked = false;
+  // msIsOldEntry always false
   addMultiSaleRow();
   document.getElementById('multiSaleOverlay').classList.add('open');
 }
@@ -3355,9 +4608,12 @@ function onMsCustomerSearch(){
   const resultsEl = document.getElementById('msCustomerResults');
   if(!input || !resultsEl) return;
   const q = input.value.trim().toLowerCase();
-  const entries = Object.entries(db.customers);
+  const selectedGroupId = document.getElementById('msGroupSelect') ? document.getElementById('msGroupSelect').value : '';
+  const grpHajjiIds = selectedGroupId && db.groups[selectedGroupId] ? new Set(db.groups[selectedGroupId].hajjiIds||[]) : null;
+  let entries = Object.entries(db.customers);
+  if(grpHajjiIds && grpHajjiIds.size>0) entries = entries.filter(([cid])=>grpHajjiIds.has(cid));
   const matches = q
-    ? entries.filter(([cid,c]) => c.name.toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || String(c.displayId||'').includes(q)).slice(0,10)
+    ? entries.filter(([cid,c]) => c.name.toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.passport&&c.passport.toLowerCase().includes(q))).slice(0,10)
     : entries.slice(0,10);
   if(matches.length===0){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; return; }
   resultsEl.innerHTML = matches.map(([cid,c]) => `<div class="ms-product-result-item" onclick="selectMsCustomer('${cid}')">${escapeHtml(c.name)} <span style="color:var(--ink-soft);font-size:11px;">${c.phone?escapeHtml(c.phone):''}${Number(c.due)>0?' · ৳'+money(c.due):''}</span></div>`).join('');
@@ -3441,7 +4697,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   const voucherNo = document.getElementById('msVoucher').value.trim();
   const voucherTag = document.getElementById('msVoucherTag').value.trim();
   const paymentSystem = document.getElementById('msPaymentSystem').value;
-  const isOldEntry = document.getElementById('msIsOldEntry').checked;
+  const isOldEntry = false; // Old entry always false — field hidden
   const instCount = Number(document.getElementById('msInstCount').value)||0;
 
   const rowsData = [];
@@ -3502,11 +4758,14 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     remainingPaid -= rowPaid;
     remainingDue -= rowDue;
     const saleId = uid();
+    const msGroupId = document.getElementById('msGroupSelect') ? document.getElementById('msGroupSelect').value : '';
+    const msGroupObj = msGroupId ? db.groups[msGroupId] : null;
     const record = {
       id: saleId, invoiceId, invoiceNo, voucherNo, voucherTag, paymentSystem, isOldEntry, customerId, customerName,
       productId: r.pid, productName: r.product.name,
       qty: r.qty, unitPrice: r.price, unitCost: Number(r.product.cost||0), discount: r.disc,
-      total: r.rowTotal, paid: rowPaid, due: rowDue, initialPaid: rowPaid, date, ts: Date.now()
+      total: r.rowTotal, paid: rowPaid, due: rowDue, initialPaid: rowPaid, date, ts: Date.now(),
+      groupId: msGroupId || null, groupName: msGroupObj ? msGroupObj.name : ''
     };
     saleRecords.push(record);
     r.product.qty = Math.max(0, Number(r.product.qty) - r.qty);
@@ -3557,7 +4816,7 @@ function openPayDue(custId){
   document.getElementById('dueDateLabel').textContent = t('f_date');
   document.getElementById('dueNoteLabel').textContent = t('f_note');
   document.getElementById('dueNoteInput').value = '';
-  document.getElementById('dueIsOldEntry').checked = false;
+  // dueIsOldEntry always false
   document.getElementById('dueIsOldEntryLabel').textContent = t('f_is_old_entry');
   document.getElementById('duePaidInput').value = cust.due;
   document.getElementById('dueDiscountInput').value = 0;
@@ -3590,7 +4849,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const discount = Number(document.getElementById('dueDiscountInput').value)||0;
   const payDate = document.getElementById('dueDateInput').value || todayStr();
   const note = document.getElementById('dueNoteInput').value.trim();
-  const isOldEntry = document.getElementById('dueIsOldEntry').checked;
+  const isOldEntry = false; // Old entry always false
   if(paid<=0 && discount<=0) return;
   const previousDue = Number(cust.due);
   const newDue = Math.max(0, previousDue - (paid+discount));
