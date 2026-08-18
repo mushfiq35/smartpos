@@ -525,7 +525,7 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 
 <!-- Sale View Modal -->
 <div class="overlay" id="saleViewOverlay">
-  <div class="modal" style="max-width:800px;width:95%;">
+  <div class="modal" style="max-width:800px;width:95%;overflow-x:hidden;">
     <h2 id="saleViewTitle">View</h2>
     <div id="saleViewBody"></div>
     <div class="modal-actions no-print">
@@ -955,10 +955,10 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    ব্রাউজার ট্যাব টাইটেল, প্রিন্ট হেডার, ব্যাকআপ ফাইলের নাম) নিজে থেকেই বদলে যাবে।
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
-const SHOP_NAME = "Muttaki Hajj Kafela";
-const SHOP_ADDRESS = "Noapara, Abhaynagar, Jashore-7460";
-const SHOP_EMAIL = "mushfiq35@gmail.com";
-const SHOP_CONTACT = "01718702706";
+cconst SHOP_NAME = "Bashar Air International";
+const SHOP_ADDRESS = "Fynas Tower(Lift-15F);37/2,Cilvert Road;Purana Polton,Dhaka-1000";
+const SHOP_EMAIL = "abasharbd13@gmail.com";
+const SHOP_CONTACT = "01771044444";
 /* Only these logged-in emails will see the "Reports" menu — everyone else's
    staff login will not see Reports at all. Add/remove emails as needed. */
 const ADMIN_EMAILS = ["your@email.com"];
@@ -967,12 +967,12 @@ const ADMIN_EMAILS = ["your@email.com"];
 const SUMMARY_START_DATE = "2026-07-31";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBy1ntmUb87ak8hg3Q-fKrw4PGp5YubUA8",
-  authDomain: "muttaki-hajj-kafela.firebaseapp.com",
-  projectId: "muttaki-hajj-kafela",
-  storageBucket: "muttaki-hajj-kafela.firebasestorage.app",
-  messagingSenderId: "1004775252708",
-  appId: "1:1004775252708:web:e9c601633d495d9e2e42f1"
+  apiKey: "AIzaSyA0InSEmqrWVk5Ugdb0JhdSzc4MBLnyHaM",
+  authDomain: "bashar-air-international.firebaseapp.com",
+  projectId: "bashar-air-international",
+  storageBucket: "bashar-air-international.firebasestorage.app",
+  messagingSenderId: "894372788372",
+  appId: "1:894372788372:web:ffdada116dabdd70965c81"
 };
 
 
@@ -1440,7 +1440,7 @@ function renderPrintHeader(){
     <div>
       <div class="ph-name">${SHOP_NAME}</div>
       <div class="ph-contact">
-        ${escapeHtml(SHOP_ADDRESS)}<br>
+        ${typeof SHOP_OWNER !== 'undefined' && SHOP_OWNER ? escapeHtml(SHOP_OWNER)+'<br>' : ''}${escapeHtml(SHOP_ADDRESS)}<br>
         ${t('inv_email_label')}: ${escapeHtml(SHOP_EMAIL)} &nbsp;·&nbsp; ${t('inv_contact_label')}: ${escapeHtml(SHOP_CONTACT)}
       </div>
     </div>
@@ -4449,16 +4449,16 @@ function openSaleView(id){
         ${paymentSystemKey(sale.paymentSystem) ? `<tr><td>${t('col_payment_system')}</td><td>${t(paymentSystemKey(sale.paymentSystem))}</td></tr>` : ''}
       </tbody>
     </table>
-    <table class="data" style="margin-top:10px;">
+    <div style="overflow-x:auto;margin-top:10px;"><table class="data">
       <thead><tr><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('f_unit_price')}</th><th>${t('col_discount')}</th><th>${t('col_total')}</th><th>${t('return_already')}</th><th>${t('return_remaining')}</th><th class="no-print"></th></tr></thead>
       <tbody>
         ${groupItems.map(it => {
           const returned = saleReturnedQty(it.id);
           const remaining = Number(it.qty) - returned;
-          return `<tr><td>${escapeHtml(it.productName)}</td><td>${it.qty}</td><td>৳${money(it.unitPrice)}</td><td>${Number(it.discount)>0?'৳'+money(it.discount):'—'}</td><td>৳${money(it.total)}</td><td>${returned>0?returned:'—'}</td><td>${remaining}</td><td class="no-print">${remaining>0?`<button class="btn ghost small" onclick="openReturnForm('${it.id}')">↩️ ${t('return_new')}</button>`:''}</td></tr>`;
+          return `<tr><td>${escapeHtml(it.productName)}</td><td>${it.qty}</td><td>৳${money(it.unitPrice)}</td><td>${Number(it.discount)>0?'৳'+money(it.discount):'—'}</td><td>৳${money(it.total)}</td><td>${returned>0?returned:'—'}</td><td>${remaining}</td><td class="no-print">${remaining>0?`<button class="btn ghost small" onclick="openReturnForm('${it.id}')">↩️</button>`:''}</td></tr>`;
         }).join('')}
       </tbody>
-    </table>
+    </table></div>
     <table class="data" style="margin-top:10px;">
       <tbody>
         <tr><td>${t('grand_total')}</td><td>৳${money(grandTotal)}</td></tr>
