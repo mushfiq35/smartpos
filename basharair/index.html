@@ -311,8 +311,9 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 
 @media print{
   .sidebar, .topbar, #storageBanner, .toast, #backdrop, .toolbar button, .actions-cell, .no-print{display:none !important;}
-  .panel{break-inside:avoid;box-shadow:none;border:1px solid #ccc;}
-  table.data{font-size:11px;}
+  .panel{break-inside:avoid;box-shadow:none;border:1px solid #ccc;overflow:visible !important;}
+  table.data{font-size:10px;width:100%;}
+  table.data th, table.data td{padding:4px 5px !important;white-space:nowrap;}
   .main{margin-left:0 !important;}
   body{background:#fff;}
   .panel, table.data{border-color:#ccc;}
@@ -321,6 +322,7 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
   body:has(.overlay.open) .content{display:none !important;}
   .app{min-height:0 !important;display:block !important;}
   .main{min-height:0 !important;}
+  div[style*="overflow-x:auto"]{overflow:visible !important;}
 }
 
 .print-header{display:none;}
@@ -542,6 +544,13 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
     <div class="field-hint" id="dueCurrentInfo" style="margin-bottom:12px;"></div>
     <div class="field"><label id="dueAmountLabel">Amount Paid</label><input type="number" id="duePaidInput" value="0"></div>
     <div class="field"><label id="dueDiscountLabel">Discount</label><input type="number" id="dueDiscountInput" value="0"></div>
+    <div class="field"><label id="duePaymentLabel">Payment Method</label>
+      <select id="duePaymentSystem">
+        <option value="cash">Cash</option>
+        <option value="bank">Bank</option>
+        <option value="mobile_banking">Mobile Banking</option>
+      </select>
+    </div>
     <div class="field"><label id="dueDateLabel">Date</label><input type="date" id="dueDateInput"></div>
     <div class="field"><label id="dueNoteLabel">Note</label>
       <input type="text" id="dueNoteInput" list="dl-due-note" autocomplete="off">
@@ -955,7 +964,7 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    ব্রাউজার ট্যাব টাইটেল, প্রিন্ট হেডার, ব্যাকআপ ফাইলের নাম) নিজে থেকেই বদলে যাবে।
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
-cconst SHOP_NAME = "Bashar Air International";
+const SHOP_NAME = "Bashar Air International";
 const SHOP_ADDRESS = "Fynas Tower(Lift-15F);37/2,Cilvert Road;Purana Polton,Dhaka-1000";
 const SHOP_EMAIL = "abasharbd13@gmail.com";
 const SHOP_CONTACT = "01771044444";
@@ -1488,7 +1497,7 @@ function computeTotalBalance(){
   const toStr = todayStr();
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
-  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
+  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.paid||0); });
   db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount)+Number(i.discount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
@@ -2714,7 +2723,7 @@ function renderSummaryReport(body){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)) buckets[toISODate(d)] = {dp:0, de:0};
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
-    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); } });
+    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.paid||0); } });
     db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
@@ -3108,6 +3117,17 @@ function renderReportsOverview(body){
   refresh();
 }
 
+function custRptPrint(){
+  const detail = document.getElementById('custReportDetail');
+  const list = document.getElementById('custReportList');
+  if(!detail||!list) return;
+  const hasDetail = detail.innerHTML.trim().length > 0;
+  const hideEl = hasDetail ? list : detail;
+  hideEl.style.cssText = 'display:none!important';
+  window.addEventListener('afterprint', function(){ hideEl.style.cssText = ''; }, {once:true});
+  window.print();
+}
+
 function renderCustomerReport(body){
   const years = getAvailableYears();
   body.innerHTML = `
@@ -3121,8 +3141,9 @@ function renderCustomerReport(body){
         <option value="all">${t('all_months')}</option>
         ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(custReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
       </select>
+      <button class="btn ghost" onclick="custRptPrint()" style="margin-left:auto;">${t('print_report')}</button>
     </div>
-    <div id="custReportList" class="no-print"></div>
+    <div id="custReportList"></div>
     <div id="custReportDetail"></div>
   `;
   document.getElementById('custYearSelect').value = custReportYear;
@@ -3139,29 +3160,71 @@ function renderCustomerReport(body){
     custReportMonth = e.target.value;
     renderCustDetail();
   });
+  let custRptPage = 1;
+  const CUST_RPT_PAGE_SIZE = 25;
+
   function renderCustList(){
     const q = reportsCustQuery.trim().toLowerCase();
-    const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)) || db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherNo||'').toLowerCase().includes(q)) || (c.passport && c.passport.toLowerCase().includes(q)) || (c.tracking && c.tracking.toLowerCase().includes(q)));
+    const allEntries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)) || db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherNo||'').toLowerCase().includes(q)) || (c.passport && c.passport.toLowerCase().includes(q)) || (c.tracking && c.tracking.toLowerCase().includes(q)));
     const listEl = document.getElementById('custReportList');
-    listEl.innerHTML = entries.length===0
-      ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
-      : `<table class="data">
-          <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_due_amt')}</th><th></th></tr></thead>
-          <tbody>${entries.map(([id,c]) => `
-            <tr style="${reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':''}">
-              <td>${c.displayId?('#'+c.displayId):'—'}</td>
-              <td>${escapeHtml(c.name)}</td>
-              <td>${escapeHtml(c.phone||'—')}</td>
-              <td>৳${money(c.due)}</td>
-              <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${id}" title="${t('view_title')}">👁</button></td>
-            </tr>`).join('')}</tbody>
-        </table>`;
-    listEl.querySelectorAll('.cust-pick-btn').forEach(b => {
-      b.addEventListener('click', () => {
-        reportsSelectedCustId = b.dataset.id;
-        renderCustList();
-        renderCustDetail();
-      });
+    if(allEntries.length===0){ listEl.innerHTML = '<div class="empty"><div class="big">'+t('no_data')+'</div></div>'; return; }
+
+    const totalPages = Math.max(1, Math.ceil(allEntries.length / CUST_RPT_PAGE_SIZE));
+    if(custRptPage > totalPages) custRptPage = 1;
+    const entries = allEntries.slice((custRptPage-1)*CUST_RPT_PAGE_SIZE, custRptPage*CUST_RPT_PAGE_SIZE);
+
+    // Totals
+    const grandTotalBooked = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total),0),0);
+    const grandTotalDue = allEntries.reduce((s,[,c])=>s+Number(c.due||0),0);
+    const grandTotalPaid = grandTotalBooked - grandTotalDue;
+    const grandTotalProfit = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0),0);
+
+    const rows = entries.map(([id,c])=>{
+      const booked = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total),0);
+      const paid = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0) + db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.amount)+Number(i.discount||0),0);
+      const profit = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0);
+      return '<tr style="'+(reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':'')+'">'
+        +'<td>'+(c.displayId?('#'+c.displayId):'—')+'</td>'
+        +'<td>'+escapeHtml(c.name)+'</td>'
+        +'<td>'+escapeHtml(c.phone||'—')+'</td>'
+        +'<td>৳'+money(booked)+'</td>'
+        +'<td>৳'+money(paid)+'</td>'
+        +'<td>'+(c.due>0?'<span class="pill red">৳'+money(c.due)+'</span>':'<span class="pill green">'+t('lbl_clear')+'</span>')+'</td>'
+        +'<td>৳'+money(profit)+'</td>'
+        +'<td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="'+id+'" title="'+t('view_title')+'">👁</button></td>'
+        +'</tr>';
+    }).join('');
+
+    // Pagination
+    let pgBtns = '<button class="pagination-btn" '+(custRptPage===1?'disabled':'')+' data-crp="'+(custRptPage-1)+'">&#8249;</button>';
+    for(let p=1;p<=totalPages;p++){
+      if(p===1||p===totalPages||(p>=custRptPage-2&&p<=custRptPage+2)) pgBtns+='<button class="pagination-btn'+(p===custRptPage?' active':'')+'" data-crp="'+p+'">'+p+'</button>';
+      else if(p===custRptPage-3||p===custRptPage+3) pgBtns+='<span class="pg-info">…</span>';
+    }
+    pgBtns+='<button class="pagination-btn" '+(custRptPage===totalPages?'disabled':'')+' data-crp="'+(custRptPage+1)+'">&#8250;</button>';
+    pgBtns+='<span class="pg-info">'+(((custRptPage-1)*CUST_RPT_PAGE_SIZE)+1)+'-'+Math.min(custRptPage*CUST_RPT_PAGE_SIZE,allEntries.length)+' / '+allEntries.length+'</span>';
+
+    listEl.innerHTML =
+      '<div style="overflow-x:auto;">'
+      +'<table class="data">'
+      +'<thead><tr><th>'+t('col_id')+'</th><th>'+t('col_name')+'</th><th>'+t('col_phone')+'</th><th>'+t('lbl_total_booking')+'</th><th>'+t('lbl_paid_col')+'</th><th>'+t('col_due_amt')+'</th><th>'+t('col_profit')+'</th><th></th></tr></thead>'
+      +'<tbody>'+rows+'</tbody>'
+      +'<tfoot><tr style="font-weight:700;background:var(--paper-card);">'
+      +'<td colspan="3">'+t('totals_label')+' ('+allEntries.length+')</td>'
+      +'<td>৳'+money(grandTotalBooked)+'</td>'
+      +'<td>৳'+money(grandTotalPaid)+'</td>'
+      +'<td>'+(grandTotalDue>0?'<span style="color:var(--red);">৳'+money(grandTotalDue)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>')+'</td>'
+      +'<td>৳'+money(grandTotalProfit)+'</td>'
+      +'<td></td>'
+      +'</tr></tfoot>'
+      +'</table></div>'
+      +'<div class="pagination no-print">'+pgBtns+'</div>';
+
+    listEl.querySelectorAll('.cust-pick-btn').forEach(b=>{
+      b.addEventListener('click',()=>{ reportsSelectedCustId=b.dataset.id; renderCustList(); renderCustDetail(); });
+    });
+    listEl.querySelectorAll('.pagination-btn').forEach(b=>{
+      b.addEventListener('click',()=>{ if(!b.disabled){ custRptPage=Number(b.dataset.crp); renderCustList(); } });
     });
   }
   function renderCustDetail(){
@@ -3188,7 +3251,7 @@ function renderCustomerReport(body){
         invoiceNo: s.invoiceNo,
         label: escapeHtml(s.productName),
         total: s.total,
-        amount: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+        amount: Number(s.paid||0),
         due: s.due,
         discount: s.discount||0,
         note: t('col_paid') + ' (Booking)'
@@ -3225,6 +3288,14 @@ function renderCustomerReport(body){
             const returned = saleReturnedQty(s.id);
             return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.initialPaid!==undefined?s.initialPaid:s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
           }).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+            <td colspan="5">${t('totals_label')}</td>
+            <td>৳${money(totalBought)}</td>
+            <td>৳${money(sales.reduce((s,x)=>s+Number(x.discount||0),0))}</td>
+            <td>৳${money(totalInitialPaid)}</td>
+            <td>${cust.due>0?'৳'+money(cust.due):'—'}</td>
+            <td>৳${money(totalProfit)}</td>
+          </tr></tfoot>
         </table></div>`}
       </div>
 
@@ -3235,7 +3306,7 @@ function renderCustomerReport(body){
         <div style="overflow-x:auto;"><table class="data">
           <thead><tr>
             <th>${t('col_date')}</th>
-            <th>ধরন</th>
+            <th>${t('hdr_type')}</th>
             <th>${t('f_note')}</th>
             <th>${t('inst_col_amount')}</th>
             <th>${t('inst_col_discount')}</th>
@@ -3254,10 +3325,32 @@ function renderCustomerReport(body){
               <td>${tx.due>=0?'৳'+money(tx.due):'—'}</td>
             </tr>`;
           }).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+            <td colspan="3">${t('totals_label')}</td>
+            <td>৳${money(totalPaid)}</td>
+            <td>৳${money(payments.reduce((s,p)=>s+Number(p.discount||0),0))}</td>
+            <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+          </tr></tfoot>
         </table></div>`}
+
+        <!-- Summary box -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;">
+          <div style="background:var(--hajj-green-light);border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:var(--hajj-green);">৳${money(totalBought)}</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">${t('lbl_total_booking')}</div>
+          </div>
+          <div style="background:var(--green-bg);border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:var(--green);">৳${money(totalPaid)}</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">${t('lbl_paid_col')}</div>
+          </div>
+          <div style="background:${cust.due>0?'var(--red-bg)':'var(--green-bg)'};border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:${cust.due>0?'var(--red)':'var(--green)'};">৳${money(cust.due)}</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">${t('lbl_due_col')}</div>
+          </div>
+        </div>
       </div>
     `;
-    document.getElementById('custPrintBtn').addEventListener('click', () => window.print());
+    document.getElementById('custPrintBtn').addEventListener('click', () => custRptPrint());
   }
   renderCustList();
   renderCustDetail();
@@ -4814,6 +4907,8 @@ function openPayDue(custId){
   document.getElementById('dueDiscountLabel').textContent = t('pay_discount');
   document.getElementById('dueDateLabel').textContent = t('f_date');
   document.getElementById('dueNoteLabel').textContent = t('f_note');
+  document.getElementById('duePaymentLabel').textContent = t('col_payment_system');
+  document.getElementById('duePaymentSystem').value = 'cash';
   document.getElementById('dueNoteInput').value = '';
   // dueIsOldEntry always false
   document.getElementById('dueIsOldEntryLabel').textContent = t('f_is_old_entry');
@@ -4849,6 +4944,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const payDate = document.getElementById('dueDateInput').value || todayStr();
   const note = document.getElementById('dueNoteInput').value.trim();
   const isOldEntry = false; // Old entry always false
+  const instPaymentSystem = document.getElementById('duePaymentSystem').value || 'cash';
   if(paid<=0 && discount<=0) return;
   const previousDue = Number(cust.due);
   const newDue = Math.max(0, previousDue - (paid+discount));
@@ -4871,6 +4967,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const instRecord = {
     id: uid(), receiptNo: nextReceiptNo(), customerId: dueCtx, customerName: cust.name,
     amount: paid, discount, previousDue, newDue, note, isOldEntry,
+    paymentSystem: instPaymentSystem,
     date: payDate, ts: new Date(payDate).getTime() || Date.now()
   };
   db.installments.push(instRecord);
