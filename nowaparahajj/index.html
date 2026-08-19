@@ -4373,6 +4373,30 @@ function openInstallmentEdit(instId, custId){
       await safePut('customers', rec.customerId, cust2);
     }
 
+    // Sale.due update
+    let remaining = Math.abs(diff);
+    if(diff > 0){
+      const openSales = db.sales.filter(s=>s.customerId===rec.customerId && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
+      for(const sale of openSales){
+        if(remaining<=0) break;
+        const applyAmt = Math.min(Number(sale.due), remaining);
+        sale.paid = Number(sale.paid||0) + applyAmt;
+        sale.due = Math.max(0, Number(sale.due) - applyAmt);
+        remaining -= applyAmt;
+        await safePut('sales', sale.id, sale);
+      }
+    } else if(diff < 0){
+      const paidSales = db.sales.filter(s=>s.customerId===rec.customerId && Number(s.paid||0)>0).sort((a,b)=>b.ts-a.ts);
+      for(const sale of paidSales){
+        if(remaining<=0) break;
+        const rev = Math.min(Number(sale.paid||0), remaining);
+        sale.paid = Math.max(0, Number(sale.paid||0) - rev);
+        sale.due = Number(sale.due||0) + rev;
+        remaining -= rev;
+        await safePut('sales', sale.id, sale);
+      }
+    }
+
     // Record update
     rec.amount = newAmt;
     rec.discount = newDisc;
