@@ -4595,7 +4595,7 @@ function openMultiSale(editInvoiceId){
   document.getElementById('msVoucherLabel').textContent = t('f_voucher');
   document.getElementById('msVoucherTagLabel').textContent = t('f_voucher_tag');
   document.getElementById('msPaymentSystemLabel').textContent = t('f_payment_system');
-  document.getElementById('msIsOldEntryLabel').textContent = t('f_is_old_entry');
+  // msIsOldEntryLabel removed (field hidden)
   const paySel = document.getElementById('msPaymentSystem');
   const prevPayVal = paySel.value || 'cash';
   paySel.innerHTML = `
