@@ -5142,7 +5142,6 @@ function openInstallmentEdit(instId, custId){
     +'<button class="btn amber" id="ieSave">'+t('save')+'</button>'
     +'</div></div></div>';
   document.body.insertAdjacentHTML('beforeend', html);
-
   document.getElementById('ieCancel').onclick = ()=> document.getElementById('instEditOverlay').remove();
   document.getElementById('ieSave').onclick = async function(){
     const newAmt = Number(document.getElementById('ieAmt').value);
@@ -5150,27 +5149,41 @@ function openInstallmentEdit(instId, custId){
     const newDate = document.getElementById('ieDate').value;
     const newNote = document.getElementById('ieNote').value.trim();
     if(newAmt < 0){ alert(t('inst_col_amount')); return; }
-
     const oldTotal = Number(rec.amount) + Number(rec.discount||0);
     const newTotal = newAmt + newDisc;
     const diff = newTotal - oldTotal;
-
+    // customer.due
     const cust2 = db.customers[rec.customerId];
-    if(cust2){
-      cust2.due = Math.max(0, Number(cust2.due||0) - diff);
-      await safePut('customers', rec.customerId, cust2);
+    if(cust2){ cust2.due = Math.max(0, Number(cust2.due||0) - diff); await safePut('customers', rec.customerId, cust2); }
+    // sale.due
+    let remaining = Math.abs(diff);
+    if(diff > 0){
+      const openSales = db.sales.filter(s=>s.customerId===rec.customerId && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
+      for(const sale of openSales){
+        if(remaining<=0) break;
+        const applyAmt = Math.min(Number(sale.due), remaining);
+        sale.paid = Number(sale.paid||0) + applyAmt;
+        sale.due = Math.max(0, Number(sale.due) - applyAmt);
+        remaining -= applyAmt;
+        await safePut('sales', sale.id, sale);
+      }
+    } else if(diff < 0){
+      const paidSales = db.sales.filter(s=>s.customerId===rec.customerId && Number(s.paid||0)>0).sort((a,b)=>b.ts-a.ts);
+      for(const sale of paidSales){
+        if(remaining<=0) break;
+        const rev = Math.min(Number(sale.paid||0), remaining);
+        sale.paid = Math.max(0, Number(sale.paid||0) - rev);
+        sale.due = Number(sale.due||0) + rev;
+        remaining -= rev;
+        await safePut('sales', sale.id, sale);
+      }
     }
-
-    rec.amount = newAmt;
-    rec.discount = newDisc;
-    rec.date = newDate;
-    rec.note = newNote;
+    // record update
+    rec.amount = newAmt; rec.discount = newDisc; rec.date = newDate; rec.note = newNote;
     rec.newDue = Math.max(0, Number(rec.previousDue) - newTotal);
     await safePut('installments', rec.id, rec);
-
     const idx = db.installments.findIndex(x=>x.id===rec.id);
     if(idx>=0) db.installments[idx] = rec;
-
     document.getElementById('instEditOverlay').remove();
     showToast(t('saved_toast'));
     openInstallmentHistory(custId);
@@ -5200,21 +5213,15 @@ function openInstallmentHistory(custId){
     <table class="data">
       <thead><tr><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
       <tbody>${list.map(r=>`<tr>
-        <td>${formatDateDMY(r.date)}</td>
-        <td>৳${money(r.previousDue)}</td>
-        <td>৳${money(r.amount)}</td>
-        <td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td>
-        <td>৳${money(r.newDue)}</td>
-        <td>${escapeHtml(r.note||'—')}</td>
+        <td>${formatDateDMY(r.date)}</td><td>৳${money(r.previousDue)}</td><td>৳${money(r.amount)}</td>
+        <td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td><td>৳${money(r.newDue)}</td><td>${escapeHtml(r.note||'—')}</td>
         <td class="actions-cell no-print">
           <button class="icon-btn inst-edit-btn" data-id="${r.id}" title="${t('edit_title')}">✏️</button>
           <button class="icon-btn inst-del-btn" data-id="${r.id}" title="${t('delete_title')}">🗑️</button>
-        </td>
-      </tr>`).join('')}</tbody>
+        </td></tr>`).join('')}</tbody>
     </table>`}
   `;
   document.getElementById('instHistoryOverlay').classList.add('open');
-
   document.getElementById('instHistoryBody').querySelectorAll('.inst-edit-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> openInstallmentEdit(btn.dataset.id, custId));
   });
@@ -5223,10 +5230,19 @@ function openInstallmentHistory(custId){
       if(!confirm(t('delete_confirm'))) return;
       const rec = db.installments.find(x=>x.id===btn.dataset.id);
       if(!rec) return;
+      const delTotal = Number(rec.amount) + Number(rec.discount||0);
       const cust2 = db.customers[rec.customerId];
-      if(cust2){
-        cust2.due = Number(cust2.due||0) + Number(rec.amount) + Number(rec.discount||0);
-        await safePut('customers', rec.customerId, cust2);
+      if(cust2){ cust2.due = Number(cust2.due||0) + delTotal; await safePut('customers', rec.customerId, cust2); }
+      // sale.due reverse
+      let delRem = delTotal;
+      const paidSales = db.sales.filter(s=>s.customerId===rec.customerId && Number(s.paid||0)>0).sort((a,b)=>b.ts-a.ts);
+      for(const sale of paidSales){
+        if(delRem<=0) break;
+        const rev = Math.min(Number(sale.paid||0), delRem);
+        sale.paid = Math.max(0, Number(sale.paid||0) - rev);
+        sale.due = Number(sale.due||0) + rev;
+        delRem -= rev;
+        await safePut('sales', sale.id, sale);
       }
       db.installments = db.installments.filter(x=>x.id!==rec.id);
       await safeRemove('installments', rec.id);
