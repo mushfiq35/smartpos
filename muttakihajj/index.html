@@ -2,6 +2,7 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
+  <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>হজ্জ এজেন্সি ম্যানেজমেন্ট সিস্টেম</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -231,6 +232,11 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
   body:has(.overlay.open) .content{display:none !important;}
   .app{min-height:0 !important;display:block !important;}
   .main{min-height:0 !important;}
+  table.data{font-size:10px;width:100%;}
+  table.data th, table.data td{padding:4px 5px !important;white-space:nowrap;}
+  .panel{overflow:visible !important;break-inside:avoid;box-shadow:none;}
+  div[style*="overflow-x:auto"]{overflow:visible !important;}
+  #custReportList .pagination{display:none !important;}
 }
 
 .print-header{display:none;}
@@ -452,6 +458,13 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
     <div class="field-hint" id="dueCurrentInfo" style="margin-bottom:12px;"></div>
     <div class="field"><label id="dueAmountLabel">Amount Paid</label><input type="number" id="duePaidInput" value="0"></div>
     <div class="field"><label id="dueDiscountLabel">Discount</label><input type="number" id="dueDiscountInput" value="0"></div>
+    <div class="field"><label id="duePaymentLabel">Payment Method</label>
+      <select id="duePaymentSystem">
+        <option value="cash">Cash</option>
+        <option value="bank">Bank</option>
+        <option value="mobile_banking">Mobile Banking</option>
+      </select>
+    </div>
     <div class="field"><label id="dueDateLabel">Date</label><input type="date" id="dueDateInput"></div>
     <div class="field"><label id="dueNoteLabel">Note</label>
       <input type="text" id="dueNoteInput" list="dl-due-note" autocomplete="off">
@@ -563,9 +576,10 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 /* ---------- Storage Keys ---------- */
 const K = {
   customers:'pos-customers', suppliers:'pos-suppliers', products:'pos-products',
-  purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo'
+  purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo',
+  vendorPayments:'pos-vendor-payments'
 };
-let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[] };
+let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], vendorPayments:[] };
 let currentTab = 'dashboard';
 let logoData = null;
 
@@ -575,12 +589,12 @@ const I18N = {
   bn: {
     brand_sub:'হজ্জ এজেন্সি ম্যানেজমেন্ট', logo_change:'লোগো পরিবর্তন / Change logo', new_sale:'+ নতুন বুকিং',
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
-    nav_dashboard:'ড্যাশবোর্ড', nav_customers:'হাজী', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর',
+    nav_dashboard:'ড্যাশবোর্ড', nav_customers:'হাজী', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর', vnd_statement:'ভেন্ডর স্টেটমেন্ট', vnd_pay_btn:'+ পেমেন্ট দিন', vnd_return_btn:'+ পণ্য রিটার্ন', vnd_due:'আমাদের দিতে হবে', vnd_advance:'ভেন্ডর অগ্রিম', vnd_clear:'ক্লিয়ার', vnd_pay_title:'পেমেন্ট দিন', vnd_return_title:'পণ্য রিটার্ন', vnd_return_cash:'নগদ ফেরত', vnd_return_adjust:'পরবর্তী ক্রয়ে সমন্বয়', vnd_return_confirm:'এই রিটার্ন নিশ্চিত করবেন?', vnd_pay_amount:'পরিশোধের পরিমাণ (৳)', vnd_history:'লেনদেনের ইতিহাস', vnd_type_purchase:'ক্রয়', vnd_type_payment:'পেমেন্ট', vnd_type_return:'রিটার্ন', vnd_no_history:'কোনো লেনদেন নেই', vnd_del_confirm:'এই লেনদেন মুছবেন?', vnd_no_returnable:'কোনো রিটার্নযোগ্য ক্রয় নেই', vnd_remaining:'অবশিষ্ট:', vnd_return_total:'মোট রিটার্ন:', vnd_total_purchase:'মোট ক্রয়', vnd_total_paid:'মোট পরিশোধ', col_debit:'ডেবিট', col_credit:'ক্রেডিট',
     title_categories:'প্যাকেজের ধরন', add_categories:'+ নতুন ধরন', f_category_name:'ধরনের নাম',
     nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট',
     reports_sales_returns_tab:'বুকিং ও বাতিল', sr_sales_count:'বুকিং সংখ্যা', sr_returns_count:'বাতিল সংখ্যা', sr_net_label:'নিট',
     return_title:'বুকিং বাতিল', return_new:'নতুন বাতিল', return_no:'বাতিল নং',
-    return_original_qty:'মোট বুকড পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
+    return_original_qty:'মোট বুকড পরিমাণ', return_already:'রিটার্ন', return_remaining:'অবশিষ্ট',
     return_qty_label:'রিটার্ন পরিমাণ', return_value:'রিটার্ন মূল্য', return_due_adjust:'বাকি থেকে সমন্বয়',
     return_excess_refund:'অতিরিক্ত রিফান্ড', return_note:'কারণ/নোট', return_confirm:'রিটার্ন নিশ্চিত করুন',
     return_qty_invalid:'রিটার্নের পরিমাণ অবশিষ্ট পরিমাণের বেশি হতে পারবে না', return_history:'রিটার্ন ইতিহাস',
@@ -603,7 +617,7 @@ const I18N = {
     stat_customer:'মোট হাজী', stat_product:'মোট প্যাকেজ', stat_supplier:'মোট ভেন্ডর',
     stat_sales:'মোট বুকিং', stat_today_sales:'আজকের বুকিং', stat_today_purchase:'আজকের ক্রয়',
     stat_today_expense:'আজকের খরচ', stat_today_income:'আজকের আয় (লাভ)', stat_total_qty:'মোট আসন সংখ্যা',
-    col_name:'নাম', col_phone:'ফোন', col_passport:'পাসপোর্ট', col_tracking:'ট্র্যাকিং নং', col_address:'ঠিকানা', col_due_amt:'বাকি (৳)',
+    col_name:'নাম', col_phone:'ফোন', col_passport:'পাসপোর্ট', col_address:'ঠিকানা', col_due_amt:'বাকি (৳)',
     col_cat:'প্যাকেজের ধরন', col_stock:'আসন সংখ্যা', col_cost:'খরচ মূল্য', col_price:'বিক্রয়মূল্য', col_supplier:'ভেন্ডর',
     col_date:'তারিখ', col_customer:'হাজী', col_product:'প্যাকেজ', col_qty:'পরিমাণ', col_unit_cost:'একক মূল্য',
     col_total:'মোট', col_paid:'প্রদানকৃত', col_due:'বাকি', col_profit:'লাভ', col_note:'নোট', col_amount:'টাকা',
@@ -611,7 +625,7 @@ const I18N = {
     add_purchases:'+ নতুন ক্রয়', add_sales:'+ নতুন বুকিং', add_expenses:'+ নতুন খরচ',
     title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_tracking:'ট্র্যাকিং নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
+    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
     login_subtitle:'চালিয়ে যেতে লগ ইন করুন', login_email:'ইমেইল', login_password:'পাসওয়ার্ড',
     login_btn:'লগ ইন করুন', login_error:'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে', logout:'লগ আউট',
     backup_btn:'☁️ ব্যাকআপ', restore_btn:'♻️ রিস্টোর',
@@ -674,12 +688,12 @@ const I18N = {
   en: {
     brand_sub:'Hajj Agency Management', logo_change:'Change logo', new_sale:'+ New Booking',
     loading:'Loading...', crumb_prefix:'Dashboard',
-    nav_dashboard:'Dashboard', nav_customers:'Hajji', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors',
+    nav_dashboard:'Dashboard', nav_customers:'Hajji', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors', vnd_statement:'Vendor Statement', vnd_pay_btn:'+ Pay Vendor', vnd_return_btn:'+ Purchase Return', vnd_due:'We Owe', vnd_advance:'Vendor Advance', vnd_clear:'Clear', vnd_pay_title:'Pay Vendor', vnd_return_title:'Purchase Return', vnd_return_cash:'Cash Refund', vnd_return_adjust:'Adjust in Next Purchase', vnd_return_confirm:'Confirm this return?', vnd_pay_amount:'Payment Amount (৳)', vnd_history:'Transaction History', vnd_type_purchase:'Purchase', vnd_type_payment:'Payment', vnd_type_return:'Return', vnd_no_history:'No transactions yet', vnd_del_confirm:'Delete this transaction?', vnd_no_returnable:'No returnable purchases', vnd_remaining:'Remaining:', vnd_return_total:'Total Return:', vnd_total_purchase:'Total Purchase', vnd_total_paid:'Total Paid', col_debit:'Debit', col_credit:'Credit',
     title_categories:'Package Types', add_categories:'+ New Type', f_category_name:'Type Name',
     nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports',
     reports_sales_returns_tab:'Bookings & Cancellations', sr_sales_count:'Bookings Count', sr_returns_count:'Cancellations Count', sr_net_label:'Net',
     return_title:'Cancellations', return_new:'New Cancellation', return_no:'Cancellation No.',
-    return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
+    return_original_qty:'Sold Qty', return_already:'Returned', return_remaining:'Remaining',
     return_qty_label:'Return Qty', return_value:'Return Value', return_due_adjust:'Adjusted from Due',
     return_excess_refund:'Excess Refund', return_note:'Reason/Note', return_confirm:'Confirm Return',
     return_qty_invalid:'Return quantity cannot exceed the remaining quantity', return_history:'Cancellation History',
@@ -702,7 +716,7 @@ const I18N = {
     stat_customer:'Total Hajji', stat_product:'Total Packages', stat_supplier:'Total Vendors',
     stat_sales:'Total Bookings', stat_today_sales:'Today Bookings', stat_today_purchase:'Today Purchase',
     stat_today_expense:'Today Expense', stat_today_income:'Today Income (Profit)', stat_total_qty:'Total Seats',
-    col_name:'Name', col_phone:'Phone', col_passport:'Passport', col_tracking:'Tracking No', col_address:'Address', col_due_amt:'Due (৳)',
+    col_name:'Name', col_phone:'Phone', col_passport:'Passport', col_address:'Address', col_due_amt:'Due (৳)',
     col_cat:'Package Type', col_stock:'Seats', col_cost:'Cost Price', col_price:'Sell Price', col_supplier:'Vendor',
     col_date:'Date', col_customer:'Hajji', col_product:'Package', col_qty:'Qty', col_unit_cost:'Unit Cost',
     col_total:'Total', col_paid:'Paid', col_due:'Due', col_profit:'Profit', col_note:'Note', col_amount:'Amount',
@@ -710,7 +724,7 @@ const I18N = {
     add_purchases:'+ New Purchase', add_sales:'+ New Booking', add_expenses:'+ New Expense',
     title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_tracking:'Tracking Number', f_address:'Address', f_email:'Email', col_email:'Email',
+    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_address:'Address', f_email:'Email', col_email:'Email',
     login_subtitle:'Please log in to continue', login_email:'Email', login_password:'Password',
     login_btn:'Login', login_error:'Incorrect email or password', logout:'Logout',
     backup_btn:'☁️ Backup', restore_btn:'♻️ Restore',
@@ -802,7 +816,7 @@ const firebaseConfig = {
   storageBucket: "muttaki-hajj-kafela.firebasestorage.app",
   messagingSenderId: "1004775252708",
   appId: "1:1004775252708:web:e9c601633d495d9e2e42f1"
-};
+}
 
 
 let useFirebase = false;
@@ -1169,7 +1183,7 @@ function paymentSystemKey(v){
 /* ---------- Load / Save ---------- */
 async function loadAll(){
   const objTabs = ['customers','suppliers','products','categories'];
-  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns'];
+  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments'];
   let hadError = false;
   for(const key of [...objTabs, ...arrTabs]){
     try{
@@ -1313,10 +1327,15 @@ function computeTotalBalance(){
   const toStr = todayStr();
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
-  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
+  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.paid||0); });
   db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount)+Number(i.discount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
+  db.vendorPayments.forEach(vp => {
+    if(!inRange(vp.date)) return;
+    if(vp.type==='payment'||vp.type==='purchase_payment') de += Number(vp.amount||0);
+    if(vp.type==='purchase_return'&&vp.returnType==='cash') dp += Number(vp.amount||0);
+  });
   return dp - de;
 }
 
@@ -1338,6 +1357,7 @@ function pageDashboard(){
   const totalDue = Object.values(db.customers).reduce((s,c)=>s+Number(c.due||0),0);
   const totalPaid = totalSales - totalDue;
   const todayBookings = db.sales.filter(x=>x.date===today).length;
+  const vendorDue = Object.values(db.suppliers).reduce((s,sup)=>s+Number(sup.due||0),0);
   const pendingInstallments = Object.values(db.customers).filter(c=>Number(c.due||0)>0).length;
 
   // গত ১৪ দিনের trend data
@@ -1409,10 +1429,10 @@ function pageDashboard(){
         <div class="val">৳${money(totalDue)}</div>
         <div class="lbl">মোট বাকি</div>
       </div>
-      <div class="stat-card" style="background:${totalBalance>=0?'#1B6B3A':'#B4423A'};">
-        <div style="font-size:22px;margin-bottom:6px;">${totalBalance>=0?'📈':'📉'}</div>
-        <div class="val">৳${money(Math.abs(totalBalance))}</div>
-        <div class="lbl">${t('summary_final')}</div>
+      <div class="stat-card" style="background:${vendorDue>0?'#8f3a8f':'#4a6741'};">
+        <div style="font-size:22px;margin-bottom:6px;">🏢</div>
+        <div class="val">৳${money(Math.abs(vendorDue))}</div>
+        <div class="lbl">${vendorDue>0?t('vnd_due'):t('vnd_clear')}</div>
       </div>
     </div>
 
@@ -1446,7 +1466,7 @@ function pageDashboard(){
                 ${recentSales.map(s=>`
                   <tr>
                     <td>${escapeHtml(s.customerName||t('walk_in'))}</td>
-                    <td>${escapeHtml(s.productName)}</td>
+                    <td>${escapeHtml((s.productName||'').split(' ')[0])}</td>
                     <td>৳${money(s.total)}</td>
                     <td>${s.due>0?'<span class="pill red">৳'+money(s.due)+'</span>':'<span class="pill green">পরিশোধ</span>'}</td>
                     <td style="color:var(--ink-soft);font-size:12px;">${formatDateDMY(s.date)}</td>
@@ -1488,6 +1508,246 @@ function pageDashboard(){
   `;
 }
 
+
+/* ---------- Vendor Ledger ---------- */
+
+function purchaseReturnedQty(purchaseId){
+  return db.vendorPayments
+    .filter(vp=>vp.type==='purchase_return' && vp.purchaseId===purchaseId)
+    .reduce((s,vp)=>s+Number(vp.qty||0), 0);
+}
+
+function openVendorStatement(supplierId){
+  const supplier = db.suppliers[supplierId];
+  if(!supplier) return;
+
+  const purchases = db.purchases.filter(p=>p.supplierId===supplierId).sort((a,b)=>a.ts-b.ts);
+  const payments = db.vendorPayments.filter(vp=>vp.supplierId===supplierId).sort((a,b)=>a.ts-b.ts);
+  const totalPurchased = purchases.reduce((s,p)=>s+Number(p.total),0);
+  const totalPaid = db.vendorPayments.filter(vp=>vp.supplierId===supplierId&&(vp.type==='payment'||vp.type==='purchase_payment')).reduce((s,vp)=>s+Number(vp.amount),0);
+  const totalReturn = db.vendorPayments.filter(vp=>vp.supplierId===supplierId&&vp.type==='purchase_return'&&vp.returnType==='cash').reduce((s,vp)=>s+Number(vp.amount||0),0);
+  const due = Number(supplier.due||0);
+
+  const timeline = [
+    ...purchases.map(p=>({ts:p.ts, date:p.date, type:'purchase', label:escapeHtml(p.sector||p.productName||'—'), qty:p.qty, debit:p.total, credit:0, id:p.id})),
+    ...payments.map(vp=>({ts:vp.ts, date:vp.date, type:vp.type, label:vp.note||'—', qty:vp.qty||'', returnType:vp.returnType,
+      debit: vp.type==='purchase_return'&&vp.returnType==='adjust' ? vp.amount : 0,
+      credit: (vp.type==='payment'||vp.type==='purchase_payment') ? vp.amount : (vp.type==='purchase_return'&&vp.returnType==='cash' ? vp.amount : 0),
+      id:vp.id}))
+  ].sort((a,b)=>a.ts-b.ts);
+
+  let running = 0;
+  const rows = timeline.map(function(tx){
+    if(tx.type==='purchase') running += tx.debit;
+    else if(tx.type==='payment'||tx.type==='purchase_payment') running -= tx.credit;
+    else if(tx.type==='purchase_return') running -= (tx.credit||tx.debit||0);
+
+    const typePill = tx.type==='purchase'
+      ? '<span class="pill" style="background:#2E6B8A;color:#fff;font-size:10px;">'+t('vnd_type_purchase')+'</span>'
+      : tx.type==='purchase_return'
+        ? '<span class="pill red" style="font-size:10px;">'+t('vnd_type_return')+'</span>'
+        : '<span class="pill green" style="font-size:10px;">'+t('vnd_type_payment')+'</span>';
+
+    const balCell = running>0
+      ? '<span style="color:var(--red);">৳'+money(running)+'</span>'
+      : running<0
+        ? '<span style="color:var(--green);">'+t('vnd_advance')+' ৳'+money(Math.abs(running))+'</span>'
+        : '<span style="color:var(--green);">'+t('vnd_clear')+'</span>';
+
+    const delBtn = (tx.type==='payment'||tx.type==='purchase_return')
+      ? '<button class="icon-btn" data-vndel="'+tx.id+'" style="font-size:11px;">🗑️</button>' : '';
+
+    return '<tr>'
+      +'<td style="font-size:12px;">'+formatDateDMY(tx.date)+'</td>'
+      +'<td>'+typePill+'</td>'
+      +'<td style="font-size:12px;">'+tx.label+(tx.qty?' ('+tx.qty+')':'')+'</td>'
+      +'<td>'+(tx.debit>0?'<span style="color:var(--red);">৳'+money(tx.debit)+'</span>':'—')+'</td>'
+      +'<td>'+(tx.credit>0?'<span style="color:var(--green);">৳'+money(tx.credit)+'</span>':'—')+'</td>'
+      +'<td><strong>'+balCell+'</strong></td>'
+      +'<td class="actions-cell no-print">'+delBtn+'</td>'
+      +'</tr>';
+  }).join('');
+
+  const c = document.getElementById('content');
+  c.innerHTML =
+    '<div class="no-print" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">'
+    +'<button class="btn" onclick="renderListPage(\'suppliers\')">← '+t('nav_suppliers')+'</button>'
+    +'<button class="btn ghost" style="margin-left:auto;" onclick="window.print()">'+t('print_report')+'</button>'
+    +'</div>'
+    +'<div class="panel" style="background:linear-gradient(135deg,#0f3d20,#1B6B3A);color:#fff;margin-bottom:16px;">'
+    +'<div style="font-size:20px;font-weight:700;">🏢 '+escapeHtml(supplier.name)+'</div>'
+    +(supplier.phone?'<div style="opacity:0.75;font-size:13px;margin-top:4px;">📞 '+escapeHtml(supplier.phone)+'</div>':'')
+    +'<div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">'
+    +'<div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px 16px;text-align:center;">'
+    +'<div style="font-size:18px;font-weight:700;">৳'+money(totalPurchased)+'</div>'
+    +'<div style="font-size:11px;opacity:0.8;">'+t('vnd_total_purchase')+'</div></div>'
+    +'<div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px 16px;text-align:center;">'
+    +'<div style="font-size:18px;font-weight:700;">৳'+money(totalPaid+totalReturn)+'</div>'
+    +'<div style="font-size:11px;opacity:0.8;">'+t('vnd_total_paid')+'</div></div>'
+    +'<div style="background:'+(due>0?'rgba(180,66,58,0.6)':'rgba(27,107,58,0.5)')+';border-radius:8px;padding:10px 16px;text-align:center;">'
+    +'<div style="font-size:18px;font-weight:700;">৳'+money(Math.abs(due))+'</div>'
+    +'<div style="font-size:11px;opacity:0.8;">'+(due>0?t('vnd_due'):t('vnd_clear'))+'</div></div>'
+    +'</div></div>'
+    +'<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;" class="no-print">'
+    +'<button class="btn amber" onclick="openVendorPayForm(\''+supplierId+'\')">'+t('vnd_pay_btn')+'</button>'
+    +'<button class="btn" style="border:1px solid var(--line);" onclick="openPurchaseReturnForVendor(\''+supplierId+'\')">'+t('vnd_return_btn')+'</button>'
+    +'</div>'
+    +'<div class="panel" style="overflow-x:auto;">'
+    +'<h3>'+t('vnd_history')+'</h3>'
+    +(timeline.length===0
+      ? '<div class="empty">'+t('vnd_no_history')+'</div>'
+      : '<table class="data"><thead><tr>'
+        +'<th>'+t('col_date')+'</th><th>ধরন</th><th>বিবরণ</th>'
+        +'<th>'+t('col_debit')+'</th><th>'+t('col_credit')+'</th><th>ব্যালেন্স</th><th class="no-print"></th>'
+        +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    )+'</div>';
+
+  // Delete handler
+  c.querySelector && c.querySelectorAll('[data-vndel]').forEach(btn=>{
+    btn.addEventListener('click', async function(){
+      if(!confirm(t('vnd_del_confirm'))) return;
+      const vpId = btn.dataset.vndel;
+      const vp = db.vendorPayments.find(x=>x.id===vpId);
+      if(!vp) return;
+      if(vp.type==='payment'||vp.type==='purchase_payment'){
+        supplier.due = Number(supplier.due||0) + Number(vp.amount);
+        await safePut('suppliers', supplierId, supplier);
+      } else if(vp.type==='purchase_return'){
+        const prod = db.products[vp.productId];
+        if(prod){ prod.qty = Number(prod.qty) + Number(vp.qty||0); await safePut('products', vp.productId, prod); }
+        supplier.due = Number(supplier.due||0) + Number(vp.amount||0);
+        await safePut('suppliers', supplierId, supplier);
+        const pur = db.purchases.find(x=>x.id===vp.purchaseId);
+        if(pur){ pur.due = Number(pur.due||0) + Number(vp.amount||0); await safePut('purchases', pur.id, pur); }
+      }
+      db.vendorPayments = db.vendorPayments.filter(x=>x.id!==vpId);
+      await safeRemove('vendorPayments', vpId);
+      showToast(t('deleted_toast'));
+      openVendorStatement(supplierId);
+    });
+  });
+}
+
+function openVendorPayForm(supplierId){
+  const supplier = db.suppliers[supplierId];
+  if(!supplier) return;
+  const due = Number(supplier.due||0);
+  const html = '<div class="overlay open" id="vndPayOverlay" style="z-index:120;">'
+    +'<div class="modal" style="max-width:400px;">'
+    +'<h2>'+t('vnd_pay_title')+' — '+escapeHtml(supplier.name)+'</h2>'
+    +(due>0?'<div style="background:var(--red-bg);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:13px;">'+t('vnd_due')+': <strong>৳'+money(due)+'</strong></div>':'')
+    +(due<=0?'<div style="background:var(--green-bg);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:13px;">'+t('vnd_advance')+': <strong>৳'+money(Math.abs(due))+'</strong></div>':'')
+    +'<div class="field"><label>'+t('vnd_pay_amount')+' *</label>'
+    +'<input type="number" id="vndPayAmt" value="'+Math.max(0,due)+'" min="0" step="any"></div>'
+    +'<div class="field"><label>'+t('col_date')+'</label>'
+    +'<input type="date" id="vndPayDate" value="'+todayStr()+'"></div>'
+    +'<div class="field"><label>'+t('f_note')+'</label>'
+    +'<input type="text" id="vndPayNote" placeholder="বিকাশ, ব্যাংক ট্রান্সফার..."></div>'
+    +'<div style="display:flex;gap:10px;margin-top:16px;">'
+    +'<button class="btn" id="vndPayCancel">'+t('cancel')+'</button>'
+    +'<button class="btn amber" id="vndPaySave">'+t('save')+'</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('vndPayCancel').onclick = ()=>document.getElementById('vndPayOverlay').remove();
+  document.getElementById('vndPaySave').onclick = async function(){
+    const amt = Number(document.getElementById('vndPayAmt').value);
+    const date = document.getElementById('vndPayDate').value;
+    const note = document.getElementById('vndPayNote').value.trim();
+    if(!amt||amt<=0){ alert(t('vnd_pay_amount')); return; }
+    supplier.due = Number(supplier.due||0) - amt;
+    await safePut('suppliers', supplierId, supplier);
+    const vp = {id:uid(), supplierId, supplierName:supplier.name, type:'payment', amount:amt, note:note||'Payment', date, ts:Date.now()};
+    db.vendorPayments.push(vp); await safePut('vendorPayments', vp.id, vp);
+    document.getElementById('vndPayOverlay').remove();
+    showToast(t('saved_toast'));
+    openVendorStatement(supplierId);
+  };
+}
+
+function openPurchaseReturnForVendor(supplierId){
+  const purchases = db.purchases.filter(p=>p.supplierId===supplierId && (Number(p.qty)-purchaseReturnedQty(p.id))>0);
+  if(purchases.length===0){ alert(t('vnd_no_returnable')); return; }
+  if(purchases.length===1){ openPurchaseReturnForm(purchases[0].id, supplierId); return; }
+  const html = '<div class="overlay open" id="vndSelOverlay" style="z-index:120;">'
+    +'<div class="modal" style="max-width:420px;">'
+    +'<h2>ক্রয় নির্বাচন করুন</h2>'
+    +'<div style="max-height:300px;overflow-y:auto;">'
+    +purchases.map(p=>{
+      const rem = Number(p.qty)-purchaseReturnedQty(p.id);
+      return '<div style="padding:10px 12px;border:1px solid var(--line);border-radius:6px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="document.getElementById(\'vndSelOverlay\').remove();openPurchaseReturnForm(\''+p.id+'\',\''+supplierId+'\');">'
+        +'<div><strong>'+escapeHtml(p.sector||p.productName||'—')+'</strong>'
+        +'<div style="font-size:12px;color:var(--ink-soft);">'+formatDateDMY(p.date)+' · '+t('vnd_remaining')+' '+rem+'</div></div>'
+        +'<span style="color:var(--hajj-green);font-size:18px;">›</span></div>';
+    }).join('')
+    +'</div>'
+    +'<button class="btn" style="margin-top:12px;" onclick="document.getElementById(\'vndSelOverlay\').remove()">'+t('cancel')+'</button>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function openPurchaseReturnForVendor2(purchaseId){
+  const purchase = db.purchases.find(p=>p.id===purchaseId);
+  if(!purchase) return;
+  openPurchaseReturnForm(purchaseId, purchase.supplierId);
+}
+
+function openPurchaseReturnForm(purchaseId, supplierId){
+  const purchase = db.purchases.find(p=>p.id===purchaseId);
+  const supplier = db.suppliers[supplierId];
+  if(!purchase||!supplier) return;
+  const remainingQty = Number(purchase.qty) - purchaseReturnedQty(purchaseId);
+  const html = '<div class="overlay open" id="vndReturnOverlay" style="z-index:120;">'
+    +'<div class="modal" style="max-width:420px;">'
+    +'<h2>'+t('vnd_return_title')+'</h2>'
+    +'<div style="background:var(--paper-card);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:13px;">'
+    +escapeHtml(purchase.sector||purchase.productName||'—')+' · '+t('vnd_remaining')+' '+remainingQty+' · ৳'+money(purchase.unitCost)+'</div>'
+    +'<div class="field"><label>'+t('f_pur_qty')+' * (max: '+remainingQty+')</label>'
+    +'<input type="number" id="vrQty" value="1" min="1" max="'+remainingQty+'" oninput="vrCalc()"></div>'
+    +'<div class="field"><label>একক মূল্য (৳)</label>'
+    +'<input type="number" id="vrUnit" value="'+purchase.unitCost+'" oninput="vrCalc()"></div>'
+    +'<div class="field"><label>'+t('vnd_return_title')+'</label>'
+    +'<select id="vrType">'
+    +'<option value="cash">'+t('vnd_return_cash')+'</option>'
+    +'<option value="adjust">'+t('vnd_return_adjust')+'</option>'
+    +'</select></div>'
+    +'<div style="background:var(--gold-bg);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:13px;" id="vrTotal">'+t('vnd_return_total')+' ৳'+money(purchase.unitCost)+'</div>'
+    +'<div class="field"><label>'+t('col_date')+'</label>'
+    +'<input type="date" id="vrDate" value="'+todayStr()+'"></div>'
+    +'<div class="field"><label>'+t('f_note')+'</label><input type="text" id="vrNote" placeholder="কারণ..."></div>'
+    +'<div style="display:flex;gap:10px;margin-top:16px;">'
+    +'<button class="btn" id="vrCancel">'+t('cancel')+'</button>'
+    +'<button class="btn amber" id="vrSave">'+t('save')+'</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  window.vrCalc = function(){
+    const q=Number(document.getElementById('vrQty').value)||0;
+    const u=Number(document.getElementById('vrUnit').value)||0;
+    document.getElementById('vrTotal').textContent=t('vnd_return_total')+' ৳'+money(q*u);
+  };
+  document.getElementById('vrCancel').onclick=()=>document.getElementById('vndReturnOverlay').remove();
+  document.getElementById('vrSave').onclick=async function(){
+    const qty=Number(document.getElementById('vrQty').value);
+    const unit=Number(document.getElementById('vrUnit').value);
+    const returnType=document.getElementById('vrType').value;
+    const date=document.getElementById('vrDate').value;
+    const note=document.getElementById('vrNote').value.trim();
+    if(!qty||qty<=0||qty>remainingQty){ alert(t('f_pur_qty')+': 1-'+remainingQty); return; }
+    if(!confirm(t('vnd_return_confirm'))) return;
+    const amount = qty * unit;
+    purchase.due = Math.max(0, Number(purchase.due||0) - amount);
+    await safePut('purchases', purchaseId, purchase);
+    supplier.due = Number(supplier.due||0) - amount;
+    await safePut('suppliers', supplierId, supplier);
+    const vp={id:uid(), supplierId, supplierName:supplier.name, type:'purchase_return', returnType, purchaseId,
+      productId:purchase.productId, productName:purchase.productName||purchase.sector||'—',
+      qty, unitCost:unit, amount, note:note||'Purchase Return', date, ts:Date.now()};
+    db.vendorPayments.push(vp); await safePut('vendorPayments', vp.id, vp);
+    document.getElementById('vndReturnOverlay').remove();
+    showToast(t('saved_toast'));
+    openVendorStatement(supplierId);
+  };
+}
+
 /* ---------- Reports ---------- */
 let reportsSubTab = 'overview';
 let reportsCustQuery = '';
@@ -1499,8 +1759,14 @@ let overviewFrom = '';
 let overviewTo = '';
 let custReportYear = 'all';
 let custReportMonth = 'all';
+let custFromDate='';
+let custToDate='';
+let custRangeMode='yearmonth';
 let suppReportYear = 'all';
 let suppReportMonth = 'all';
+let suppFromDate='';
+let suppToDate='';
+let suppRangeMode='yearmonth';
 
 function pad2(n){ return String(n).padStart(2,'0'); }
 function toISODate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
@@ -1603,7 +1869,6 @@ function renderInstallmentsPage(){
       if(String(cust.displayId||'').includes(q)) return true;
       if(cust.phone && cust.phone.toLowerCase().includes(q)) return true;
       if(cust.passport && cust.passport.toLowerCase().includes(q)) return true;
-      if(cust.tracking && cust.tracking.toLowerCase().includes(q)) return true;
       if(accountNumbersFor(id).some(v=>v.toLowerCase().includes(q))) return true;
       if(db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherTag||'').toLowerCase().includes(q))) return true;
       return false;
@@ -1613,11 +1878,24 @@ function renderInstallmentsPage(){
       listEl.innerHTML = `<div class="empty"><div class="big">${t('no_active_installments')}</div></div>`;
       return;
     }
+    const instPageTotal = Math.max(1, Math.ceil(entries.length / 25));
+    if(instListPage[0] > instPageTotal) instListPage[0] = 1;
+    const instPaged = entries.slice((instListPage[0]-1)*25, instListPage[0]*25);
+    let pgBtns = '';
+    if(instPageTotal > 1){
+      pgBtns += '<button class="pagination-btn" '+(instListPage[0]===1?'disabled':'')+' data-ip="p">&#8249;</button>';
+      for(let p=1;p<=instPageTotal;p++){
+        if(p===1||p===instPageTotal||(p>=instListPage[0]-2&&p<=instListPage[0]+2)) pgBtns+='<button class="pagination-btn'+(p===instListPage[0]?' active':'')+'" data-ip="'+p+'">'+p+'</button>';
+        else if(p===instListPage[0]-3||p===instListPage[0]+3) pgBtns+='<span class="pg-info">…</span>';
+      }
+      pgBtns += '<button class="pagination-btn" '+(instListPage[0]===instPageTotal?'disabled':'')+' data-ip="n">&#8250;</button>';
+      pgBtns += '<span class="pg-info">'+((instListPage[0]-1)*25+1)+'-'+Math.min(instListPage[0]*25,entries.length)+' / '+entries.length+'</span>';
+    }
     listEl.innerHTML = `
       <table class="data">
         <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_voucher')}</th><th>${t('inst_remaining')}</th><th></th></tr></thead>
         <tbody>
-          ${entries.map(([id,cust]) => {
+          ${instPaged.map(([id,cust]) => {
             const due = Number(cust.due);
             const accNos = accountNumbersFor(id);
             return `<tr>
@@ -1635,9 +1913,17 @@ function renderInstallmentsPage(){
           }).join('')}
         </tbody>
       </table>
+      ${instPageTotal>1 ? '<div class="pagination no-print" id="instListPgEl">'+pgBtns+'</div>' : ''}
     `;
+    if(instPageTotal>1){
+      listEl.querySelectorAll('.pagination-btn').forEach(b=>b.addEventListener('click',()=>{
+        const v=b.dataset.ip;
+        if(v==='p'&&instListPage[0]>1){instListPage[0]--;} else if(v==='n'&&instListPage[0]<instPageTotal){instListPage[0]++;} else if(!isNaN(v)){instListPage[0]=Number(v);}
+        renderInstList();
+      }));
+    }
   }
-
+  let instListPage=[1];
   renderInstList();
 }
 
@@ -1653,6 +1939,7 @@ function renderReportsPage(){
       <button class="sub-tab ${reportsSubTab==='customer'?'active':''}" data-sub="customer">${t('nav_customers')}</button>
       <button class="sub-tab ${reportsSubTab==='supplier'?'active':''}" data-sub="supplier">${t('nav_suppliers')}</button>
       <button class="sub-tab ${reportsSubTab==='stock'?'active':''}" data-sub="stock">${t('nav_products')}</button>
+      <button class="sub-tab ${reportsSubTab==='purchaserpt'?'active':''}" data-sub="purchaserpt">${t('nav_purchases')}</button>
     </div>
     <div id="reportsBody"></div>
   `;
@@ -1668,6 +1955,7 @@ function renderReportsPage(){
   else if(reportsSubTab==='customer') renderCustomerReport(body);
   else if(reportsSubTab==='supplier') renderSupplierReport(body);
   else if(reportsSubTab==='stock') renderStockReport(body);
+  else if(reportsSubTab==='purchaserpt') renderPurchaseReport(body);
 }
 
 let summaryRange = 'last14';
@@ -1708,10 +1996,17 @@ function renderSummaryReport(body){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)) buckets[toISODate(d)] = {dp:0, de:0};
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
-    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); } });
+    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.paid||0); } });
     db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
+    db.vendorPayments.forEach(vp => {
+      if(!inRange(vp.date)) return;
+      const k = bucketKey(vp.date);
+      if(!buckets[k]) return;
+      if(vp.type==='payment'||vp.type==='purchase_payment') buckets[k].de += Number(vp.amount||0);
+      if(vp.type==='purchase_return'&&vp.returnType==='cash') buckets[k].dp += Number(vp.amount||0);
+    });
     let running = 0;
     const rows = Object.entries(buckets).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v]) => {
       running += v.dp - v.de;
@@ -1798,6 +2093,28 @@ function wireRangeToolbar(prefix, getState, setState, refresh){
 }
 
 let salesRptQuery = '';
+
+function rptPaginate(list, pageVar, bodyId, rowFn, afterHtml){
+  const totalPages = Math.max(1, Math.ceil(list.length / 25));
+  if(pageVar[0] > totalPages) pageVar[0] = 1;
+  const paged = list.slice((pageVar[0]-1)*25, pageVar[0]*25);
+  let pgBtns = '';
+  if(totalPages > 1){
+    pgBtns += '<button class="pagination-btn" '+(pageVar[0]===1?'disabled':'')+' data-rpp="'+(pageVar[0]-1)+'">&#8249;</button>';
+    for(let p=1;p<=totalPages;p++){
+      if(p===1||p===totalPages||(p>=pageVar[0]-2&&p<=pageVar[0]+2)) pgBtns+='<button class="pagination-btn'+(p===pageVar[0]?' active':'')+'" data-rpp="'+p+'">'+p+'</button>';
+      else if(p===pageVar[0]-3||p===pageVar[0]+3) pgBtns+='<span class="pg-info">…</span>';
+    }
+    pgBtns += '<button class="pagination-btn" '+(pageVar[0]===totalPages?'disabled':'')+' data-rpp="'+(pageVar[0]+1)+'">&#8250;</button>';
+    pgBtns += '<span class="pg-info">'+((pageVar[0]-1)*25+1)+'-'+Math.min(pageVar[0]*25,list.length)+' / '+list.length+'</span>';
+  }
+  return paged.map(rowFn).join('') + '</tbody>'
+    + (afterHtml||'')
+    + '</table>'
+    + (totalPages>1 ? '<div class="pagination no-print" id="'+bodyId+'Pg">'+pgBtns+'</div>' : '');
+}
+
+let salesRptPage=[1];
 function renderSalesOnlyReport(body){
   body.innerHTML = buildRangeToolbar('salesRpt');
   const toolbar = body.querySelector('.toolbar');
@@ -1823,8 +2140,7 @@ function renderSalesOnlyReport(body){
         || (s.productName||'').toLowerCase().includes(q)
         || (s.voucherNo||'').toLowerCase().includes(q)
         || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
-        || (cust && cust.passport && cust.passport.toLowerCase().includes(q))
-        || (cust && cust.tracking && cust.tracking.toLowerCase().includes(q));
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q));
     }).sort((a,b)=>b.ts-a.ts);
     const totalValue = list.reduce((s,x)=>s+Number(x.total),0);
     const totalPaid = list.reduce((s,x)=>s+Number(x.paid),0);
@@ -1839,11 +2155,33 @@ function renderSalesOnlyReport(body){
         <h3>${t('nav_sales')}</h3>
         <table class="data">
           <thead><tr><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
-          <tbody>${list.map(s=>`<tr><td>${formatDateDMY(s.date)}</td><td>${escapeHtml(s.customerName||t('walk_in'))}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>৳${money(s.total)}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td></tr>`).join('')}</tbody>
+          <tbody id="salesRptBodyRows"></tbody>
           <tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalValue)}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDue)}</td></tr></tfoot>
         </table>
+        <div id="salesRptPg" class="no-print"></div>
       </div>
     `;
+    // pagination
+    const salesTotalPages = Math.max(1, Math.ceil(list.length / 25));
+    if(salesRptPage[0] > salesTotalPages) salesRptPage[0] = 1;
+    const salesPaged = list.slice((salesRptPage[0]-1)*25, salesRptPage[0]*25);
+    const salesTbody = document.getElementById('salesRptBodyRows');
+    if(salesTbody) salesTbody.innerHTML = salesPaged.map(s=>`<tr><td>${formatDateDMY(s.date)}</td><td>${escapeHtml(s.customerName||t('walk_in'))}</td><td>${escapeHtml((s.productName||'').split(' ')[0])}</td><td>${s.qty}</td><td>৳${money(s.total)}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td></tr>`).join('');
+    const salesPgEl = document.getElementById('salesRptPg');
+    if(salesPgEl && salesTotalPages>1){
+      let pgH='<button class="pagination-btn" '+(salesRptPage[0]===1?'disabled':'')+' data-rpp="p">&#8249;</button>';
+      for(let p=1;p<=salesTotalPages;p++){
+        if(p===1||p===salesTotalPages||(p>=salesRptPage[0]-2&&p<=salesRptPage[0]+2)) pgH+='<button class="pagination-btn'+(p===salesRptPage[0]?' active':'')+'" data-rpp="'+p+'">'+p+'</button>';
+        else if(p===salesRptPage[0]-3||p===salesRptPage[0]+3) pgH+='<span class="pg-info">…</span>';
+      }
+      pgH+='<button class="pagination-btn" '+(salesRptPage[0]===salesTotalPages?'disabled':'')+' data-rpp="n">&#8250;</button>';
+      pgH+='<span class="pg-info">'+((salesRptPage[0]-1)*25+1)+'-'+Math.min(salesRptPage[0]*25,list.length)+' / '+list.length+'</span>';
+      salesPgEl.innerHTML=pgH;
+      salesPgEl.querySelectorAll('.pagination-btn').forEach(b=>b.addEventListener('click',()=>{
+        const v=b.dataset.rpp; if(v==='p'&&salesRptPage[0]>1){salesRptPage[0]--;} else if(v==='n'&&salesRptPage[0]<salesTotalPages){salesRptPage[0]++;} else if(!isNaN(v)){salesRptPage[0]=Number(v);}
+        refresh();
+      }));
+    } else if(salesPgEl) salesPgEl.innerHTML='';
   }
   wireRangeToolbar('salesRpt',
     () => ({range:salesRptRange, from:salesRptFrom, to:salesRptTo}),
@@ -1854,6 +2192,7 @@ function renderSalesOnlyReport(body){
 }
 
 let returnsRptQuery = '';
+let returnsRptPage=[1];
 function renderReturnsOnlyReport(body){
   body.innerHTML = buildRangeToolbar('returnsRpt');
   const toolbar = body.querySelector('.toolbar');
@@ -1878,8 +2217,7 @@ function renderReturnsOnlyReport(body){
       return (r.customerName||'').toLowerCase().includes(q)
         || (r.productName||'').toLowerCase().includes(q)
         || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
-        || (cust && cust.passport && cust.passport.toLowerCase().includes(q))
-        || (cust && cust.tracking && cust.tracking.toLowerCase().includes(q));
+        || (cust && cust.passport && cust.passport.toLowerCase().includes(q));
     }).sort((a,b)=>b.ts-a.ts);
     const activeList = list.filter(r=>!r.cancelled);
     const totalValue = activeList.reduce((s,x)=>s+Number(x.value),0);
@@ -1895,11 +2233,33 @@ function renderReturnsOnlyReport(body){
         <h3>${t('nav_returns')}</h3>
         <table class="data">
           <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th></tr></thead>
-          <tbody>${list.map(r=>`<tr><td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td><td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td><td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td></tr>`).join('')}</tbody>
+          <tbody id="returnsRptBodyRows"></tbody>
           <tfoot><tr style="font-weight:700;"><td colspan="5">${t('totals_label')} (${t('return_active')})</td><td>৳${money(totalValue)}</td><td></td></tr></tfoot>
         </table>
+        <div id="returnsRptPg" class="no-print"></div>
       </div>
     `;
+    // pagination
+    const retTotalPages = Math.max(1, Math.ceil(list.length / 25));
+    if(returnsRptPage[0] > retTotalPages) returnsRptPage[0] = 1;
+    const retPaged = list.slice((returnsRptPage[0]-1)*25, returnsRptPage[0]*25);
+    const retTbody = document.getElementById('returnsRptBodyRows');
+    if(retTbody) retTbody.innerHTML = retPaged.map(r=>`<tr><td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td><td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td><td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td></tr>`).join('');
+    const retPgEl = document.getElementById('returnsRptPg');
+    if(retPgEl && retTotalPages>1){
+      let pgH='<button class="pagination-btn" '+(returnsRptPage[0]===1?'disabled':'')+' data-rpp="p">&#8249;</button>';
+      for(let p=1;p<=retTotalPages;p++){
+        if(p===1||p===retTotalPages||(p>=returnsRptPage[0]-2&&p<=returnsRptPage[0]+2)) pgH+='<button class="pagination-btn'+(p===returnsRptPage[0]?' active':'')+'" data-rpp="'+p+'">'+p+'</button>';
+        else if(p===returnsRptPage[0]-3||p===returnsRptPage[0]+3) pgH+='<span class="pg-info">…</span>';
+      }
+      pgH+='<button class="pagination-btn" '+(returnsRptPage[0]===retTotalPages?'disabled':'')+' data-rpp="n">&#8250;</button>';
+      pgH+='<span class="pg-info">'+((returnsRptPage[0]-1)*25+1)+'-'+Math.min(returnsRptPage[0]*25,list.length)+' / '+list.length+'</span>';
+      retPgEl.innerHTML=pgH;
+      retPgEl.querySelectorAll('.pagination-btn').forEach(b=>b.addEventListener('click',()=>{
+        const v=b.dataset.rpp; if(v==='p'&&returnsRptPage[0]>1){returnsRptPage[0]--;} else if(v==='n'&&returnsRptPage[0]<retTotalPages){returnsRptPage[0]++;} else if(!isNaN(v)){returnsRptPage[0]=Number(v);}
+        refresh();
+      }));
+    } else if(retPgEl) retPgEl.innerHTML='';
   }
   wireRangeToolbar('returnsRpt',
     () => ({range:returnsRptRange, from:returnsRptFrom, to:returnsRptTo}),
@@ -1910,6 +2270,7 @@ function renderReturnsOnlyReport(body){
 }
 
 let instRptQuery = '';
+let instRptPage=[1];
 function renderInstallmentOnlyReport(body){
   body.innerHTML = buildRangeToolbar('instRpt');
   const toolbar = body.querySelector('.toolbar');
@@ -1934,7 +2295,6 @@ function renderInstallmentOnlyReport(body){
       return (i.customerName||'').toLowerCase().includes(q)
         || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
         || (cust && cust.passport && cust.passport.toLowerCase().includes(q))
-        || (cust && cust.tracking && cust.tracking.toLowerCase().includes(q))
         || (db.sales.filter(s=>s.customerId===i.customerId).some(s=>(s.voucherNo||'').toLowerCase().includes(q)));
     }).sort((a,b)=>b.ts-a.ts);
     const totalPaid = list.reduce((s,x)=>s+Number(x.amount),0);
@@ -1949,17 +2309,112 @@ function renderInstallmentOnlyReport(body){
         <h3>${t('nav_installments')}</h3>
         <table class="data">
           <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('col_customer')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
-          <tbody>${list.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>${escapeHtml(i.customerName||'')}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td></tr>`).join('')}</tbody>
+          <tbody id="instRptBodyRows"></tbody>
           <tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalNewDue)}</td><td></td></tr></tfoot>
         </table>
+        <div id="instRptPg" class="no-print"></div>
       </div>
     `;
+    // pagination
+    const instTotalPages = Math.max(1, Math.ceil(list.length / 25));
+    if(instRptPage[0] > instTotalPages) instRptPage[0] = 1;
+    const instPaged = list.slice((instRptPage[0]-1)*25, instRptPage[0]*25);
+    const instTbody = document.getElementById('instRptBodyRows');
+    if(instTbody) instTbody.innerHTML = instPaged.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>${escapeHtml(i.customerName||'')}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td></tr>`).join('');
+    const instPgEl = document.getElementById('instRptPg');
+    if(instPgEl && instTotalPages>1){
+      let pgH='<button class="pagination-btn" '+(instRptPage[0]===1?'disabled':'')+' data-rpp="p">&#8249;</button>';
+      for(let p=1;p<=instTotalPages;p++){
+        if(p===1||p===instTotalPages||(p>=instRptPage[0]-2&&p<=instRptPage[0]+2)) pgH+='<button class="pagination-btn'+(p===instRptPage[0]?' active':'')+'" data-rpp="'+p+'">'+p+'</button>';
+        else if(p===instRptPage[0]-3||p===instRptPage[0]+3) pgH+='<span class="pg-info">…</span>';
+      }
+      pgH+='<button class="pagination-btn" '+(instRptPage[0]===instTotalPages?'disabled':'')+' data-rpp="n">&#8250;</button>';
+      pgH+='<span class="pg-info">'+((instRptPage[0]-1)*25+1)+'-'+Math.min(instRptPage[0]*25,list.length)+' / '+list.length+'</span>';
+      instPgEl.innerHTML=pgH;
+      instPgEl.querySelectorAll('.pagination-btn').forEach(b=>b.addEventListener('click',()=>{
+        const v=b.dataset.rpp; if(v==='p'&&instRptPage[0]>1){instRptPage[0]--;} else if(v==='n'&&instRptPage[0]<instTotalPages){instRptPage[0]++;} else if(!isNaN(v)){instRptPage[0]=Number(v);}
+        refresh();
+      }));
+    } else if(instPgEl) instPgEl.innerHTML='';
   }
   wireRangeToolbar('instRpt',
     () => ({range:instRptRange, from:instRptFrom, to:instRptTo}),
     (s) => { instRptRange=s.range; instRptFrom=s.from; instRptTo=s.to; },
     refresh
   );
+  refresh();
+}
+
+
+function renderPurchaseReport(body){
+  let purYear = 'all', purMonth = 'all', purQuery = '';
+
+  function refresh(){
+    const list = db.purchases.filter(p=>{
+      const q = purQuery.toLowerCase();
+      const yr = purYear==='all' || p.date.startsWith(purYear);
+      const mo = purMonth==='all' || p.date.startsWith((purYear==='all'?p.date.slice(0,4):purYear)+'-'+(String(purMonth).padStart(2,'0')));
+      const match = !q || (p.supplierName||'').toLowerCase().includes(q) || (p.sector||'').toLowerCase().includes(q);
+      return yr && mo && match;
+    });
+
+    const totalPurchased = list.reduce((s,p)=>s+Number(p.total),0);
+    const totalPaid = list.reduce((s,p)=>s+Number(p.paid||0),0);
+    const totalDue = list.reduce((s,p)=>s+Number(p.due||0),0);
+
+    const years = getAvailableYears();
+    body.innerHTML = `
+      <div class="toolbar no-print">
+        <input type="text" id="purRptSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(purQuery)}">
+        <select id="purRptYear">
+          <option value="all">${t('all_years')}</option>
+          ${years.map(y=>`<option value="${y}" ${purYear===y?'selected':''}>${y}</option>`).join('')}
+        </select>
+        <select id="purRptMonth">
+          <option value="all">${t('all_months')}</option>
+          ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(purMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
+        </select>
+        <button class="btn ghost" onclick="window.print()" style="margin-left:auto;">${t('print_report')}</button>
+      </div>
+      ${list.length===0 ? `<div class="empty"><div class="big">${t('no_data')}</div></div>` : `
+      <div style="overflow-x:auto;">
+      <table class="data">
+        <thead><tr>
+          <th>${t('col_date')}</th>
+          <th>${t('col_supplier')}</th>
+          <th>${t('f_sector')}</th>
+          <th>${t('f_pur_qty')}</th>
+          <th>${t('col_unit_cost')}</th>
+          <th>${t('col_total')}</th>
+          <th>${t('col_paid')}</th>
+          <th>${t('col_due')}</th>
+        </tr></thead>
+        <tbody>
+          ${list.map(p=>`<tr>
+            <td>${formatDateDMY(p.date)}</td>
+            <td>${escapeHtml(p.supplierName||'—')}</td>
+            <td>${escapeHtml((p.sector||p.productName||'—').split(' ')[0])}</td>
+            <td>${p.qty}</td>
+            <td>৳${money(p.unitCost)}</td>
+            <td>৳${money(p.total)}</td>
+            <td>৳${money(p.paid||0)}</td>
+            <td>${Number(p.due||0)>0?'<span class="pill red">৳'+money(p.due)+'</span>':'<span class="pill green">'+t('vnd_clear')+'</span>'}</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+          <td colspan="5">${t('totals_label')}</td>
+          <td>৳${money(totalPurchased)}</td>
+          <td>৳${money(totalPaid)}</td>
+          <td>${totalDue>0?'<span style="color:var(--red);">৳'+money(totalDue)+'</span>':'<span style="color:var(--green);">'+t('vnd_clear')+'</span>'}</td>
+        </tr></tfoot>
+      </table>
+      </div>`}
+    `;
+
+    document.getElementById('purRptSearch').addEventListener('input', e=>{ purQuery=e.target.value; refresh(); });
+    document.getElementById('purRptYear').addEventListener('change', e=>{ purYear=e.target.value; refresh(); });
+    document.getElementById('purRptMonth').addEventListener('change', e=>{ purMonth=e.target.value; refresh(); });
+  }
   refresh();
 }
 
@@ -2092,11 +2547,26 @@ function renderReportsOverview(body){
   refresh();
 }
 
+function custRptPrint(){
+  const detail = document.getElementById('custReportDetail');
+  const list = document.getElementById('custReportList');
+  if(!detail||!list) return;
+  const hasDetail = detail.innerHTML.trim().length > 0;
+  const hideEl = hasDetail ? list : detail;
+  hideEl.style.cssText = 'display:none!important';
+  window.addEventListener('afterprint', function(){ hideEl.style.cssText = ''; }, {once:true});
+  window.print();
+}
+
 function renderCustomerReport(body){
   const years = getAvailableYears();
   body.innerHTML = `
     <div class="toolbar no-print">
       <input type="text" id="custReportSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(reportsCustQuery)}">
+      <select id="custRangeType">
+        <option value="yearmonth">${t('all_years')}</option>
+        <option value="custom">${t('range_custom')}</option>
+      </select>
       <select id="custYearSelect">
         <option value="all">${t('all_years')}</option>
         ${years.map(y=>`<option value="${y}" ${custReportYear===y?'selected':''}>${y}</option>`).join('')}
@@ -2105,8 +2575,11 @@ function renderCustomerReport(body){
         <option value="all">${t('all_months')}</option>
         ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(custReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
       </select>
+      <input type="date" id="custFromDate" style="display:none;" value="${custFromDate||''}">
+      <input type="date" id="custToDate" style="display:none;" value="${custToDate||''}">
+      <button class="btn ghost" onclick="custRptPrint()" style="margin-left:auto;">${t('print_report')}</button>
     </div>
-    <div id="custReportList" class="no-print"></div>
+    <div id="custReportList"></div>
     <div id="custReportDetail"></div>
   `;
   document.getElementById('custYearSelect').value = custReportYear;
@@ -2115,38 +2588,72 @@ function renderCustomerReport(body){
     reportsCustQuery = e.target.value;
     renderCustList();
   });
+  document.getElementById('custRangeType').addEventListener('change', (e) => {
+    custRangeMode = e.target.value;
+    const isCustom = custRangeMode==='custom';
+    document.getElementById('custFromDate').style.display = isCustom?'':'none';
+    document.getElementById('custToDate').style.display = isCustom?'':'none';
+    document.getElementById('custYearSelect').style.display = isCustom?'none':'';
+    document.getElementById('custMonthSelect').style.display = isCustom?'none':'';
+    renderCustList(); renderCustDetail();
+  });
   document.getElementById('custYearSelect').addEventListener('change', (e) => {
-    custReportYear = e.target.value;
-    renderCustDetail();
+    custReportYear = e.target.value; renderCustList(); renderCustDetail();
   });
   document.getElementById('custMonthSelect').addEventListener('change', (e) => {
-    custReportMonth = e.target.value;
-    renderCustDetail();
+    custReportMonth = e.target.value; renderCustList(); renderCustDetail();
   });
+  document.getElementById('custFromDate').addEventListener('change', (e) => { custFromDate=e.target.value; renderCustList(); renderCustDetail(); });
+  document.getElementById('custToDate').addEventListener('change', (e) => { custToDate=e.target.value; renderCustList(); renderCustDetail(); });
+  let custRptPage = 1;
+  const CUST_RPT_PAGE_SIZE = 25;
+
   function renderCustList(){
     const q = reportsCustQuery.trim().toLowerCase();
-    const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)) || db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherNo||'').toLowerCase().includes(q)) || (c.passport && c.passport.toLowerCase().includes(q)) || (c.tracking && c.tracking.toLowerCase().includes(q)));
+    const allEntries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)) || db.sales.filter(s=>s.customerId===id).some(s=>(s.voucherNo||'').toLowerCase().includes(q)) || (c.passport && c.passport.toLowerCase().includes(q)));
     const listEl = document.getElementById('custReportList');
-    listEl.innerHTML = entries.length===0
-      ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
-      : `<table class="data">
-          <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_due_amt')}</th><th></th></tr></thead>
-          <tbody>${entries.map(([id,c]) => `
-            <tr style="${reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':''}">
-              <td>${c.displayId?('#'+c.displayId):'—'}</td>
-              <td>${escapeHtml(c.name)}</td>
-              <td>${escapeHtml(c.phone||'—')}</td>
-              <td>৳${money(c.due)}</td>
-              <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${id}" title="${t('view_title')}">👁</button></td>
-            </tr>`).join('')}</tbody>
-        </table>`;
-    listEl.querySelectorAll('.cust-pick-btn').forEach(b => {
-      b.addEventListener('click', () => {
-        reportsSelectedCustId = b.dataset.id;
-        renderCustList();
-        renderCustDetail();
-      });
-    });
+    if(allEntries.length===0){ listEl.innerHTML = '<div class="empty"><div class="big">'+t('no_data')+'</div></div>'; return; }
+    const totalPages = Math.max(1, Math.ceil(allEntries.length / CUST_RPT_PAGE_SIZE));
+    if(custRptPage > totalPages) custRptPage = 1;
+    const entries = allEntries.slice((custRptPage-1)*CUST_RPT_PAGE_SIZE, custRptPage*CUST_RPT_PAGE_SIZE);
+    const grandTotalBooked = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total),0),0);
+    const grandTotalDue = allEntries.reduce((s,[,c])=>s+Number(c.due||0),0);
+    const grandTotalPaid = grandTotalBooked - grandTotalDue;
+    const grandTotalProfit = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0),0);
+    const rows = entries.map(([id,c])=>{
+      const booked = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total),0);
+      const paid = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.paid||0),0) + db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.amount)+Number(i.discount||0),0);
+      const profit = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0);
+      return '<tr style="'+(reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':'')+'">'
+        +'<td>'+(c.displayId?('#'+c.displayId):'—')+'</td>'
+        +'<td>'+escapeHtml(c.name)+'</td>'
+        +'<td>'+escapeHtml(c.phone||'—')+'</td>'
+        +'<td>৳'+money(booked)+'</td>'
+        +'<td>৳'+money(paid)+'</td>'
+        +'<td>'+(c.due>0?'<span class="pill red">৳'+money(c.due)+'</span>':'<span class="pill green">'+t('lbl_clear')+'</span>')+'</td>'
+        +'<td>৳'+money(profit)+'</td>'
+        +'<td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="'+id+'" title="'+t('view_title')+'">👁</button></td>'
+        +'</tr>';
+    }).join('');
+    let pgBtns='<button class="pagination-btn" '+(custRptPage===1?'disabled':'')+' data-crp="'+(custRptPage-1)+'">&#8249;</button>';
+    for(let p=1;p<=totalPages;p++){
+      if(p===1||p===totalPages||(p>=custRptPage-2&&p<=custRptPage+2)) pgBtns+='<button class="pagination-btn'+(p===custRptPage?' active':'')+'" data-crp="'+p+'">'+p+'</button>';
+      else if(p===custRptPage-3||p===custRptPage+3) pgBtns+='<span class="pg-info">…</span>';
+    }
+    pgBtns+='<button class="pagination-btn" '+(custRptPage===totalPages?'disabled':'')+' data-crp="'+(custRptPage+1)+'">&#8250;</button>';
+    pgBtns+='<span class="pg-info">'+((custRptPage-1)*CUST_RPT_PAGE_SIZE+1)+'-'+Math.min(custRptPage*CUST_RPT_PAGE_SIZE,allEntries.length)+' / '+allEntries.length+'</span>';
+    listEl.innerHTML='<div style="overflow-x:auto;"><table class="data">'
+      +'<thead><tr><th>'+t('col_id')+'</th><th>'+t('col_name')+'</th><th>'+t('col_phone')+'</th><th>'+t('lbl_total_booking')+'</th><th>'+t('lbl_paid_col')+'</th><th>'+t('col_due_amt')+'</th><th>'+t('col_profit')+'</th><th></th></tr></thead>'
+      +'<tbody>'+rows+'</tbody>'
+      +'<tfoot><tr style="font-weight:700;background:var(--paper-card);">'
+      +'<td colspan="3">'+t('totals_label')+' ('+allEntries.length+')</td>'
+      +'<td>৳'+money(grandTotalBooked)+'</td><td>৳'+money(grandTotalPaid)+'</td>'
+      +'<td>'+(grandTotalDue>0?'<span style="color:var(--red);">৳'+money(grandTotalDue)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>')+'</td>'
+      +'<td>৳'+money(grandTotalProfit)+'</td><td></td></tr></tfoot>'
+      +'</table></div>'
+      +(totalPages>1?'<div class="pagination no-print">'+pgBtns+'</div>':'');
+    listEl.querySelectorAll('.cust-pick-btn').forEach(b=>{ b.addEventListener('click',()=>{ reportsSelectedCustId=b.dataset.id; renderCustList(); renderCustDetail(); }); });
+    listEl.querySelectorAll('.pagination-btn').forEach(b=>{ b.addEventListener('click',()=>{ if(!b.disabled){ custRptPage=Number(b.dataset.crp); renderCustList(); } }); });
   }
   function renderCustDetail(){
     const el = document.getElementById('custReportDetail');
@@ -2174,7 +2681,7 @@ function renderCustomerReport(body){
           <tbody>${sales.map(s=>{
             const profit = saleNetProfit(s);
             const returned = saleReturnedQty(s.id);
-            return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
+            return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml((s.productName||'').split(' ')[0])}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
           }).join('')}</tbody>
         </table>`}
       </div>
@@ -2187,7 +2694,7 @@ function renderCustomerReport(body){
         </table>`}
       </div>
     `;
-    document.getElementById('custPrintBtn').addEventListener('click', () => window.print());
+    document.getElementById('custPrintBtn').addEventListener('click', () => custRptPrint());
   }
   renderCustList();
   renderCustDetail();
@@ -2198,6 +2705,10 @@ function renderSupplierReport(body){
   body.innerHTML = `
     <div class="toolbar no-print">
       <input type="text" id="suppReportSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(reportsSuppQuery)}">
+      <select id="suppRangeType">
+        <option value="yearmonth">${t('all_years')}</option>
+        <option value="custom">${t('range_custom')}</option>
+      </select>
       <select id="suppYearSelect">
         <option value="all">${t('all_years')}</option>
         ${years.map(y=>`<option value="${y}" ${suppReportYear===y?'selected':''}>${y}</option>`).join('')}
@@ -2206,6 +2717,9 @@ function renderSupplierReport(body){
         <option value="all">${t('all_months')}</option>
         ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(suppReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
       </select>
+      <input type="date" id="suppFromDate" style="display:none;">
+      <input type="date" id="suppToDate" style="display:none;">
+      <button class="btn ghost" id="suppRptPrintBtn" style="margin-left:auto;">${t('print_report')}</button>
     </div>
     <div id="suppReportList" class="no-print"></div>
     <div id="suppReportDetail"></div>
@@ -2216,14 +2730,24 @@ function renderSupplierReport(body){
     reportsSuppQuery = e.target.value;
     renderSuppList();
   });
+  document.getElementById('suppRangeType').addEventListener('change', (e) => {
+    suppRangeMode = e.target.value;
+    const isCustom = suppRangeMode==='custom';
+    document.getElementById('suppFromDate').style.display = isCustom?'':'none';
+    document.getElementById('suppToDate').style.display = isCustom?'':'none';
+    document.getElementById('suppYearSelect').style.display = isCustom?'none':'';
+    document.getElementById('suppMonthSelect').style.display = isCustom?'none':'';
+    renderSuppList(); renderSuppDetail();
+  });
   document.getElementById('suppYearSelect').addEventListener('change', (e) => {
-    suppReportYear = e.target.value;
-    renderSuppDetail();
+    suppReportYear = e.target.value; renderSuppList(); renderSuppDetail();
   });
   document.getElementById('suppMonthSelect').addEventListener('change', (e) => {
-    suppReportMonth = e.target.value;
-    renderSuppDetail();
+    suppReportMonth = e.target.value; renderSuppList(); renderSuppDetail();
   });
+  document.getElementById('suppFromDate').addEventListener('change', (e) => { suppFromDate=e.target.value; renderSuppList(); renderSuppDetail(); });
+  document.getElementById('suppToDate').addEventListener('change', (e) => { suppToDate=e.target.value; renderSuppList(); renderSuppDetail(); });
+  document.getElementById('suppRptPrintBtn').addEventListener('click', ()=>window.print());
   function renderSuppList(){
     const q = reportsSuppQuery.trim().toLowerCase();
     const entries = Object.entries(db.suppliers).filter(([id,s]) => !q || s.name.toLowerCase().includes(q) || (s.phone && s.phone.toLowerCase().includes(q)));
@@ -2280,12 +2804,11 @@ function renderSupplierReport(body){
 const CONFIG = {
   customers: {
     titleKey:'title_customers', addLabelKey:'add_customers',
-    columns:[{k:'displayId',hKey:'col_id', fmt:v=>v?('#'+v):'—'},{k:'name',hKey:'col_name'},{k:'passport',hKey:'col_passport', fmt:v=>v||'—'},{k:'phone',hKey:'col_phone'},{k:'tracking',hKey:'col_tracking', fmt:v=>v||'—'},{k:'email',hKey:'col_email', fmt:v=>v||'—'},{k:'address',hKey:'col_address'},{k:'due',hKey:'col_due_amt', fmt:v=>'৳'+money(v)}],
+    columns:[{k:'displayId',hKey:'col_id', fmt:v=>v?('#'+v):'—'},{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'passport',hKey:'col_passport', fmt:v=>v||'—'},{k:'email',hKey:'col_email', fmt:v=>v||'—'},{k:'address',hKey:'col_address'},{k:'due',hKey:'col_due_amt', fmt:v=>'৳'+money(v)}],
     fields:[
       {key:'name', labelKey:'f_name', type:'text', required:true, suggest:true},
       {key:'phone', labelKey:'f_phone', type:'text', suggest:true},
       {key:'passport', labelKey:'f_passport', type:'text', suggest:true},
-      {key:'tracking', labelKey:'f_tracking', type:'text', suggest:true},
       {key:'email', labelKey:'f_email', type:'email', suggest:true},
       {key:'address', labelKey:'f_address', type:'text', suggest:true},
       {key:'note', labelKey:'f_note', type:'text', suggest:true},
@@ -2299,13 +2822,18 @@ const CONFIG = {
   },
   suppliers: {
     titleKey:'title_suppliers', addLabelKey:'add_suppliers',
-    columns:[{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'address',hKey:'col_address'}],
+    columns:[
+      {k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'address',hKey:'col_address'},
+      {k:'due',hKey:'col_due',fmt:v=>Number(v||0)>0?'<span class="pill red">৳'+money(v)+'</span>':'<span class="pill green">'+t('vnd_clear')+'</span>'}
+    ],
     fields:[
       {key:'name', labelKey:'f_name', type:'text', required:true, suggest:true},
       {key:'phone', labelKey:'f_phone', type:'text', suggest:true},
       {key:'address', labelKey:'f_address', type:'text', suggest:true},
+      {key:'note', labelKey:'f_note', type:'text', suggest:true},
     ],
-    isObj:true
+    isObj:true,
+    extraRowActions:(id,item)=>'<button class="icon-btn" title="'+t('vnd_statement')+'" data-vndstmt="'+id+'">📋</button>'
   },
   categories: {
     titleKey:'title_categories', addLabelKey:'add_categories',
@@ -2338,16 +2866,30 @@ const CONFIG = {
   },
   purchases: {
     titleKey:'title_purchases', addLabelKey:'add_purchases',
-    columns:[{k:'date',hKey:'col_date'},{k:'supplierName',hKey:'col_supplier'},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'unitCost',hKey:'col_unit_cost',fmt:v=>'৳'+money(v)},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)}],
+    columns:[
+      {k:'date',hKey:'col_date'},{k:'supplierName',hKey:'col_supplier'},
+      {k:'sector',hKey:'f_sector',fmt:v=>v||'—'},
+      {k:'qty',hKey:'f_pur_qty'},
+      {k:'unitCost',hKey:'col_unit_cost',fmt:v=>'৳'+money(v)},
+      {k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)},
+      {k:'paid',hKey:'col_paid',fmt:v=>'৳'+money(v||0)},
+      {k:'due',hKey:'col_due',fmt:v=>Number(v||0)>0?'<span class="pill red">৳'+money(v)+'</span>':'<span class="pill green">'+t('vnd_clear')+'</span>'}
+    ],
     fields:[
       {key:'supplierId', labelKey:'f_supplier_select', type:'select', optionsFrom:'suppliers', required:true, quickAdd:'suppliers'},
-      {key:'productId', labelKey:'f_product_select', type:'select', optionsFrom:'products', required:true, quickAdd:'products'},
-      {key:'qty', labelKey:'f_qty', type:'number', required:true},
+      {key:'sector', labelKey:'f_sector', type:'text', required:true, suggest:true, suggestFromPurchases:'sector'},
+      {key:'qty', labelKey:'f_pur_qty', type:'number', required:true},
       {key:'unitCost', labelKey:'f_unit_cost', type:'number', required:true},
+      {key:'paid', labelKey:'f_paid', type:'number'},
       {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
+      {key:'note', labelKey:'f_note', type:'text', suggest:true},
     ],
     isObj:false,
-    noEdit:true
+    extraRowActions:(id,item)=>{
+      const canReturn = (Number(item.qty) - purchaseReturnedQty(id)) > 0;
+      return '<button class="icon-btn" title="'+t('vnd_statement')+'" data-vndstmt="'+item.supplierId+'">📋</button>'
+        +(canReturn?'<button class="icon-btn" title="'+t('vnd_return_btn')+'" data-purreturn="'+id+'">↩️</button>':'');
+    }
   },
   sales: {
     titleKey:'title_sales', addLabelKey:'add_sales',
@@ -2438,11 +2980,31 @@ function renderListPage(tab){
   }
 
   applyFilters();
-  document.getElementById('pgSearch').addEventListener('input', applyFilters);
+  document.getElementById('pgSearch').addEventListener('input', ()=>{ pgCurrentPage=1; applyFilters(); });
   if(isProducts) document.getElementById('pgCatFilter').addEventListener('change', applyFilters);
   document.getElementById('pgAddBtn').addEventListener('click', () => {
     if(tab==='sales') openMultiSale(); else openForm(tab, null);
   });
+}
+
+let pgCurrentPage = 1;
+const PG_PAGE_SIZE = 25;
+
+function makePagination(total, current, onPage){
+  if(total <= 1) return '';
+  let html = '<div class="pagination no-print">';
+  html += '<button class="pagination-btn" '+(current===1?'disabled':'')+' data-pg="'+(current-1)+'">&#8249;</button>';
+  for(let p=1;p<=total;p++){
+    if(p===1||p===total||(p>=current-2&&p<=current+2)){
+      html += '<button class="pagination-btn'+(p===current?' active':'')+'" data-pg="'+p+'">'+p+'</button>';
+    } else if(p===current-3||p===current+3){
+      html += '<span class="pg-info">…</span>';
+    }
+  }
+  html += '<button class="pagination-btn" '+(current===total?'disabled':'')+' data-pg="'+(current+1)+'">&#8250;</button>';
+  html += '<span class="pg-info">'+((current-1)*PG_PAGE_SIZE+1)+'-'+Math.min(current*PG_PAGE_SIZE,total*PG_PAGE_SIZE)+'</span>';
+  html += '</div>';
+  return html;
 }
 
 function renderTable(tab, items, search){
@@ -2454,13 +3016,27 @@ function renderTable(tab, items, search){
   const wrap = document.getElementById('pgTableWrap');
   if(filtered.length===0){
     wrap.innerHTML = `<div class="empty"><div class="big">${t('no_data')}</div>${t('no_data_hint')}</div>`;
+    pgCurrentPage = 1;
     return;
   }
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PG_PAGE_SIZE));
+  if(pgCurrentPage > totalPages) pgCurrentPage = 1;
+  const paged = filtered.slice((pgCurrentPage-1)*PG_PAGE_SIZE, pgCurrentPage*PG_PAGE_SIZE);
+  const pgInfo = '<span class="pg-info" style="margin-left:8px;">'+(((pgCurrentPage-1)*PG_PAGE_SIZE)+1)+'-'+Math.min(pgCurrentPage*PG_PAGE_SIZE,filtered.length)+' / '+filtered.length+'</span>';
+
+  let pgBtns = '<button class="pagination-btn" '+(pgCurrentPage===1?'disabled':'')+' data-pg="'+(pgCurrentPage-1)+'">&#8249;</button>';
+  for(let p=1;p<=totalPages;p++){
+    if(p===1||p===totalPages||(p>=pgCurrentPage-2&&p<=pgCurrentPage+2)) pgBtns+='<button class="pagination-btn'+(p===pgCurrentPage?' active':'')+'" data-pg="'+p+'">'+p+'</button>';
+    else if(p===pgCurrentPage-3||p===pgCurrentPage+3) pgBtns+='<span class="pg-info">…</span>';
+  }
+  pgBtns+='<button class="pagination-btn" '+(pgCurrentPage===totalPages?'disabled':'')+' data-pg="'+(pgCurrentPage+1)+'">&#8250;</button>';
+  pgBtns+=pgInfo;
+
   wrap.innerHTML = `
     <table class="data">
       <thead><tr>${cfg.columns.map(c=>`<th>${t(c.hKey)}</th>`).join('')}<th></th></tr></thead>
       <tbody>
-        ${filtered.map(([id,item]) => {
+        ${paged.map(([id,item]) => {
           const isLow = cfg.isLow && cfg.isLow(item);
           const isGroup = !!item._groupIds;
           return `<tr class="${isLow?'low':''}">
@@ -2473,7 +3049,21 @@ function renderTable(tab, items, search){
           </tr>`;
         }).join('')}
       </tbody>
-    </table>`;
+    </table>
+    ${totalPages>1 ? '<div class="pagination no-print">'+pgBtns+'</div>' : ''}`;
+
+  wrap.querySelectorAll('.pagination-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      if(!b.disabled){ pgCurrentPage=Number(b.dataset.pg); renderTable(tab,items,search); }
+    });
+  });
+  // Vendor statement + purchase return buttons
+  wrap.querySelectorAll('[data-vndstmt]').forEach(b=>{
+    b.addEventListener('click',()=> openVendorStatement(b.dataset.vndstmt));
+  });
+  wrap.querySelectorAll('[data-purreturn]').forEach(b=>{
+    b.addEventListener('click',()=> openPurchaseReturnForVendor2(b.dataset.purreturn));
+  });
 }
 
 /* ---------- Generic Form Modal ---------- */
@@ -2503,6 +3093,10 @@ function openForm(tab, id){
     if(f.suggest){
       const collection = cfg.isObj ? Object.values(db[tab]) : db[tab];
       let suggestions = [...new Set(collection.map(it=>it[f.key]).filter(Boolean))];
+      if(f.suggestFromPurchases){
+        const purSugg = [...new Set(db.purchases.map(p=>p[f.suggestFromPurchases]).filter(Boolean))];
+        suggestions = [...new Set([...purSugg, ...suggestions])];
+      }
       if(f.suggestFromCategories){
         const catNames = Object.values(db.categories).map(c=>c.name).filter(Boolean);
         suggestions = [...new Set([...catNames, ...suggestions])];
@@ -2571,19 +3165,46 @@ async function handleSave(tab, id, values){
   }
   else if(tab==='purchases'){
     const supplier = db.suppliers[values.supplierId];
-    const product = db.products[values.productId];
-    if(!product){ alert(t('product_not_found')); return; }
     const total = Number(values.qty) * Number(values.unitCost);
-    product.qty = Number(product.qty) + Number(values.qty);
-    product.cost = Number(values.unitCost);
-    const record = {
-      id: uid(), supplierId: values.supplierId, supplierName: supplier?supplier.name:'—',
-      productId: values.productId, productName: product.name,
-      qty: Number(values.qty), unitCost: Number(values.unitCost), total, date: values.date, ts: Date.now()
-    };
-    db.purchases.push(record);
-    await safePut('products', values.productId, product);
-    await safePut('purchases', record.id, record);
+    const paidNow = Math.min(Number(values.paid||0), total);
+    const dueAmt = total - paidNow;
+
+    if(id){
+      // ── EDIT: reverse old effects ──
+      const existing = db.purchases.find(x=>x.id===id);
+      if(existing && existing.supplierId){
+        const oldSup = db.suppliers[existing.supplierId];
+        if(oldSup){ oldSup.due = Number(oldSup.due||0) - Number(existing.due||0); await safePut('suppliers', existing.supplierId, oldSup); }
+        const oldVp = db.vendorPayments.find(vp=>vp.purchaseId===id && vp.type==='purchase_payment');
+        if(oldVp){ db.vendorPayments = db.vendorPayments.filter(vp=>vp.id!==oldVp.id); await safeRemove('vendorPayments', oldVp.id); }
+      }
+      const updatedRecord = {...(existing||{}), supplierId:values.supplierId, supplierName:supplier?supplier.name:'—',
+        sector:values.sector||'—', note:values.note||'', qty:Number(values.qty), unitCost:Number(values.unitCost),
+        total, paid:paidNow, due:dueAmt, date:values.date };
+      const eidx = db.purchases.findIndex(x=>x.id===id);
+      if(eidx>=0) db.purchases[eidx] = updatedRecord;
+      await safePut('purchases', id, updatedRecord);
+      if(supplier){ supplier.due = Number(supplier.due||0) + dueAmt; await safePut('suppliers', values.supplierId, supplier); }
+      if(paidNow>0){
+        const vp = {id:uid(), supplierId:values.supplierId, supplierName:supplier?supplier.name:'—', type:'purchase_payment', amount:paidNow, purchaseId:id, note:'Payment', date:values.date, ts:Date.now()};
+        db.vendorPayments.push(vp); await safePut('vendorPayments', vp.id, vp);
+      }
+    } else {
+      // ── NEW purchase ──
+      if(supplier){ supplier.due = Number(supplier.due||0) + dueAmt; await safePut('suppliers', values.supplierId, supplier); }
+      const record = {
+        id:uid(), supplierId:values.supplierId, supplierName:supplier?supplier.name:'—',
+        sector:values.sector||'—', note:values.note||'',
+        qty:Number(values.qty), unitCost:Number(values.unitCost), total, paid:paidNow, due:dueAmt,
+        date:values.date, ts:Date.now()
+      };
+      db.purchases.push(record);
+      await safePut('purchases', record.id, record);
+      if(paidNow>0){
+        const vp = {id:uid(), supplierId:values.supplierId, supplierName:supplier?supplier.name:'—', type:'purchase_payment', amount:paidNow, purchaseId:record.id, note:'Initial payment', date:values.date, ts:Date.now()};
+        db.vendorPayments.push(vp); await safePut('vendorPayments', vp.id, vp);
+      }
+    }
   }
   else if(tab==='sales'){
     let existing = null;
@@ -2702,6 +3323,15 @@ async function deleteInvoiceGroup(repId){
 async function deleteItem(tab, id){
   if(!confirm(t('confirm_delete'))) return;
   const cfg = CONFIG[tab];
+  if(tab==='purchases'){
+    const pur = db.purchases.find(x=>x.id===id);
+    if(pur && pur.supplierId && db.suppliers[pur.supplierId]){
+      db.suppliers[pur.supplierId].due = Number(db.suppliers[pur.supplierId].due||0) - Number(pur.due||0);
+      await safePut('suppliers', pur.supplierId, db.suppliers[pur.supplierId]);
+    }
+    const oldVp = db.vendorPayments.find(vp=>vp.purchaseId===id && vp.type==='purchase_payment');
+    if(oldVp){ db.vendorPayments = db.vendorPayments.filter(vp=>vp.id!==oldVp.id); await safeRemove('vendorPayments', oldVp.id); }
+  }
   if(cfg.isObj) delete db[tab][id];
   else db[tab] = db[tab].filter(x=>x.id!==id);
   await safeRemove(tab, id);
@@ -2751,11 +3381,17 @@ setupOverlayBackdropClose('historyOverlay');
 let quickAddCtx = null; // {kind, fieldKey}
 function openQuickAdd(kind, fieldKey){
   quickAddCtx = {kind, fieldKey};
-  document.getElementById('quickAddTitle').textContent = kind==='customers' ? t('quick_add_customer') : t('quick_add_product');
+  document.getElementById('quickAddTitle').textContent = kind==='customers' ? t('quick_add_customer') : kind==='suppliers' ? t('nav_suppliers') : t('quick_add_product');
   document.getElementById('quickAddCancelBtn').textContent = t('cancel');
   document.getElementById('quickAddSaveBtn').textContent = t('save');
   const fieldsEl = document.getElementById('quickAddFields');
-  if(kind==='customers'){
+  if(kind==='suppliers'){
+    fieldsEl.innerHTML = `
+      <div class="field"><label>${t('f_name')} *</label><input type="text" id="qaName" autocomplete="off"></div>
+      <div class="field"><label>${t('f_phone')}</label><input type="text" id="qaPhone" autocomplete="off"></div>
+      <div class="field"><label>${t('f_address')}</label><input type="text" id="qaAddress" autocomplete="off"></div>
+    `;
+  } else if(kind==='customers'){
     const nameSugg = [...new Set(Object.values(db.customers).map(c=>c.name).filter(Boolean))];
     const addrSugg = [...new Set(Object.values(db.customers).map(c=>c.address).filter(Boolean))];
     fieldsEl.innerHTML = `
@@ -2765,12 +3401,17 @@ function openQuickAdd(kind, fieldKey){
       </div>
       <div class="field"><label>${t('qa_phone')}</label><input type="text" id="qaPhone" autocomplete="off"></div>
       <div class="field"><label>${t('f_passport')}</label><input type="text" id="qaPassport" autocomplete="off"></div>
-      <div class="field"><label>${t('f_tracking')}</label><input type="text" id="qaTracking" autocomplete="off"></div>
       <div class="field"><label>${t('f_email')}</label><input type="email" id="qaEmail" autocomplete="off"></div>
       <div class="field"><label>${t('f_address')}</label>
         <input type="text" id="qaAddress" list="dl-qa-custaddr" autocomplete="off">
         <datalist id="dl-qa-custaddr">${addrSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist>
       </div>
+    `;
+  } else if(kind==='suppliers'){
+    fieldsEl.innerHTML = `
+      <div class="field"><label>${t('f_name')} *</label><input type="text" id="qaName" autocomplete="off"></div>
+      <div class="field"><label>${t('f_phone')}</label><input type="text" id="qaPhone" autocomplete="off"></div>
+      <div class="field"><label>${t('f_address')}</label><input type="text" id="qaAddress" autocomplete="off"></div>
     `;
   } else {
     const nameSuggestions = [...new Set(Object.values(db.products).map(p=>p.name).filter(Boolean))];
@@ -2813,13 +3454,29 @@ document.getElementById('quickAddSaveBtn').addEventListener('click', async () =>
   const name = document.getElementById('qaName').value.trim();
   if(!name){ alert(t('qa_name_required')); return; }
   const key = uid();
-  if(kind==='customers'){
+  if(kind==='suppliers'){
+    const phone = document.getElementById('qaPhone') ? document.getElementById('qaPhone').value.trim() : '';
+    const address = document.getElementById('qaAddress') ? document.getElementById('qaAddress').value.trim() : '';
+    const record = { name, phone, address, due:0 };
+    db.suppliers[key] = record;
+    await safePut('suppliers', key, record);
+    closeQuickAdd();
+    showToast(t('saved_toast'));
+    if(fieldKey){
+      const sel = document.querySelector(`[data-key="${fieldKey}"]`);
+      if(sel && sel.tagName==='SELECT'){
+        const opt = document.createElement('option');
+        opt.value = key; opt.text = name; opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }
+    return;
+  } else if(kind==='customers'){
     const phone = document.getElementById('qaPhone').value.trim();
     const passport = document.getElementById('qaPassport').value.trim();
-    const tracking = document.getElementById('qaTracking').value.trim();
     const email = document.getElementById('qaEmail').value.trim();
     const address = document.getElementById('qaAddress').value.trim();
-    const record = { name, phone, passport, tracking, email, address, due:0, displayId: nextCustomerDisplayId() };
+    const record = { name, phone, passport, email, address, due:0, displayId: nextCustomerDisplayId() };
     db.customers[key] = record;
     await safePut('customers', key, record);
   } else {
@@ -3157,11 +3814,24 @@ function renderReturnsPage(){
       listEl.innerHTML = `<div class="empty"><div class="big">${t('return_no_history')}</div></div>`;
       return;
     }
+    const retPageTotal = Math.max(1, Math.ceil(list.length / 25));
+    if(retListPage[0] > retPageTotal) retListPage[0] = 1;
+    const retPaged = list.slice((retListPage[0]-1)*25, retListPage[0]*25);
+    let pgBtns='';
+    if(retPageTotal>1){
+      pgBtns+='<button class="pagination-btn" '+(retListPage[0]===1?'disabled':'')+' data-rp="p">&#8249;</button>';
+      for(let p=1;p<=retPageTotal;p++){
+        if(p===1||p===retPageTotal||(p>=retListPage[0]-2&&p<=retListPage[0]+2)) pgBtns+='<button class="pagination-btn'+(p===retListPage[0]?' active':'')+'" data-rp="'+p+'">'+p+'</button>';
+        else if(p===retListPage[0]-3||p===retListPage[0]+3) pgBtns+='<span class="pg-info">…</span>';
+      }
+      pgBtns+='<button class="pagination-btn" '+(retListPage[0]===retPageTotal?'disabled':'')+' data-rp="n">&#8250;</button>';
+      pgBtns+='<span class="pg-info">'+((retListPage[0]-1)*25+1)+'-'+Math.min(retListPage[0]*25,list.length)+' / '+list.length+'</span>';
+    }
     listEl.innerHTML = `
       <table class="data">
         <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th><th></th></tr></thead>
         <tbody>
-          ${list.map(r => `<tr class="${r.cancelled?'':''}">
+          ${retPaged.map(r => `<tr class="${r.cancelled?'':''}">
             <td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td>
             <td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td>
             <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
@@ -3173,8 +3843,17 @@ function renderReturnsPage(){
           </tr>`).join('')}
         </tbody>
       </table>
+      ${retPageTotal>1 ? '<div class="pagination no-print">'+pgBtns+'</div>' : ''}
     `;
+    if(retPageTotal>1){
+      listEl.querySelectorAll('.pagination-btn').forEach(b=>b.addEventListener('click',()=>{
+        const v=b.dataset.rp;
+        if(v==='p'&&retListPage[0]>1){retListPage[0]--;} else if(v==='n'&&retListPage[0]<retPageTotal){retListPage[0]++;} else if(!isNaN(v)){retListPage[0]=Number(v);}
+        renderList();
+      }));
+    }
   }
+  let retListPage=[1];
   renderList();
 }
 
@@ -3210,7 +3889,7 @@ function openSaleView(id){
         ${groupItems.map(it => {
           const returned = saleReturnedQty(it.id);
           const remaining = Number(it.qty) - returned;
-          return `<tr><td>${escapeHtml(it.productName)}</td><td>${it.qty}</td><td>৳${money(it.unitPrice)}</td><td>${Number(it.discount)>0?'৳'+money(it.discount):'—'}</td><td>৳${money(it.total)}</td><td>${returned>0?returned:'—'}</td><td>${remaining}</td><td class="no-print">${remaining>0?`<button class="btn ghost small" onclick="openReturnForm('${it.id}')">↩️ ${t('return_new')}</button>`:''}</td></tr>`;
+          return `<tr><td>${escapeHtml((it.productName||'').split(' ')[0])}</td><td>${it.qty}</td><td>৳${money(it.unitPrice)}</td><td>${Number(it.discount)>0?'৳'+money(it.discount):'—'}</td><td>৳${money(it.total)}</td><td>${returned>0?returned:'—'}</td><td>${remaining}</td><td class="no-print">${remaining>0?`<button class="btn ghost small" onclick="openReturnForm('${it.id}')">↩️ ${t('return_new')}</button>`:''}</td></tr>`;
         }).join('')}
       </tbody>
     </table>
@@ -3556,6 +4235,8 @@ function openPayDue(custId){
   document.getElementById('dueDiscountLabel').textContent = t('pay_discount');
   document.getElementById('dueDateLabel').textContent = t('f_date');
   document.getElementById('dueNoteLabel').textContent = t('f_note');
+  if(document.getElementById('duePaymentLabel')) document.getElementById('duePaymentLabel').textContent = t('col_payment_system');
+  if(document.getElementById('duePaymentSystem')) document.getElementById('duePaymentSystem').value = 'cash';
   document.getElementById('dueNoteInput').value = '';
   document.getElementById('dueIsOldEntry').checked = false;
   document.getElementById('dueIsOldEntryLabel').textContent = t('f_is_old_entry');
@@ -3613,6 +4294,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const instRecord = {
     id: uid(), receiptNo: nextReceiptNo(), customerId: dueCtx, customerName: cust.name,
     amount: paid, discount, previousDue, newDue, note, isOldEntry,
+    paymentSystem: instPaymentSystem,
     date: payDate, ts: new Date(payDate).getTime() || Date.now()
   };
   db.installments.push(instRecord);
@@ -3651,6 +4333,63 @@ document.getElementById('instReceiptCloseBtn').addEventListener('click', () => {
 document.getElementById('instReceiptPrintBtn').addEventListener('click', () => window.print());
 setupOverlayBackdropClose('instReceiptOverlay');
 
+
+function openInstallmentEdit(instId, custId){
+  const rec = db.installments.find(x=>x.id===instId);
+  if(!rec) return;
+  const html = '<div class="overlay open" id="instEditOverlay" style="z-index:200;">'
+    +'<div class="modal" style="max-width:400px;">'
+    +'<h2>'+t('edit_title')+' — '+t('nav_installments')+'</h2>'
+    +'<div class="field"><label>'+t('inst_col_amount')+' *</label>'
+    +'<input type="number" id="ieAmt" value="'+rec.amount+'" min="0" step="any"></div>'
+    +'<div class="field"><label>'+t('inst_col_discount')+'</label>'
+    +'<input type="number" id="ieDisc" value="'+(rec.discount||0)+'" min="0" step="any"></div>'
+    +'<div class="field"><label>'+t('col_date')+'</label>'
+    +'<input type="date" id="ieDate" value="'+rec.date+'"></div>'
+    +'<div class="field"><label>'+t('f_note')+'</label>'
+    +'<input type="text" id="ieNote" value="'+escapeHtml(rec.note||'')+'"></div>'
+    +'<div style="display:flex;gap:10px;margin-top:16px;">'
+    +'<button class="btn" id="ieCancel">'+t('cancel')+'</button>'
+    +'<button class="btn amber" id="ieSave">'+t('save')+'</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  document.getElementById('ieCancel').onclick = ()=> document.getElementById('instEditOverlay').remove();
+  document.getElementById('ieSave').onclick = async function(){
+    const newAmt = Number(document.getElementById('ieAmt').value);
+    const newDisc = Number(document.getElementById('ieDisc').value||0);
+    const newDate = document.getElementById('ieDate').value;
+    const newNote = document.getElementById('ieNote').value.trim();
+    if(newAmt < 0){ alert(t('inst_col_amount')); return; }
+
+    const oldTotal = Number(rec.amount) + Number(rec.discount||0);
+    const newTotal = newAmt + newDisc;
+    const diff = newTotal - oldTotal; // বেশি দিলে + কম দিলে -
+
+    // Customer due update
+    const cust2 = db.customers[rec.customerId];
+    if(cust2){
+      cust2.due = Math.max(0, Number(cust2.due||0) - diff);
+      await safePut('customers', rec.customerId, cust2);
+    }
+
+    // Record update
+    rec.amount = newAmt;
+    rec.discount = newDisc;
+    rec.date = newDate;
+    rec.note = newNote;
+    rec.newDue = Math.max(0, Number(rec.previousDue) - newTotal);
+    await safePut('installments', rec.id, rec);
+
+    const idx = db.installments.findIndex(x=>x.id===rec.id);
+    if(idx>=0) db.installments[idx] = rec;
+
+    document.getElementById('instEditOverlay').remove();
+    showToast(t('saved_toast'));
+    openInstallmentHistory(custId);
+  };
+}
+
 function openInstallmentHistory(custId){
   const cust = db.customers[custId];
   if(!cust) return;
@@ -3672,11 +4411,45 @@ function openInstallmentHistory(custId){
       </div>`).join('') : ''}
     ${list.length===0 ? `<div class="empty"><div class="big">${t('inst_no_history')}</div></div>` : `
     <table class="data">
-      <thead><tr><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
-      <tbody>${list.map(r=>`<tr><td>${formatDateDMY(r.date)}</td><td>৳${money(r.previousDue)}</td><td>৳${money(r.amount)}</td><td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td><td>৳${money(r.newDue)}</td><td>${escapeHtml(r.note||'—')}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
+      <tbody>${list.map(r=>`<tr>
+        <td>${formatDateDMY(r.date)}</td>
+        <td>৳${money(r.previousDue)}</td>
+        <td>৳${money(r.amount)}</td>
+        <td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td>
+        <td>৳${money(r.newDue)}</td>
+        <td>${escapeHtml(r.note||'—')}</td>
+        <td class="actions-cell no-print">
+          <button class="icon-btn inst-edit-btn" data-id="${r.id}" title="${t('edit_title')}">✏️</button>
+          <button class="icon-btn inst-del-btn" data-id="${r.id}" title="${t('delete_title')}">🗑️</button>
+        </td>
+      </tr>`).join('')}</tbody>
     </table>`}
   `;
   document.getElementById('instHistoryOverlay').classList.add('open');
+
+  // Edit button
+  document.getElementById('instHistoryBody').querySelectorAll('.inst-edit-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> openInstallmentEdit(btn.dataset.id, custId));
+  });
+  // Delete button
+  document.getElementById('instHistoryBody').querySelectorAll('.inst-del-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm(t('delete_confirm'))) return;
+      const rec = db.installments.find(x=>x.id===btn.dataset.id);
+      if(!rec) return;
+      // Reverse: customer due বাড়াও
+      const cust2 = db.customers[rec.customerId];
+      if(cust2){
+        cust2.due = Number(cust2.due||0) + Number(rec.amount) + Number(rec.discount||0);
+        await safePut('customers', rec.customerId, cust2);
+      }
+      db.installments = db.installments.filter(x=>x.id!==rec.id);
+      await safeRemove('installments', rec.id);
+      showToast(t('deleted_toast'));
+      openInstallmentHistory(custId);
+    });
+  });
 }
 document.getElementById('instHistoryCloseBtn').addEventListener('click', () => {
   document.getElementById('instHistoryOverlay').classList.remove('open');
