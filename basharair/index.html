@@ -1322,7 +1322,11 @@ function saleReturnedQty(saleId){
   return db.returns.filter(r=>r.saleId===saleId && !r.cancelled).reduce((s,r)=>s+Number(r.qty),0);
 }
 function saleGrossProfit(sale){
-  return (Number(sale.unitPrice)-Number(sale.unitCost||0))*Number(sale.qty) - Number(sale.discount||0);
+  // Package cost: current product cost ব্যবহার করো (edit এ update হয়)
+  // Fallback: sale এ save করা unitCost
+  const product = db.products[sale.productId];
+  const currentCost = product ? Number(product.cost||0) : Number(sale.unitCost||0);
+  return (Number(sale.unitPrice) - currentCost) * Number(sale.qty) - Number(sale.discount||0);
 }
 function saleReturnedProfitAmount(sale){
   if(!sale || !Number(sale.qty)) return 0;
@@ -2503,8 +2507,14 @@ let overviewFrom = '';
 let overviewTo = '';
 let custReportYear = 'all';
 let custReportMonth = 'all';
+let custFromDate = '';
+let custToDate = '';
+let custRangeMode = 'yearmonth';
 let suppReportYear = 'all';
 let suppReportMonth = 'all';
+let suppFromDate='';
+let suppToDate='';
+let suppRangeMode='yearmonth';
 
 function pad2(n){ return String(n).padStart(2,'0'); }
 function toISODate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
@@ -2668,6 +2678,7 @@ function renderReportsPage(){
       <button class="sub-tab ${reportsSubTab==='group'?'active':''}" data-sub="group">${t('rep_group_tab')}</button>
       <button class="sub-tab ${reportsSubTab==='supplier'?'active':''}" data-sub="supplier">${t('nav_suppliers')}</button>
       <button class="sub-tab ${reportsSubTab==='stock'?'active':''}" data-sub="stock">${t('nav_products')}</button>
+      <button class="sub-tab ${reportsSubTab==='purchaserpt'?'active':''}" data-sub="purchaserpt">${t('nav_purchases')}</button>
     </div>
     <div id="reportsBody"></div>
   `;
@@ -2684,6 +2695,7 @@ function renderReportsPage(){
   else if(reportsSubTab==='supplier') renderSupplierReport(body);
   else if(reportsSubTab==='group') renderGroupReport(body);
   else if(reportsSubTab==='stock') renderStockReport(body);
+  else if(reportsSubTab==='purchaserpt') renderPurchaseReport(body);
 }
 
 let summaryRange = 'last14';
@@ -2987,6 +2999,79 @@ function renderInstallmentOnlyReport(body){
   refresh();
 }
 
+
+function renderPurchaseReport(body){
+  body.innerHTML = buildRangeToolbar('purRpt');
+  const toolbar = body.querySelector('.toolbar');
+  if(toolbar){
+    const srchInp = document.createElement('input');
+    srchInp.type='text'; srchInp.placeholder=t('search_placeholder');
+    srchInp.style.flex='1'; srchInp.style.minWidth='160px';
+    srchInp.id='purRptSearch'; srchInp.value=purRptQuery;
+    toolbar.insertBefore(srchInp, toolbar.firstChild);
+  }
+
+  let purRptState = { range:'allTime', from:'', to:'' };
+  wireRangeToolbar('purRpt',
+    ()=>purRptState,
+    s=>{ purRptState=s; },
+    refresh
+  );
+
+  function refresh(){
+    const q = (document.getElementById('purRptSearch')||{value:''}).value.trim().toLowerCase();
+    purRptQuery = q;
+    const {fromStr, toStr} = resolveRange(purRptState.range, purRptState.from, purRptState.to);
+    const inRange = d => d>=fromStr && d<=toStr;
+
+    const list = db.purchases.filter(p=>{
+      const match = !q || (p.supplierName||'').toLowerCase().includes(q) || (p.sector||'').toLowerCase().includes(q);
+      return inRange(p.date) && match;
+    });
+
+    const totalPurchased = list.reduce((s,p)=>s+Number(p.total),0);
+    const totalPaid = list.reduce((s,p)=>s+Number(p.paid||0),0);
+    const totalDue = list.reduce((s,p)=>s+Number(p.due||0),0);
+
+    document.getElementById('purRptBody').innerHTML = list.length===0
+      ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
+      : `<div style="overflow-x:auto;"><table class="data">
+          <thead><tr>
+            <th>${t('col_date')}</th>
+            <th>${t('col_supplier')}</th>
+            <th>${t('f_sector')}</th>
+            <th>${t('f_pur_qty')}</th>
+            <th>${t('col_unit_cost')}</th>
+            <th>${t('col_total')}</th>
+            <th>${t('col_paid')}</th>
+            <th>${t('col_due')}</th>
+          </tr></thead>
+          <tbody>
+            ${list.map(p=>`<tr>
+              <td>${formatDateDMY(p.date)}</td>
+              <td>${escapeHtml(p.supplierName||'—')}</td>
+              <td>${escapeHtml((p.sector||p.productName||'—').split(' ')[0])}</td>
+              <td>${p.qty}</td>
+              <td>৳${money(p.unitCost)}</td>
+              <td>৳${money(p.total)}</td>
+              <td>৳${money(p.paid||0)}</td>
+              <td>${Number(p.due||0)>0?'<span class="pill red">৳'+money(p.due)+'</span>':'<span class="pill green">'+t('vnd_clear')+'</span>'}</td>
+            </tr>`).join('')}
+          </tbody>
+          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+            <td colspan="5">${t('totals_label')}</td>
+            <td>৳${money(totalPurchased)}</td>
+            <td>৳${money(totalPaid)}</td>
+            <td>${totalDue>0?'<span style="color:var(--red);">৳'+money(totalDue)+'</span>':'<span style="color:var(--green);">'+t('vnd_clear')+'</span>'}</td>
+          </tr></tfoot>
+        </table></div>`;
+  }
+  document.getElementById('purRptSearch').addEventListener('input', refresh);
+  refresh();
+}
+
+let purRptQuery = '';
+
 function renderStockReport(body){
   const categories = [...new Set([
     ...Object.values(db.categories).map(c=>c.name).filter(Boolean),
@@ -3142,6 +3227,12 @@ function renderCustomerReport(body){
         <option value="all">${t('all_months')}</option>
         ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(custReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
       </select>
+      <select id="custRangeType">
+        <option value="yearmonth">${t('all_years')+'/'+ t('all_months')}</option>
+        <option value="custom">${t('range_custom')}</option>
+      </select>
+      <input type="date" id="custFromDate" style="display:none;" value="${custFromDate||''}">
+      <input type="date" id="custToDate" style="display:none;" value="${custToDate||''}">
       <button class="btn ghost" onclick="custRptPrint()" style="margin-left:auto;">${t('print_report')}</button>
     </div>
     <div id="custReportList"></div>
@@ -3154,13 +3245,21 @@ function renderCustomerReport(body){
     renderCustList();
   });
   document.getElementById('custYearSelect').addEventListener('change', (e) => {
-    custReportYear = e.target.value;
-    renderCustDetail();
+    custReportYear = e.target.value; renderCustList(); renderCustDetail();
   });
   document.getElementById('custMonthSelect').addEventListener('change', (e) => {
-    custReportMonth = e.target.value;
-    renderCustDetail();
+    custReportMonth = e.target.value; renderCustList(); renderCustDetail();
   });
+  document.getElementById('custRangeType').addEventListener('change', (e) => {
+    custRangeMode = e.target.value;
+    document.getElementById('custFromDate').style.display = custRangeMode==='custom'?'':'none';
+    document.getElementById('custToDate').style.display = custRangeMode==='custom'?'':'none';
+    document.getElementById('custYearSelect').style.display = custRangeMode==='custom'?'none':'';
+    document.getElementById('custMonthSelect').style.display = custRangeMode==='custom'?'none':'';
+    renderCustList(); renderCustDetail();
+  });
+  document.getElementById('custFromDate').addEventListener('change', (e) => { custFromDate=e.target.value; renderCustList(); renderCustDetail(); });
+  document.getElementById('custToDate').addEventListener('change', (e) => { custToDate=e.target.value; renderCustList(); renderCustDetail(); });
   let custRptPage = 1;
   const CUST_RPT_PAGE_SIZE = 25;
 
@@ -3370,6 +3469,13 @@ function renderSupplierReport(body){
         <option value="all">${t('all_months')}</option>
         ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(suppReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
       </select>
+      <select id="suppRangeType">
+        <option value="yearmonth">${t('all_years')+'/'+ t('all_months')}</option>
+        <option value="custom">${t('range_custom')}</option>
+      </select>
+      <input type="date" id="suppFromDate" style="display:none;">
+      <input type="date" id="suppToDate" style="display:none;">
+      <button class="btn ghost" id="suppRptPrintBtn" style="margin-left:auto;">${t('print_report')}</button>
     </div>
     <div id="suppReportList" class="no-print"></div>
     <div id="suppReportDetail"></div>
@@ -3381,13 +3487,22 @@ function renderSupplierReport(body){
     renderSuppList();
   });
   document.getElementById('suppYearSelect').addEventListener('change', (e) => {
-    suppReportYear = e.target.value;
-    renderSuppDetail();
+    suppReportYear = e.target.value; renderSuppList(); renderSuppDetail();
   });
   document.getElementById('suppMonthSelect').addEventListener('change', (e) => {
-    suppReportMonth = e.target.value;
-    renderSuppDetail();
+    suppReportMonth = e.target.value; renderSuppList(); renderSuppDetail();
   });
+  document.getElementById('suppRangeType').addEventListener('change', (e) => {
+    suppRangeMode = e.target.value;
+    document.getElementById('suppFromDate').style.display = suppRangeMode==='custom'?'':'none';
+    document.getElementById('suppToDate').style.display = suppRangeMode==='custom'?'':'none';
+    document.getElementById('suppYearSelect').style.display = suppRangeMode==='custom'?'none':'';
+    document.getElementById('suppMonthSelect').style.display = suppRangeMode==='custom'?'none':'';
+    renderSuppList(); renderSuppDetail();
+  });
+  document.getElementById('suppFromDate').addEventListener('change', (e) => { suppFromDate=e.target.value; renderSuppList(); renderSuppDetail(); });
+  document.getElementById('suppToDate').addEventListener('change', (e) => { suppToDate=e.target.value; renderSuppList(); renderSuppDetail(); });
+  document.getElementById('suppRptPrintBtn').addEventListener('click', ()=>window.print());
   function renderSuppList(){
     const q = reportsSuppQuery.trim().toLowerCase();
     const entries = Object.entries(db.suppliers).filter(([id,s]) => !q || s.name.toLowerCase().includes(q) || (s.phone && s.phone.toLowerCase().includes(q)));
@@ -5007,6 +5122,61 @@ document.getElementById('instReceiptCloseBtn').addEventListener('click', () => {
 document.getElementById('instReceiptPrintBtn').addEventListener('click', () => window.print());
 setupOverlayBackdropClose('instReceiptOverlay');
 
+
+function openInstallmentEdit(instId, custId){
+  const rec = db.installments.find(x=>x.id===instId);
+  if(!rec) return;
+  const html = '<div class="overlay open" id="instEditOverlay" style="z-index:200;">'
+    +'<div class="modal" style="max-width:400px;">'
+    +'<h2>'+t('edit_title')+' — '+t('nav_installments')+'</h2>'
+    +'<div class="field"><label>'+t('inst_col_amount')+' *</label>'
+    +'<input type="number" id="ieAmt" value="'+rec.amount+'" min="0" step="any"></div>'
+    +'<div class="field"><label>'+t('inst_col_discount')+'</label>'
+    +'<input type="number" id="ieDisc" value="'+(rec.discount||0)+'" min="0" step="any"></div>'
+    +'<div class="field"><label>'+t('col_date')+'</label>'
+    +'<input type="date" id="ieDate" value="'+rec.date+'"></div>'
+    +'<div class="field"><label>'+t('f_note')+'</label>'
+    +'<input type="text" id="ieNote" value="'+escapeHtml(rec.note||'')+'"></div>'
+    +'<div style="display:flex;gap:10px;margin-top:16px;">'
+    +'<button class="btn" id="ieCancel">'+t('cancel')+'</button>'
+    +'<button class="btn amber" id="ieSave">'+t('save')+'</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  document.getElementById('ieCancel').onclick = ()=> document.getElementById('instEditOverlay').remove();
+  document.getElementById('ieSave').onclick = async function(){
+    const newAmt = Number(document.getElementById('ieAmt').value);
+    const newDisc = Number(document.getElementById('ieDisc').value||0);
+    const newDate = document.getElementById('ieDate').value;
+    const newNote = document.getElementById('ieNote').value.trim();
+    if(newAmt < 0){ alert(t('inst_col_amount')); return; }
+
+    const oldTotal = Number(rec.amount) + Number(rec.discount||0);
+    const newTotal = newAmt + newDisc;
+    const diff = newTotal - oldTotal;
+
+    const cust2 = db.customers[rec.customerId];
+    if(cust2){
+      cust2.due = Math.max(0, Number(cust2.due||0) - diff);
+      await safePut('customers', rec.customerId, cust2);
+    }
+
+    rec.amount = newAmt;
+    rec.discount = newDisc;
+    rec.date = newDate;
+    rec.note = newNote;
+    rec.newDue = Math.max(0, Number(rec.previousDue) - newTotal);
+    await safePut('installments', rec.id, rec);
+
+    const idx = db.installments.findIndex(x=>x.id===rec.id);
+    if(idx>=0) db.installments[idx] = rec;
+
+    document.getElementById('instEditOverlay').remove();
+    showToast(t('saved_toast'));
+    openInstallmentHistory(custId);
+  };
+}
+
 function openInstallmentHistory(custId){
   const cust = db.customers[custId];
   if(!cust) return;
@@ -5028,11 +5198,42 @@ function openInstallmentHistory(custId){
       </div>`).join('') : ''}
     ${list.length===0 ? `<div class="empty"><div class="big">${t('inst_no_history')}</div></div>` : `
     <table class="data">
-      <thead><tr><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
-      <tbody>${list.map(r=>`<tr><td>${formatDateDMY(r.date)}</td><td>৳${money(r.previousDue)}</td><td>৳${money(r.amount)}</td><td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td><td>৳${money(r.newDue)}</td><td>${escapeHtml(r.note||'—')}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
+      <tbody>${list.map(r=>`<tr>
+        <td>${formatDateDMY(r.date)}</td>
+        <td>৳${money(r.previousDue)}</td>
+        <td>৳${money(r.amount)}</td>
+        <td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td>
+        <td>৳${money(r.newDue)}</td>
+        <td>${escapeHtml(r.note||'—')}</td>
+        <td class="actions-cell no-print">
+          <button class="icon-btn inst-edit-btn" data-id="${r.id}" title="${t('edit_title')}">✏️</button>
+          <button class="icon-btn inst-del-btn" data-id="${r.id}" title="${t('delete_title')}">🗑️</button>
+        </td>
+      </tr>`).join('')}</tbody>
     </table>`}
   `;
   document.getElementById('instHistoryOverlay').classList.add('open');
+
+  document.getElementById('instHistoryBody').querySelectorAll('.inst-edit-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> openInstallmentEdit(btn.dataset.id, custId));
+  });
+  document.getElementById('instHistoryBody').querySelectorAll('.inst-del-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm(t('delete_confirm'))) return;
+      const rec = db.installments.find(x=>x.id===btn.dataset.id);
+      if(!rec) return;
+      const cust2 = db.customers[rec.customerId];
+      if(cust2){
+        cust2.due = Number(cust2.due||0) + Number(rec.amount) + Number(rec.discount||0);
+        await safePut('customers', rec.customerId, cust2);
+      }
+      db.installments = db.installments.filter(x=>x.id!==rec.id);
+      await safeRemove('installments', rec.id);
+      showToast(t('deleted_toast'));
+      openInstallmentHistory(custId);
+    });
+  });
 }
 document.getElementById('instHistoryCloseBtn').addEventListener('click', () => {
   document.getElementById('instHistoryOverlay').classList.remove('open');
