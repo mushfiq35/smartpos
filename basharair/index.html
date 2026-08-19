@@ -2,6 +2,7 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
+  <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>হজ্জ এজেন্সি ম্যানেজমেন্ট সিস্টেম</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4594,7 +4595,7 @@ function openMultiSale(editInvoiceId){
   document.getElementById('msVoucherLabel').textContent = t('f_voucher');
   document.getElementById('msVoucherTagLabel').textContent = t('f_voucher_tag');
   document.getElementById('msPaymentSystemLabel').textContent = t('f_payment_system');
-  document.getElementById('msIsOldEntryLabel').textContent = t('f_is_old_entry');
+  // msIsOldEntryLabel removed (field hidden)
   const paySel = document.getElementById('msPaymentSystem');
   const prevPayVal = paySel.value || 'cash';
   paySel.innerHTML = `
