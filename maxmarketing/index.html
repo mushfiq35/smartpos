@@ -141,6 +141,10 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 .pagination-page{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink);}
 .pagination-btns .btn:disabled{opacity:0.4;cursor:not-allowed;}
 .report-print-table{display:none;}
+.print-only-block{display:none;}
+@media print{
+  .print-only-block{display:block !important;}
+}
 @media print{
   .report-screen-table{display:none !important;}
   .report-print-table{display:block !important;}
@@ -438,6 +442,18 @@ const THEMES = {
   </div>
 </div>
 
+<!-- Product Stock History Modal -->
+<div class="overlay" id="productHistoryOverlay">
+  <div class="modal" style="max-width:700px;width:95%;">
+    <h2 id="productHistoryTitle">Stock History</h2>
+    <div id="productHistoryBody"></div>
+    <div class="modal-actions no-print">
+      <button class="btn ghost" id="productHistoryCloseBtn">বন্ধ করুন</button>
+      <button class="btn amber" id="productHistoryPrintBtn">🖨</button>
+    </div>
+  </div>
+</div>
+
 <!-- Pay Due Modal -->
 <div class="overlay" id="payDueOverlay">
   <div class="modal" style="max-width:360px;">
@@ -696,10 +712,14 @@ const I18N = {
     f_voucher:'অ্যাকাউন্ট নম্বর', col_voucher:'অ্যাকাউন্ট', f_voucher_tag:'নোট', col_voucher_tag:'নোট', all_categories:'সব ক্যাটাগরি',
     col_invoice_no:'ইনভয়েস নং', col_receipt_no:'রসিদ নং',
     history_type_label:'ধরন', history_type_sale:'বিক্রি', history_type_payment:'কিস্তি পেমেন্ট',
+    stock_history_title:'স্টক হিস্ট্রি', stock_hist_purchase:'ক্রয় (যোগ)', stock_hist_sale:'বিক্রি (বিয়োগ)',
+    stock_hist_opening:'শুরুর স্টক (যোগ)',
+    stock_hist_return:'রিটার্ন (যোগ)', stock_hist_in:'মোট যোগ', stock_hist_out:'মোট বিয়োগ',
+    stock_hist_none:'কোনো স্টক লেনদেন নেই',
     reports_summary_tab:'ব্যালেন্স', summary_dp:'দৈনিক প্রাপ্তি (DP)', summary_de:'দৈনিক খরচ (DE)',
     first_booking_label:'প্রথম বুকিং',
     summary_s:'ব্যালেন্স (S)', summary_final:'মোট ব্যালেন্স',
-    stock_value_label:'মোট স্টক মূল্য (ক্রয়মূল্যে)', stock_sale_value_label:'সম্ভাব্য বিক্রয় মূল্য',
+    stock_value_label:'স্টক মূল্য', stock_sale_value_label:'সেল মূল্য',
     low_stock_label:'লো-স্টক', stock_statement_title:'স্টক স্টেটমেন্ট',
     f_payment_system:'পেমেন্ট সিস্টেম', col_payment_system:'পেমেন্ট',
     payment_cash:'ক্যাশ', payment_bank:'ব্যাংক', payment_mobile_banking:'মোবাইল ব্যাংকিং',
@@ -799,10 +819,14 @@ const I18N = {
     f_voucher:'Account Number', col_voucher:'Account', f_voucher_tag:'Note', col_voucher_tag:'Note', all_categories:'All Categories',
     col_invoice_no:'Invoice No.', col_receipt_no:'Receipt No.',
     history_type_label:'Type', history_type_sale:'Sale', history_type_payment:'Installment Payment',
+    stock_history_title:'Stock History', stock_hist_purchase:'Purchase (In)', stock_hist_sale:'Sale (Out)',
+    stock_hist_opening:'Opening Stock (In)',
+    stock_hist_return:'Return (In)', stock_hist_in:'Total In', stock_hist_out:'Total Out',
+    stock_hist_none:'No stock movements yet',
     reports_summary_tab:'Balance', summary_dp:'Daily Paid (DP)', summary_de:'Daily Expense (DE)',
     first_booking_label:'First Booking',
     summary_s:'Balance (S)', summary_final:'Total Balance',
-    stock_value_label:'Total Stock Value (at cost)', stock_sale_value_label:'Potential Sale Value',
+    stock_value_label:'Stock Value', stock_sale_value_label:'Sale Value',
     low_stock_label:'Low Stock', stock_statement_title:'Stock Statement',
     f_payment_system:'Payment System', col_payment_system:'Payment',
     payment_cash:'Cash', payment_bank:'Bank', payment_mobile_banking:'Mobile Banking',
@@ -1597,6 +1621,7 @@ function renderReportsPage(){
       <button class="sub-tab ${reportsSubTab==='salesrpt'?'active':''}" data-sub="salesrpt">${t('nav_sales')}</button>
       <button class="sub-tab ${reportsSubTab==='returnsrpt'?'active':''}" data-sub="returnsrpt">${t('nav_returns')}</button>
       <button class="sub-tab ${reportsSubTab==='installmentrpt'?'active':''}" data-sub="installmentrpt">${t('nav_installments')}</button>
+      <button class="sub-tab ${reportsSubTab==='expensesrpt'?'active':''}" data-sub="expensesrpt">${t('nav_expenses')}</button>
       <button class="sub-tab ${reportsSubTab==='customer'?'active':''}" data-sub="customer">${t('nav_customers')}</button>
       <button class="sub-tab ${reportsSubTab==='supplier'?'active':''}" data-sub="supplier">${t('nav_suppliers')}</button>
       <button class="sub-tab ${reportsSubTab==='stock'?'active':''}" data-sub="stock">${t('nav_products')}</button>
@@ -1612,6 +1637,7 @@ function renderReportsPage(){
   else if(reportsSubTab==='salesrpt') renderSalesOnlyReport(body);
   else if(reportsSubTab==='returnsrpt') renderReturnsOnlyReport(body);
   else if(reportsSubTab==='installmentrpt') renderInstallmentOnlyReport(body);
+  else if(reportsSubTab==='expensesrpt') renderExpensesOnlyReport(body);
   else if(reportsSubTab==='customer') renderCustomerReport(body);
   else if(reportsSubTab==='supplier') renderSupplierReport(body);
   else if(reportsSubTab==='stock') renderStockReport(body);
@@ -1881,6 +1907,38 @@ function renderInstallmentOnlyReport(body){
   refresh();
 }
 
+let expRptRange='last14', expRptFrom='', expRptTo='';
+function renderExpensesOnlyReport(body){
+  body.innerHTML = buildRangeToolbar('expRpt');
+  function refresh(){
+    const st = {range:expRptRange, from:expRptFrom, to:expRptTo};
+    const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('expRptFromDate').value, st.to || document.getElementById('expRptToDate').value);
+    const list = db.expenses.filter(e=>e.date>=fromStr && e.date<=toStr).sort((a,b)=>b.ts-a.ts);
+    const totalAmount = list.reduce((s,x)=>s+Number(x.amount),0);
+    document.getElementById('expRptBody').innerHTML = `
+      <div class="stat-grid no-print cols-2">
+        <div class="stat-card c7"><div class="val">৳${money(totalAmount)}</div><div class="lbl">${t('f_amount')} (${t('totals_label')})</div></div>
+        <div class="stat-card c4"><div class="val">${list.length}</div><div class="lbl">${t('nav_expenses')}</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('nav_expenses')}</h3>
+        ${renderReportTableWithPagination('expRptTable', list,
+          `<tr><th>${t('col_date')}</th><th>${t('f_expense_cat')}</th><th>${t('f_amount')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr>`,
+          e=>`<tr><td>${formatDateDMY(e.date)}</td><td>${escapeHtml(e.category)}</td><td>৳${money(e.amount)}</td><td>${escapeHtml(e.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openForm('expenses','${e.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteItem('expenses','${e.id}')">🗑️</button></td></tr>`,
+          `<tfoot><tr style="font-weight:700;"><td colspan="2">${t('totals_label')}</td><td>৳${money(totalAmount)}</td><td colspan="2"></td></tr></tfoot>`
+        )}
+      </div>
+    `;
+    wirePaginationEvents('expRptTable', refresh);
+  }
+  wireRangeToolbar('expRpt',
+    () => ({range:expRptRange, from:expRptFrom, to:expRptTo}),
+    (s) => { expRptRange=s.range; expRptFrom=s.from; expRptTo=s.to; },
+    refresh
+  );
+  refresh();
+}
+
 function renderStockReport(body){
   const categories = [...new Set([
     ...Object.values(db.categories).map(c=>c.name).filter(Boolean),
@@ -2023,8 +2081,7 @@ function renderCustomerReport(body){
         ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(custReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
       </select>
     </div>
-    <div id="custReportList" class="no-print"></div>
-    <div id="custReportDetail"></div>
+    <div id="custReportList"></div>
   `;
   document.getElementById('custYearSelect').value = custReportYear;
   document.getElementById('custMonthSelect').value = custReportMonth;
@@ -2046,7 +2103,7 @@ function renderCustomerReport(body){
     const listEl = document.getElementById('custReportList');
     listEl.innerHTML = entries.length===0
       ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
-      : `<table class="data">
+      : `<table class="data no-print">
           <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_due_amt')}</th><th></th></tr></thead>
           <tbody>${entries.map(([id,c]) => `
             <tr style="${reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':''}">
@@ -2055,35 +2112,39 @@ function renderCustomerReport(body){
               <td>${escapeHtml(c.phone||'—')}</td>
               <td>৳${money(c.due)}</td>
               <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${id}" title="${t('view_title')}">👁</button></td>
-            </tr>`).join('')}</tbody>
-        </table>`;
+            </tr>
+            ${reportsSelectedCustId===id ? `<tr><td colspan="5" style="padding:0;border-bottom:none;background:transparent;"><div style="padding:14px 0;">${buildCustDetailHtml(id)}</div></td></tr>` : ''}
+          `).join('')}</tbody>
+        </table>
+        ${reportsSelectedCustId ? `<div class="print-only-block">${buildCustDetailHtml(reportsSelectedCustId)}</div>` : ''}`;
     listEl.querySelectorAll('.cust-pick-btn').forEach(b => {
       b.addEventListener('click', () => {
-        reportsSelectedCustId = b.dataset.id;
+        reportsSelectedCustId = (reportsSelectedCustId===b.dataset.id) ? null : b.dataset.id;
         renderCustList();
-        renderCustDetail();
       });
     });
+    const printBtns = listEl.querySelectorAll('.cust-print-btn');
+    printBtns.forEach(b => b.addEventListener('click', () => window.print()));
   }
-  function renderCustDetail(){
-    const el = document.getElementById('custReportDetail');
-    const cust = reportsSelectedCustId ? db.customers[reportsSelectedCustId] : null;
-    if(!cust){ el.innerHTML = ''; return; }
+
+  function buildCustDetailHtml(custId){
+    const cust = db.customers[custId];
+    if(!cust) return '';
     const sales = db.sales
-      .filter(s=>s.customerId===reportsSelectedCustId && matchesYearMonth(s.date, custReportYear, custReportMonth))
+      .filter(s=>s.customerId===custId && matchesYearMonth(s.date, custReportYear, custReportMonth))
       .sort((a,b)=>b.ts-a.ts);
     const payments = db.installments
-      .filter(p=>p.customerId===reportsSelectedCustId && matchesYearMonth(p.date, custReportYear, custReportMonth))
+      .filter(p=>p.customerId===custId && matchesYearMonth(p.date, custReportYear, custReportMonth))
       .sort((a,b)=>b.ts-a.ts);
     const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
     const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
     const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
     const firstSale = sales.length ? [...sales].sort((a,b)=>a.ts-b.ts)[0] : null;
-    el.innerHTML = `
+    return `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3><div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address? ' · '+escapeHtml(cust.address):''}</div></div>
-          <button class="btn ghost no-print" id="custPrintBtn">${t('print_report')}</button>
+          <button class="btn ghost no-print cust-print-btn">${t('print_report')}</button>
         </div>
         <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}${firstSale ? ' · ' + t('first_booking_label') + ': ' + firstSale.date + (firstSale.invoiceNo ? ' (#'+firstSale.invoiceNo+')' : '') : ''}</div>
         ${sales.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
@@ -2105,10 +2166,8 @@ function renderCustomerReport(body){
         </table>`}
       </div>
     `;
-    document.getElementById('custPrintBtn').addEventListener('click', () => window.print());
   }
   renderCustList();
-  renderCustDetail();
 }
 
 function renderSupplierReport(body){
@@ -2250,7 +2309,8 @@ const CONFIG = {
       {key:'supplierId', labelKey:'f_supplier', type:'select', optionsFrom:'suppliers'},
     ],
     isObj:true,
-    isLow:(item)=>Number(item.qty)<=Number(item.threshold)
+    isLow:(item)=>Number(item.qty)<=Number(item.threshold),
+    extraRowActions:(id,item)=> `<button class="icon-btn" title="${t('stock_history_title')}" onclick="openProductHistory('${id}')">📊</button>`
   },
   purchases: {
     titleKey:'title_purchases', addLabelKey:'add_purchases',
@@ -2514,7 +2574,13 @@ async function handleSave(tab, id, values){
   }
   else if(tab==='products'){
     const key = id || uid();
-    const record = {...(db.products[key]||{}), ...values};
+    const existing = db.products[key];
+    const record = {...(existing||{}), ...values};
+    if(!existing){
+      record.initialQty = Number(values.qty)||0;
+      record.createdDate = todayStr();
+      record.createdTs = Date.now();
+    }
     db.products[key] = record;
     await safePut('products', key, record);
   }
@@ -2656,6 +2722,54 @@ async function deleteItem(tab, id){
   await safeRemove(tab, id);
   renderNav(); renderPage();
 }
+
+function openProductHistory(productId){
+  const product = db.products[productId];
+  if(!product) return;
+  const purchases = db.purchases.filter(p=>p.productId===productId);
+  const sales = db.sales.filter(s=>s.productId===productId);
+  const returns = db.returns.filter(r=>r.productId===productId && !r.cancelled);
+
+  const timeline = [
+    ...(Number(product.initialQty)>0 ? [{ ts:product.createdTs||0, date:product.createdDate||'', type:'in', label:t('stock_hist_opening'), ref:'', qty:Number(product.initialQty) }] : []),
+    ...purchases.map(p => ({ ts:p.ts, date:p.date, type:'in', label:t('stock_hist_purchase'), ref:p.supplierName||'', qty:Number(p.qty) })),
+    ...sales.map(s => ({ ts:s.ts, date:s.date, type:'out', label:t('stock_hist_sale'), ref:s.customerName||t('walk_in'), qty:Number(s.qty) })),
+    ...returns.map(r => ({ ts:r.ts, date:r.date, type:'in', label:t('stock_hist_return'), ref:r.customerName||'', qty:Number(r.qty) })),
+  ].sort((a,b)=>a.ts-b.ts);
+
+  const totalIn = timeline.filter(x=>x.type==='in').reduce((s,x)=>s+x.qty,0);
+  const totalOut = timeline.filter(x=>x.type==='out').reduce((s,x)=>s+x.qty,0);
+  let running = 0;
+  const rows = timeline.map(x => {
+    running += x.type==='in' ? x.qty : -x.qty;
+    return { ...x, running };
+  });
+
+  document.getElementById('productHistoryTitle').textContent = escapeHtml(product.name) + ' — ' + t('stock_history_title');
+  document.getElementById('productHistoryCloseBtn').textContent = t('close');
+  document.getElementById('productHistoryPrintBtn').textContent = t('print_report');
+  document.getElementById('productHistoryBody').innerHTML = `
+    <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
+      ${escapeHtml(product.name)}${product.cat ? ' · ' + escapeHtml(product.cat) : ''}
+    </div>
+    <div class="field-hint" style="margin-bottom:10px;">
+      ${t('stock_hist_in')}: ${totalIn} · ${t('stock_hist_out')}: ${totalOut} · ${t('col_stock')}: ${product.qty}
+    </div>
+    ${rows.length===0 ? `<div class="empty"><div class="big">${t('stock_hist_none')}</div></div>` : `
+    <table class="data">
+      <thead><tr><th>${t('col_date')}</th><th>${t('history_type_label')}</th><th>${t('col_customer')}/${t('nav_suppliers')}</th><th>${t('col_qty')}</th><th>${t('col_stock')}</th></tr></thead>
+      <tbody>
+        ${rows.map(x=>`<tr><td>${formatDateDMY(x.date)}</td><td>${x.label}</td><td>${escapeHtml(x.ref)}</td><td style="color:${x.type==='in'?'var(--green)':'var(--red)'};font-weight:600;">${x.type==='in'?'+':'−'}${x.qty}</td><td>${x.running}</td></tr>`).join('')}
+      </tbody>
+    </table>`}
+  `;
+  document.getElementById('productHistoryOverlay').classList.add('open');
+}
+document.getElementById('productHistoryCloseBtn').addEventListener('click', () => {
+  document.getElementById('productHistoryOverlay').classList.remove('open');
+});
+document.getElementById('productHistoryPrintBtn').addEventListener('click', () => window.print());
+setupOverlayBackdropClose('productHistoryOverlay');
 
 function openCustomerHistory(custId){
   const cust = db.customers[custId];
