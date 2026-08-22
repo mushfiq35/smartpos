@@ -420,6 +420,20 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
     </div>
     <button class="btn amber" id="loginBtn">Login</button>
     <div class="login-error" id="loginError"></div>
+    <div style="text-align:center;margin-top:12px;">
+      <a href="#" id="forgotPasswordLink" style="font-size:13px;color:var(--hajj-green);text-decoration:none;">Forgot Password?</a>
+    </div>
+    <div id="forgotPasswordForm" style="display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:14px;">
+      <div class="field">
+        <label style="font-size:13px;">Enter your email to reset password</label>
+        <input type="email" id="forgotEmail" autocomplete="email" placeholder="your@email.com">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn ghost" id="forgotCancelBtn" style="flex:1;">Cancel</button>
+        <button class="btn amber" id="forgotSendBtn" style="flex:1;">Send Reset Link</button>
+      </div>
+      <div id="forgotMsg" style="font-size:13px;margin-top:8px;text-align:center;"></div>
+    </div>
   </div>
 </div>
 <div class="app" id="appRoot" style="display:none;">
@@ -2654,6 +2668,7 @@ function renderInstallmentsPage(){
                 ${due>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
                 <button class="icon-btn" title="${t('installment_history_title')}" onclick="openInstallmentHistory('${id}')">📋</button>
                 <button class="icon-btn" title="${t('edit_title')}" onclick="openForm('customers','${id}')">✏️</button>
+                <button class="icon-btn" title="${t('delete_title')}" onclick="deleteHajji('${id}')">🗑️</button>
               </td>
             </tr>`;
           }).join('')}
@@ -3574,6 +3589,7 @@ const CONFIG = {
       <button class="icon-btn" title="${t('installment_history_title')}" onclick="openInstallmentHistory('${id}')">📋</button>
       ${item.due>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
     `,
+    customDelete: (id) => deleteHajji(id),
     isObj:true
   },
   suppliers: {
@@ -4112,7 +4128,51 @@ async function deleteInvoiceGroup(repId){
   renderNav(); renderPage();
 }
 
+
+async function deleteHajji(custId){
+  const cust = db.customers[custId];
+  if(!cust) return;
+  if(!confirm(`"${cust.name}" এবং তার সকল বুকিং, কিস্তি ও বাতিল রেকর্ড মুছে ফেলবেন?\nএই কাজ পূর্বাবস্থায় ফেরানো যাবে না!`)) return;
+
+  // ── sales (bookings) মুছো ────────────────────────────────────────────
+  const custSales = db.sales.filter(s=>s.customerId===custId);
+  for(const sale of custSales){
+    db.sales = db.sales.filter(x=>x.id!==sale.id);
+    await safeRemove('sales', sale.id);
+  }
+
+  // ── installments মুছো ────────────────────────────────────────────────
+  const custInst = db.installments.filter(i=>i.customerId===custId);
+  for(const inst of custInst){
+    db.installments = db.installments.filter(x=>x.id!==inst.id);
+    await safeRemove('installments', inst.id);
+  }
+
+  // ── installment plans মুছো ───────────────────────────────────────────
+  const custPlans = db.installmentPlans.filter(p=>p.customerId===custId);
+  for(const plan of custPlans){
+    db.installmentPlans = db.installmentPlans.filter(x=>x.id!==plan.id);
+    await safeRemove('installmentPlans', plan.id);
+  }
+
+  // ── returns মুছো ─────────────────────────────────────────────────────
+  const custReturns = db.returns.filter(r=>r.customerId===custId);
+  for(const ret of custReturns){
+    db.returns = db.returns.filter(x=>x.id!==ret.id);
+    await safeRemove('returns', ret.id);
+  }
+
+  // ── customer নিজে মুছো ───────────────────────────────────────────────
+  delete db.customers[custId];
+  await safeRemove('customers', custId);
+
+  showToast(t('deleted_toast'));
+  renderNav();
+  renderPage();
+}
+
 async function deleteItem(tab, id){
+  if(tab==='customers'){ await deleteHajji(id); return; }
   if(!confirm(t('confirm_delete'))) return;
   const cfg = CONFIG[tab];
   // Purchase delete হলে supplier.due reverse করো
@@ -5288,6 +5348,39 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
 });
 document.getElementById('loginPassword').addEventListener('keydown', (e) => {
   if(e.key==='Enter') document.getElementById('loginBtn').click();
+});
+
+document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('forgotPasswordForm').style.display = 'block';
+  document.getElementById('forgotPasswordLink').style.display = 'none';
+  document.getElementById('forgotEmail').value = document.getElementById('loginEmail').value || '';
+  document.getElementById('forgotMsg').textContent = '';
+});
+document.getElementById('forgotCancelBtn').addEventListener('click', () => {
+  document.getElementById('forgotPasswordForm').style.display = 'none';
+  document.getElementById('forgotPasswordLink').style.display = 'block';
+  document.getElementById('forgotMsg').textContent = '';
+});
+document.getElementById('forgotSendBtn').addEventListener('click', async () => {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const msgEl = document.getElementById('forgotMsg');
+  if(!email){ msgEl.style.color='#c0392b'; msgEl.textContent='Please enter your email.'; return; }
+  document.getElementById('forgotSendBtn').disabled = true;
+  document.getElementById('forgotSendBtn').textContent = 'Sending...';
+  try {
+    await firebase.auth().sendPasswordResetEmail(email);
+    msgEl.style.color = '#1B6B3A';
+    msgEl.textContent = '✓ Reset link sent! Check your email.';
+    document.getElementById('forgotSendBtn').textContent = 'Sent ✓';
+  } catch(err) {
+    msgEl.style.color = '#c0392b';
+    msgEl.textContent = err.code==='auth/user-not-found' ? 'No account found with this email.'
+      : err.code==='auth/invalid-email' ? 'Invalid email address.'
+      : 'Error: ' + err.message;
+    document.getElementById('forgotSendBtn').disabled = false;
+    document.getElementById('forgotSendBtn').textContent = 'Send Reset Link';
+  }
 });
 document.getElementById('logoutBtn').addEventListener('click', () => {
   if(useFirebase) firebase.auth().signOut();
