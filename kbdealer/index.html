@@ -367,6 +367,10 @@ const THEMES = {
     </div>
     <button class="btn amber" id="loginBtn">Login</button>
     <div class="login-error" id="loginError"></div>
+    <div style="text-align:center;margin-top:12px;">
+      <a href="#" id="forgotPasswordLink" style="font-size:13px;color:var(--ink-soft);text-decoration:underline;">Forgot Password?</a>
+    </div>
+    <div class="login-error" id="forgotPasswordMsg" style="color:var(--green);"></div>
   </div>
 </div>
 <div class="app" id="appRoot" style="display:none;">
@@ -669,6 +673,11 @@ const I18N = {
     f_name:'নাম', f_phone:'ফোন নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
     login_subtitle:'চালিয়ে যেতে লগ ইন করুন', login_email:'ইমেইল', login_password:'পাসওয়ার্ড',
     login_btn:'লগ ইন করুন', login_error:'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে', logout:'লগ আউট',
+    forgot_password_link:'পাসওয়ার্ড ভুলে গেছেন?',
+    forgot_password_prompt:'আপনার ইমেইল ঠিকানা লিখুন',
+    forgot_password_sent:'✓ পাসওয়ার্ড রিসেট লিংক আপনার ইমেইলে পাঠানো হয়েছে',
+    forgot_password_error:'পাঠাতে সমস্যা হয়েছে',
+    forgot_password_unavailable:'এই ফিচারটি এখন উপলব্ধ নেই',
     backup_btn:'☁️ ব্যাকআপ', restore_btn:'♻️ রিস্টোর',
     clear_all_confirm1:'⚠️ এটি সব কাস্টমার, পণ্য, বিক্রি, ক্রয়, খরচ, কিস্তি ও রিটার্ন — সম্পূর্ণ ডেটা স্থায়ীভাবে মুছে ফেলবে! এটা আর ফিরিয়ে আনা যাবে না। আগে ব্যাকআপ নিয়ে নিয়েছেন তো?',
     clear_all_confirm2:'নিশ্চিত করতে নিচে ঠিক এই শব্দটা লিখুন: DELETE',
@@ -776,6 +785,11 @@ const I18N = {
     f_name:'Name', f_phone:'Phone Number', f_address:'Address', f_email:'Email', col_email:'Email',
     login_subtitle:'Please log in to continue', login_email:'Email', login_password:'Password',
     login_btn:'Login', login_error:'Incorrect email or password', logout:'Logout',
+    forgot_password_link:'Forgot Password?',
+    forgot_password_prompt:'Enter your email address',
+    forgot_password_sent:'✓ Password reset link sent to your email',
+    forgot_password_error:'Could not send reset email',
+    forgot_password_unavailable:'This feature is not available right now',
     backup_btn:'☁️ Backup', restore_btn:'♻️ Restore',
     clear_all_confirm1:'⚠️ This will permanently delete ALL data — customers, products, sales, purchases, expenses, installments, and returns! This cannot be undone. Have you already made a backup?',
     clear_all_confirm2:'Type exactly this word below to confirm: DELETE',
@@ -1315,6 +1329,7 @@ function renderBrandTexts(){
   document.getElementById('loginEmailLabel').textContent = t('login_email');
   document.getElementById('loginPasswordLabel').textContent = t('login_password');
   document.getElementById('loginBtn').textContent = t('login_btn');
+  document.getElementById('forgotPasswordLink').textContent = t('forgot_password_link');
   document.getElementById('logoutBtn').textContent = t('logout');
   document.getElementById('backupBtn').textContent = t('backup_btn');
   document.getElementById('clearAllBtn').textContent = t('clear_all_btn');
@@ -3911,6 +3926,29 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
 });
 document.getElementById('loginPassword').addEventListener('keydown', (e) => {
   if(e.key==='Enter') document.getElementById('loginBtn').click();
+});
+document.getElementById('forgotPasswordLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  const msgEl = document.getElementById('forgotPasswordMsg');
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  msgEl.textContent = '';
+  if(!useFirebase || typeof firebase==='undefined'){
+    errEl.textContent = t('forgot_password_unavailable');
+    return;
+  }
+  let email = document.getElementById('loginEmail').value.trim();
+  if(!email){
+    email = prompt(t('forgot_password_prompt')) || '';
+    email = email.trim();
+  }
+  if(!email){ return; }
+  try{
+    await firebase.auth().sendPasswordResetEmail(email);
+    msgEl.textContent = t('forgot_password_sent');
+  } catch(err){
+    errEl.textContent = t('forgot_password_error') + (err && err.message ? ' (' + err.message + ')' : '');
+  }
 });
 document.getElementById('logoutBtn').addEventListener('click', () => {
   if(useFirebase) firebase.auth().signOut();
