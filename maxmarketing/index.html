@@ -1396,7 +1396,7 @@ function computeTotalBalance(){
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
   db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
-  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount); });
+  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
   return dp - de;
@@ -1691,7 +1691,7 @@ function renderSummaryReport(body){
     let dp = 0, de = 0;
     const inRange = (d) => d>=SUMMARY_START_DATE && d<beforeDateStr;
     db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount); });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
     return dp - de;
@@ -1707,7 +1707,7 @@ function renderSummaryReport(body){
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
     db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); } });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount); } });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
     let running = computeOpeningBalance(fromStr);
