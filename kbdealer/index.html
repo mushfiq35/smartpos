@@ -713,7 +713,7 @@ const I18N = {
     col_invoice_no:'ইনভয়েস নং', col_receipt_no:'রসিদ নং',
     history_type_label:'ধরন', history_type_sale:'বিক্রি', history_type_payment:'কিস্তি পেমেন্ট',
     stock_history_title:'স্টক হিস্ট্রি', stock_hist_purchase:'ক্রয় (যোগ)', stock_hist_sale:'বিক্রি (বিয়োগ)',
-    stock_hist_opening:'শুরুর স্টক (যোগ)',
+    stock_hist_opening:'শুরুর স্টক (যোগ)', restock_title:'রিস্টক করুন',
     stock_hist_return:'রিটার্ন (যোগ)', stock_hist_in:'মোট যোগ', stock_hist_out:'মোট বিয়োগ',
     stock_hist_none:'কোনো স্টক লেনদেন নেই',
     reports_summary_tab:'ব্যালেন্স', summary_dp:'দৈনিক প্রাপ্তি (DP)', summary_de:'দৈনিক খরচ (DE)',
@@ -820,7 +820,7 @@ const I18N = {
     col_invoice_no:'Invoice No.', col_receipt_no:'Receipt No.',
     history_type_label:'Type', history_type_sale:'Sale', history_type_payment:'Installment Payment',
     stock_history_title:'Stock History', stock_hist_purchase:'Purchase (In)', stock_hist_sale:'Sale (Out)',
-    stock_hist_opening:'Opening Stock (In)',
+    stock_hist_opening:'Opening Stock (In)', restock_title:'Restock',
     stock_hist_return:'Return (In)', stock_hist_in:'Total In', stock_hist_out:'Total Out',
     stock_hist_none:'No stock movements yet',
     reports_summary_tab:'Balance', summary_dp:'Daily Paid (DP)', summary_de:'Daily Expense (DE)',
@@ -1381,7 +1381,7 @@ function computeTotalBalance(){
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
   db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
-  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount)+Number(i.discount||0); });
+  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
   return dp - de;
@@ -1676,7 +1676,7 @@ function renderSummaryReport(body){
     let dp = 0, de = 0;
     const inRange = (d) => d>=SUMMARY_START_DATE && d<beforeDateStr;
     db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount)+Number(i.discount||0); });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount); });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
     return dp - de;
@@ -1692,7 +1692,7 @@ function renderSummaryReport(body){
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
     db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); } });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
     let running = computeOpeningBalance(fromStr);
@@ -2310,7 +2310,7 @@ const CONFIG = {
     ],
     isObj:true,
     isLow:(item)=>Number(item.qty)<=Number(item.threshold),
-    extraRowActions:(id,item)=> `<button class="icon-btn" title="${t('stock_history_title')}" onclick="openProductHistory('${id}')">📊</button>`
+    extraRowActions:(id,item)=> `<button class="icon-btn" title="${t('stock_history_title')}" onclick="openProductHistory('${id}')">📊</button><button class="icon-btn" title="${t('restock_title')}" onclick="openRestockForm('${id}')">📥</button>`
   },
   purchases: {
     titleKey:'title_purchases', addLabelKey:'add_purchases',
@@ -2487,6 +2487,19 @@ function wirePaginationEvents(tab, rerender){
 
 /* ---------- Generic Form Modal ---------- */
 let formCtx = null; // {tab, id}
+function openRestockForm(productId){
+  openForm('purchases', null);
+  setTimeout(() => {
+    const productSelect = document.querySelector(`#formFields select[data-key="productId"]`);
+    if(productSelect){
+      productSelect.value = productId;
+      const product = db.products[productId];
+      const costInput = document.querySelector(`#formFields input[data-key="unitCost"]`);
+      if(costInput && product) costInput.value = product.cost || 0;
+    }
+  }, 0);
+}
+
 function openForm(tab, id){
   const cfg = CONFIG[tab];
   formCtx = {tab, id};
