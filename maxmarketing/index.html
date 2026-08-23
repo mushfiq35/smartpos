@@ -398,6 +398,11 @@ const THEMES = {
       <button id="restoreBtn">♻️ Restore</button>
     </div>
     <div class="backup-row">
+      <button id="exportJsonBtn">⬇️ Export Backup</button>
+      <button id="importJsonBtn">⬆️ Import Backup</button>
+      <input type="file" id="importJsonInput" accept="application/json,.json" style="display:none;">
+    </div>
+    <div class="backup-row">
       <button id="clearAllBtn" style="border-color:rgba(180,66,58,0.5);color:#e6a29c;">🗑️ Clear All Data</button>
     </div>
     <div class="logout-row" id="logoutRow" style="display:none;">
@@ -684,6 +689,7 @@ const I18N = {
     clear_all_confirm_word:'DELETE',
     clear_all_aborted:'বাতিল করা হয়েছে — কোনো ডেটা মোছা হয়নি।',
     clear_all_done:'✓ সব ডেটা মুছে ফেলা হয়েছে', clear_all_btn:'🗑️ সব ডেটা মুছুন',
+    export_json_btn:'⬇️ ব্যাকআপ ডাউনলোড', import_json_btn:'⬆️ ব্যাকআপ রিস্টোর',
     drive_auth_failed:'Google Drive অনুমতি ব্যর্থ হয়েছে', backup_success:'✓ ব্যাকআপ সফল হয়েছে',
     backup_failed:'⚠️ ব্যাকআপ ব্যর্থ হয়েছে', no_backups_found:'কোনো ব্যাকআপ পাওয়া যায়নি',
     choose_backup_prompt:'কোন ব্যাকআপ থেকে রিস্টোর করতে চান? নম্বর লিখুন:',
@@ -796,6 +802,7 @@ const I18N = {
     clear_all_confirm_word:'DELETE',
     clear_all_aborted:'Cancelled — no data was deleted.',
     clear_all_done:'✓ All data has been cleared', clear_all_btn:'🗑️ Clear All Data',
+    export_json_btn:'⬇️ Export Backup', import_json_btn:'⬆️ Import Backup',
     drive_auth_failed:'Google Drive authorization failed', backup_success:'✓ Backup successful',
     backup_failed:'⚠️ Backup failed', no_backups_found:'No backups found',
     choose_backup_prompt:'Which backup do you want to restore? Type the number:',
@@ -878,12 +885,12 @@ const ADMIN_EMAILS = ["maxnoapara@gmail.com", "mushfiq35@gmail.com"];
 const SUMMARY_START_DATE = "2026-07-31";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA7pvxxc0AEj-As2Uxe0TWsC3kQfMAfY2o",
-  authDomain: "max-marketing-4bcd4.firebaseapp.com",
-  projectId: "max-marketing-4bcd4",
-  storageBucket: "max-marketing-4bcd4.firebasestorage.app",
-  messagingSenderId: "56240417487",
-  appId: "1:56240417487:web:9358a934b2c61e4d9665ba"
+  apiKey: "AIzaSyAhjBFCucUnk8kgqstDeJcifTJDtExJgws",
+  authDomain: "pos-system-bd96e.firebaseapp.com",
+  projectId: "pos-system-bd96e",
+  storageBucket: "pos-system-bd96e.firebasestorage.app",
+  messagingSenderId: "30277024982",
+  appId: "1:30277024982:web:3afa0715cf5450e5d0dd77"
 };
 
 let useFirebase = false;
@@ -932,6 +939,55 @@ function requestDriveToken(onReady){
     onReady();
   };
   gisTokenClient.requestAccessToken({ prompt: gisAccessToken ? '' : 'consent' });
+}
+
+async function exportBackupToFile(){
+  try{
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      shopName: SHOP_NAME,
+      customers: db.customers, suppliers: db.suppliers, products: db.products, categories: db.categories,
+      purchases: db.purchases, sales: db.sales, expenses: db.expenses,
+      installments: db.installments, installmentPlans: db.installmentPlans, returns: db.returns
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${SHOP_NAME}-backup-${todayStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(t('backup_success'));
+  }catch(e){
+    console.error('export failed', e);
+    showToast(t('backup_failed'));
+  }
+}
+
+async function importBackupFromFile(file){
+  if(!file) return;
+  try{
+    const text = await file.text();
+    const backupData = JSON.parse(text);
+    if(!confirm(t('confirm_restore'))) return;
+    for(const [rid, rec] of Object.entries(backupData.customers||{})){ db.customers[rid]=rec; await safePut('customers', rid, rec); }
+    for(const [rid, rec] of Object.entries(backupData.suppliers||{})){ db.suppliers[rid]=rec; await safePut('suppliers', rid, rec); }
+    for(const [rid, rec] of Object.entries(backupData.products||{})){ db.products[rid]=rec; await safePut('products', rid, rec); }
+    for(const [rid, rec] of Object.entries(backupData.categories||{})){ db.categories[rid]=rec; await safePut('categories', rid, rec); }
+    for(const rec of (backupData.purchases||[])) await safePut('purchases', rec.id, rec);
+    for(const rec of (backupData.sales||[])) await safePut('sales', rec.id, rec);
+    for(const rec of (backupData.expenses||[])) await safePut('expenses', rec.id, rec);
+    for(const rec of (backupData.installments||[])) await safePut('installments', rec.id, rec);
+    for(const rec of (backupData.installmentPlans||[])) await safePut('installmentPlans', rec.id, rec);
+    for(const rec of (backupData.returns||[])) await safePut('returns', rec.id, rec);
+    await loadAll();
+    showToast(t('restore_success'));
+  }catch(e){
+    console.error('import failed', e);
+    showToast(t('restore_failed'));
+  }
 }
 
 async function backupToDrive(){
@@ -1333,6 +1389,8 @@ function renderBrandTexts(){
   document.getElementById('logoutBtn').textContent = t('logout');
   document.getElementById('backupBtn').textContent = t('backup_btn');
   document.getElementById('clearAllBtn').textContent = t('clear_all_btn');
+  document.getElementById('exportJsonBtn').textContent = t('export_json_btn');
+  document.getElementById('importJsonBtn').textContent = t('import_json_btn');
   document.getElementById('restoreBtn').textContent = t('restore_btn');
 }
 function renderLogo(){
@@ -3954,6 +4012,15 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   if(useFirebase) firebase.auth().signOut();
 });
 document.getElementById('backupBtn').addEventListener('click', backupToDrive);
+document.getElementById('exportJsonBtn').addEventListener('click', exportBackupToFile);
+document.getElementById('importJsonBtn').addEventListener('click', () => {
+  document.getElementById('importJsonInput').click();
+});
+document.getElementById('importJsonInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  importBackupFromFile(file);
+  e.target.value = '';
+});
 document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
 
 async function clearAllData(){
