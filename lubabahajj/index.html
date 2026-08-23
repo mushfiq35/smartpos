@@ -1517,8 +1517,8 @@ function computeTotalBalance(){
   const toStr = todayStr();
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
-  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.paid||0); });
-  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount)+Number(i.discount||0); });
+  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry && (!s.customerId||db.customers[s.customerId])) dp += Number(s.paid||0); });
+  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])) dp += Number(i.amount)+Number(i.discount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
   // Vendor payments: cash out (আমরা vendor কে দিলাম)
@@ -2752,8 +2752,8 @@ function renderSummaryReport(body){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)) buckets[toISODate(d)] = {dp:0, de:0};
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
-    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.paid||0); } });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
+    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry && (!s.customerId||db.customers[s.customerId])){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.paid||0); } });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
     // Vendor payments: cash out → de, cash return → dp
@@ -2925,6 +2925,8 @@ function renderReturnsOnlyReport(body){
     const q = returnsRptQuery.trim().toLowerCase();
     const list = db.returns.filter(r=>{
       if(!(r.date>=fromStr && r.date<=toStr)) return false;
+      // Deleted customer এর return দেখাবে না
+      if(r.customerId && !db.customers[r.customerId]) return false;
       if(!q) return true;
       const cust = r.customerId ? db.customers[r.customerId] : null;
       return (r.customerName||'').toLowerCase().includes(q)
@@ -2981,6 +2983,8 @@ function renderInstallmentOnlyReport(body){
     const q = instRptQuery.trim().toLowerCase();
     const list = db.installments.filter(i=>{
       if(!(i.date>=fromStr && i.date<=toStr)) return false;
+      // Deleted customer এর installment দেখাবে না
+      if(i.customerId && !db.customers[i.customerId]) return false;
       if(!q) return true;
       const cust = i.customerId ? db.customers[i.customerId] : null;
       return (i.customerName||'').toLowerCase().includes(q)
