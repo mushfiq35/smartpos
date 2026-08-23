@@ -398,6 +398,11 @@ const THEMES = {
       <button id="restoreBtn">♻️ Restore</button>
     </div>
     <div class="backup-row">
+      <button id="exportJsonBtn">⬇️ Export Backup</button>
+      <button id="importJsonBtn">⬆️ Import Backup</button>
+      <input type="file" id="importJsonInput" accept="application/json,.json" style="display:none;">
+    </div>
+    <div class="backup-row">
       <button id="clearAllBtn" style="border-color:rgba(180,66,58,0.5);color:#e6a29c;">🗑️ Clear All Data</button>
     </div>
     <div class="logout-row" id="logoutRow" style="display:none;">
@@ -466,6 +471,37 @@ const THEMES = {
     <div class="modal-actions">
       <button class="btn ghost" id="payDueCancelBtn">Cancel</button>
       <button class="btn amber" id="payDueSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restock Modal -->
+<div class="overlay" id="restockOverlay">
+  <div class="modal" style="max-width:520px;width:95%;">
+    <h2 id="restockTitle">Restock</h2>
+    <div class="field">
+      <label id="restockProductLabel">Product</label>
+      <div class="select-row" style="position:relative;">
+        <input type="text" id="restockProductInput" autocomplete="off" oninput="onRestockProductSearch()" onfocus="onRestockProductSearch()">
+        <input type="hidden" id="restockProductId">
+        <div class="ms-product-results" id="restockProductResults"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label id="restockSupplierLabel">Supplier</label>
+      <select id="restockSupplier"></select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label id="restockQtyLabel">Quantity</label><input type="number" id="restockQty" min="1"></div>
+      <div class="field"><label id="restockDateLabel">Date</label><input type="date" id="restockDate"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label id="restockCostLabel">Unit Cost Price (৳)</label><input type="number" id="restockUnitCost"></div>
+      <div class="field"><label id="restockSellLabel">Sell Price (৳)</label><input type="number" id="restockSellPrice"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="restockCancelBtn">Cancel</button>
+      <button class="btn amber" id="restockConfirmBtn">Save</button>
     </div>
   </div>
 </div>
@@ -684,6 +720,8 @@ const I18N = {
     clear_all_confirm_word:'DELETE',
     clear_all_aborted:'বাতিল করা হয়েছে — কোনো ডেটা মোছা হয়নি।',
     clear_all_done:'✓ সব ডেটা মুছে ফেলা হয়েছে', clear_all_btn:'🗑️ সব ডেটা মুছুন',
+    export_json_btn:'⬇️ ব্যাকআপ ডাউনলোড', import_json_btn:'⬆️ ব্যাকআপ রিস্টোর',
+    export_preparing:'সব ডেটা লোড হচ্ছে, একটু অপেক্ষা করুন...',
     drive_auth_failed:'Google Drive অনুমতি ব্যর্থ হয়েছে', backup_success:'✓ ব্যাকআপ সফল হয়েছে',
     backup_failed:'⚠️ ব্যাকআপ ব্যর্থ হয়েছে', no_backups_found:'কোনো ব্যাকআপ পাওয়া যায়নি',
     choose_backup_prompt:'কোন ব্যাকআপ থেকে রিস্টোর করতে চান? নম্বর লিখুন:',
@@ -796,6 +834,8 @@ const I18N = {
     clear_all_confirm_word:'DELETE',
     clear_all_aborted:'Cancelled — no data was deleted.',
     clear_all_done:'✓ All data has been cleared', clear_all_btn:'🗑️ Clear All Data',
+    export_json_btn:'⬇️ Export Backup', import_json_btn:'⬆️ Import Backup',
+    export_preparing:'Loading all data, please wait...',
     drive_auth_failed:'Google Drive authorization failed', backup_success:'✓ Backup successful',
     backup_failed:'⚠️ Backup failed', no_backups_found:'No backups found',
     choose_backup_prompt:'Which backup do you want to restore? Type the number:',
@@ -932,6 +972,57 @@ function requestDriveToken(onReady){
     onReady();
   };
   gisTokenClient.requestAccessToken({ prompt: gisAccessToken ? '' : 'consent' });
+}
+
+async function exportBackupToFile(){
+  try{
+    showToast(t('export_preparing'));
+    if(useFirebase) await loadAll();
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      shopName: SHOP_NAME,
+      customers: db.customers, suppliers: db.suppliers, products: db.products, categories: db.categories,
+      purchases: db.purchases, sales: db.sales, expenses: db.expenses,
+      installments: db.installments, installmentPlans: db.installmentPlans, returns: db.returns
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${SHOP_NAME}-backup-${todayStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(t('backup_success'));
+  }catch(e){
+    console.error('export failed', e);
+    showToast(t('backup_failed'));
+  }
+}
+
+async function importBackupFromFile(file){
+  if(!file) return;
+  try{
+    const text = await file.text();
+    const backupData = JSON.parse(text);
+    if(!confirm(t('confirm_restore'))) return;
+    for(const [rid, rec] of Object.entries(backupData.customers||{})){ db.customers[rid]=rec; await safePut('customers', rid, rec); }
+    for(const [rid, rec] of Object.entries(backupData.suppliers||{})){ db.suppliers[rid]=rec; await safePut('suppliers', rid, rec); }
+    for(const [rid, rec] of Object.entries(backupData.products||{})){ db.products[rid]=rec; await safePut('products', rid, rec); }
+    for(const [rid, rec] of Object.entries(backupData.categories||{})){ db.categories[rid]=rec; await safePut('categories', rid, rec); }
+    for(const rec of (backupData.purchases||[])) await safePut('purchases', rec.id, rec);
+    for(const rec of (backupData.sales||[])) await safePut('sales', rec.id, rec);
+    for(const rec of (backupData.expenses||[])) await safePut('expenses', rec.id, rec);
+    for(const rec of (backupData.installments||[])) await safePut('installments', rec.id, rec);
+    for(const rec of (backupData.installmentPlans||[])) await safePut('installmentPlans', rec.id, rec);
+    for(const rec of (backupData.returns||[])) await safePut('returns', rec.id, rec);
+    await loadAll();
+    showToast(t('restore_success'));
+  }catch(e){
+    console.error('import failed', e);
+    showToast(t('restore_failed'));
+  }
 }
 
 async function backupToDrive(){
@@ -1333,6 +1424,8 @@ function renderBrandTexts(){
   document.getElementById('logoutBtn').textContent = t('logout');
   document.getElementById('backupBtn').textContent = t('backup_btn');
   document.getElementById('clearAllBtn').textContent = t('clear_all_btn');
+  document.getElementById('exportJsonBtn').textContent = t('export_json_btn');
+  document.getElementById('importJsonBtn').textContent = t('import_json_btn');
   document.getElementById('restoreBtn').textContent = t('restore_btn');
 }
 function renderLogo(){
@@ -2325,7 +2418,7 @@ const CONFIG = {
     ],
     isObj:true,
     isLow:(item)=>Number(item.qty)<=Number(item.threshold),
-    extraRowActions:(id,item)=> `<button class="icon-btn" title="${t('stock_history_title')}" onclick="openProductHistory('${id}')">📊</button><button class="icon-btn" title="${t('restock_title')}" onclick="openRestockForm('${id}')">📥</button>`
+    extraRowActions:(id,item)=> `<button class="icon-btn" title="${t('stock_history_title')}" onclick="openProductHistory('${id}')">📊</button>`
   },
   purchases: {
     titleKey:'title_purchases', addLabelKey:'add_purchases',
@@ -2415,10 +2508,12 @@ function renderListPage(tab){
     <div class="toolbar">
       <input type="text" id="pgSearch" placeholder="${t('search_placeholder')}">
       ${isProducts ? `<select id="pgCatFilter"><option value="">${t('all_categories')}</option>${categories.map(cat=>`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('')}</select>` : ''}
+      ${isProducts ? `<button class="btn ghost" id="pgRestockBtn">📥 ${t('restock_title')}</button>` : ''}
       <button class="btn amber" id="pgAddBtn">${t(cfg.addLabelKey)}</button>
     </div>
     <div id="pgTableWrap"></div>
   `;
+  if(isProducts) document.getElementById('pgRestockBtn').addEventListener('click', () => openRestockForm());
 
   function applyFilters(){
     const search = document.getElementById('pgSearch').value.trim().toLowerCase();
@@ -2503,17 +2598,94 @@ function wirePaginationEvents(tab, rerender){
 /* ---------- Generic Form Modal ---------- */
 let formCtx = null; // {tab, id}
 function openRestockForm(productId){
-  openForm('purchases', null);
-  setTimeout(() => {
-    const productSelect = document.querySelector(`#formFields select[data-key="productId"]`);
-    if(productSelect){
-      productSelect.value = productId;
-      const product = db.products[productId];
-      const costInput = document.querySelector(`#formFields input[data-key="unitCost"]`);
-      if(costInput && product) costInput.value = product.cost || 0;
-    }
-  }, 0);
+  document.getElementById('restockTitle').textContent = t('restock_title');
+  document.getElementById('restockProductLabel').textContent = t('f_product_select');
+  document.getElementById('restockSupplierLabel').textContent = t('f_supplier');
+  document.getElementById('restockQtyLabel').textContent = t('f_qty');
+  document.getElementById('restockDateLabel').textContent = t('f_date');
+  document.getElementById('restockCostLabel').textContent = t('f_unit_cost');
+  document.getElementById('restockSellLabel').textContent = t('f_unit_price');
+  document.getElementById('restockCancelBtn').textContent = t('cancel');
+  document.getElementById('restockConfirmBtn').textContent = t('save');
+
+  const suppSel = document.getElementById('restockSupplier');
+  suppSel.innerHTML = `<option value="">—</option>` + Object.entries(db.suppliers).map(([sid,s]) => `<option value="${sid}">${escapeHtml(s.name)}</option>`).join('');
+
+  document.getElementById('restockProductInput').value = '';
+  document.getElementById('restockProductId').value = '';
+  document.getElementById('restockQty').value = '';
+  document.getElementById('restockUnitCost').value = '';
+  document.getElementById('restockSellPrice').value = '';
+  document.getElementById('restockDate').value = todayStr();
+  const resultsEl = document.getElementById('restockProductResults');
+  if(resultsEl){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; }
+
+  if(productId){
+    selectRestockProduct(productId);
+  }
+  document.getElementById('restockOverlay').classList.add('open');
 }
+
+function onRestockProductSearch(){
+  const input = document.getElementById('restockProductInput');
+  const resultsEl = document.getElementById('restockProductResults');
+  if(!input || !resultsEl) return;
+  const q = input.value.trim().toLowerCase();
+  const entries = Object.entries(db.products);
+  const matches = q
+    ? entries.filter(([pid,p]) => p.name.toLowerCase().includes(q) || (p.cat||'').toLowerCase().includes(q)).slice(0,10)
+    : entries.slice(0,10);
+  if(matches.length===0){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; return; }
+  resultsEl.innerHTML = matches.map(([pid,p]) => `<div class="ms-product-result-item" onclick="selectRestockProduct('${pid}')">${escapeHtml(p.name)} <span style="color:var(--ink-soft);font-size:11px;">${escapeHtml(p.cat||'')} · ${t('col_stock')}:${p.qty}</span></div>`).join('');
+  resultsEl.classList.add('open');
+}
+function selectRestockProduct(pid){
+  const product = db.products[pid];
+  if(!product) return;
+  document.getElementById('restockProductInput').value = product.name;
+  document.getElementById('restockProductId').value = pid;
+  document.getElementById('restockUnitCost').value = product.cost || 0;
+  document.getElementById('restockSellPrice').value = product.price || 0;
+  const resultsEl = document.getElementById('restockProductResults');
+  if(resultsEl){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; }
+}
+document.addEventListener('click', (e) => {
+  const el = document.getElementById('restockProductResults');
+  if(el && el.classList.contains('open') && !el.parentElement.contains(e.target)) el.classList.remove('open');
+});
+document.getElementById('restockCancelBtn').addEventListener('click', () => {
+  document.getElementById('restockOverlay').classList.remove('open');
+});
+setupOverlayBackdropClose('restockOverlay');
+
+document.getElementById('restockConfirmBtn').addEventListener('click', async () => {
+  const productId = document.getElementById('restockProductId').value;
+  const product = productId ? db.products[productId] : null;
+  const qty = Number(document.getElementById('restockQty').value)||0;
+  if(!product || qty<=0){ alert(t('required_fields')); return; }
+  const supplierId = document.getElementById('restockSupplier').value || null;
+  const supplier = supplierId ? db.suppliers[supplierId] : null;
+  const unitCost = Number(document.getElementById('restockUnitCost').value)||0;
+  const sellPrice = Number(document.getElementById('restockSellPrice').value)||0;
+  const date = document.getElementById('restockDate').value || todayStr();
+
+  product.qty = Number(product.qty) + qty;
+  product.cost = unitCost;
+  product.price = sellPrice;
+  await safePut('products', productId, product);
+
+  const record = {
+    id: uid(), supplierId, supplierName: supplier?supplier.name:'—',
+    productId, productName: product.name,
+    qty, unitCost, total: qty*unitCost, date, ts: Date.now()
+  };
+  db.purchases.push(record);
+  await safePut('purchases', record.id, record);
+
+  document.getElementById('restockOverlay').classList.remove('open');
+  renderNav();
+  renderPage();
+});
 
 function openForm(tab, id){
   const cfg = CONFIG[tab];
@@ -2725,14 +2897,34 @@ async function handleSave(tab, id, values){
   }
 }
 
+async function reverseSaleEffects(sale){
+  // any returns tied to this sale must be undone first (in the right order),
+  // otherwise stock math would double-count what the return already added back
+  const relatedReturns = db.returns.filter(r=>r.saleId===sale.id && !r.cancelled);
+  for(const rec of relatedReturns){
+    const product = db.products[rec.productId];
+    if(product){ product.qty = Math.max(0, Number(product.qty) - rec.qty); await safePut('products', rec.productId, product); }
+    db.returns = db.returns.filter(r=>r.id!==rec.id);
+    await safeRemove('returns', rec.id);
+  }
+  const product = db.products[sale.productId];
+  if(product){ product.qty = Number(product.qty) + Number(sale.qty); await safePut('products', sale.productId, product); }
+  if(sale.customerId && db.customers[sale.customerId]){
+    const cust = db.customers[sale.customerId];
+    cust.due = Math.max(0, Number(cust.due) - Number(sale.due));
+    await safePut('customers', sale.customerId, cust);
+  }
+}
+
 async function deleteInvoiceGroup(repId){
   const rep = db.sales.find(s=>s.id===repId);
   if(!rep) return;
   if(!confirm(t('confirm_delete'))) return;
-  const groupIds = db.sales.filter(s=>s.invoiceId===rep.invoiceId).map(s=>s.id);
-  for(const gid of groupIds){
-    db.sales = db.sales.filter(s=>s.id!==gid);
-    await safeRemove('sales', gid);
+  const groupSales = db.sales.filter(s=>s.invoiceId===rep.invoiceId);
+  for(const s of groupSales){
+    await reverseSaleEffects(s);
+    db.sales = db.sales.filter(x=>x.id!==s.id);
+    await safeRemove('sales', s.id);
   }
   const plan = db.installmentPlans.find(p=>p.invoiceId===rep.invoiceId);
   if(plan){
@@ -2745,6 +2937,10 @@ async function deleteInvoiceGroup(repId){
 async function deleteItem(tab, id){
   if(!confirm(t('confirm_delete'))) return;
   const cfg = CONFIG[tab];
+  if(tab==='sales'){
+    const sale = db.sales.find(x=>x.id===id);
+    if(sale) await reverseSaleEffects(sale);
+  }
   if(cfg.isObj) delete db[tab][id];
   else db[tab] = db[tab].filter(x=>x.id!==id);
   await safeRemove(tab, id);
@@ -3954,6 +4150,15 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   if(useFirebase) firebase.auth().signOut();
 });
 document.getElementById('backupBtn').addEventListener('click', backupToDrive);
+document.getElementById('exportJsonBtn').addEventListener('click', exportBackupToFile);
+document.getElementById('importJsonBtn').addEventListener('click', () => {
+  document.getElementById('importJsonInput').click();
+});
+document.getElementById('importJsonInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  importBackupFromFile(file);
+  e.target.value = '';
+});
 document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
 
 async function clearAllData(){
