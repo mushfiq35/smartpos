@@ -965,11 +965,11 @@ let SHOP_EMAIL = "maxnoapara@gmail.com";
 let SHOP_CONTACT = "01710448844";
 /* Only these logged-in emails will see the "Reports" menu — everyone else's
    staff login will not see Reports at all. Add/remove emails as needed. */
-const ADMIN_EMAILS = ["maxnoapara@gmail.com", "mushfiq35@gmail.com"];
+const ADMIN_EMAILS = ["mushfiq35@gmail.com"];
 /* Client-visibility toggles — change true/false to show/hide these features
    from this client's copy of the app. One line each, no other code needed. */
-const SHOW_RESET_ALL_BUTTON = true;
-const SHOW_BACKUP_RESTORE_BUTTONS = true;
+const SHOW_RESET_ALL_BUTTON = false;
+const SHOW_BACKUP_RESTORE_BUTTONS = false;
 
 /* ---------- App Settings (SaaS-style feature toggles, admin-managed) ---------- */
 let appSettings = { showResetAll: SHOW_RESET_ALL_BUTTON, showBackupRestore: SHOW_BACKUP_RESTORE_BUTTONS, adminEmails: [...ADMIN_EMAILS] };
