@@ -762,6 +762,7 @@ const I18N = {
     f_name:'নাম', f_phone:'ফোন নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
     login_subtitle:'চালিয়ে যেতে লগ ইন করুন', login_email:'ইমেইল', login_password:'পাসওয়ার্ড',
     login_btn:'লগ ইন করুন', login_error:'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে', logout:'লগ আউট',
+    login_error_too_many:'অনেকবার ভুল চেষ্টা হয়েছে — কিছুক্ষণ পর আবার চেষ্টা করুন', login_error_disabled:'এই অ্যাকাউন্টটি নিষ্ক্রিয় করা হয়েছে', login_error_network:'ইন্টারনেট সংযোগে সমস্যা হয়েছে',
     forgot_password_link:'পাসওয়ার্ড ভুলে গেছেন?',
     forgot_password_prompt:'আপনার ইমেইল ঠিকানা লিখুন',
     forgot_password_sent:'✓ পাসওয়ার্ড রিসেট লিংক আপনার ইমেইলে পাঠানো হয়েছে',
@@ -881,6 +882,7 @@ const I18N = {
     f_name:'Name', f_phone:'Phone Number', f_address:'Address', f_email:'Email', col_email:'Email',
     login_subtitle:'Please log in to continue', login_email:'Email', login_password:'Password',
     login_btn:'Login', login_error:'Incorrect email or password', logout:'Logout',
+    login_error_too_many:'Too many attempts — please wait a bit and try again', login_error_disabled:'This account has been disabled', login_error_network:'Network connection problem',
     forgot_password_link:'Forgot Password?',
     forgot_password_prompt:'Enter your email address',
     forgot_password_sent:'✓ Password reset link sent to your email',
@@ -1054,34 +1056,34 @@ const SHOPS = [
   },
   // ---- EXAMPLE PLACEHOLDER — replace with shop B's real details ----
   {
-    id: "shoppingzonebd",
-    name: "ShoppingZoneBD",
-    address: "ShoppingZoneBD, Noapara Bazar, Abhaynagar, Jashore-7460",
-    email: "shoppingzonebd@gmail.com",
-    contact: "01303631066",
+    id: "shop-b",
+    name: "Shop B (উদাহরণ — এখানে আসল নাম দিন)",
+    address: "",
+    email: "",
+    contact: "",
     firebaseConfig: {
-      apiKey: "AIzaSyDqtiFkXiAkoDIm_fqCpJYb6ZhDLORT78k",
-      authDomain: "shoppingzonebd-51823.firebaseapp.com",
-      projectId: "shoppingzonebd-51823",
-      storageBucket: "shoppingzonebd-51823.firebasestorage.app",
-      messagingSenderId: "250367575508",
-      appId: "1:250367575508:web:f1816a1f118613c2874241"
+      apiKey: "PASTE_SHOP_B_API_KEY",
+      authDomain: "PASTE_SHOP_B_AUTH_DOMAIN",
+      projectId: "PASTE_SHOP_B_PROJECT_ID",
+      storageBucket: "PASTE_SHOP_B_STORAGE_BUCKET",
+      messagingSenderId: "PASTE_SHOP_B_SENDER_ID",
+      appId: "PASTE_SHOP_B_APP_ID"
     }
   },
   // ---- EXAMPLE PLACEHOLDER — replace with shop C's real details ----
   {
-    id: "kbdealer",
-    name: "KB Enterprise Dealer Point",
-    address: "Station Bazar, Noapara, Abhaynagar, Jashore-7460",
-    email: "kbenterprisedealerpoint@gmail.com",
-    contact: "01911273443",
+    id: "shop-c",
+    name: "Shop C (উদাহরণ — এখানে আসল নাম দিন)",
+    address: "",
+    email: "",
+    contact: "",
     firebaseConfig: {
-      apiKey: "AIzaSyDERU02jeKq7kSFv_R-SL1GeKmNQHC54WA",
-      authDomain: "kb-enterprise-dealer-point.firebaseapp.com",
-      projectId: "kb-enterprise-dealer-point",
-      storageBucket: "kb-enterprise-dealer-point.firebasestorage.app",
-      messagingSenderId: "919563906958",
-      appId: "1:919563906958:web:d45d4db99f9c9ac0c07edf"
+      apiKey: "PASTE_SHOP_C_API_KEY",
+      authDomain: "PASTE_SHOP_C_AUTH_DOMAIN",
+      projectId: "PASTE_SHOP_C_PROJECT_ID",
+      storageBucket: "PASTE_SHOP_C_STORAGE_BUCKET",
+      messagingSenderId: "PASTE_SHOP_C_SENDER_ID",
+      appId: "PASTE_SHOP_C_APP_ID"
     }
   },
   // ---- EXAMPLE PLACEHOLDER — replace with shop D's real details ----
@@ -4587,7 +4589,7 @@ function showApp(){
 
 document.getElementById('loginBtn').addEventListener('click', async () => {
   const email = document.getElementById('loginEmail').value.trim();
-  const pass = document.getElementById('loginPassword').value;
+  const pass = document.getElementById('loginPassword').value.trim();
   const errEl = document.getElementById('loginError');
   errEl.textContent = '';
   if(!email || !pass){ errEl.textContent = t('login_error'); return; }
@@ -4595,7 +4597,15 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     await firebase.auth().signInWithEmailAndPassword(email, pass);
   }catch(e){
     console.error('login failed', e);
-    errEl.textContent = t('login_error');
+    if(e && e.code==='auth/too-many-requests'){
+      errEl.textContent = t('login_error_too_many');
+    } else if(e && e.code==='auth/user-disabled'){
+      errEl.textContent = t('login_error_disabled');
+    } else if(e && e.code==='auth/network-request-failed'){
+      errEl.textContent = t('login_error_network');
+    } else {
+      errEl.textContent = t('login_error');
+    }
   }
 });
 document.getElementById('loginPassword').addEventListener('keydown', (e) => {
