@@ -353,6 +353,14 @@ const THEMES = {
 </script>
 </head>
 <body>
+<div class="login-screen" id="shopSelectScreen" style="display:none;">
+  <div class="login-box" style="max-width:420px;">
+    <h1>🔀 কোন দোকান দেখতে চান?</h1>
+    <p style="margin-bottom:16px;">Select which shop's dashboard to open</p>
+    <div id="shopSelectList"></div>
+  </div>
+</div>
+
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <h1 id="loginTitle"></h1>
@@ -397,16 +405,17 @@ const THEMES = {
       <button id="backupBtn">☁️ Backup</button>
       <button id="restoreBtn">♻️ Restore</button>
     </div>
-    <div class="backup-row">
+    <div class="backup-row" id="localBackupRow">
       <button id="exportJsonBtn">⬇️ Export Backup</button>
       <button id="importJsonBtn">⬆️ Import Backup</button>
       <input type="file" id="importJsonInput" accept="application/json,.json" style="display:none;">
     </div>
-    <div class="backup-row">
+    <div class="backup-row" id="resetAllRow">
       <button id="clearAllBtn" style="border-color:rgba(180,66,58,0.5);color:#e6a29c;">🗑️ Clear All Data</button>
     </div>
     <div class="logout-row" id="logoutRow" style="display:none;">
       <button id="logoutBtn">Logout</button>
+      <button id="switchShopBtn" style="display:none;">🔀 Switch Shop</button>
     </div>
   </aside>
 
@@ -471,6 +480,49 @@ const THEMES = {
     <div class="modal-actions">
       <button class="btn ghost" id="payDueCancelBtn">Cancel</button>
       <button class="btn amber" id="payDueSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pay Supplier Modal -->
+<div class="overlay" id="supplierPayOverlay">
+  <div class="modal" style="max-width:420px;">
+    <h2 id="supplierPayTitle">Pay Supplier</h2>
+    <div class="field-hint" id="supplierPayCurrentInfo" style="margin-bottom:12px;"></div>
+    <div class="field"><label id="supplierPayAmountLabel">Amount</label><input type="number" id="supplierPayAmountInput" value="0"></div>
+    <div class="field"><label id="supplierPayDateLabel">Date</label><input type="date" id="supplierPayDateInput"></div>
+    <div class="field"><label id="supplierPayNoteLabel">Note</label>
+      <input type="text" id="supplierPayNoteInput" list="dl-supplier-pay-note" autocomplete="off">
+      <datalist id="dl-supplier-pay-note"></datalist>
+    </div>
+    <div class="field-hint" id="supplierPayResultInfo"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="supplierPayCancelBtn">Cancel</button>
+      <button class="btn amber" id="supplierPayConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Supplier History Modal -->
+<div class="overlay" id="supplierHistoryOverlay">
+  <div class="modal" style="max-width:700px;width:95%;">
+    <h2 id="supplierHistoryTitle">History</h2>
+    <div id="supplierHistoryBody"></div>
+    <div class="modal-actions no-print">
+      <button class="btn ghost" id="supplierHistoryCloseBtn">Close</button>
+      <button class="btn amber" id="supplierHistoryPrintBtn">🖨</button>
+    </div>
+  </div>
+</div>
+
+<!-- Purchase View Modal -->
+<div class="overlay" id="purchaseViewOverlay">
+  <div class="modal" style="max-width:520px;">
+    <h2 id="purchaseViewTitle">Purchase</h2>
+    <div id="purchaseViewBody"></div>
+    <div class="modal-actions no-print">
+      <button class="btn ghost" id="purchaseViewCloseBtn">Close</button>
+      <button class="btn amber" id="purchaseViewPrintBtn">🖨</button>
     </div>
   </div>
 </div>
@@ -655,9 +707,9 @@ const THEMES = {
 /* ---------- Storage Keys ---------- */
 const K = {
   customers:'pos-customers', suppliers:'pos-suppliers', products:'pos-products',
-  purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo'
+  purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo', settings:'pos-settings'
 };
-let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[] };
+let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], supplierPayments:[] };
 let currentTab = 'dashboard';
 let logoData = null;
 
@@ -683,6 +735,7 @@ const I18N = {
     required_fields:'আবশ্যক ফিল্ড পূরণ করুন', confirm_delete:'এটি ডিলিট করতে চান?',
     no_data:'কোনো তথ্য নেই', no_data_hint:'উপরে বাটনে চেপে যোগ করুন।', search_placeholder:'খুঁজুন...',
     edit_title:'এডিট', delete_title:'ডিলিট', history_title:'বিক্রি ইতিহাস', pay_due_title:'বাকি পরিশোধ',
+    pay_supplier_title:'সাপ্লায়ারকে পরিশোধ',
     low_stock_heading:'লো-স্টক সতর্কতা', low_stock_ok:'সব পণ্যের স্টক ঠিক আছে ✓',
     recent_sales_heading:'সাম্প্রতিক বিক্রি', no_sales_yet:'এখনো কোনো বিক্রি নেই',
     reports_summary:'গত ১৪ দিনের সামারি', reports_trend:'বিক্রির প্রবণতা (Sales Trend)', print_report:'🖨 প্রিন্ট করুন',
@@ -720,6 +773,10 @@ const I18N = {
     clear_all_confirm_word:'DELETE',
     clear_all_aborted:'বাতিল করা হয়েছে — কোনো ডেটা মোছা হয়নি।',
     clear_all_done:'✓ সব ডেটা মুছে ফেলা হয়েছে', clear_all_btn:'🗑️ সব ডেটা মুছুন',
+    nav_settings:'সেটিংস', settings_features_heading:'ফিচার নিয়ন্ত্রণ',
+    settings_backup_toggle_label:'⬇️⬆️ ব্যাকআপ/রিস্টোর বাটন', settings_admins_heading:'অ্যাডমিন ইমেইল',
+    settings_admins_hint:'প্রতি লাইনে একটা করে ইমেইল — যাদের এই সেটিংস পেজ দেখার অনুমতি থাকবে',
+    settings_saved:'✓ সেটিংস সেভ হয়েছে',
     export_json_btn:'⬇️ ব্যাকআপ ডাউনলোড', import_json_btn:'⬆️ ব্যাকআপ রিস্টোর',
     export_preparing:'সব ডেটা লোড হচ্ছে, একটু অপেক্ষা করুন...',
     drive_auth_failed:'Google Drive অনুমতি ব্যর্থ হয়েছে', backup_success:'✓ ব্যাকআপ সফল হয়েছে',
@@ -797,6 +854,7 @@ const I18N = {
     required_fields:'Please fill in the required fields', confirm_delete:'Delete this item?',
     no_data:'No data yet', no_data_hint:'Click the button above to add.', search_placeholder:'Search...',
     edit_title:'Edit', delete_title:'Delete', history_title:'Sales History', pay_due_title:'Pay Due',
+    pay_supplier_title:'Pay Supplier',
     low_stock_heading:'Low Stock Alerts', low_stock_ok:'All products are well stocked ✓',
     recent_sales_heading:'Recent Sales', no_sales_yet:'No sales yet',
     reports_summary:'Last 14 Days Summary', reports_trend:'Sales Trend', print_report:'🖨 Print Report',
@@ -834,6 +892,10 @@ const I18N = {
     clear_all_confirm_word:'DELETE',
     clear_all_aborted:'Cancelled — no data was deleted.',
     clear_all_done:'✓ All data has been cleared', clear_all_btn:'🗑️ Clear All Data',
+    nav_settings:'Settings', settings_features_heading:'Feature Controls',
+    settings_backup_toggle_label:'⬇️⬆️ Backup/Restore buttons', settings_admins_heading:'Admin Emails',
+    settings_admins_hint:'One email per line — these accounts will be able to see this Settings page',
+    settings_saved:'✓ Settings saved',
     export_json_btn:'⬇️ Export Backup', import_json_btn:'⬆️ Import Backup',
     export_preparing:'Loading all data, please wait...',
     drive_auth_failed:'Google Drive authorization failed', backup_success:'✓ Backup successful',
@@ -906,25 +968,144 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    ব্রাউজার ট্যাব টাইটেল, প্রিন্ট হেডার, ব্যাকআপ ফাইলের নাম) নিজে থেকেই বদলে যাবে।
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
-const SHOP_NAME = "MAX";
-const SHOP_ADDRESS = "Max Marketing, Noapara Bazar, Abhaynagar, Jashore-7460";
-const SHOP_EMAIL = "maxnoapara@gmail.com";
-const SHOP_CONTACT = "01710448844";
+let SHOP_NAME = "MAX";
+let SHOP_ADDRESS = "Max Marketing, Noapara Bazar, Abhaynagar, Jashore-7460";
+let SHOP_EMAIL = "maxnoapara@gmail.com";
+let SHOP_CONTACT = "01710448844";
 /* Only these logged-in emails will see the "Reports" menu — everyone else's
    staff login will not see Reports at all. Add/remove emails as needed. */
 const ADMIN_EMAILS = ["maxnoapara@gmail.com", "mushfiq35@gmail.com"];
+/* Client-visibility toggles — change true/false to show/hide these features
+   from this client's copy of the app. One line each, no other code needed. */
+const SHOW_RESET_ALL_BUTTON = true;
+const SHOW_BACKUP_RESTORE_BUTTONS = true;
+
+/* ---------- App Settings (SaaS-style feature toggles, admin-managed) ---------- */
+let appSettings = { showResetAll: SHOW_RESET_ALL_BUTTON, showBackupRestore: SHOW_BACKUP_RESTORE_BUTTONS, adminEmails: [...ADMIN_EMAILS] };
+async function loadSettings(){
+  try{
+    const raw = await storageGet(K.settings);
+    if(raw){ appSettings = { ...appSettings, ...JSON.parse(raw) }; }
+  }catch(e){ console.error('settings load failed', e); }
+}
+async function saveSettings(){
+  try{ await storageSet(K.settings, JSON.stringify(appSettings)); }catch(e){ console.error('settings save failed', e); showToast(t('save_failed_toast')); }
+}
+function isAdminUser(){
+  if(!useFirebase) return true;
+  if(!currentAuthUser || !currentAuthUser.email) return false;
+  const userEmail = currentAuthUser.email.trim().toLowerCase();
+  return (appSettings.adminEmails||[]).some(e => e.trim().toLowerCase()===userEmail);
+}
+function applyFeatureVisibility(){
+  const resetRow = document.getElementById('resetAllRow');
+  const localRow = document.getElementById('localBackupRow');
+  if(resetRow) resetRow.style.display = appSettings.showResetAll ? '' : 'none';
+  if(localRow) localRow.style.display = appSettings.showBackupRestore ? '' : 'none';
+  const driveRow = document.getElementById('backupRow');
+  if(driveRow && !appSettings.showBackupRestore && driveRow.style.display !== 'none'){
+    driveRow.style.display = 'none';
+  }
+}
 /* Reports > Summary tab ignores everything before this date — old/messy
    historical accounts before this point are excluded from the running total. */
 const SUMMARY_START_DATE = "2026-07-31";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA7pvxxc0AEj-As2Uxe0TWsC3kQfMAfY2o",
-  authDomain: "max-marketing-4bcd4.firebaseapp.com",
-  projectId: "max-marketing-4bcd4",
-  storageBucket: "max-marketing-4bcd4.firebasestorage.app",
-  messagingSenderId: "56240417487",
-  appId: "1:56240417487:web:9358a934b2c61e4d9665ba"
-};
+/* ============================================================
+   MULTI-SHOP REGISTRY (Admin-only "master" file)
+   ============================================================
+   This lets ONE admin file switch between several shops' own
+   Firebase projects — each shop's data stays fully separate.
+
+   HOW TO ADD A NEW SHOP: copy one block below, paste it before
+   the closing `];`, and fill in that shop's own details —
+   nothing else in the file needs to change.
+   ============================================================ */
+const SHOPS = [
+  {
+    id: "max",
+    name: "MAX",
+    address: "Max Marketing, Noapara Bazar, Abhaynagar, Jashore-7460",
+    email: "maxnoapara@gmail.com",
+    contact: "01710448844",
+    firebaseConfig: {
+      apiKey: "AIzaSyAhjBFCucUnk8kgqstDeJcifTJDtExJgws",
+      authDomain: "pos-system-bd96e.firebaseapp.com",
+      projectId: "pos-system-bd96e",
+      storageBucket: "pos-system-bd96e.firebasestorage.app",
+      messagingSenderId: "30277024982",
+      appId: "1:30277024982:web:3afa0715cf5450e5d0dd77"
+    }
+  },
+  // ---- EXAMPLE PLACEHOLDER — replace with shop B's real details ----
+  {
+    id: "shop-b",
+    name: "Shop B (উদাহরণ — এখানে আসল নাম দিন)",
+    address: "",
+    email: "",
+    contact: "",
+    firebaseConfig: {
+      apiKey: "PASTE_SHOP_B_API_KEY",
+      authDomain: "PASTE_SHOP_B_AUTH_DOMAIN",
+      projectId: "PASTE_SHOP_B_PROJECT_ID",
+      storageBucket: "PASTE_SHOP_B_STORAGE_BUCKET",
+      messagingSenderId: "PASTE_SHOP_B_SENDER_ID",
+      appId: "PASTE_SHOP_B_APP_ID"
+    }
+  },
+  // ---- EXAMPLE PLACEHOLDER — replace with shop C's real details ----
+  {
+    id: "shop-c",
+    name: "Shop C (উদাহরণ — এখানে আসল নাম দিন)",
+    address: "",
+    email: "",
+    contact: "",
+    firebaseConfig: {
+      apiKey: "PASTE_SHOP_C_API_KEY",
+      authDomain: "PASTE_SHOP_C_AUTH_DOMAIN",
+      projectId: "PASTE_SHOP_C_PROJECT_ID",
+      storageBucket: "PASTE_SHOP_C_STORAGE_BUCKET",
+      messagingSenderId: "PASTE_SHOP_C_SENDER_ID",
+      appId: "PASTE_SHOP_C_APP_ID"
+    }
+  },
+  // ---- EXAMPLE PLACEHOLDER — replace with shop D's real details ----
+  {
+    id: "shop-d",
+    name: "Shop D (উদাহরণ — এখানে আসল নাম দিন)",
+    address: "",
+    email: "",
+    contact: "",
+    firebaseConfig: {
+      apiKey: "PASTE_SHOP_D_API_KEY",
+      authDomain: "PASTE_SHOP_D_AUTH_DOMAIN",
+      projectId: "PASTE_SHOP_D_PROJECT_ID",
+      storageBucket: "PASTE_SHOP_D_STORAGE_BUCKET",
+      messagingSenderId: "PASTE_SHOP_D_SENDER_ID",
+      appId: "PASTE_SHOP_D_APP_ID"
+    }
+  },
+  // ---- EXAMPLE PLACEHOLDER — replace with shop E's real details ----
+  {
+    id: "shop-e",
+    name: "Shop E (উদাহরণ — এখানে আসল নাম দিন)",
+    address: "",
+    email: "",
+    contact: "",
+    firebaseConfig: {
+      apiKey: "PASTE_SHOP_E_API_KEY",
+      authDomain: "PASTE_SHOP_E_AUTH_DOMAIN",
+      projectId: "PASTE_SHOP_E_PROJECT_ID",
+      storageBucket: "PASTE_SHOP_E_STORAGE_BUCKET",
+      messagingSenderId: "PASTE_SHOP_E_SENDER_ID",
+      appId: "PASTE_SHOP_E_APP_ID"
+    }
+  },
+  // ---- Add more shops here by copying a block above ----
+];
+let currentShopId = null;
+
+let firebaseConfig = SHOPS[0].firebaseConfig;
 
 let useFirebase = false;
 let fsdb = null;
@@ -1092,10 +1273,13 @@ async function restoreFromDrive(){
   });
 }
 
-function initStorage(){
-  const configured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY";
+async function initStorage(){
+  const configured = firebaseConfig.apiKey && !String(firebaseConfig.apiKey).startsWith("PASTE_");
   if(configured && window.firebase){
     try{
+      if(firebase.apps && firebase.apps.length){
+        await Promise.all(firebase.apps.map(a => a.delete()));
+      }
       firebase.initializeApp(firebaseConfig);
       useFirebase = true;
     }catch(e){
@@ -1273,6 +1457,7 @@ const NAV = [
   {id:'expenses', ic:'💸', key:'nav_expenses'},
   {id:'returns', ic:'↩️', key:'nav_returns'},
   {id:'reports', ic:'📈', key:'nav_reports'},
+  {id:'settings', ic:'⚙️', key:'nav_settings'},
 ];
 
 function setupOverlayBackdropClose(overlayId, onClose){
@@ -1305,6 +1490,14 @@ function nextInvoiceNo(){
 }
 function nextReceiptNo(){
   const maxNo = db.installments.reduce((m,i)=>Math.max(m, Number(i.receiptNo)||0), 0);
+  return maxNo + 1;
+}
+function nextPurchaseNo(){
+  const maxNo = db.purchases.reduce((m,p)=>Math.max(m, Number(p.purchaseNo)||0), 0);
+  return maxNo + 1;
+}
+function nextSupplierReceiptNo(){
+  const maxNo = db.supplierPayments.reduce((m,p)=>Math.max(m, Number(p.receiptNo)||0), 0);
   return maxNo + 1;
 }
 function saleReturnedQty(saleId){
@@ -1341,7 +1534,7 @@ function paymentSystemKey(v){
 /* ---------- Load / Save ---------- */
 async function loadAll(){
   const objTabs = ['customers','suppliers','products','categories'];
-  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns'];
+  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','supplierPayments'];
   let hadError = false;
   for(const key of [...objTabs, ...arrTabs]){
     try{
@@ -1355,6 +1548,8 @@ async function loadAll(){
   }
   if(hadError) showToast(t('load_error_toast'));
   try{ logoData = await withTimeout(storageGet(K.logo), 8000); }catch(e){ logoData = null; }
+  await loadSettings();
+  applyFeatureVisibility();
   renderLangSwitch();
   renderLogo();
   renderBrandTexts();
@@ -1365,7 +1560,9 @@ async function loadAll(){
 /* ---------- Nav ---------- */
 function renderNav(){
   const lowCount = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold)).length;
-  document.getElementById('navList').innerHTML = NAV.map(n => `
+  const admin = isAdminUser();
+  const visibleNav = NAV.filter(n => n.id!=='settings' || admin);
+  document.getElementById('navList').innerHTML = visibleNav.map(n => `
     <div class="nav-item ${currentTab===n.id?'active':''}" data-tab="${n.id}">
       <span class="ic">${n.ic}</span><span>${t(n.key)}</span>
       ${n.id==='products' && lowCount>0 ? `<span class="badge">${lowCount}</span>` : ''}
@@ -1466,6 +1663,7 @@ document.getElementById('logoFileInput').addEventListener('change', async (e) =>
 });
 
 function renderPage(){
+  if(currentTab==='settings' && !isAdminUser()) currentTab = 'dashboard';
   setTitle(currentTab);
   const c = document.getElementById('content');
   if(currentTab==='dashboard') c.innerHTML = pageDashboard();
@@ -1479,6 +1677,7 @@ function renderPage(){
   else if(currentTab==='expenses') renderListPage('expenses');
   else if(currentTab==='returns') renderReturnsPage();
   else if(currentTab==='reports') renderReportsPage();
+  else if(currentTab==='settings') renderSettingsPage();
   attachPageEvents();
 }
 
@@ -1492,6 +1691,8 @@ function computeTotalBalance(){
   db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
+  db.purchases.forEach(p => { if(inRange(p.date)) de += Number(p.initialPaid!==undefined ? p.initialPaid : p.paid||0); });
+  db.supplierPayments.forEach(p => { if(inRange(p.date)) de += Number(p.amount); });
   return dp - de;
 }
 
@@ -1720,6 +1921,40 @@ function renderInstallmentsPage(){
   renderInstList();
 }
 
+/* ---------- Settings (admin only) ---------- */
+function renderSettingsPage(){
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="panel">
+      <h3>${t('settings_features_heading')}</h3>
+      <div class="field" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="stgShowReset" ${appSettings.showResetAll?'checked':''} style="width:auto;">
+        <label style="margin:0;text-transform:none;font-size:14px;">${t('clear_all_btn')}</label>
+      </div>
+      <div class="field" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="stgShowBackup" ${appSettings.showBackupRestore?'checked':''} style="width:auto;">
+        <label style="margin:0;text-transform:none;font-size:14px;">${t('settings_backup_toggle_label')}</label>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>${t('settings_admins_heading')}</h3>
+      <div class="field-hint" style="margin-bottom:8px;">${t('settings_admins_hint')}</div>
+      <div class="field"><textarea id="stgAdminEmails" rows="4" style="width:100%;font-family:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);">${(appSettings.adminEmails||[]).join('\n')}</textarea></div>
+    </div>
+    <button class="btn amber" id="stgSaveBtn">${t('save')}</button>
+  `;
+  document.getElementById('stgSaveBtn').addEventListener('click', async () => {
+    appSettings.showResetAll = document.getElementById('stgShowReset').checked;
+    appSettings.showBackupRestore = document.getElementById('stgShowBackup').checked;
+    const emails = document.getElementById('stgAdminEmails').value.split('\n').map(e=>e.trim()).filter(Boolean);
+    appSettings.adminEmails = emails.length ? emails : [...ADMIN_EMAILS];
+    await saveSettings();
+    applyFeatureVisibility();
+    renderNav();
+    showToast(t('settings_saved'));
+  });
+}
+
 function renderReportsPage(){
   const c = document.getElementById('content');
   c.innerHTML = `
@@ -1730,6 +1965,7 @@ function renderReportsPage(){
       <button class="sub-tab ${reportsSubTab==='returnsrpt'?'active':''}" data-sub="returnsrpt">${t('nav_returns')}</button>
       <button class="sub-tab ${reportsSubTab==='installmentrpt'?'active':''}" data-sub="installmentrpt">${t('nav_installments')}</button>
       <button class="sub-tab ${reportsSubTab==='expensesrpt'?'active':''}" data-sub="expensesrpt">${t('nav_expenses')}</button>
+      <button class="sub-tab ${reportsSubTab==='purchasesrpt'?'active':''}" data-sub="purchasesrpt">${t('nav_purchases')}</button>
       <button class="sub-tab ${reportsSubTab==='customer'?'active':''}" data-sub="customer">${t('nav_customers')}</button>
       <button class="sub-tab ${reportsSubTab==='supplier'?'active':''}" data-sub="supplier">${t('nav_suppliers')}</button>
       <button class="sub-tab ${reportsSubTab==='stock'?'active':''}" data-sub="stock">${t('nav_products')}</button>
@@ -1746,6 +1982,7 @@ function renderReportsPage(){
   else if(reportsSubTab==='returnsrpt') renderReturnsOnlyReport(body);
   else if(reportsSubTab==='installmentrpt') renderInstallmentOnlyReport(body);
   else if(reportsSubTab==='expensesrpt') renderExpensesOnlyReport(body);
+  else if(reportsSubTab==='purchasesrpt') renderPurchasesOnlyReport(body);
   else if(reportsSubTab==='customer') renderCustomerReport(body);
   else if(reportsSubTab==='supplier') renderSupplierReport(body);
   else if(reportsSubTab==='stock') renderStockReport(body);
@@ -1787,6 +2024,8 @@ function renderSummaryReport(body){
     db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
+    db.purchases.forEach(p => { if(inRange(p.date)) de += Number(p.initialPaid!==undefined ? p.initialPaid : p.paid||0); });
+    db.supplierPayments.forEach(p => { if(inRange(p.date)) de += Number(p.amount); });
     return dp - de;
   }
 
@@ -1803,6 +2042,8 @@ function renderSummaryReport(body){
     db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
+    db.purchases.forEach(p => { if(inRange(p.date)){ const k=bucketKey(p.date); if(buckets[k]) buckets[k].de += Number(p.initialPaid!==undefined ? p.initialPaid : p.paid||0); } });
+    db.supplierPayments.forEach(p => { if(inRange(p.date)){ const k=bucketKey(p.date); if(buckets[k]) buckets[k].de += Number(p.amount); } });
     let running = computeOpeningBalance(fromStr);
     const rows = Object.entries(buckets).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v]) => {
       running += v.dp - v.de;
@@ -2016,6 +2257,41 @@ function renderInstallmentOnlyReport(body){
 }
 
 let expRptRange='last14', expRptFrom='', expRptTo='';
+let purchRptRange='last14', purchRptFrom='', purchRptTo='';
+function renderPurchasesOnlyReport(body){
+  body.innerHTML = buildRangeToolbar('purchRpt');
+  function refresh(){
+    const st = {range:purchRptRange, from:purchRptFrom, to:purchRptTo};
+    const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('purchRptFromDate').value, st.to || document.getElementById('purchRptToDate').value);
+    const list = db.purchases.filter(p=>p.date>=fromStr && p.date<=toStr).sort((a,b)=>b.ts-a.ts);
+    const totalValue = list.reduce((s,x)=>s+Number(x.total),0);
+    const totalPaid = list.reduce((s,x)=>s+Number(x.paid||0),0);
+    const totalDue = list.reduce((s,x)=>s+Number(x.due||0),0);
+    document.getElementById('purchRptBody').innerHTML = `
+      <div class="stat-grid no-print cols-3">
+        <div class="stat-card c4"><div class="val">৳${money(totalValue)}</div><div class="lbl">${t('col_total')}</div></div>
+        <div class="stat-card c5"><div class="val">৳${money(totalPaid)}</div><div class="lbl">${t('col_paid')}</div></div>
+        <div class="stat-card c7"><div class="val">৳${money(totalDue)}</div><div class="lbl">${t('col_due')}</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('nav_purchases')}</h3>
+        ${renderReportTableWithPagination('purchRptTable', list,
+          `<tr><th>${t('col_invoice_no')}</th><th>${t('col_date')}</th><th>${t('nav_suppliers')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th class="no-print"></th></tr>`,
+          p=>`<tr><td>${p.purchaseNo?'#'+p.purchaseNo:'—'}</td><td>${formatDateDMY(p.date)}</td><td>${escapeHtml(p.supplierName||'—')}</td><td>${escapeHtml(p.productName)}</td><td>${p.qty}</td><td>৳${money(p.total)}</td><td>৳${money(p.paid||0)}</td><td>${Number(p.due)>0?'৳'+money(p.due):'—'}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('view_title')}" onclick="openPurchaseView('${p.id}')">👁</button><button class="icon-btn" title="${t('edit_title')}" onclick="openForm('purchases','${p.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteItem('purchases','${p.id}')">🗑️</button></td></tr>`,
+          `<tfoot><tr style="font-weight:700;"><td colspan="5">${t('totals_label')}</td><td>৳${money(totalValue)}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDue)}</td><td></td></tr></tfoot>`
+        )}
+      </div>
+    `;
+    wirePaginationEvents('purchRptTable', refresh);
+  }
+  wireRangeToolbar('purchRpt',
+    () => ({range:purchRptRange, from:purchRptFrom, to:purchRptTo}),
+    (s) => { purchRptRange=s.range; purchRptFrom=s.from; purchRptTo=s.to; },
+    refresh
+  );
+  refresh();
+}
+
 function renderExpensesOnlyReport(body){
   body.innerHTML = buildRangeToolbar('expRpt');
   function refresh(){
@@ -2382,13 +2658,15 @@ const CONFIG = {
   },
   suppliers: {
     titleKey:'title_suppliers', addLabelKey:'add_suppliers',
-    columns:[{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'address',hKey:'col_address'}],
+    columns:[{k:'name',hKey:'col_name'},{k:'phone',hKey:'col_phone'},{k:'address',hKey:'col_address'},{k:'due',hKey:'col_due_amt',fmt:v=>'৳'+money(v||0)}],
     fields:[
       {key:'name', labelKey:'f_name', type:'text', required:true, suggest:true},
       {key:'phone', labelKey:'f_phone', type:'text', suggest:true},
       {key:'address', labelKey:'f_address', type:'text', suggest:true},
+      {key:'note', labelKey:'f_note', type:'text', suggest:true},
     ],
-    isObj:true
+    isObj:true,
+    extraRowActions:(id,item)=> `${Number(item.due)>0?`<button class="icon-btn" title="${t('pay_supplier_title')}" onclick="openPaySupplier('${id}')">৳</button>`:''}<button class="icon-btn" title="${t('history_title')}" onclick="openSupplierHistory('${id}')">🧾</button>`
   },
   categories: {
     titleKey:'title_categories', addLabelKey:'add_categories',
@@ -2422,16 +2700,18 @@ const CONFIG = {
   },
   purchases: {
     titleKey:'title_purchases', addLabelKey:'add_purchases',
-    columns:[{k:'date',hKey:'col_date'},{k:'supplierName',hKey:'col_supplier'},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'unitCost',hKey:'col_unit_cost',fmt:v=>'৳'+money(v)},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)}],
+    columns:[{k:'purchaseNo',hKey:'col_invoice_no',fmt:v=>v?('#'+v):'—'},{k:'date',hKey:'col_date'},{k:'supplierName',hKey:'col_supplier'},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'unitCost',hKey:'col_unit_cost',fmt:v=>'৳'+money(v)},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)},{k:'paid',hKey:'col_paid',fmt:v=>'৳'+money(v)},{k:'due',hKey:'col_due',fmt:v=>v>0?'৳'+money(v):'—'}],
     fields:[
       {key:'supplierId', labelKey:'f_supplier_select', type:'select', optionsFrom:'suppliers', required:true, quickAdd:'suppliers'},
       {key:'productId', labelKey:'f_product_select', type:'select', optionsFrom:'products', required:true, quickAdd:'products'},
       {key:'qty', labelKey:'f_qty', type:'number', required:true},
       {key:'unitCost', labelKey:'f_unit_cost', type:'number', required:true},
+      {key:'paid', labelKey:'f_paid', type:'number'},
+      {key:'note', labelKey:'f_note', type:'text', suggest:true},
       {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
     ],
     isObj:false,
-    noEdit:true
+    extraRowActions:(id,item)=> `<button class="icon-btn" title="${t('view_title')}" onclick="openPurchaseView('${id}')">👁</button>`
   },
   sales: {
     titleKey:'title_sales', addLabelKey:'add_sales',
@@ -2597,6 +2877,151 @@ function wirePaginationEvents(tab, rerender){
 
 /* ---------- Generic Form Modal ---------- */
 let formCtx = null; // {tab, id}
+/* ---------- Supplier Payments ---------- */
+function openPaySupplier(supplierId){
+  const supplier = db.suppliers[supplierId];
+  if(!supplier) return;
+  supplierPayCtx = supplierId;
+  document.getElementById('supplierPayTitle').textContent = t('pay_supplier_title');
+  document.getElementById('supplierPayCurrentInfo').textContent = t('pay_due_current')(supplier.name, supplier.due||0);
+  document.getElementById('supplierPayAmountLabel').textContent = t('pay_amount');
+  document.getElementById('supplierPayDateLabel').textContent = t('f_date');
+  document.getElementById('supplierPayNoteLabel').textContent = t('f_note');
+  document.getElementById('supplierPayCancelBtn').textContent = t('cancel');
+  document.getElementById('supplierPayConfirmBtn').textContent = t('confirm');
+  document.getElementById('supplierPayAmountInput').value = supplier.due||0;
+  document.getElementById('supplierPayDateInput').value = todayStr();
+  document.getElementById('supplierPayNoteInput').value = '';
+  const noteSugg = [...new Set(db.supplierPayments.map(p=>p.note).filter(Boolean))];
+  document.getElementById('dl-supplier-pay-note').innerHTML = noteSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('');
+  updateSupplierPayResultInfo();
+  document.getElementById('supplierPayOverlay').classList.add('open');
+}
+let supplierPayCtx = null;
+function updateSupplierPayResultInfo(){
+  if(!supplierPayCtx) return;
+  const supplier = db.suppliers[supplierPayCtx];
+  if(!supplier) return;
+  const amount = Number(document.getElementById('supplierPayAmountInput').value)||0;
+  const remaining = Math.max(0, Number(supplier.due||0) - amount);
+  document.getElementById('supplierPayResultInfo').textContent = t('pay_due_remaining')(remaining);
+}
+document.getElementById('supplierPayAmountInput').addEventListener('input', updateSupplierPayResultInfo);
+document.getElementById('supplierPayCancelBtn').addEventListener('click', () => {
+  document.getElementById('supplierPayOverlay').classList.remove('open');
+  supplierPayCtx = null;
+});
+setupOverlayBackdropClose('supplierPayOverlay', () => { supplierPayCtx = null; });
+
+document.getElementById('supplierPayConfirmBtn').addEventListener('click', async () => {
+  if(!supplierPayCtx) return;
+  const supplier = db.suppliers[supplierPayCtx];
+  if(!supplier) return;
+  const amount = Number(document.getElementById('supplierPayAmountInput').value)||0;
+  if(amount<=0) return;
+  const date = document.getElementById('supplierPayDateInput').value || todayStr();
+  const note = document.getElementById('supplierPayNoteInput').value.trim();
+  const previousDue = Number(supplier.due||0);
+  const newDue = Math.max(0, previousDue - amount);
+  supplier.due = newDue;
+  await safePut('suppliers', supplierPayCtx, supplier);
+
+  let toApply = amount;
+  const openPurchases = db.purchases.filter(p=>p.supplierId===supplierPayCtx && Number(p.due)>0).sort((a,b)=>a.ts-b.ts);
+  const adjustments = [];
+  for(const purchase of openPurchases){
+    if(toApply<=0) break;
+    const applyAmt = Math.min(Number(purchase.due), toApply);
+    purchase.paid = Number(purchase.paid||0) + applyAmt;
+    purchase.due = Math.max(0, Number(purchase.due) - applyAmt);
+    toApply -= applyAmt;
+    adjustments.push({ purchaseId: purchase.id, amount: applyAmt });
+    await safePut('purchases', purchase.id, purchase);
+  }
+
+  const record = {
+    id: uid(), receiptNo: nextSupplierReceiptNo(), supplierId: supplierPayCtx, supplierName: supplier.name,
+    amount, previousDue, newDue, note, adjustments, date, ts: new Date(date).getTime() || Date.now()
+  };
+  db.supplierPayments.push(record);
+  await safePut('supplierPayments', record.id, record);
+
+  document.getElementById('supplierPayOverlay').classList.remove('open');
+  supplierPayCtx = null;
+  renderNav();
+  renderPage();
+});
+
+/* ---------- Purchase View ---------- */
+function openPurchaseView(id){
+  const purchase = db.purchases.find(p=>p.id===id);
+  if(!purchase) return;
+  document.getElementById('purchaseViewTitle').textContent = (purchase.purchaseNo?t('col_invoice_no')+' #'+purchase.purchaseNo:t('view_title'));
+  document.getElementById('purchaseViewCloseBtn').textContent = t('close');
+  document.getElementById('purchaseViewPrintBtn').textContent = t('print_report');
+  document.getElementById('purchaseViewBody').innerHTML = `
+    <table class="data">
+      <tbody>
+        <tr><td>${t('col_date')}</td><td>${purchase.date}</td></tr>
+        <tr><td>${t('nav_suppliers')}</td><td>${escapeHtml(purchase.supplierName||'—')}</td></tr>
+        <tr><td>${t('col_product')}</td><td>${escapeHtml(purchase.productName)}</td></tr>
+        <tr><td>${t('col_qty')}</td><td>${purchase.qty}</td></tr>
+        <tr><td>${t('col_unit_cost')}</td><td>৳${money(purchase.unitCost)}</td></tr>
+        <tr><td>${t('col_total')}</td><td>৳${money(purchase.total)}</td></tr>
+        <tr><td>${t('col_paid')}</td><td>৳${money(purchase.paid||0)}</td></tr>
+        <tr><td>${t('col_due')}</td><td>${Number(purchase.due)>0?'৳'+money(purchase.due):'—'}</td></tr>
+        ${purchase.note ? `<tr><td>${t('f_note')}</td><td>${escapeHtml(purchase.note)}</td></tr>` : ''}
+      </tbody>
+    </table>
+  `;
+  document.getElementById('purchaseViewOverlay').classList.add('open');
+}
+document.getElementById('purchaseViewCloseBtn').addEventListener('click', () => {
+  document.getElementById('purchaseViewOverlay').classList.remove('open');
+});
+document.getElementById('purchaseViewPrintBtn').addEventListener('click', () => window.print());
+setupOverlayBackdropClose('purchaseViewOverlay');
+
+/* ---------- Supplier History ---------- */
+function openSupplierHistory(supplierId){
+  const supplier = db.suppliers[supplierId];
+  if(!supplier) return;
+  const purchases = db.purchases.filter(p=>p.supplierId===supplierId);
+  const payments = db.supplierPayments.filter(p=>p.supplierId===supplierId);
+  const totalBought = purchases.reduce((s,x)=>s+Number(x.total),0);
+  const totalPaid = purchases.reduce((s,x)=>s+Number(x.paid||0),0);
+
+  const timeline = [
+    ...purchases.map(p => ({ ts:p.ts, date:p.date, type:'purchase', label:escapeHtml(p.productName), ref:p.purchaseNo?'#'+p.purchaseNo:'', amount:p.total, note:'' })),
+    ...payments.map(p => ({ ts:p.ts, date:p.date, type:'payment', label:t('pay_supplier_title'), ref:p.receiptNo?'#'+p.receiptNo:'', amount:p.amount, note:p.note||'' })),
+  ].sort((a,b)=>a.ts-b.ts);
+
+  document.getElementById('supplierHistoryTitle').textContent = supplier.name + ' — ' + t('history_title');
+  document.getElementById('supplierHistoryBody').innerHTML = `
+    <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
+      ${escapeHtml(supplier.name)}${supplier.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(supplier.phone) : ''}
+    </div>
+    <div class="field-hint" style="margin-bottom:10px;">
+      ${t('history_summary')(totalBought, totalPaid, supplier.due||0)}
+    </div>
+    ${timeline.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+    <table class="data">
+      <thead><tr><th>${t('col_date')}</th><th>${t('history_type_label')}</th><th>${t('col_product')}</th><th>${t('col_amount')}</th><th>${t('f_note')}</th></tr></thead>
+      <tbody>
+        ${timeline.map(x=>`<tr><td>${formatDateDMY(x.date)}</td><td>${x.type==='purchase'?t('nav_purchases'):t('pay_supplier_title')}</td><td>${x.label}${x.ref?' ('+x.ref+')':''}</td><td>৳${money(x.amount)}</td><td>${escapeHtml(x.note||'—')}</td></tr>`).join('')}
+      </tbody>
+    </table>`}
+  `;
+  document.getElementById('supplierHistoryCloseBtn').textContent = t('close');
+  document.getElementById('supplierHistoryPrintBtn').textContent = t('print_report');
+  document.getElementById('supplierHistoryOverlay').classList.add('open');
+}
+document.getElementById('supplierHistoryCloseBtn').addEventListener('click', () => {
+  document.getElementById('supplierHistoryOverlay').classList.remove('open');
+});
+document.getElementById('supplierHistoryPrintBtn').addEventListener('click', () => window.print());
+setupOverlayBackdropClose('supplierHistoryOverlay');
+
 function openRestockForm(productId){
   document.getElementById('restockTitle').textContent = t('restock_title');
   document.getElementById('restockProductLabel').textContent = t('f_product_select');
@@ -2788,16 +3213,41 @@ async function handleSave(tab, id, values){
     const supplier = db.suppliers[values.supplierId];
     const product = db.products[values.productId];
     if(!product){ alert(t('product_not_found')); return; }
+    const existing = id ? db.purchases.find(x=>x.id===id) : null;
     const total = Number(values.qty) * Number(values.unitCost);
+    const paid = Math.min(total, Number(values.paid)||0);
+    const due = Math.max(0, total - paid);
+
+    if(existing){
+      // reverse the old stock/due effects before re-applying the edited values
+      const oldProduct = db.products[existing.productId];
+      if(oldProduct){ oldProduct.qty = Math.max(0, Number(oldProduct.qty) - Number(existing.qty)); await safePut('products', existing.productId, oldProduct); }
+      if(existing.supplierId && db.suppliers[existing.supplierId]){
+        const oldSupplier = db.suppliers[existing.supplierId];
+        oldSupplier.due = Math.max(0, Number(oldSupplier.due||0) - Number(existing.due||0));
+        await safePut('suppliers', existing.supplierId, oldSupplier);
+      }
+    }
+
     product.qty = Number(product.qty) + Number(values.qty);
     product.cost = Number(values.unitCost);
-    const record = {
-      id: uid(), supplierId: values.supplierId, supplierName: supplier?supplier.name:'—',
-      productId: values.productId, productName: product.name,
-      qty: Number(values.qty), unitCost: Number(values.unitCost), total, date: values.date, ts: Date.now()
-    };
-    db.purchases.push(record);
     await safePut('products', values.productId, product);
+
+    if(supplier){
+      supplier.due = Math.max(0, Number(supplier.due||0) + due);
+      await safePut('suppliers', values.supplierId, supplier);
+    }
+
+    const record = {
+      id: id || uid(), purchaseNo: existing ? (existing.purchaseNo || nextPurchaseNo()) : nextPurchaseNo(),
+      supplierId: values.supplierId, supplierName: supplier?supplier.name:'—',
+      productId: values.productId, productName: product.name,
+      qty: Number(values.qty), unitCost: Number(values.unitCost), total,
+      paid, due, initialPaid: paid,
+      note: values.note||'', date: values.date, ts: existing ? existing.ts : Date.now()
+    };
+    if(existing) db.purchases = db.purchases.map(x=>x.id===id?record:x);
+    else db.purchases.push(record);
     await safePut('purchases', record.id, record);
   }
   else if(tab==='sales'){
@@ -2940,6 +3390,18 @@ async function deleteItem(tab, id){
   if(tab==='sales'){
     const sale = db.sales.find(x=>x.id===id);
     if(sale) await reverseSaleEffects(sale);
+  }
+  if(tab==='purchases'){
+    const purchase = db.purchases.find(x=>x.id===id);
+    if(purchase){
+      const product = db.products[purchase.productId];
+      if(product){ product.qty = Math.max(0, Number(product.qty) - Number(purchase.qty)); await safePut('products', purchase.productId, product); }
+      if(purchase.supplierId && db.suppliers[purchase.supplierId]){
+        const supplier = db.suppliers[purchase.supplierId];
+        supplier.due = Math.max(0, Number(supplier.due||0) - Number(purchase.due||0));
+        await safePut('suppliers', purchase.supplierId, supplier);
+      }
+    }
   }
   if(cfg.isObj) delete db[tab][id];
   else db[tab] = db[tab].filter(x=>x.id!==id);
@@ -4149,6 +4611,12 @@ document.getElementById('forgotPasswordLink').addEventListener('click', async (e
 document.getElementById('logoutBtn').addEventListener('click', () => {
   if(useFirebase) firebase.auth().signOut();
 });
+if(SHOPS.length > 1) document.getElementById('switchShopBtn').style.display = '';
+document.getElementById('switchShopBtn').addEventListener('click', async () => {
+  if(useFirebase) { try{ await firebase.auth().signOut(); }catch(e){} }
+  currentAuthUser = null;
+  showShopSelector();
+});
 document.getElementById('backupBtn').addEventListener('click', backupToDrive);
 document.getElementById('exportJsonBtn').addEventListener('click', exportBackupToFile);
 document.getElementById('importJsonBtn').addEventListener('click', () => {
@@ -4160,6 +4628,9 @@ document.getElementById('importJsonInput').addEventListener('change', (e) => {
   e.target.value = '';
 });
 document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
+// Drive backup row visibility gets re-applied by applyFeatureVisibility() once settings are loaded
+const backupRowObserver = new MutationObserver(applyFeatureVisibility);
+backupRowObserver.observe(document.getElementById('backupRow'), { attributes: true, attributeFilter: ['style'] });
 
 async function clearAllData(){
   const step1 = confirm(t('clear_all_confirm1'));
@@ -4167,15 +4638,21 @@ async function clearAllData(){
   const typed = prompt(t('clear_all_confirm2'));
   if(typed !== t('clear_all_confirm_word')) { alert(t('clear_all_aborted')); return; }
 
-  const collections = ['customers','suppliers','products','purchases','sales','expenses','installments','installmentPlans','returns'];
-  for(const name of collections){
-    const items = db[name];
-    const ids = Array.isArray(items) ? items.map(x=>x.id) : Object.keys(items);
+  const objCollections = ['customers','suppliers','products','categories'];
+  const arrCollections = ['purchases','sales','expenses','installments','installmentPlans','returns','supplierPayments'];
+
+  for(const name of objCollections){
+    const ids = Object.keys(db[name]);
     for(const id of ids){ await safeRemove(name, id); }
   }
-  db.customers = {}; db.suppliers = {}; db.products = {};
+  for(const name of arrCollections){
+    const ids = db[name].map(x=>x.id);
+    for(const id of ids){ await safeRemove(name, id); }
+  }
+
+  db.customers = {}; db.suppliers = {}; db.products = {}; db.categories = {};
   db.purchases = []; db.sales = []; db.expenses = [];
-  db.installments = []; db.installmentPlans = []; db.returns = [];
+  db.installments = []; db.installmentPlans = []; db.returns = []; db.supplierPayments = [];
   try{ await storageSet(K.logo, null); }catch(e){}
   logoData = null;
 
@@ -4211,9 +4688,40 @@ window.addEventListener('unhandledrejection', (ev) => {
   console.error('unhandled promise rejection', ev.reason);
 });
 
-function bootstrapApp(){
+function renderShopSelector(){
+  const listEl = document.getElementById('shopSelectList');
+  listEl.innerHTML = SHOPS.map((shop, i) => `
+    <button class="btn ${i===0?'amber':'ghost'}" style="width:100%;margin-bottom:8px;text-align:left;" data-shop-idx="${i}">
+      ${escapeHtml(shop.name)}
+    </button>
+  `).join('');
+  listEl.querySelectorAll('[data-shop-idx]').forEach(btn => {
+    btn.addEventListener('click', () => selectShop(Number(btn.dataset.shopIdx)));
+  });
+}
+function selectShop(idx){
+  const shop = SHOPS[idx];
+  if(!shop) return;
+  currentShopId = shop.id;
+  firebaseConfig = shop.firebaseConfig;
+  SHOP_NAME = shop.name;
+  SHOP_ADDRESS = shop.address || '';
+  SHOP_EMAIL = shop.email || '';
+  SHOP_CONTACT = shop.contact || '';
+  db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], supplierPayments:[] };
+  document.getElementById('shopSelectScreen').style.display = 'none';
+  bootstrapApp();
+}
+function showShopSelector(){
+  renderShopSelector();
+  document.getElementById('shopSelectScreen').style.display = 'flex';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'none';
+}
+
+async function bootstrapApp(){
   try{
-    initStorage();
+    await initStorage();
     initGoogleDrive();
     renderLangSwitch();
     renderBrandTexts();
@@ -4242,10 +4750,18 @@ function bootstrapApp(){
     try{ safeShowAppOrLogin(); }catch(e2){ console.error('fallback also failed', e2); }
   }
 }
+function startApp(){
+  if(SHOPS.length > 1){
+    showShopSelector();
+  } else {
+    currentShopId = SHOPS[0].id;
+    bootstrapApp();
+  }
+}
 if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', () => { bootstrapApp(); });
+  document.addEventListener('DOMContentLoaded', () => { startApp(); });
 } else {
-  bootstrapApp();
+  startApp();
 }
 </script>
 </body>
