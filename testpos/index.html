@@ -968,10 +968,10 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    ব্রাউজার ট্যাব টাইটেল, প্রিন্ট হেডার, ব্যাকআপ ফাইলের নাম) নিজে থেকেই বদলে যাবে।
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
-const SHOP_NAME = "Picone IT";
-const SHOP_ADDRESS = "Piconet IT, Noapara Bazar, Abhaynagar, Jashore-7460";
-const SHOP_EMAIL = "shoppingzonebd@gmail.com";
-const SHOP_CONTACT = "01303631066";
+let SHOP_NAME = "MAX";
+let SHOP_ADDRESS = "Max Marketing, Noapara Bazar, Abhaynagar, Jashore-7460";
+let SHOP_EMAIL = "maxnoapara@gmail.com";
+let SHOP_CONTACT = "01710448844";
 /* Only these logged-in emails will see the "Reports" menu — everyone else's
    staff login will not see Reports at all. Add/remove emails as needed. */
 const ADMIN_EMAILS = ["maxnoapara@gmail.com", "mushfiq35@gmail.com"];
@@ -4574,6 +4574,7 @@ document.getElementById('quickSaleBtn').addEventListener('click', () => openMult
 
 /* ---------- Auth Gate ---------- */
 function showLoginScreen(){
+  document.getElementById('loginScreen').style.display = '';
   document.getElementById('loginScreen').classList.add('open');
   document.getElementById('appRoot').style.display = 'none';
   document.getElementById('logoutRow').style.display = 'none';
@@ -4730,7 +4731,8 @@ function selectShop(idx){
 function showShopSelector(){
   renderShopSelector();
   document.getElementById('shopSelectScreen').style.display = 'flex';
-  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('loginScreen').classList.remove('open');
+  document.getElementById('loginScreen').style.display = '';
   document.getElementById('appRoot').style.display = 'none';
 }
 
