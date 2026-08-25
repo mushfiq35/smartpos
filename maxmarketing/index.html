@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#16302A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MAX MARKETING">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Business System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -1688,7 +1696,11 @@ function pad2(n){ return String(n).padStart(2,'0'); }
 function toISODate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
 
 function getEarliestDate(){
-  const allDates = [...db.sales, ...db.purchases, ...db.expenses].map(x=>x.date).filter(Boolean).sort();
+  const isValidISODate = (d) => typeof d==='string' && /^\d{4}-\d{2}-\d{2}/.test(d);
+  const allDates = [
+    ...db.sales, ...db.purchases, ...db.expenses,
+    ...(db.installments||[]), ...(db.returns||[])
+  ].map(x=>x.date).filter(isValidISODate).sort();
   return allDates.length ? allDates[0] : todayStr();
 }
 
@@ -1994,7 +2006,7 @@ function renderSummaryReport(body){
 /* ---------- Separate Sales / Returns / Installment Reports ---------- */
 let salesRptRange='last14', salesRptFrom='', salesRptTo='';
 let returnsRptRange='last14', returnsRptFrom='', returnsRptTo='';
-let instRptRange='last14', instRptFrom='', instRptTo='';
+let instRptRange='allTime', instRptFrom='', instRptTo='';
 
 function buildRangeToolbar(prefix, state){
   return `
@@ -2032,7 +2044,10 @@ function wireRangeToolbar(prefix, getState, setState, refresh){
   });
   fromInput.addEventListener('change', () => { const s=getState(); s.from=fromInput.value; setState(s); refresh(); });
   toInput.addEventListener('change', () => { const s=getState(); s.to=toInput.value; setState(s); refresh(); });
-  document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => window.print());
+  document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => {
+    document.querySelectorAll('.overlay.open').forEach(el => el.classList.remove('open'));
+    window.print();
+  });
 }
 
 const REPORT_PAGE_SIZE = 50;
@@ -2131,7 +2146,67 @@ function renderReturnsOnlyReport(body){
 
 let instRptSelectedCustId = null;
 let instRptQuery = '';
+function printIsolated(title, tableHtml){
+  const oldFrame = document.getElementById('isolatedPrintFrame');
+  if(oldFrame) oldFrame.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'isolatedPrintFrame';
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.style.visibility = 'hidden';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(title)}</title>
+<style>
+  @page{ margin:12mm; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:Arial,Helvetica,sans-serif;padding:16px;color:#222;}
+  h2{margin:0 0 14px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:6px 8px;border-bottom:1px solid #ccc;text-align:left;}
+  th{background:#f0f0f0;text-transform:uppercase;font-size:11px;}
+  tfoot td{font-weight:700;border-top:2px solid #333;}
+  .no-print, .actions-cell{display:none !important;}
+</style>
+</head>
+<body>
+<h2>${escapeHtml(title)}</h2>
+${tableHtml}
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Service worker registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>`);
+  doc.close();
+
+  iframe.onload = () => {
+    const frameWin = iframe.contentWindow;
+    frameWin.focus();
+    frameWin.print();
+  };
+  const cleanup = () => { setTimeout(() => { iframe.remove(); }, 500); };
+  iframe.contentWindow.onafterprint = cleanup;
+}
+
 function renderInstallmentOnlyReport(body){
+  let lastPrintTableHtml = '';
   body.innerHTML = buildRangeToolbar('instRpt');
   function refresh(){
     const st = {range:instRptRange, from:instRptFrom, to:instRptTo};
@@ -2143,10 +2218,11 @@ function renderInstallmentOnlyReport(body){
     const byCust = {};
     list.forEach(i => {
       const cid = i.customerId || 'walkin';
-      if(!byCust[cid]) byCust[cid] = { customerId:i.customerId, customerName:i.customerName||t('walk_in'), count:0, paid:0, discount:0 };
+      if(!byCust[cid]) byCust[cid] = { customerId:i.customerId, customerName:i.customerName||t('walk_in'), count:0, paid:0, discount:0, receiptNos:[] };
       byCust[cid].count++;
       byCust[cid].paid += Number(i.amount);
       byCust[cid].discount += Number(i.discount||0);
+      if(i.receiptNo) byCust[cid].receiptNos.push(i.receiptNo);
     });
     // also include every customer relevant to installments (due>0, or any payment/plan history)
     // even if they have no payment within the selected date range — matching the Installment page
@@ -2154,13 +2230,13 @@ function renderInstallmentOnlyReport(body){
     const planIds = new Set(db.installmentPlans.map(p=>p.customerId).filter(Boolean));
     Object.entries(db.customers).forEach(([cid,cust]) => {
       if(Number(cust.due)>0 || historyIds.has(cid) || planIds.has(cid)){
-        if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0 };
+        if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0, receiptNos:[] };
       }
     });
     Object.values(byCust).forEach(c => { c.due = c.customerId && db.customers[c.customerId] ? Number(db.customers[c.customerId].due||0) : 0; });
     const q = instRptQuery.trim().toLowerCase();
     const custRows = Object.values(byCust)
-      .filter(c => !q || c.customerName.toLowerCase().includes(q) || (c.customerId && db.customers[c.customerId] && (db.customers[c.customerId].phone||'').toLowerCase().includes(q)))
+      .filter(c => !q || c.customerName.toLowerCase().includes(q) || (c.customerId && db.customers[c.customerId] && (db.customers[c.customerId].phone||'').toLowerCase().includes(q)) || (c.receiptNos && c.receiptNos.some(rn => String(rn).toLowerCase().includes(q))))
       .sort((a,b)=>b.paid-a.paid);
     const totalDueAll = custRows.reduce((s,c)=>s+Number(c.due||0),0);
 
@@ -2193,9 +2269,10 @@ function renderInstallmentOnlyReport(body){
           <input type="text" id="instRptSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(instRptQuery)}">
         </div>
         <table class="data no-print">
-          <thead><tr><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th><th></th></tr></thead>
+          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th><th></th></tr></thead>
           <tbody>${custRows.map(c => `
             <tr style="${instRptSelectedCustId===c.customerId?'background:rgba(193,119,46,0.12);':''}">
+              <td>${c.receiptNos && c.receiptNos.length ? c.receiptNos.map(rn=>'#'+rn).join(', ') : '—'}</td>
               <td>${escapeHtml(c.customerName)}</td>
               <td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td>
               <td>৳${money(c.paid)}</td>
@@ -2203,13 +2280,34 @@ function renderInstallmentOnlyReport(body){
               <td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td>
               <td class="actions-cell"><button class="icon-btn inst-rpt-pick-btn" data-id="${c.customerId||'walkin'}" title="${t('view_title')}">👁</button></td>
             </tr>
-            ${instRptSelectedCustId===(c.customerId||'walkin') ? `<tr><td colspan="6" style="padding:0;border-bottom:none;"><div style="padding:14px 0;">${buildCustInstDetail(c.customerId||'walkin')}</div></td></tr>` : ''}
+            ${instRptSelectedCustId===(c.customerId||'walkin') ? `<tr><td colspan="7" style="padding:0;border-bottom:none;"><div style="padding:14px 0;">${buildCustInstDetail(c.customerId||'walkin')}</div></td></tr>` : ''}
           `).join('')}</tbody>
-          <tfoot><tr style="font-weight:700;"><td colspan="2">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalDueAll)}</td><td></td></tr></tfoot>
+          <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalDueAll)}</td><td></td></tr></tfoot>
         </table>
-        ${instRptSelectedCustId ? `<div class="print-only-block">${buildCustInstDetail(instRptSelectedCustId)}</div>` : ''}
       </div>
     `;
+    lastPrintTableHtml = `
+      <table>
+        <thead><tr><th>${t('col_receipt_no')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th></tr></thead>
+        <tbody>${custRows.map(c => `<tr><td>${c.receiptNos && c.receiptNos.length ? c.receiptNos.map(rn=>'#'+rn).join(', ') : '—'}</td><td>${escapeHtml(c.customerName)}</td><td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td><td>৳${money(c.paid)}</td><td>${Number(c.discount)>0?'৳'+money(c.discount):'—'}</td><td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td colspan="3">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalDueAll)}</td></tr></tfoot>
+      </table>
+    `;
+    let lastPrintDetailHtml = '';
+    let lastPrintDetailTitle = t('nav_installments');
+    if(instRptSelectedCustId){
+      lastPrintDetailTitle = (custRows.find(c => (c.customerId||'walkin')===instRptSelectedCustId) || {}).customerName || t('nav_installments');
+      lastPrintDetailHtml = buildCustInstDetail(instRptSelectedCustId);
+    }
+    const printBtnEl = document.getElementById('instRptPrintBtn');
+    if(printBtnEl){
+      const freshBtn = printBtnEl.cloneNode(true);
+      printBtnEl.parentNode.replaceChild(freshBtn, printBtnEl);
+      freshBtn.addEventListener('click', () => {
+        if(instRptSelectedCustId) printIsolated(lastPrintDetailTitle, lastPrintDetailHtml);
+        else printIsolated(t('nav_installments'), lastPrintTableHtml);
+      });
+    }
     document.querySelectorAll('.inst-rpt-pick-btn').forEach(b => {
       b.addEventListener('click', () => {
         instRptSelectedCustId = (instRptSelectedCustId===b.dataset.id) ? null : b.dataset.id;
