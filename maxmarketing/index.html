@@ -3,14 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#16302A">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="MAX MARKETING">
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="apple-touch-icon" href="./icon-192.png">
 <title>Business System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -1013,12 +1005,12 @@ function applyFeatureVisibility(){
 const SUMMARY_START_DATE = "2026-07-31";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA7pvxxc0AEj-As2Uxe0TWsC3kQfMAfY2o",
-  authDomain: "max-marketing-4bcd4.firebaseapp.com",
-  projectId: "max-marketing-4bcd4",
-  storageBucket: "max-marketing-4bcd4.firebasestorage.app",
-  messagingSenderId: "56240417487",
-  appId: "1:56240417487:web:9358a934b2c61e4d9665ba"
+  apiKey: "AIzaSyDqtiFkXiAkoDIm_fqCpJYb6ZhDLORT78k",
+  authDomain: "shoppingzonebd-51823.firebaseapp.com",
+  projectId: "shoppingzonebd-51823",
+  storageBucket: "shoppingzonebd-51823.firebasestorage.app",
+  messagingSenderId: "250367575508",
+  appId: "1:250367575508:web:f1816a1f118613c2874241"
 };
 
 let useFirebase = false;
@@ -4443,8 +4435,9 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     r.product.qty = Math.max(0, Number(r.product.qty) - r.qty);
   });
 
-  for(const r of rowsData) await safePut('products', r.pid, r.product);
-  for(const rec of saleRecords){ db.sales.push(rec); await safePut('sales', rec.id, rec); }
+  await Promise.all(rowsData.map(r => safePut('products', r.pid, r.product)));
+  saleRecords.forEach(rec => db.sales.push(rec));
+  await Promise.all(saleRecords.map(rec => safePut('sales', rec.id, rec)));
   if(customerId && cust){
     cust.due = Number(cust.due||0) + overallDue;
     await safePut('customers', customerId, cust);
@@ -4472,6 +4465,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   msEditInvoiceNo = null;
   renderNav();
   renderPage();
+  if(saleRecords.length && typeof openSaleView==='function') openSaleView(saleRecords[0].id);
 });
 
 let dueCtx = null;
@@ -4535,6 +4529,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   let toApply = paid + discount;
   const openSales = db.sales.filter(s=>s.customerId===dueCtx && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
   const adjustments = [];
+  const salesToUpdate = [];
   for(const sale of openSales){
     if(toApply<=0) break;
     const applyAmt = Math.min(Number(sale.due), toApply);
@@ -4542,8 +4537,9 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
     sale.due = Math.max(0, Number(sale.due) - applyAmt);
     toApply -= applyAmt;
     adjustments.push({ saleId: sale.id, amount: applyAmt });
-    await safePut('sales', sale.id, sale);
+    salesToUpdate.push(sale);
   }
+  await Promise.all(salesToUpdate.map(sale => safePut('sales', sale.id, sale)));
 
   const instRecord = {
     id: uid(), receiptNo: nextReceiptNo(), customerId: dueCtx, customerName: cust.name,
@@ -4791,16 +4787,6 @@ if(document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', () => { bootstrapApp(); });
 } else {
   bootstrapApp();
-}
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./sw.js').catch(function (err) {
-      console.warn('Service worker registration failed:', err);
-    });
-  });
 }
 </script>
 </body>
