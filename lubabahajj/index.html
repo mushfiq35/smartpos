@@ -745,7 +745,7 @@ const I18N = {
     grp_no_group:'— কোনো গ্রুপ নেই —', grp_add_btn:'+ নতুন গ্রুপ / লট', grp_add_member_btn:'+ নতুন গ্রুপ মেম্বার',
     grp_edit_form:'গ্রুপ / লট সম্পাদনা', grp_new_form:'নতুন গ্রুপ / লট',
     grp_edit_member:'গ্রুপ মেম্বার সম্পাদনা', grp_new_member:'নতুন গ্রুপ মেম্বার',
-    grp_del_member_confirm:'এই গ্রুপ মেম্বার মুছে ফেলবেন?', grp_del_confirm:'এই গ্রুপ মুছে ফেলবেন?',
+    grp_del_member_confirm:'এই গ্রুপ মেম্বার মুছে ফেলবেন?', grp_del_confirm:'এই গ্রুপ মুছে ফেলবেন?', del_cancel:'বাতিল করুন', del_confirm_btn:'হ্যাঁ, মুছুন', del_irreversible:'⚠️ এই কাজ পূর্বাবস্থায় ফেরানো যাবে না!', del_title_hajji:'হাজী সম্পূর্ণ মুছুন', del_title_booking:'বুকিং মুছুন', del_title_return:'বাতিল রেকর্ড মুছুন', del_title_generic:'মুছে ফেলুন', del_title_group:'গ্রুপ / লট মুছুন', del_title_member:'গ্রুপ মেম্বার মুছুন', del_msg_hajji_data:' এবং তার সকল ডেটা মুছে যাবে', del_msg_sales:' টি বুকিং', del_msg_inst:' টি কিস্তি', del_msg_no_sales:'কোনো বুকিং নেই', del_msg_confirm:' মুছে ফেলবেন?',
     grp_name_required:'গ্রুপ নাম ও মোয়াল্লেম আবশ্যক', grp_member_required:'নম্বর ও নাম আবশ্যক',
     grp_no_members:'কোনো গ্রুপ মেম্বার নেই', grp_no_groups:'কোনো গ্রুপ নেই',
     grp_no_lots:'এই মেম্বারের কোনো লট নেই', grp_no_bookings:'কোনো বুকিং নেই', grp_no_inst:'কোনো কিস্তি নেই',
@@ -881,7 +881,7 @@ const I18N = {
     grp_no_group:'— No Group —', grp_add_btn:'+ New Group / Lot', grp_add_member_btn:'+ New Group Member',
     grp_edit_form:'Edit Group / Lot', grp_new_form:'New Group / Lot',
     grp_edit_member:'Edit Group Member', grp_new_member:'New Group Member',
-    grp_del_member_confirm:'Delete this group member?', grp_del_confirm:'Delete this group?',
+    grp_del_member_confirm:'Delete this group member?', grp_del_confirm:'Delete this group?', del_cancel:'Cancel', del_confirm_btn:'Yes, Delete', del_irreversible:'⚠️ This action cannot be undone!', del_title_hajji:'Delete Hajji Completely', del_title_booking:'Delete Booking', del_title_return:'Delete Cancellation Record', del_title_generic:'Delete', del_title_group:'Delete Group / Lot', del_title_member:'Delete Group Member', del_msg_hajji_data:' and all their data will be deleted', del_msg_sales:' booking(s)', del_msg_inst:' installment(s)', del_msg_no_sales:'no bookings', del_msg_confirm:' — delete?',
     grp_name_required:'Group name and Moallem are required', grp_member_required:'Number and name are required',
     grp_no_members:'No group members yet', grp_no_groups:'No groups yet',
     grp_no_lots:'No lots for this member', grp_no_bookings:'No bookings', grp_no_inst:'No installments',
@@ -2106,11 +2106,11 @@ function showDeleteConfirm(title, message, onConfirm){
     +'<p style="margin:0;font-size:13px;color:var(--ink-soft);">'+message+'</p>'
     +'</div></div>'
     +'<div style="background:rgba(180,66,58,0.08);border:1px solid rgba(180,66,58,0.2);border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:13px;color:var(--red);">'
-    +'⚠️ এই কাজ পূর্বাবস্থায় ফেরানো যাবে না!'
+    +t('del_irreversible')
     +'</div>'
     +'<div style="display:flex;gap:10px;justify-content:flex-end;">'
-    +'<button class="btn ghost" id="delCancelBtn" style="min-width:100px;">বাতিল করুন</button>'
-    +'<button class="btn" id="delConfirmBtn" style="background:var(--red);color:#fff;border:none;min-width:120px;">হ্যাঁ, মুছুন</button>'
+    +'<button class="btn ghost" id="delCancelBtn" style="min-width:100px;">'+t('del_cancel')+'</button>'
+    +'<button class="btn" id="delConfirmBtn" style="background:var(--red);color:#fff;border:none;min-width:120px;">'+t('del_confirm_btn')+'</button>'
     +'</div></div></div>';
   document.body.insertAdjacentHTML('beforeend', html);
   document.getElementById('delCancelBtn').onclick = ()=>document.getElementById('deleteConfirmOverlay').remove();
@@ -2121,8 +2121,8 @@ async function deleteGroupMember(id){
   const m = db.groupMembers[id];
   if(!m) return;
   showDeleteConfirm(
-    'গ্রুপ মেম্বার মুছুন',
-    '"'+escapeHtml(m.name)+'" কে মুছে ফেলবেন?',
+    t('del_title_member'),
+    '"'+escapeHtml(m.name)+'"'+t('del_msg_confirm'),
     async ()=>{
       delete db.groupMembers[id];
       await safeRemove('groupMembers', id);
@@ -2604,8 +2604,8 @@ async function deleteGroup(id){
   const g = db.groups[id];
   if(!g) return;
   showDeleteConfirm(
-    'গ্রুপ / লট মুছুন',
-    '"'+escapeHtml(g.name)+'" গ্রুপটি মুছে ফেলবেন?',
+    t('del_title_group'),
+    '"'+escapeHtml(g.name)+'"'+t('del_msg_confirm'),
     async ()=>{
       delete db.groups[id];
       await safeRemove('groups', id);
@@ -4296,8 +4296,8 @@ async function deleteInvoiceGroup(repId){
   if(!rep) return;
   await new Promise(resolve=>{
     showDeleteConfirm(
-      'বুকিং মুছুন',
-      '"'+escapeHtml(rep.customerName||'এই বুকিং')+'" এর Invoice #'+(rep.invoiceNo||'?')+' মুছে ফেলবেন?',
+      t('del_title_booking'),
+      '"'+escapeHtml(rep.customerName||'')+'" Invoice #'+(rep.invoiceNo||'?')+t('del_msg_confirm'),
       resolve
     );
   });
@@ -4320,11 +4320,11 @@ async function deleteHajji(custId){
   if(!cust) return;
   const custSalesCount = db.sales.filter(s=>s.customerId===custId).length;
   const custInstCount = db.installments.filter(i=>i.customerId===custId).length;
-  const details = custSalesCount>0 ? custSalesCount+' টি বুকিং' + (custInstCount>0?', '+custInstCount+' টি কিস্তি':'') : 'কোনো বুকিং নেই';
+  const details = custSalesCount>0 ? custSalesCount+t('del_msg_sales')+(custInstCount>0?', '+custInstCount+t('del_msg_inst'):'') : t('del_msg_no_sales');
   await new Promise(resolve=>{
     showDeleteConfirm(
-      'হাজী সম্পূর্ণ মুছুন',
-      '"'+escapeHtml(cust.name)+'" এবং তার সকল ডেটা মুছে যাবে ('+details+')',
+      t('del_title_hajji'),
+      '"'+escapeHtml(cust.name)+'"'+t('del_msg_hajji_data')+' ('+details+')',
       resolve
     );
   });
@@ -4370,11 +4370,11 @@ async function deleteItem(tab, id){
   if(tab==='customers'){ await deleteHajji(id); return; }
   const cfg = CONFIG[tab];
   const itemObj = cfg.isObj ? db[tab][id] : (db[tab]||[]).find(x=>x.id===id);
-  const itemName = itemObj ? (itemObj.name||itemObj.customerName||itemObj.supplierName||itemObj.sector||itemObj.productName||'এই আইটেম') : 'এই আইটেম';
+  const itemName = itemObj ? (itemObj.name||itemObj.customerName||itemObj.supplierName||itemObj.sector||itemObj.productName||t('del_title_generic')) : t('del_title_generic');
   await new Promise(resolve=>{
     showDeleteConfirm(
-      'মুছে ফেলুন',
-      '"'+escapeHtml(String(itemName))+'" মুছে ফেলবেন?',
+      t('del_title_generic'),
+      '"'+escapeHtml(String(itemName))+'"'+t('del_msg_confirm'),
       resolve
     );
   });
@@ -4819,8 +4819,8 @@ async function deleteReturn(returnId){
   if(!rec) return;
   await new Promise(resolve=>{
     showDeleteConfirm(
-      'বাতিল রেকর্ড মুছুন',
-      '"'+escapeHtml(rec.customerName||'এই রেকর্ড')+'" এর বাতিল রেকর্ড মুছে ফেলবেন?',
+      t('del_title_return'),
+      '"'+escapeHtml(rec.customerName||'')+'"'+t('del_msg_confirm'),
       resolve
     );
   });
