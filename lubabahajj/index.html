@@ -2094,12 +2094,42 @@ function openGroupMemberForm(id){
   };
 }
 
+
+function showDeleteConfirm(title, message, onConfirm){
+  const existing = document.getElementById('deleteConfirmOverlay');
+  if(existing) existing.remove();
+  const html = '<div class="overlay open" id="deleteConfirmOverlay" style="z-index:300;">'
+    +'<div class="modal" style="max-width:420px;">'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
+    +'<div style="width:44px;height:44px;border-radius:50%;background:var(--red-bg);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🗑️</div>'
+    +'<div><h3 style="margin:0 0 4px;color:var(--red);">'+title+'</h3>'
+    +'<p style="margin:0;font-size:13px;color:var(--ink-soft);">'+message+'</p>'
+    +'</div></div>'
+    +'<div style="background:rgba(180,66,58,0.08);border:1px solid rgba(180,66,58,0.2);border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:13px;color:var(--red);">'
+    +'⚠️ এই কাজ পূর্বাবস্থায় ফেরানো যাবে না!'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end;">'
+    +'<button class="btn ghost" id="delCancelBtn" style="min-width:100px;">বাতিল করুন</button>'
+    +'<button class="btn" id="delConfirmBtn" style="background:var(--red);color:#fff;border:none;min-width:120px;">হ্যাঁ, মুছুন</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('delCancelBtn').onclick = ()=>document.getElementById('deleteConfirmOverlay').remove();
+  document.getElementById('delConfirmBtn').onclick = ()=>{ document.getElementById('deleteConfirmOverlay').remove(); onConfirm(); };
+}
+
 async function deleteGroupMember(id){
-  if(!confirm(t('grp_del_member_confirm'))) return;
-  delete db.groupMembers[id];
-  await safeRemove('groupMembers', id);
-  showToast(t('deleted_toast'));
-  renderGroupMembersPage();
+  const m = db.groupMembers[id];
+  if(!m) return;
+  showDeleteConfirm(
+    'গ্রুপ মেম্বার মুছুন',
+    '"'+escapeHtml(m.name)+'" কে মুছে ফেলবেন?',
+    async ()=>{
+      delete db.groupMembers[id];
+      await safeRemove('groupMembers', id);
+      showToast(t('deleted_toast'));
+      renderGroupMembersPage();
+    }
+  );
 }
 
 function openGroupMemberReport(memberId){
@@ -2571,11 +2601,18 @@ function openGroupForm(id){
 }
 
 async function deleteGroup(id){
-  if(!confirm(t('grp_del_confirm'))) return;
-  delete db.groups[id];
-  await safeRemove('groups', id);
-  showToast(t('deleted_toast'));
-  renderGroupsPage();
+  const g = db.groups[id];
+  if(!g) return;
+  showDeleteConfirm(
+    'গ্রুপ / লট মুছুন',
+    '"'+escapeHtml(g.name)+'" গ্রুপটি মুছে ফেলবেন?',
+    async ()=>{
+      delete db.groups[id];
+      await safeRemove('groups', id);
+      showToast(t('deleted_toast'));
+      renderGroupsPage();
+    }
+  );
 }
 
 function onMsGroupChange(){
@@ -4257,7 +4294,13 @@ async function handleSave(tab, id, values){
 async function deleteInvoiceGroup(repId){
   const rep = db.sales.find(s=>s.id===repId);
   if(!rep) return;
-  if(!confirm(t('confirm_delete'))) return;
+  await new Promise(resolve=>{
+    showDeleteConfirm(
+      'বুকিং মুছুন',
+      '"'+escapeHtml(rep.customerName||'এই বুকিং')+'" এর Invoice #'+(rep.invoiceNo||'?')+' মুছে ফেলবেন?',
+      resolve
+    );
+  });
   const groupIds = db.sales.filter(s=>s.invoiceId===rep.invoiceId).map(s=>s.id);
   for(const gid of groupIds){
     db.sales = db.sales.filter(s=>s.id!==gid);
@@ -4275,7 +4318,16 @@ async function deleteInvoiceGroup(repId){
 async function deleteHajji(custId){
   const cust = db.customers[custId];
   if(!cust) return;
-  if(!confirm(`"${cust.name}" এবং তার সকল বুকিং, কিস্তি ও বাতিল রেকর্ড মুছে ফেলবেন?\nএই কাজ পূর্বাবস্থায় ফেরানো যাবে না!`)) return;
+  const custSalesCount = db.sales.filter(s=>s.customerId===custId).length;
+  const custInstCount = db.installments.filter(i=>i.customerId===custId).length;
+  const details = custSalesCount>0 ? custSalesCount+' টি বুকিং' + (custInstCount>0?', '+custInstCount+' টি কিস্তি':'') : 'কোনো বুকিং নেই';
+  await new Promise(resolve=>{
+    showDeleteConfirm(
+      'হাজী সম্পূর্ণ মুছুন',
+      '"'+escapeHtml(cust.name)+'" এবং তার সকল ডেটা মুছে যাবে ('+details+')',
+      resolve
+    );
+  });
 
   // ── sales (bookings) মুছো ────────────────────────────────────────────
   const custSales = db.sales.filter(s=>s.customerId===custId);
@@ -4316,8 +4368,16 @@ async function deleteHajji(custId){
 
 async function deleteItem(tab, id){
   if(tab==='customers'){ await deleteHajji(id); return; }
-  if(!confirm(t('confirm_delete'))) return;
   const cfg = CONFIG[tab];
+  const itemObj = cfg.isObj ? db[tab][id] : (db[tab]||[]).find(x=>x.id===id);
+  const itemName = itemObj ? (itemObj.name||itemObj.customerName||itemObj.supplierName||itemObj.sector||itemObj.productName||'এই আইটেম') : 'এই আইটেম';
+  await new Promise(resolve=>{
+    showDeleteConfirm(
+      'মুছে ফেলুন',
+      '"'+escapeHtml(String(itemName))+'" মুছে ফেলবেন?',
+      resolve
+    );
+  });
   // Purchase delete হলে supplier.due reverse করো
   if(tab==='purchases'){
     const pur = db.purchases.find(x=>x.id===id);
@@ -4757,7 +4817,13 @@ async function cancelReturn(returnId){
 async function deleteReturn(returnId){
   const rec = db.returns.find(r=>r.id===returnId);
   if(!rec) return;
-  if(!confirm(t('confirm_delete'))) return;
+  await new Promise(resolve=>{
+    showDeleteConfirm(
+      'বাতিল রেকর্ড মুছুন',
+      '"'+escapeHtml(rec.customerName||'এই রেকর্ড')+'" এর বাতিল রেকর্ড মুছে ফেলবেন?',
+      resolve
+    );
+  });
 
   if(!rec.cancelled){
     // still active — reverse its stock/due effects first, same as cancelling
