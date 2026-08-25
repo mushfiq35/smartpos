@@ -374,7 +374,11 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
       <button id="backupBtn">☁️ Backup</button>
       <button id="restoreBtn">♻️ Restore</button>
     </div>
-    <div class="backup-row">
+    <div class="backup-row" id="pcBackupRow" style="display:none;">
+      <button id="pcBackupBtn">💾 PC Backup</button>
+      <button id="pcRestoreBtn">📂 PC Restore</button>
+    </div>
+    <div class="backup-row" id="clearAllRow" style="display:none;">
       <button id="clearAllBtn" style="border-color:rgba(180,66,58,0.5);color:#e6a29c;">🗑️ Clear All Data</button>
     </div>
     <div class="logout-row" id="logoutRow" style="display:none;">
@@ -592,7 +596,8 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 const K = {
   customers:'pos-customers', suppliers:'pos-suppliers', products:'pos-products',
   purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo',
-  vendorPayments:'pos-vendor-payments'
+  vendorPayments:'pos-vendor-payments',
+  settings:'pos-settings'
 };
 let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], vendorPayments:[] };
 let currentTab = 'dashboard';
@@ -606,7 +611,7 @@ const I18N = {
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'হাজী', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর', vnd_statement:'ভেন্ডর স্টেটমেন্ট', vnd_pay_btn:'+ পেমেন্ট দিন', vnd_return_btn:'+ পণ্য রিটার্ন', vnd_due:'আমাদের দিতে হবে', vnd_advance:'ভেন্ডর অগ্রিম', vnd_clear:'ক্লিয়ার', vnd_pay_title:'পেমেন্ট দিন', vnd_return_title:'পণ্য রিটার্ন', vnd_return_cash:'নগদ ফেরত', vnd_return_adjust:'পরবর্তী ক্রয়ে সমন্বয়', vnd_return_confirm:'এই রিটার্ন নিশ্চিত করবেন?', vnd_pay_amount:'পরিশোধের পরিমাণ (৳)', vnd_history:'লেনদেনের ইতিহাস', vnd_type_purchase:'ক্রয়', vnd_type_payment:'পেমেন্ট', vnd_type_return:'রিটার্ন', vnd_no_history:'কোনো লেনদেন নেই', vnd_del_confirm:'এই লেনদেন মুছবেন?', vnd_no_returnable:'কোনো রিটার্নযোগ্য ক্রয় নেই', vnd_remaining:'অবশিষ্ট:', vnd_return_total:'মোট রিটার্ন:', vnd_total_purchase:'মোট ক্রয়', vnd_total_paid:'মোট পরিশোধ', col_debit:'ডেবিট', col_credit:'ক্রেডিট',
     title_categories:'প্যাকেজের ধরন', add_categories:'+ নতুন ধরন', f_category_name:'ধরনের নাম',
-    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট',
+    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস',
     reports_sales_returns_tab:'বুকিং ও বাতিল', sr_sales_count:'বুকিং সংখ্যা', sr_returns_count:'বাতিল সংখ্যা', sr_net_label:'নিট',
     return_title:'বুকিং বাতিল', return_new:'নতুন বাতিল', return_no:'বাতিল নং',
     return_original_qty:'মোট বুকড পরিমাণ', return_already:'রিটার্ন', return_remaining:'অবশিষ্ট',
@@ -617,7 +622,7 @@ const I18N = {
     return_confirm_cancel:'এই বুকিং বাতিল করতে চান? আসন ও বাকির হিসাব আগের অবস্থায় ফিরে যাবে।',
     return_status:'অবস্থা', return_active:'সক্রিয়',
     cancel:'বাতিল', save:'সংরক্ষণ করুন', edit_prefix:'এডিট করুন — ', new_prefix:'নতুন — ',
-    required_fields:'আবশ্যক ফিল্ড পূরণ করুন', confirm_delete:'এটি ডিলিট করতে চান?',
+    required_fields:'আবশ্যক ফিল্ড পূরণ করুন', confirm_delete:'এটি ডিলিট করতে চান?', del_cancel:'বাতিল করুন', del_confirm_btn:'হ্যাঁ, মুছুন', del_irreversible:'⚠️ এই কাজ পূর্বাবস্থায় ফেরানো যাবে না!', del_title_hajji:'হাজী সম্পূর্ণ মুছুন', del_title_booking:'বুকিং মুছুন', del_title_return:'বাতিল রেকর্ড মুছুন', del_title_generic:'মুছে ফেলুন', del_msg_hajji_data:' এবং তার সকল ডেটা মুছে যাবে', del_msg_sales:' টি বুকিং', del_msg_inst:' টি কিস্তি', del_msg_no_sales:'কোনো বুকিং নেই', del_msg_confirm:' মুছে ফেলবেন?',
     no_data:'কোনো তথ্য নেই', no_data_hint:'উপরে বাটনে চেপে যোগ করুন।', search_placeholder:'খুঁজুন...',
     edit_title:'এডিট', delete_title:'ডিলিট', history_title:'বুকিং ইতিহাস', pay_due_title:'বাকি পরিশোধ',
     low_stock_heading:'কম আসন সতর্কতা', low_stock_ok:'সব প্যাকেজের আসন ঠিক আছে ✓',
@@ -705,7 +710,7 @@ const I18N = {
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Hajji', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors', vnd_statement:'Vendor Statement', vnd_pay_btn:'+ Pay Vendor', vnd_return_btn:'+ Purchase Return', vnd_due:'We Owe', vnd_advance:'Vendor Advance', vnd_clear:'Clear', vnd_pay_title:'Pay Vendor', vnd_return_title:'Purchase Return', vnd_return_cash:'Cash Refund', vnd_return_adjust:'Adjust in Next Purchase', vnd_return_confirm:'Confirm this return?', vnd_pay_amount:'Payment Amount (৳)', vnd_history:'Transaction History', vnd_type_purchase:'Purchase', vnd_type_payment:'Payment', vnd_type_return:'Return', vnd_no_history:'No transactions yet', vnd_del_confirm:'Delete this transaction?', vnd_no_returnable:'No returnable purchases', vnd_remaining:'Remaining:', vnd_return_total:'Total Return:', vnd_total_purchase:'Total Purchase', vnd_total_paid:'Total Paid', col_debit:'Debit', col_credit:'Credit',
     title_categories:'Package Types', add_categories:'+ New Type', f_category_name:'Type Name',
-    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports',
+    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports', nav_settings:'Settings',
     reports_sales_returns_tab:'Bookings & Cancellations', sr_sales_count:'Bookings Count', sr_returns_count:'Cancellations Count', sr_net_label:'Net',
     return_title:'Cancellations', return_new:'New Cancellation', return_no:'Cancellation No.',
     return_original_qty:'Sold Qty', return_already:'Returned', return_remaining:'Remaining',
@@ -716,7 +721,7 @@ const I18N = {
     return_confirm_cancel:'Cancel this booking? Seats and due will be restored to their previous state.',
     return_status:'Status', return_active:'Active',
     cancel:'Cancel', save:'Save', edit_prefix:'Edit — ', new_prefix:'New — ',
-    required_fields:'Please fill in the required fields', confirm_delete:'Delete this item?',
+    required_fields:'Please fill in the required fields', confirm_delete:'Delete this item?', del_cancel:'Cancel', del_confirm_btn:'Yes, Delete', del_irreversible:'⚠️ This action cannot be undone!', del_title_hajji:'Delete Hajji Completely', del_title_booking:'Delete Booking', del_title_return:'Delete Cancellation Record', del_title_generic:'Delete', del_msg_hajji_data:' and all their data will be deleted', del_msg_sales:' booking(s)', del_msg_inst:' installment(s)', del_msg_no_sales:'no bookings', del_msg_confirm:' — delete?',
     no_data:'No data yet', no_data_hint:'Click the button above to add.', search_placeholder:'Search...',
     edit_title:'Edit', delete_title:'Delete', history_title:'Booking History', pay_due_title:'Pay Due',
     low_stock_heading:'Low Seat Alerts', low_stock_ok:'All packages have sufficient seats ✓',
@@ -819,7 +824,7 @@ const SHOP_EMAIL = "mushfiq35@gmail.com";
 const SHOP_CONTACT = "01718702706";
 /* Only these logged-in emails will see the "Reports" menu — everyone else's
    staff login will not see Reports at all. Add/remove emails as needed. */
-const ADMIN_EMAILS = ["your@email.com"];
+const ADMIN_EMAILS = ["mushfiq35@gmail.com"];
 /* Reports > Summary tab ignores everything before this date — old/messy
    historical accounts before this point are excluded from the running total. */
 const SUMMARY_START_DATE = "2026-07-31";
@@ -1130,6 +1135,7 @@ const NAV = [
   {id:'expenses', ic:'💸', key:'nav_expenses'},
   {id:'returns', ic:'↩️', key:'nav_returns'},
   {id:'reports', ic:'📈', key:'nav_reports'},
+  {id:'settings', ic:'⚙️', key:'nav_settings', adminOnly:true},
 ];
 
 function setupOverlayBackdropClose(overlayId, onClose){
@@ -1333,6 +1339,7 @@ function renderPage(){
   else if(currentTab==='expenses') renderListPage('expenses');
   else if(currentTab==='returns') renderReturnsPage();
   else if(currentTab==='reports') renderReportsPage();
+  else if(currentTab==='settings') renderSettingsPage();
   attachPageEvents();
 }
 
@@ -1342,8 +1349,8 @@ function computeTotalBalance(){
   const toStr = todayStr();
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
-  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.paid||0); });
-  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount)+Number(i.discount||0); });
+  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry && (!s.customerId||db.customers[s.customerId])) dp += Number(s.paid||0); });
+  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])) dp += Number(i.amount)+Number(i.discount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
   db.vendorPayments.forEach(vp => {
@@ -2012,8 +2019,8 @@ function renderSummaryReport(body){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)) buckets[toISODate(d)] = {dp:0, de:0};
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
-    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.paid||0); } });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
+    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry && (!s.customerId||db.customers[s.customerId])){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.paid||0); } });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
     db.vendorPayments.forEach(vp => {
@@ -2228,6 +2235,7 @@ function renderReturnsOnlyReport(body){
     const q = returnsRptQuery.trim().toLowerCase();
     const list = db.returns.filter(r=>{
       if(!(r.date>=fromStr && r.date<=toStr)) return false;
+      if(r.customerId && !db.customers[r.customerId]) return false;
       if(!q) return true;
       const cust = r.customerId ? db.customers[r.customerId] : null;
       return (r.customerName||'').toLowerCase().includes(q)
@@ -2306,6 +2314,7 @@ function renderInstallmentOnlyReport(body){
     const q = instRptQuery.trim().toLowerCase();
     const list = db.installments.filter(i=>{
       if(!(i.date>=fromStr && i.date<=toStr)) return false;
+      if(i.customerId && !db.customers[i.customerId]) return false;
       if(!q) return true;
       const cust = i.customerId ? db.customers[i.customerId] : null;
       return (i.customerName||'').toLowerCase().includes(q)
@@ -3322,7 +3331,9 @@ async function handleSave(tab, id, values){
 async function deleteInvoiceGroup(repId){
   const rep = db.sales.find(s=>s.id===repId);
   if(!rep) return;
-  if(!confirm(t('confirm_delete'))) return;
+  await new Promise(resolve=>{
+    showDeleteConfirm(t('del_title_booking'),'"'+escapeHtml(rep.customerName||'')+'" Invoice #'+(rep.invoiceNo||'?')+t('del_msg_confirm'),resolve);
+  });
   const groupIds = db.sales.filter(s=>s.invoiceId===rep.invoiceId).map(s=>s.id);
   for(const gid of groupIds){
     db.sales = db.sales.filter(s=>s.id!==gid);
@@ -3340,7 +3351,12 @@ async function deleteInvoiceGroup(repId){
 async function deleteHajji(custId){
   const cust = db.customers[custId];
   if(!cust) return;
-  if(!confirm(`"${cust.name}" এবং তার সকল বুকিং, কিস্তি ও বাতিল রেকর্ড মুছে ফেলবেন?\nএই কাজ পূর্বাবস্থায় ফেরানো যাবে না!`)) return;
+  const custSalesCount = db.sales.filter(s=>s.customerId===custId).length;
+  const custInstCount = db.installments.filter(i=>i.customerId===custId).length;
+  const details = custSalesCount>0 ? custSalesCount+t('del_msg_sales')+(custInstCount>0?', '+custInstCount+t('del_msg_inst'):'') : t('del_msg_no_sales');
+  await new Promise(resolve=>{
+    showDeleteConfirm(t('del_title_hajji'),'"'+escapeHtml(cust.name)+'"'+t('del_msg_hajji_data')+' ('+details+')',resolve);
+  });
 
   // Sales মুছো
   const custSales = db.sales.filter(s=>s.customerId===custId);
@@ -3374,10 +3390,97 @@ async function deleteHajji(custId){
   renderNav(); renderPage();
 }
 
+
+function showDeleteConfirm(title, message, onConfirm){
+  const existing = document.getElementById('deleteConfirmOverlay');
+  if(existing) existing.remove();
+  const html = '<div class="overlay open" id="deleteConfirmOverlay" style="z-index:300;">'
+    +'<div class="modal" style="max-width:420px;">'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
+    +'<div style="width:44px;height:44px;border-radius:50%;background:var(--red-bg);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🗑️</div>'
+    +'<div><h3 style="margin:0 0 4px;color:var(--red);">'+title+'</h3>'
+    +'<p style="margin:0;font-size:13px;color:var(--ink-soft);">'+message+'</p>'
+    +'</div></div>'
+    +'<div style="background:rgba(180,66,58,0.08);border:1px solid rgba(180,66,58,0.2);border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:13px;color:var(--red);">'
+    +t('del_irreversible')
+    +'</div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end;">'
+    +'<button class="btn ghost" id="delCancelBtn" style="min-width:100px;">'+t('del_cancel')+'</button>'
+    +'<button class="btn" id="delConfirmBtn" style="background:var(--red);color:#fff;border:none;min-width:120px;">'+t('del_confirm_btn')+'</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('delCancelBtn').onclick = ()=>document.getElementById('deleteConfirmOverlay').remove();
+  document.getElementById('delConfirmBtn').onclick = ()=>{ document.getElementById('deleteConfirmOverlay').remove(); onConfirm(); };
+}
+
+function renderSettingsPage(){
+  const user=firebase.auth().currentUser;
+  if(!user||!ADMIN_EMAILS.includes(user.email)){
+    document.getElementById('content').innerHTML='<div class="empty"><div class="big">⛔</div>Admin only</div>'; return;
+  }
+  const c=document.getElementById('content');
+  c.innerHTML=`<div class="panel">
+    <h3>⚙️ Settings</h3>
+    <div style="margin-bottom:20px;">
+      <h4 style="margin:0 0 10px;">Admin Emails</h4>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 8px;">One email per line — these accounts will see Settings, PC Backup/Restore, and Clear All Data.</p>
+      <textarea id="settingsAdminEmails" rows="4" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;font-size:13px;resize:vertical;">${ADMIN_EMAILS.join('\n')}</textarea>
+    </div>
+    <div style="margin-bottom:20px;">
+      <h4 style="margin:0 0 10px;">PC Backup / Restore</h4>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn" id="settingsPcBackup">💾 Download Backup (JSON)</button>
+        <button class="btn ghost" id="settingsPcRestore">📂 Restore from File</button>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;padding:14px;border:1px solid rgba(180,66,58,0.3);border-radius:8px;background:var(--red-bg);">
+      <h4 style="margin:0 0 8px;color:var(--red);">⚠️ Danger Zone</h4>
+      <button class="btn" style="background:var(--red);color:#fff;border:none;" id="settingsClearAll">🗑️ Clear All Data</button>
+    </div>
+    <button class="btn amber" id="settingsSave">Save Settings</button>
+    <span id="settingsSaveMsg" style="font-size:13px;margin-left:12px;color:var(--green);"></span>
+  </div>`;
+  document.getElementById('settingsSave').addEventListener('click',async()=>{
+    const emails=document.getElementById('settingsAdminEmails').value.split('\n').map(e=>e.trim()).filter(Boolean);
+    if(!emails.length){alert('At least one admin email required.');return;}
+    await safePut('settings','adminEmails',{emails});
+    ADMIN_EMAILS.length=0;emails.forEach(e=>ADMIN_EMAILS.push(e));
+    document.getElementById('settingsSaveMsg').textContent='✓ Saved!';
+    setTimeout(()=>document.getElementById('settingsSaveMsg').textContent='',2000);
+  });
+  document.getElementById('settingsPcBackup').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download=SHOP_NAME+'-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+    URL.revokeObjectURL(url);showToast(t('backup_success'));
+  });
+  document.getElementById('settingsPcRestore').addEventListener('click',()=>{
+    if(!confirm(t('confirm_restore')))return;
+    const input=document.createElement('input');input.type='file';input.accept='.json';
+    input.onchange=async(e)=>{
+      const file=e.target.files[0];if(!file)return;
+      const reader=new FileReader();
+      reader.onload=async(ev)=>{
+        try{
+          const data=JSON.parse(ev.target.result);const puts=[];
+          ['customers','suppliers','products','categories'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>puts.push(safePut(k,id,v)));});
+          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
+          await Promise.all(puts);showToast(t('restore_success'));setTimeout(()=>location.reload(),1500);
+        }catch(err){alert(t('restore_failed')+': '+err.message);}
+      };reader.readAsText(file);
+    };input.click();
+  });
+  document.getElementById('settingsClearAll').addEventListener('click',clearAllData);
+}
+
 async function deleteItem(tab, id){
   if(tab==='customers'){ await deleteHajji(id); return; }
-  if(!confirm(t('confirm_delete'))) return;
   const cfg = CONFIG[tab];
+  const itemObj = cfg.isObj ? db[tab][id] : (db[tab]||[]).find(x=>x.id===id);
+  const itemName = itemObj ? (itemObj.name||itemObj.customerName||itemObj.supplierName||itemObj.sector||itemObj.productName||t('del_title_generic')) : t('del_title_generic');
+  await new Promise(resolve=>{
+    showDeleteConfirm(t('del_title_generic'),'"'+escapeHtml(String(itemName))+'"'+t('del_msg_confirm'),resolve);
+  });
   if(tab==='purchases'){
     const pur = db.purchases.find(x=>x.id===id);
     if(pur && pur.supplierId && db.suppliers[pur.supplierId]){
@@ -3812,7 +3915,9 @@ async function cancelReturn(returnId){
 async function deleteReturn(returnId){
   const rec = db.returns.find(r=>r.id===returnId);
   if(!rec) return;
-  if(!confirm(t('confirm_delete'))) return;
+  await new Promise(resolve=>{
+    showDeleteConfirm(t('del_title_return'),'"'+escapeHtml(rec.customerName||'')+'"'+t('del_msg_confirm'),resolve);
+  });
 
   if(!rec.cancelled){
     // still active — reverse its stock/due effects first, same as cancelling
@@ -4613,6 +4718,8 @@ document.getElementById('backupBtn').addEventListener('click', backupToDrive);
 document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
 
 async function clearAllData(){
+  const user = firebase.auth().currentUser;
+  if(!user || !ADMIN_EMAILS.includes(user.email)){ alert('⛔ শুধুমাত্র admin এই কাজ করতে পারবেন।'); return; }
   const step1 = confirm(t('clear_all_confirm1'));
   if(!step1) return;
   const typed = prompt(t('clear_all_confirm2'));
