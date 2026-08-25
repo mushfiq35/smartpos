@@ -2379,7 +2379,8 @@ function openQuickAddHajji(groupId){
 function printGroupList(gid){
   const g=db.groups[gid]; if(!g) return;
   const sales=db.sales.filter(s=>s.groupId===gid);
-  const hajjiIds=[...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+  const salesHajjiIds=[...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+  const hajjiIds=[...new Set([...(g.hajjiIds||[]), ...salesHajjiIds])].filter(Boolean);
   const styleId='grpPrintStyle';
   let styleEl=document.getElementById(styleId);
   if(!styleEl){styleEl=document.createElement('style');styleEl.id=styleId;document.head.appendChild(styleEl);}
@@ -2515,7 +2516,8 @@ function renderGroupsPage(){
 
     filtered.forEach(function([gid,g]){
       const s2=db.sales.filter(s=>s.groupId===gid);
-      const h2=[...new Set(s2.map(s=>s.customerId).filter(Boolean))];
+      const salesHajjiIds2=[...new Set(s2.map(s=>s.customerId).filter(Boolean))];
+      const h2=[...new Set([...(g.hajjiIds||[]), ...salesHajjiIds2])].filter(Boolean);
       const hr=h2.map((hid,i)=>{
         const c=db.customers[hid]; if(!c) return '';
         return '<tr style="background:'+(i%2===0?'#fff':'#f5faf7')+';">'
