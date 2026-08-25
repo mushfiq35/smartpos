@@ -989,7 +989,6 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
 const SHOP_NAME = "Abu Lubaba Hajj & Umrah Center";
-const SHOP_OWNER = "Mowlana Masum Billah";
 const SHOP_ADDRESS = "Noapara; Abhaynagar; Jashore-7460";
 const SHOP_EMAIL = "m.masumbillah246@gmail.com";
 const SHOP_CONTACT = "01917241554";
@@ -2380,7 +2379,8 @@ function openQuickAddHajji(groupId){
 function printGroupList(gid){
   const g=db.groups[gid]; if(!g) return;
   const sales=db.sales.filter(s=>s.groupId===gid);
-  const hajjiIds=[...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+  const salesHajjiIds=[...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+  const hajjiIds=[...new Set([...(g.hajjiIds||[]), ...salesHajjiIds])].filter(Boolean);
   const styleId='grpPrintStyle';
   let styleEl=document.getElementById(styleId);
   if(!styleEl){styleEl=document.createElement('style');styleEl.id=styleId;document.head.appendChild(styleEl);}
@@ -2516,7 +2516,8 @@ function renderGroupsPage(){
 
     filtered.forEach(function([gid,g]){
       const s2=db.sales.filter(s=>s.groupId===gid);
-      const h2=[...new Set(s2.map(s=>s.customerId).filter(Boolean))];
+      const salesHajjiIds2=[...new Set(s2.map(s=>s.customerId).filter(Boolean))];
+      const h2=[...new Set([...(g.hajjiIds||[]), ...salesHajjiIds2])].filter(Boolean);
       const hr=h2.map((hid,i)=>{
         const c=db.customers[hid]; if(!c) return '';
         return '<tr style="background:'+(i%2===0?'#fff':'#f5faf7')+';">'
