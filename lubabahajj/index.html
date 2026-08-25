@@ -330,7 +330,7 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 .grp-expand-row td{padding:0 !important;}
 .grp-expand-inner{padding:12px 16px;background:var(--paper-card);border-top:2px solid var(--hajj-green);}
 .grp-hajji-table{width:100%;border-collapse:collapse;font-size:13px;}
-.grp-hajji-table th{text-align:left;padding:7px 10px;background:var(--hajj-green);color:#fff;font-size:11px;text-transform:uppercase;}
+.grp-hajji-table th{text-align:left;padding:7px 10px;background:var(--hajj-green);color:#ffffff !important;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;}
 .grp-hajji-table td{padding:7px 10px;border-bottom:1px solid var(--line);}
 .grp-hajji-table tr:last-child td{border-bottom:none;}
 @media print{
@@ -2372,27 +2372,28 @@ function printGroupList(gid){
   const rows = hajjiIds.map((hid,i)=>{
     const cust = db.customers[hid];
     if(!cust) return '';
-    return '<tr>'
-      +'<td>'+(i+1)+'</td>'
-      +'<td>'+escapeHtml(cust.name||'—')+'</td>'
-      +'<td>'+escapeHtml(cust.phone||'—')+'</td>'
-      +'<td>'+escapeHtml(cust.passport||'—')+'</td>'
-      +'<td>'+escapeHtml(cust.tracking||'—')+'</td>'
+    const bg = i%2===0?'#fff':'#f5faf7';
+    return '<tr style="background:'+bg+';">'
+      +'<td style="padding:9px 12px;font-size:13px;color:#555;">'+(i+1)+'</td>'
+      +'<td style="padding:9px 12px;font-size:13px;font-weight:600;">'+escapeHtml(cust.name||'—')+'</td>'
+      +'<td style="padding:9px 12px;font-size:13px;">'+escapeHtml(cust.phone||'—')+'</td>'
+      +'<td style="padding:9px 12px;font-size:13px;font-family:monospace;">'+escapeHtml(cust.passport||'—')+'</td>'
+      +'<td style="padding:9px 12px;font-size:13px;font-family:monospace;">'+escapeHtml(cust.tracking||'—')+'</td>'
       +'</tr>';
   }).join('');
 
   printArea.innerHTML = '<div style="font-family:Arial,sans-serif;padding:24px;">'
-    +'<h2 style="margin:0 0 4px;font-size:18px;">'+escapeHtml(g.name)+'</h2>'
-    +'<p style="margin:0 0 16px;color:#555;font-size:13px;">'
-    +(g.memberNo?'Moallem #'+g.memberNo+': ':'')+escapeHtml(g.memberName||'')
-    +(g.year?' · '+g.year:'')+' · Total: '+hajjiIds.length+' Hajji</p>'
-    +'<table style="width:100%;border-collapse:collapse;">'
-    +'<thead><tr style="background:#1B6B3A;color:#fff;">'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">#</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Name</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Phone</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Passport</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Tracking No.</th>'
+    +'<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#1B6B3A;letter-spacing:-0.3px;">'+escapeHtml(g.name)+'</h2>'
+    +'<p style="margin:0 0 18px;color:#555;font-size:13px;border-bottom:2px solid #1B6B3A;padding-bottom:12px;">'
+    +(g.memberNo?'<strong>Moallem #'+g.memberNo+':</strong> ':'')+escapeHtml(g.memberName||'')
+    +(g.year?' &nbsp;·&nbsp; <strong>Year:</strong> '+g.year:'')+' &nbsp;·&nbsp; <strong>Total:</strong> '+hajjiIds.length+' Hajji</p>'
+    +'<table style="width:100%;border-collapse:collapse;margin-top:4px;">'
+    +'<thead><tr style="background:#1B6B3A;">'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:#000 !important;">#</th>'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:#000 !important;">Name</th>'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:#000 !important;">Phone</th>'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:#000 !important;">Passport</th>'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:#000 !important;">Tracking No.</th>'
     +'</tr></thead>'
     +'<tbody>'+rows+'</tbody>'
     +'</table></div>';
