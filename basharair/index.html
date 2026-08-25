@@ -327,6 +327,18 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 }
 
 .print-header{display:none;}
+.grp-expand-row td{padding:0 !important;}
+.grp-expand-inner{padding:12px 16px;background:var(--paper-card);border-top:2px solid var(--hajj-green);}
+.grp-hajji-table{width:100%;border-collapse:collapse;font-size:13px;}
+.grp-hajji-table th{text-align:left;padding:7px 10px;background:var(--hajj-green);color:#fff;font-size:11px;text-transform:uppercase;}
+.grp-hajji-table td{padding:7px 10px;border-bottom:1px solid var(--line);}
+.grp-hajji-table tr:last-child td{border-bottom:none;}
+@media print{
+  .grp-print-only{display:block !important;}
+  .no-print{display:none !important;}
+  .grp-expand-inner{border:none;padding:0;}
+}
+.grp-print-only{display:none;}
 @media print{
   .print-header{display:flex !important;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid #2B2620;}
   .print-header img{width:44px;height:44px;object-fit:cover;border-radius:6px;}
@@ -979,10 +991,11 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    ব্রাউজার ট্যাব টাইটেল, প্রিন্ট হেডার, ব্যাকআপ ফাইলের নাম) নিজে থেকেই বদলে যাবে।
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
-const SHOP_NAME = "Bashar Air International";
-const SHOP_ADDRESS = "Fynas Tower(Lift-15F);37/2,Cilvert Road;Purana Polton,Dhaka-1000";
-const SHOP_EMAIL = "abasharbd13@gmail.com";
-const SHOP_CONTACT = "01771044444";
+const SHOP_NAME = "Abu Lubaba Hajj & Umrah Center";
+const SHOP_OWNER = "Mowlana Masum Billah";
+const SHOP_ADDRESS = "Noapara; Abhaynagar; Jashore-7460";
+const SHOP_EMAIL = "m.masumbillah246@gmail.com";
+const SHOP_CONTACT = "01917241554";
 /* Only these logged-in emails will see the "Reports" menu — everyone else's
    staff login will not see Reports at all. Add/remove emails as needed. */
 const ADMIN_EMAILS = ["your@email.com"];
@@ -991,12 +1004,12 @@ const ADMIN_EMAILS = ["your@email.com"];
 const SUMMARY_START_DATE = "2026-07-31";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA0InSEmqrWVk5Ugdb0JhdSzc4MBLnyHaM",
-  authDomain: "bashar-air-international.firebaseapp.com",
-  projectId: "bashar-air-international",
-  storageBucket: "bashar-air-international.firebasestorage.app",
-  messagingSenderId: "894372788372",
-  appId: "1:894372788372:web:ffdada116dabdd70965c81"
+  apiKey: "AIzaSyCa7EuWVMYeLZwN4eQ94zzddYZ7uz0b_M4",
+  authDomain: "abu-lubaba-hajj-center.firebaseapp.com",
+  projectId: "abu-lubaba-hajj-center",
+  storageBucket: "abu-lubaba-hajj-center.firebasestorage.app",
+  messagingSenderId: "495104939104",
+  appId: "1:495104939104:web:b9b9877087ecfeb2235f05"
 };
 
 
@@ -2334,6 +2347,64 @@ function openQuickAddHajji(groupId){
   });
 }
 
+
+function printGroupList(gid){
+  const g = db.groups[gid];
+  if(!g) return;
+  const sales = db.sales.filter(s=>s.groupId===gid);
+  const hajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+
+  // Print style inject
+  const styleId = 'grpPrintStyle';
+  let styleEl = document.getElementById(styleId);
+  if(!styleEl){ styleEl = document.createElement('style'); styleEl.id = styleId; document.head.appendChild(styleEl); }
+
+  styleEl.textContent = `@media print{
+    body > *:not(#grpPrintArea){ display:none !important; }
+    #grpPrintArea{ display:block !important; }
+    .sidebar,.topbar,#storageBanner,.toast,.no-print{ display:none !important; }
+  }`;
+
+  // Print area তৈরি করো
+  let printArea = document.getElementById('grpPrintArea');
+  if(!printArea){ printArea = document.createElement('div'); printArea.id='grpPrintArea'; document.body.appendChild(printArea); }
+
+  const rows = hajjiIds.map((hid,i)=>{
+    const cust = db.customers[hid];
+    if(!cust) return '';
+    return '<tr>'
+      +'<td>'+(i+1)+'</td>'
+      +'<td>'+escapeHtml(cust.name||'—')+'</td>'
+      +'<td>'+escapeHtml(cust.phone||'—')+'</td>'
+      +'<td>'+escapeHtml(cust.passport||'—')+'</td>'
+      +'<td>'+escapeHtml(cust.tracking||'—')+'</td>'
+      +'</tr>';
+  }).join('');
+
+  printArea.innerHTML = '<div style="font-family:Arial,sans-serif;padding:24px;">'
+    +'<h2 style="margin:0 0 4px;font-size:18px;">'+escapeHtml(g.name)+'</h2>'
+    +'<p style="margin:0 0 16px;color:#555;font-size:13px;">'
+    +(g.memberNo?'Moallem #'+g.memberNo+': ':'')+escapeHtml(g.memberName||'')
+    +(g.year?' · '+g.year:'')+' · Total: '+hajjiIds.length+' Hajji</p>'
+    +'<table style="width:100%;border-collapse:collapse;">'
+    +'<thead><tr style="background:#1B6B3A;color:#fff;">'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">#</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Name</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Phone</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Passport</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Tracking No.</th>'
+    +'</tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'</table></div>';
+
+  window.addEventListener('afterprint', function(){
+    styleEl.textContent = '';
+    printArea.innerHTML = '';
+  }, {once:true});
+
+  window.print();
+}
+
 function renderGroupsPage(){
   const c = document.getElementById('content');
   const groups = Object.entries(db.groups).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
@@ -2359,31 +2430,75 @@ function renderGroupsPage(){
       const sales = db.sales.filter(s=>s.groupId===gid);
       const hajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
       const total = sales.reduce((s,x)=>s+Number(x.total),0);
-      return '<tr>'
+      // হাজী list rows
+      const hajjiRows = hajjiIds.map(hid=>{
+        const cust = db.customers[hid];
+        if(!cust) return '';
+        return '<tr>'
+          +'<td>'+(cust.displayId?'#'+cust.displayId:'—')+'</td>'
+          +'<td>'+escapeHtml(cust.name||'—')+'</td>'
+          +'<td>'+escapeHtml(cust.phone||'—')+'</td>'
+          +'<td>'+escapeHtml(cust.passport||'—')+'</td>'
+          +'<td>'+escapeHtml(cust.tracking||'—')+'</td>'
+          +'</tr>';
+      }).join('');
+
+      const expandHtml = '<tr class="grp-expand-row" id="grpexp-'+gid+'" style="display:none;">'
+        +'<td colspan="6"><div class="grp-expand-inner">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" class="no-print">'
+        +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — Hajji List</strong>'
+        +'<button class="btn ghost no-print" data-grpprint="'+gid+'" style="font-size:12px;">🖨 Print</button>'
+        +'</div>'
+        +'<div id="grpprint-'+gid+'" class="grp-print-only" style="margin-bottom:8px;">'
+        +'<strong style="font-size:15px;">'+escapeHtml(g.name)+'</strong><br>'
+        +'<span style="font-size:12px;color:#666;">'+(g.memberNo?'মোয়াল্লেম #'+g.memberNo+': ':'')+escapeHtml(g.memberName||'')+(g.year?' ('+g.year+')':'')+'</span>'
+        +'</div>'
+        +(hajjiRows
+          ? '<table class="grp-hajji-table">'
+            +'<thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Passport</th><th>Tracking No.</th></tr></thead>'
+            +'<tbody>'+hajjiRows+'</tbody>'
+            +'</table>'
+          : '<div style="color:var(--ink-soft);font-size:13px;">কোনো হাজী নেই</div>'
+        )
+        +'</div></td></tr>';
+
+      return '<tr style="cursor:pointer;" data-grptoggle="'+gid+'">'
         +'<td><strong>'+escapeHtml(g.name)+'</strong></td>'
         +'<td>'+(g.memberNo?'#'+g.memberNo+' ':'')+escapeHtml(g.memberName||'—')+'</td>'
         +'<td>'+(g.year||'—')+'</td>'
-        +'<td>'+hajjiIds.length+' জন</td>'
+        +'<td>'+hajjiIds.length+'</td>'
         +'<td>৳'+money(total)+'</td>'
-        +'<td class="actions-cell">'
+        +'<td class="actions-cell" onclick="event.stopPropagation();">'
         +'<button class="icon-btn" title="হাজী যোগ করুন" data-grphajji="'+gid+'">🤲</button>'
         +'<button class="icon-btn" data-grpview="'+gid+'">📋</button>'
         +'<button class="icon-btn" data-grpedit="'+gid+'">✏️</button>'
         +'<button class="icon-btn" data-grpdel="'+gid+'">🗑️</button>'
-        +'</td></tr>';
+        +'</td></tr>'
+        +expandHtml;
     }).join('');
-    body.innerHTML = '<table class="data"><thead><tr>'
-      +'<th>'+t('grp_col_name')+'</th><th>'+t('grp_col_moallem')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th></th>'
-      +'</tr></thead><tbody>'+rows+'</tbody></table>';
+    body.innerHTML = '<div style="overflow-x:auto;"><table class="data" id="grpMainTable"><thead><tr>'
+      +'<th>'+t('grp_col_name')+'</th><th>'+t('grp_col_moallem')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th class="no-print"></th>'
+      +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
     body.onclick = function(e){
       const vb = e.target.closest('[data-grpview]');
       const eb = e.target.closest('[data-grpedit]');
       const db2 = e.target.closest('[data-grpdel]');
       const hb = e.target.closest('[data-grphajji]');
+      const tb = e.target.closest('[data-grptoggle]');
       if(hb) openGroupHajjiManager(hb.dataset.grphajji);
       else if(vb) openGroupMemberReport(db.groups[vb.dataset.grpview].memberId);
       else if(eb) openGroupForm(eb.dataset.grpedit);
       else if(db2) deleteGroup(db2.dataset.grpdel);
+      else if(tb){
+        const expRow = document.getElementById('grpexp-'+tb.dataset.grptoggle);
+        if(expRow){
+          const isOpen = expRow.style.display !== 'none';
+          expRow.style.display = isOpen ? 'none' : '';
+          tb.style.background = isOpen ? '' : 'rgba(27,107,58,0.08)';
+        }
+      }
+      const pb = e.target.closest('[data-grpprint]');
+      if(pb){ e.stopPropagation(); printGroupList(pb.dataset.grpprint); }
     };
   }
   renderGrpList();
