@@ -2353,30 +2353,56 @@ function printGroupList(gid){
   if(!g) return;
   const sales = db.sales.filter(s=>s.groupId===gid);
   const hajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+
+  // Print style inject
+  const styleId = 'grpPrintStyle';
+  let styleEl = document.getElementById(styleId);
+  if(!styleEl){ styleEl = document.createElement('style'); styleEl.id = styleId; document.head.appendChild(styleEl); }
+
+  styleEl.textContent = `@media print{
+    body > *:not(#grpPrintArea){ display:none !important; }
+    #grpPrintArea{ display:block !important; }
+    .sidebar,.topbar,#storageBanner,.toast,.no-print{ display:none !important; }
+  }`;
+
+  // Print area তৈরি করো
+  let printArea = document.getElementById('grpPrintArea');
+  if(!printArea){ printArea = document.createElement('div'); printArea.id='grpPrintArea'; document.body.appendChild(printArea); }
+
   const rows = hajjiIds.map((hid,i)=>{
     const cust = db.customers[hid];
     if(!cust) return '';
     return '<tr>'
-      +'<td style="padding:8px 10px;border-bottom:1px solid #ddd;">'+(i+1)+'</td>'
-      +'<td style="padding:8px 10px;border-bottom:1px solid #ddd;">'+escapeHtml(cust.name||'—')+'</td>'
-      +'<td style="padding:8px 10px;border-bottom:1px solid #ddd;">'+escapeHtml(cust.phone||'—')+'</td>'
-      +'<td style="padding:8px 10px;border-bottom:1px solid #ddd;">'+escapeHtml(cust.passport||'—')+'</td>'
-      +'<td style="padding:8px 10px;border-bottom:1px solid #ddd;">'+escapeHtml(cust.tracking||'—')+'</td>'
+      +'<td>'+(i+1)+'</td>'
+      +'<td>'+escapeHtml(cust.name||'—')+'</td>'
+      +'<td>'+escapeHtml(cust.phone||'—')+'</td>'
+      +'<td>'+escapeHtml(cust.passport||'—')+'</td>'
+      +'<td>'+escapeHtml(cust.tracking||'—')+'</td>'
       +'</tr>';
   }).join('');
 
-  const win = window.open('','_blank','width=900,height=700');
-  win.document.write('<html><head><title>'+escapeHtml(g.name)+'</title>'
-    +'<style>body{font-family:Arial,sans-serif;padding:24px;}table{width:100%;border-collapse:collapse;}th{background:#1B6B3A;color:#fff;padding:8px 10px;text-align:left;font-size:12px;}td{font-size:13px;}h2{margin:0 0 4px;}p{margin:0 0 16px;color:#666;font-size:13px;}</style>'
-    +'</head><body>'
-    +'<h2>'+escapeHtml(g.name)+'</h2>'
-    +'<p>'+(g.memberNo?'মোয়াল্লেম #'+g.memberNo+': ':'')+escapeHtml(g.memberName||'')+(g.year?' · '+g.year:'')+' · মোট: '+hajjiIds.length+' জন</p>'
-    +'<table><thead><tr><th>#</th><th>নাম</th><th>ফোন</th><th>পাসপোর্ট</th><th>ট্র্যাকিং</th></tr></thead>'
-    +'<tbody>'+rows+'</tbody></table>'
-    +'</body></html>');
-  win.document.close();
-  win.focus();
-  setTimeout(()=>{ win.print(); win.close(); }, 500);
+  printArea.innerHTML = '<div style="font-family:Arial,sans-serif;padding:24px;">'
+    +'<h2 style="margin:0 0 4px;font-size:18px;">'+escapeHtml(g.name)+'</h2>'
+    +'<p style="margin:0 0 16px;color:#555;font-size:13px;">'
+    +(g.memberNo?'Moallem #'+g.memberNo+': ':'')+escapeHtml(g.memberName||'')
+    +(g.year?' · '+g.year:'')+' · Total: '+hajjiIds.length+' Hajji</p>'
+    +'<table style="width:100%;border-collapse:collapse;">'
+    +'<thead><tr style="background:#1B6B3A;color:#fff;">'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">#</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Name</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Phone</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Passport</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Tracking No.</th>'
+    +'</tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'</table></div>';
+
+  window.addEventListener('afterprint', function(){
+    styleEl.textContent = '';
+    printArea.innerHTML = '';
+  }, {once:true});
+
+  window.print();
 }
 
 function renderGroupsPage(){
@@ -2420,7 +2446,7 @@ function renderGroupsPage(){
       const expandHtml = '<tr class="grp-expand-row" id="grpexp-'+gid+'" style="display:none;">'
         +'<td colspan="6"><div class="grp-expand-inner">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" class="no-print">'
-        +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — হাজীদের তালিকা</strong>'
+        +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — Hajji List</strong>'
         +'<button class="btn ghost no-print" data-grpprint="'+gid+'" style="font-size:12px;">🖨 Print</button>'
         +'</div>'
         +'<div id="grpprint-'+gid+'" class="grp-print-only" style="margin-bottom:8px;">'
@@ -2429,7 +2455,7 @@ function renderGroupsPage(){
         +'</div>'
         +(hajjiRows
           ? '<table class="grp-hajji-table">'
-            +'<thead><tr><th>ID</th><th>নাম</th><th>ফোন</th><th>পাসপোর্ট</th><th>ট্র্যাকিং</th></tr></thead>'
+            +'<thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Passport</th><th>Tracking No.</th></tr></thead>'
             +'<tbody>'+hajjiRows+'</tbody>'
             +'</table>'
           : '<div style="color:var(--ink-soft);font-size:13px;">কোনো হাজী নেই</div>'
@@ -2440,7 +2466,7 @@ function renderGroupsPage(){
         +'<td><strong>'+escapeHtml(g.name)+'</strong></td>'
         +'<td>'+(g.memberNo?'#'+g.memberNo+' ':'')+escapeHtml(g.memberName||'—')+'</td>'
         +'<td>'+(g.year||'—')+'</td>'
-        +'<td>'+hajjiIds.length+' জন</td>'
+        +'<td>'+hajjiIds.length+'</td>'
         +'<td>৳'+money(total)+'</td>'
         +'<td class="actions-cell" onclick="event.stopPropagation();">'
         +'<button class="icon-btn" title="হাজী যোগ করুন" data-grphajji="'+gid+'">🤲</button>'
