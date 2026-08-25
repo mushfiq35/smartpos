@@ -327,18 +327,10 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 }
 
 .print-header{display:none;}
-.grp-expand-row td{padding:0 !important;}
-.grp-expand-inner{padding:12px 16px;background:var(--paper-card);border-top:2px solid var(--hajj-green);}
 .grp-hajji-table{width:100%;border-collapse:collapse;font-size:13px;}
-.grp-hajji-table th{text-align:left;padding:7px 10px;background:var(--hajj-green);color:#fff;font-size:11px;text-transform:uppercase;}
+.grp-hajji-table th{text-align:left;padding:7px 10px;background:var(--hajj-green);color:#ffffff !important;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;font-weight:800;}
 .grp-hajji-table td{padding:7px 10px;border-bottom:1px solid var(--line);}
 .grp-hajji-table tr:last-child td{border-bottom:none;}
-@media print{
-  .grp-print-only{display:block !important;}
-  .no-print{display:none !important;}
-  .grp-expand-inner{border:none;padding:0;}
-}
-.grp-print-only{display:none;}
 @media print{
   .print-header{display:flex !important;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid #2B2620;}
   .print-header img{width:44px;height:44px;object-fit:cover;border-radius:6px;}
@@ -472,7 +464,11 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
       <button id="backupBtn">☁️ Backup</button>
       <button id="restoreBtn">♻️ Restore</button>
     </div>
-    <div class="backup-row">
+    <div class="backup-row" id="pcBackupRow" style="display:none;">
+      <button id="pcBackupBtn">💾 PC Backup</button>
+      <button id="pcRestoreBtn">📂 PC Restore</button>
+    </div>
+    <div class="backup-row" id="clearAllRow" style="display:none;">
       <button id="clearAllBtn" style="border-color:rgba(180,66,58,0.5);color:#e6a29c;">🗑️ Clear All Data</button>
     </div>
     <div class="logout-row" id="logoutRow" style="display:none;">
@@ -696,7 +692,8 @@ const K = {
   customers:'pos-customers', suppliers:'pos-suppliers', products:'pos-products',
   purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo',
   groupMembers:'pos-group-members', groups:'pos-groups',
-  vendorPayments:'pos-vendor-payments'
+  vendorPayments:'pos-vendor-payments',
+  settings:'pos-settings'
 };
 let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], groupMembers:{}, groups:{}, vendorPayments:[] };
 let currentTab = 'dashboard';
@@ -710,7 +707,7 @@ const I18N = {
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'হাজী', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর',
     title_categories:'প্যাকেজের ধরন', add_categories:'+ নতুন ধরন', f_category_name:'ধরনের নাম',
-    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট', nav_group_members:'গ্রুপ মেম্বার', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপ',
+    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_group_members:'গ্রুপ মেম্বার', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপ',
     reports_sales_returns_tab:'বুকিং ও বাতিল', sr_sales_count:'বুকিং সংখ্যা', sr_returns_count:'বাতিল সংখ্যা', sr_net_label:'নিট',
     return_title:'বুকিং বাতিল', return_new:'নতুন বাতিল', return_no:'বাতিল নং',
     return_original_qty:'মোট বুকড পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
@@ -846,7 +843,7 @@ const I18N = {
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Hajji', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors',
     title_categories:'Package Types', add_categories:'+ New Type', f_category_name:'Type Name',
-    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports', nav_group_members:'Group Members', nav_groups:'Groups / Lots', rep_group_tab:'Group',
+    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports', nav_settings:'Settings', nav_group_members:'Group Members', nav_groups:'Groups / Lots', rep_group_tab:'Group',
     reports_sales_returns_tab:'Bookings & Cancellations', sr_sales_count:'Bookings Count', sr_returns_count:'Cancellations Count', sr_net_label:'Net',
     return_title:'Cancellations', return_new:'New Cancellation', return_no:'Cancellation No.',
     return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
@@ -998,7 +995,7 @@ const SHOP_EMAIL = "m.masumbillah246@gmail.com";
 const SHOP_CONTACT = "01917241554";
 /* Only these logged-in emails will see the "Reports" menu — everyone else's
    staff login will not see Reports at all. Add/remove emails as needed. */
-const ADMIN_EMAILS = ["your@email.com"];
+const ADMIN_EMAILS = ["mushfiq35@gmail.com"];
 /* Reports > Summary tab ignores everything before this date — old/messy
    historical accounts before this point are excluded from the running total. */
 const SUMMARY_START_DATE = "2026-07-31";
@@ -1311,6 +1308,7 @@ const NAV = [
   {id:'expenses', ic:'💸', key:'nav_expenses'},
   {id:'returns', ic:'↩️', key:'nav_returns'},
   {id:'reports', ic:'📈', key:'nav_reports'},
+  {id:'settings', ic:'⚙️', key:'nav_settings', adminOnly:true},
 ];
 
 function setupOverlayBackdropClose(overlayId, onClose){
@@ -1520,6 +1518,7 @@ function renderPage(){
   else if(currentTab==='group_members') renderGroupMembersPage();
   else if(currentTab==='groups') renderGroupsPage();
   else if(currentTab==='reports') renderReportsPage();
+  else if(currentTab==='settings') renderSettingsPage();
   attachPageEvents();
 }
 
@@ -2095,12 +2094,42 @@ function openGroupMemberForm(id){
   };
 }
 
+
+function showDeleteConfirm(title, message, onConfirm){
+  const existing = document.getElementById('deleteConfirmOverlay');
+  if(existing) existing.remove();
+  const html = '<div class="overlay open" id="deleteConfirmOverlay" style="z-index:300;">'
+    +'<div class="modal" style="max-width:420px;">'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
+    +'<div style="width:44px;height:44px;border-radius:50%;background:var(--red-bg);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🗑️</div>'
+    +'<div><h3 style="margin:0 0 4px;color:var(--red);">'+title+'</h3>'
+    +'<p style="margin:0;font-size:13px;color:var(--ink-soft);">'+message+'</p>'
+    +'</div></div>'
+    +'<div style="background:rgba(180,66,58,0.08);border:1px solid rgba(180,66,58,0.2);border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:13px;color:var(--red);">'
+    +'⚠️ এই কাজ পূর্বাবস্থায় ফেরানো যাবে না!'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end;">'
+    +'<button class="btn ghost" id="delCancelBtn" style="min-width:100px;">বাতিল করুন</button>'
+    +'<button class="btn" id="delConfirmBtn" style="background:var(--red);color:#fff;border:none;min-width:120px;">হ্যাঁ, মুছুন</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('delCancelBtn').onclick = ()=>document.getElementById('deleteConfirmOverlay').remove();
+  document.getElementById('delConfirmBtn').onclick = ()=>{ document.getElementById('deleteConfirmOverlay').remove(); onConfirm(); };
+}
+
 async function deleteGroupMember(id){
-  if(!confirm(t('grp_del_member_confirm'))) return;
-  delete db.groupMembers[id];
-  await safeRemove('groupMembers', id);
-  showToast(t('deleted_toast'));
-  renderGroupMembersPage();
+  const m = db.groupMembers[id];
+  if(!m) return;
+  showDeleteConfirm(
+    'গ্রুপ মেম্বার মুছুন',
+    '"'+escapeHtml(m.name)+'" কে মুছে ফেলবেন?',
+    async ()=>{
+      delete db.groupMembers[id];
+      await safeRemove('groupMembers', id);
+      showToast(t('deleted_toast'));
+      renderGroupMembersPage();
+    }
+  );
 }
 
 function openGroupMemberReport(memberId){
@@ -2349,62 +2378,100 @@ function openQuickAddHajji(groupId){
 
 
 function printGroupList(gid){
-  const g = db.groups[gid];
-  if(!g) return;
-  const sales = db.sales.filter(s=>s.groupId===gid);
-  const hajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
-
-  // Print style inject
-  const styleId = 'grpPrintStyle';
-  let styleEl = document.getElementById(styleId);
-  if(!styleEl){ styleEl = document.createElement('style'); styleEl.id = styleId; document.head.appendChild(styleEl); }
-
-  styleEl.textContent = `@media print{
-    body > *:not(#grpPrintArea){ display:none !important; }
-    #grpPrintArea{ display:block !important; }
-    .sidebar,.topbar,#storageBanner,.toast,.no-print{ display:none !important; }
-  }`;
-
-  // Print area তৈরি করো
-  let printArea = document.getElementById('grpPrintArea');
-  if(!printArea){ printArea = document.createElement('div'); printArea.id='grpPrintArea'; document.body.appendChild(printArea); }
-
-  const rows = hajjiIds.map((hid,i)=>{
-    const cust = db.customers[hid];
-    if(!cust) return '';
-    return '<tr>'
-      +'<td>'+(i+1)+'</td>'
-      +'<td>'+escapeHtml(cust.name||'—')+'</td>'
-      +'<td>'+escapeHtml(cust.phone||'—')+'</td>'
-      +'<td>'+escapeHtml(cust.passport||'—')+'</td>'
-      +'<td>'+escapeHtml(cust.tracking||'—')+'</td>'
+  const g=db.groups[gid]; if(!g) return;
+  const sales=db.sales.filter(s=>s.groupId===gid);
+  const hajjiIds=[...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+  const styleId='grpPrintStyle';
+  let styleEl=document.getElementById(styleId);
+  if(!styleEl){styleEl=document.createElement('style');styleEl.id=styleId;document.head.appendChild(styleEl);}
+  styleEl.textContent='@media print{body > *:not(#grpPrintArea){display:none !important;}#grpPrintArea{display:block !important;}}';
+  let printArea=document.getElementById('grpPrintArea');
+  if(!printArea){printArea=document.createElement('div');printArea.id='grpPrintArea';document.body.appendChild(printArea);}
+  const rows=hajjiIds.map((hid,i)=>{
+    const cust=db.customers[hid]; if(!cust) return '';
+    return '<tr style="background:'+(i%2===0?'#fff':'#f5faf7')+';">'
+      +'<td style="padding:9px 12px;font-size:13px;color:#555;">'+(i+1)+'</td>'
+      +'<td style="padding:9px 12px;font-size:13px;font-weight:600;">'+escapeHtml(cust.name||'—')+'</td>'
+      +'<td style="padding:9px 12px;font-size:13px;">'+escapeHtml(cust.phone||'—')+'</td>'
+      +'<td style="padding:9px 12px;font-size:13px;font-family:monospace;">'+escapeHtml(cust.passport||'—')+'</td>'
+      +'<td style="padding:9px 12px;font-size:13px;font-family:monospace;">'+escapeHtml(cust.tracking||'—')+'</td>'
       +'</tr>';
   }).join('');
-
-  printArea.innerHTML = '<div style="font-family:Arial,sans-serif;padding:24px;">'
-    +'<h2 style="margin:0 0 4px;font-size:18px;">'+escapeHtml(g.name)+'</h2>'
-    +'<p style="margin:0 0 16px;color:#555;font-size:13px;">'
-    +(g.memberNo?'Moallem #'+g.memberNo+': ':'')+escapeHtml(g.memberName||'')
-    +(g.year?' · '+g.year:'')+' · Total: '+hajjiIds.length+' Hajji</p>'
-    +'<table style="width:100%;border-collapse:collapse;">'
-    +'<thead><tr style="background:#1B6B3A;color:#fff;">'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">#</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Name</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Phone</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Passport</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:12px;">Tracking No.</th>'
-    +'</tr></thead>'
-    +'<tbody>'+rows+'</tbody>'
-    +'</table></div>';
-
-  window.addEventListener('afterprint', function(){
-    styleEl.textContent = '';
-    printArea.innerHTML = '';
-  }, {once:true});
-
+  printArea.innerHTML='<div style="font-family:Arial,sans-serif;padding:24px;">'
+    +'<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#1B6B3A;">'+escapeHtml(g.name)+'</h2>'
+    +'<p style="margin:0 0 18px;color:#555;font-size:13px;border-bottom:2px solid #1B6B3A;padding-bottom:12px;">'
+    +(g.memberNo?'<strong>Moallem #'+g.memberNo+':</strong> ':'')+escapeHtml(g.memberName||'')
+    +(g.year?' &nbsp;·&nbsp; <strong>Year:</strong> '+g.year:'')+' &nbsp;·&nbsp; <strong>Total:</strong> '+hajjiIds.length+' Hajji</p>'
+    +'<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#1B6B3A;">'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;text-transform:uppercase;color:#000 !important;">#</th>'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;text-transform:uppercase;color:#000 !important;">Name</th>'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;text-transform:uppercase;color:#000 !important;">Phone</th>'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;text-transform:uppercase;color:#000 !important;">Passport</th>'
+    +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;text-transform:uppercase;color:#000 !important;">Tracking No.</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  window.addEventListener('afterprint',()=>{styleEl.textContent='';printArea.innerHTML='';},{once:true});
   window.print();
 }
 
+function renderSettingsPage(){
+  const user=firebase.auth().currentUser;
+  if(!user||!ADMIN_EMAILS.includes(user.email)){
+    document.getElementById('content').innerHTML='<div class="empty"><div class="big">⛔</div>Admin only</div>'; return;
+  }
+  const c=document.getElementById('content');
+  c.innerHTML=`<div class="panel">
+    <h3>⚙️ Settings</h3>
+    <div style="margin-bottom:20px;">
+      <h4 style="margin:0 0 10px;">Admin Emails</h4>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 8px;">One email per line — these accounts will see Settings, PC Backup/Restore, and Clear All Data.</p>
+      <textarea id="settingsAdminEmails" rows="4" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;font-size:13px;resize:vertical;">${ADMIN_EMAILS.join('\n')}</textarea>
+    </div>
+    <div style="margin-bottom:20px;">
+      <h4 style="margin:0 0 10px;">PC Backup / Restore</h4>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn" id="settingsPcBackup">💾 Download Backup (JSON)</button>
+        <button class="btn ghost" id="settingsPcRestore">📂 Restore from File</button>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;padding:14px;border:1px solid rgba(180,66,58,0.3);border-radius:8px;background:var(--red-bg);">
+      <h4 style="margin:0 0 8px;color:var(--red);">⚠️ Danger Zone</h4>
+      <button class="btn" style="background:var(--red);color:#fff;border:none;" id="settingsClearAll">🗑️ Clear All Data</button>
+    </div>
+    <button class="btn amber" id="settingsSave">Save Settings</button>
+    <span id="settingsSaveMsg" style="font-size:13px;margin-left:12px;color:var(--green);"></span>
+  </div>`;
+  document.getElementById('settingsSave').addEventListener('click',async()=>{
+    const emails=document.getElementById('settingsAdminEmails').value.split('\n').map(e=>e.trim()).filter(Boolean);
+    if(!emails.length){alert('At least one admin email required.');return;}
+    await safePut('settings','adminEmails',{emails});
+    ADMIN_EMAILS.length=0;emails.forEach(e=>ADMIN_EMAILS.push(e));
+    document.getElementById('settingsSaveMsg').textContent='✓ Saved!';
+    setTimeout(()=>document.getElementById('settingsSaveMsg').textContent='',2000);
+  });
+  document.getElementById('settingsPcBackup').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download=SHOP_NAME+'-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+    URL.revokeObjectURL(url);showToast(t('backup_success'));
+  });
+  document.getElementById('settingsPcRestore').addEventListener('click',()=>{
+    if(!confirm(t('confirm_restore')))return;
+    const input=document.createElement('input');input.type='file';input.accept='.json';
+    input.onchange=async(e)=>{
+      const file=e.target.files[0];if(!file)return;
+      const reader=new FileReader();
+      reader.onload=async(ev)=>{
+        try{
+          const data=JSON.parse(ev.target.result);const puts=[];
+          ['customers','suppliers','products','categories','groupMembers','groups'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>puts.push(safePut(k,id,v)));});
+          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
+          await Promise.all(puts);showToast(t('restore_success'));setTimeout(()=>location.reload(),1500);
+        }catch(err){alert(t('restore_failed')+': '+err.message);}
+      };reader.readAsText(file);
+    };input.click();
+  });
+  document.getElementById('settingsClearAll').addEventListener('click',clearAllData);
+}
 function renderGroupsPage(){
   const c = document.getElementById('content');
   const groups = Object.entries(db.groups).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
@@ -2430,76 +2497,63 @@ function renderGroupsPage(){
       const sales = db.sales.filter(s=>s.groupId===gid);
       const hajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
       const total = sales.reduce((s,x)=>s+Number(x.total),0);
-      // হাজী list rows
-      const hajjiRows = hajjiIds.map(hid=>{
-        const cust = db.customers[hid];
-        if(!cust) return '';
-        return '<tr>'
-          +'<td>'+(cust.displayId?'#'+cust.displayId:'—')+'</td>'
-          +'<td>'+escapeHtml(cust.name||'—')+'</td>'
-          +'<td>'+escapeHtml(cust.phone||'—')+'</td>'
-          +'<td>'+escapeHtml(cust.passport||'—')+'</td>'
-          +'<td>'+escapeHtml(cust.tracking||'—')+'</td>'
-          +'</tr>';
-      }).join('');
-
-      const expandHtml = '<tr class="grp-expand-row" id="grpexp-'+gid+'" style="display:none;">'
-        +'<td colspan="6"><div class="grp-expand-inner">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" class="no-print">'
-        +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — Hajji List</strong>'
-        +'<button class="btn ghost no-print" data-grpprint="'+gid+'" style="font-size:12px;">🖨 Print</button>'
-        +'</div>'
-        +'<div id="grpprint-'+gid+'" class="grp-print-only" style="margin-bottom:8px;">'
-        +'<strong style="font-size:15px;">'+escapeHtml(g.name)+'</strong><br>'
-        +'<span style="font-size:12px;color:#666;">'+(g.memberNo?'মোয়াল্লেম #'+g.memberNo+': ':'')+escapeHtml(g.memberName||'')+(g.year?' ('+g.year+')':'')+'</span>'
-        +'</div>'
-        +(hajjiRows
-          ? '<table class="grp-hajji-table">'
-            +'<thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Passport</th><th>Tracking No.</th></tr></thead>'
-            +'<tbody>'+hajjiRows+'</tbody>'
-            +'</table>'
-          : '<div style="color:var(--ink-soft);font-size:13px;">কোনো হাজী নেই</div>'
-        )
-        +'</div></td></tr>';
-
       return '<tr style="cursor:pointer;" data-grptoggle="'+gid+'">'
         +'<td><strong>'+escapeHtml(g.name)+'</strong></td>'
         +'<td>'+(g.memberNo?'#'+g.memberNo+' ':'')+escapeHtml(g.memberName||'—')+'</td>'
         +'<td>'+(g.year||'—')+'</td>'
         +'<td>'+hajjiIds.length+'</td>'
         +'<td>৳'+money(total)+'</td>'
-        +'<td class="actions-cell" onclick="event.stopPropagation();">'
+        +'<td class="actions-cell">'
         +'<button class="icon-btn" title="হাজী যোগ করুন" data-grphajji="'+gid+'">🤲</button>'
         +'<button class="icon-btn" data-grpview="'+gid+'">📋</button>'
         +'<button class="icon-btn" data-grpedit="'+gid+'">✏️</button>'
         +'<button class="icon-btn" data-grpdel="'+gid+'">🗑️</button>'
-        +'</td></tr>'
-        +expandHtml;
+        +'</td></tr>';
     }).join('');
-    body.innerHTML = '<div style="overflow-x:auto;"><table class="data" id="grpMainTable"><thead><tr>'
+    body.innerHTML = '<div style="overflow-x:auto;"><table class="data"><thead><tr>'
       +'<th>'+t('grp_col_name')+'</th><th>'+t('grp_col_moallem')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th class="no-print"></th>'
       +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
-    body.onclick = function(e){
-      const vb = e.target.closest('[data-grpview]');
-      const eb = e.target.closest('[data-grpedit]');
-      const db2 = e.target.closest('[data-grpdel]');
-      const hb = e.target.closest('[data-grphajji]');
-      const tb = e.target.closest('[data-grptoggle]');
-      if(hb) openGroupHajjiManager(hb.dataset.grphajji);
-      else if(vb) openGroupMemberReport(db.groups[vb.dataset.grpview].memberId);
-      else if(eb) openGroupForm(eb.dataset.grpedit);
-      else if(db2) deleteGroup(db2.dataset.grpdel);
-      else if(tb){
-        const expRow = document.getElementById('grpexp-'+tb.dataset.grptoggle);
-        if(expRow){
-          const isOpen = expRow.style.display !== 'none';
-          expRow.style.display = isOpen ? 'none' : '';
-          tb.style.background = isOpen ? '' : 'rgba(27,107,58,0.08)';
-        }
+
+    filtered.forEach(function([gid,g]){
+      const s2=db.sales.filter(s=>s.groupId===gid);
+      const h2=[...new Set(s2.map(s=>s.customerId).filter(Boolean))];
+      const hr=h2.map((hid,i)=>{
+        const c=db.customers[hid]; if(!c) return '';
+        return '<tr style="background:'+(i%2===0?'#fff':'#f5faf7')+';">'
+          +'<td style="padding:7px 10px;">'+(c.displayId?'#'+c.displayId:'—')+'</td>'
+          +'<td style="padding:7px 10px;font-weight:600;">'+escapeHtml(c.name||'—')+'</td>'
+          +'<td style="padding:7px 10px;">'+escapeHtml(c.phone||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(c.passport||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(c.tracking||'—')+'</td>'
+          +'</tr>';
+      }).join('');
+      const panel=document.createElement('div');
+      panel.id='grpexp-'+gid; panel.style.display='none'; panel.className='panel';
+      panel.style.cssText+=';margin:0 0 8px;border-top:3px solid var(--hajj-green);';
+      panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" class="no-print">'
+        +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — Hajji List</strong>'
+        +'<button class="btn ghost no-print" data-grpprint="'+gid+'" style="font-size:12px;">🖨 Print</button>'
+        +'</div>'+(hr?'<div style="overflow-x:auto;"><table class="grp-hajji-table"><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Passport</th><th>Tracking No.</th></tr></thead><tbody>'+hr+'</tbody></table></div>':'<div style="color:var(--ink-soft);font-size:13px;">No hajjis yet</div>');
+      body.appendChild(panel);
+    });
+
+    body.addEventListener('click', function(e){
+      const hb=e.target.closest('[data-grphajji]');
+      const vb=e.target.closest('[data-grpview]');
+      const eb=e.target.closest('[data-grpedit]');
+      const db2=e.target.closest('[data-grpdel]');
+      const pb=e.target.closest('[data-grpprint]');
+      if(hb){openGroupHajjiManager(hb.dataset.grphajji);return;}
+      if(vb){openGroupMemberReport(db.groups[vb.dataset.grpview].memberId);return;}
+      if(eb){openGroupForm(eb.dataset.grpedit);return;}
+      if(db2){deleteGroup(db2.dataset.grpdel);return;}
+      if(pb){printGroupList(pb.dataset.grpprint);return;}
+      const tb=e.target.closest('[data-grptoggle]');
+      if(tb && !e.target.closest('.actions-cell')){
+        const expRow=document.getElementById('grpexp-'+tb.dataset.grptoggle);
+        if(expRow){const isOpen=expRow.style.display!=='none';expRow.style.display=isOpen?'none':'';tb.style.background=isOpen?'':'rgba(27,107,58,0.08)';}
       }
-      const pb = e.target.closest('[data-grpprint]');
-      if(pb){ e.stopPropagation(); printGroupList(pb.dataset.grpprint); }
-    };
+    }, true);
   }
   renderGrpList();
   document.getElementById('grpSearch').addEventListener('input', renderGrpList);
@@ -2547,11 +2601,18 @@ function openGroupForm(id){
 }
 
 async function deleteGroup(id){
-  if(!confirm(t('grp_del_confirm'))) return;
-  delete db.groups[id];
-  await safeRemove('groups', id);
-  showToast(t('deleted_toast'));
-  renderGroupsPage();
+  const g = db.groups[id];
+  if(!g) return;
+  showDeleteConfirm(
+    'গ্রুপ / লট মুছুন',
+    '"'+escapeHtml(g.name)+'" গ্রুপটি মুছে ফেলবেন?',
+    async ()=>{
+      delete db.groups[id];
+      await safeRemove('groups', id);
+      showToast(t('deleted_toast'));
+      renderGroupsPage();
+    }
+  );
 }
 
 function onMsGroupChange(){
@@ -4233,7 +4294,13 @@ async function handleSave(tab, id, values){
 async function deleteInvoiceGroup(repId){
   const rep = db.sales.find(s=>s.id===repId);
   if(!rep) return;
-  if(!confirm(t('confirm_delete'))) return;
+  await new Promise(resolve=>{
+    showDeleteConfirm(
+      'বুকিং মুছুন',
+      '"'+escapeHtml(rep.customerName||'এই বুকিং')+'" এর Invoice #'+(rep.invoiceNo||'?')+' মুছে ফেলবেন?',
+      resolve
+    );
+  });
   const groupIds = db.sales.filter(s=>s.invoiceId===rep.invoiceId).map(s=>s.id);
   for(const gid of groupIds){
     db.sales = db.sales.filter(s=>s.id!==gid);
@@ -4251,7 +4318,16 @@ async function deleteInvoiceGroup(repId){
 async function deleteHajji(custId){
   const cust = db.customers[custId];
   if(!cust) return;
-  if(!confirm(`"${cust.name}" এবং তার সকল বুকিং, কিস্তি ও বাতিল রেকর্ড মুছে ফেলবেন?\nএই কাজ পূর্বাবস্থায় ফেরানো যাবে না!`)) return;
+  const custSalesCount = db.sales.filter(s=>s.customerId===custId).length;
+  const custInstCount = db.installments.filter(i=>i.customerId===custId).length;
+  const details = custSalesCount>0 ? custSalesCount+' টি বুকিং' + (custInstCount>0?', '+custInstCount+' টি কিস্তি':'') : 'কোনো বুকিং নেই';
+  await new Promise(resolve=>{
+    showDeleteConfirm(
+      'হাজী সম্পূর্ণ মুছুন',
+      '"'+escapeHtml(cust.name)+'" এবং তার সকল ডেটা মুছে যাবে ('+details+')',
+      resolve
+    );
+  });
 
   // ── sales (bookings) মুছো ────────────────────────────────────────────
   const custSales = db.sales.filter(s=>s.customerId===custId);
@@ -4292,8 +4368,16 @@ async function deleteHajji(custId){
 
 async function deleteItem(tab, id){
   if(tab==='customers'){ await deleteHajji(id); return; }
-  if(!confirm(t('confirm_delete'))) return;
   const cfg = CONFIG[tab];
+  const itemObj = cfg.isObj ? db[tab][id] : (db[tab]||[]).find(x=>x.id===id);
+  const itemName = itemObj ? (itemObj.name||itemObj.customerName||itemObj.supplierName||itemObj.sector||itemObj.productName||'এই আইটেম') : 'এই আইটেম';
+  await new Promise(resolve=>{
+    showDeleteConfirm(
+      'মুছে ফেলুন',
+      '"'+escapeHtml(String(itemName))+'" মুছে ফেলবেন?',
+      resolve
+    );
+  });
   // Purchase delete হলে supplier.due reverse করো
   if(tab==='purchases'){
     const pur = db.purchases.find(x=>x.id===id);
@@ -4733,7 +4817,13 @@ async function cancelReturn(returnId){
 async function deleteReturn(returnId){
   const rec = db.returns.find(r=>r.id===returnId);
   if(!rec) return;
-  if(!confirm(t('confirm_delete'))) return;
+  await new Promise(resolve=>{
+    showDeleteConfirm(
+      'বাতিল রেকর্ড মুছুন',
+      '"'+escapeHtml(rec.customerName||'এই রেকর্ড')+'" এর বাতিল রেকর্ড মুছে ফেলবেন?',
+      resolve
+    );
+  });
 
   if(!rec.cancelled){
     // still active — reverse its stock/due effects first, same as cancelling
@@ -5508,6 +5598,8 @@ document.getElementById('backupBtn').addEventListener('click', backupToDrive);
 document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
 
 async function clearAllData(){
+  const user = firebase.auth().currentUser;
+  if(!user || !ADMIN_EMAILS.includes(user.email)){ alert('⛔ শুধুমাত্র admin এই কাজ করতে পারবেন।'); return; }
   const step1 = confirm(t('clear_all_confirm1'));
   if(!step1) return;
   const typed = prompt(t('clear_all_confirm2'));
