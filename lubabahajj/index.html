@@ -1809,7 +1809,7 @@ function openVendorStatement(supplierId){
   c.innerHTML =
     '<div class="no-print" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">'
     +'<button class="btn" onclick="renderListPage(\'suppliers\')">← '+t('nav_suppliers')+'</button>'
-    +'<button class="btn ghost" style="margin-left:auto;" onclick="window.print()">'+t('print_report')+'</button>'
+    +'<button class="btn ghost" style="margin-left:auto;" onclick="safePrintPage()">'+t('print_report')+'</button>'
     +'</div>'
 
     +'<div class="panel" style="background:linear-gradient(135deg,#0f3d20,#1B6B3A);color:#fff;margin-bottom:16px;">'
@@ -2154,6 +2154,61 @@ async function deleteGroupMember(id){
   );
 }
 
+// grp.hajjiIds is meant to be an array, but Firestore can sometimes store/return
+// it as a plain object with numeric keys (e.g. {0:'id1', 1:'id2'}) depending on
+// how it was saved. Spreading that with [...x] throws "is not iterable" and
+// silently breaks whichever lot/report was rendering. This normalizes either
+// shape into a real array safely.
+function normalizeHajjiIds(raw){
+  let list;
+  if(Array.isArray(raw)) list = raw;
+  else if(raw && typeof raw === 'object') list = Object.values(raw);
+  else list = [];
+  // একজন হাজী ডিলিট হয়ে গেলেও কোনো লটের রোস্টারে তার পুরনো আইডি
+  // থেকে যেতে পারে (বিশেষত পুরনো ডেটাতে) — এখানেই সেটা ছেঁকে বাদ দিচ্ছি,
+  // যাতে হাজীর সংখ্যা সবসময় সত্যিকারের বিদ্যমান হাজীদেরই প্রতিফলিত করে
+  return list.filter(hid => db.customers[hid]);
+}
+
+function printGroupMemberReport(memberId){
+  const member = db.groupMembers[memberId];
+  if(!member) return;
+  const lots = Object.entries(db.groups).filter(([,g])=>g.memberId===memberId);
+  let body = '<div style="margin-bottom:10px;"><strong>'+escapeHtml(member.name)+'</strong><br>'
+    +t('grp_member_no_label')+': #'+member.memberNo+' &nbsp;|&nbsp; '+t('grp_total_lots')+': '+lots.length
+    +(member.phone?'<br>📞 '+escapeHtml(member.phone):'')+'</div>';
+
+  if(lots.length===0){
+    body += '<div>'+t('grp_no_lots')+'</div>';
+  } else {
+    lots.forEach(([gid, grp])=>{
+      try{
+        const grpSales = db.sales.filter(s=>s.groupId===gid);
+        const salesHajjiIds = [...new Set(grpSales.map(s=>s.customerId).filter(Boolean))];
+        const assignedHajjiIds = normalizeHajjiIds(grp.hajjiIds);
+        const hajjiIds = [...new Set([...assignedHajjiIds, ...salesHajjiIds])];
+        body += '<h3 style="margin:16px 0 8px;">🏘️ '+escapeHtml(grp.name)+(grp.year?' ('+grp.year+')':'')+'</h3>';
+        if(hajjiIds.length>0){
+          body += '<table><thead><tr><th>'+t('lbl_hajji_col')+'</th><th>'+t('lbl_passport_col')+'</th><th>'+t('lbl_total_booking')+'</th><th>'+t('lbl_paid_col')+'</th><th>'+t('lbl_due_col')+'</th></tr></thead><tbody>';
+          hajjiIds.forEach(hid=>{
+            const hajji = db.customers[hid];
+            if(!hajji) return;
+            const hSales = grpSales.filter(s=>s.customerId===hid);
+            const hTotal = hSales.reduce((s,x)=>s+Number(x.total),0);
+            const hDue = Number(hajji.due||0);
+            const hPaid = hTotal - hDue;
+            body += '<tr><td>'+escapeHtml(hajji.name)+'</td><td>'+(hajji.passport||'—')+'</td><td>৳'+money(hTotal)+'</td><td>৳'+money(hPaid)+'</td><td>৳'+money(hDue)+'</td></tr>';
+          });
+          body += '</tbody></table>';
+        }
+      }catch(lotErr){
+        body += '<div style="color:red;">⚠️ এই লট দেখাতে সমস্যা হয়েছে: '+escapeHtml(lotErr.message)+'</div>';
+      }
+    });
+  }
+  printIsolated(member.name, body);
+}
+
 function openGroupMemberReport(memberId){
   currentTab = 'group_members';
   const member = db.groupMembers[memberId];
@@ -2162,7 +2217,7 @@ function openGroupMemberReport(memberId){
   const c = document.getElementById('content');
   let html = '<div class="no-print" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">'
     +'<button class="btn" onclick="renderGroupMembersPage()">'+t('grp_back_members')+'</button>'
-    +'<button class="btn ghost" style="margin-left:auto;" onclick="window.print()">'+t('print_report')+'</button>'
+    +'<button class="btn ghost" style="margin-left:auto;" onclick="printGroupMemberReport(\''+memberId+'\')">'+t('print_report')+'</button>'
     +'</div>'
     +'<div class="panel" style="background:linear-gradient(135deg,#0f3d20,#1B6B3A);color:#fff;margin-bottom:16px;">'
     +'<div style="font-size:20px;font-weight:700;">👤 '+escapeHtml(member.name)+'</div>'
@@ -2174,9 +2229,10 @@ function openGroupMemberReport(memberId){
     html += '<div class="empty"><div class="big">🏘️</div>'+t('grp_no_lots')+'</div>';
   } else {
     lots.forEach(([gid, grp])=>{
+     try{
       const grpSales = db.sales.filter(s=>s.groupId===gid);
       const salesHajjiIds = [...new Set(grpSales.map(s=>s.customerId).filter(Boolean))];
-      const assignedHajjiIds = grp.hajjiIds||[];
+      const assignedHajjiIds = normalizeHajjiIds(grp.hajjiIds);
       const hajjiIds = [...new Set([...assignedHajjiIds, ...salesHajjiIds])];
       const totalBooking = grpSales.reduce((s,x)=>s+Number(x.total),0);
       const totalDue = hajjiIds.reduce((s,hid)=>s+Number((db.customers[hid]||{}).due||0),0);
@@ -2214,6 +2270,10 @@ function openGroupMemberReport(memberId){
         html += '</tbody></table></div>';
       }
       html += '</div>';
+     }catch(lotErr){
+      console.error('Error rendering lot', gid, lotErr);
+      html += '<div class="panel" style="border-left:4px solid var(--red);color:var(--red);">⚠️ এই লট (id: '+gid+') দেখাতে সমস্যা হয়েছে: '+escapeHtml(lotErr.message)+'</div>';
+     }
     });
   }
   c.innerHTML = html;
@@ -2232,7 +2292,7 @@ function openGroupHajjiDetail(hajjiId, groupId){
   const c = document.getElementById('content');
   let html = '<div class="no-print" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">'
     +'<button class="btn" onclick="openGroupMemberReport(\''+db.groups[groupId].memberId+'\')">'+ t('grp_back')+'</button>'
-    +'<button class="btn ghost" style="margin-left:auto;" onclick="window.print()">'+t('print_report')+'</button>'
+    +'<button class="btn ghost" style="margin-left:auto;" onclick="safePrintPage()">'+t('print_report')+'</button>'
     +'</div>'
     +'<div class="panel" style="background:linear-gradient(135deg,#1B6B3A,#144d2a);color:#fff;margin-bottom:14px;">'
     +'<div style="font-size:18px;font-weight:700;">🤲 '+escapeHtml(hajji.name)+'</div>'
@@ -2286,7 +2346,7 @@ function openGroupHajjiManager(groupId){
   if(!grp) return;
 
   // এই Lot এ আগে assign করা হাজীরা
-  const assignedIds = new Set((grp.hajjiIds||[]).filter(Boolean));
+  const assignedIds = new Set(normalizeHajjiIds(grp.hajjiIds).filter(Boolean));
 
   const html = '<div class="overlay open" id="grpHajjiOverlay" style="z-index:120;">'
     +'<div class="modal" style="max-width:560px;">'
@@ -2391,7 +2451,7 @@ function openQuickAddHajji(groupId){
     // নতুন হাজী তৈরির পর আবার hajji manager খুলুন
     if(newId && db.groups[groupId]){
       const grp = db.groups[groupId];
-      grp.hajjiIds = [...new Set([...(grp.hajjiIds||[]), newId])];
+      grp.hajjiIds = [...new Set([...normalizeHajjiIds(grp.hajjiIds), newId])];
       safePut('groups', groupId, grp);
     }
     openGroupHajjiManager(groupId);
@@ -2402,7 +2462,9 @@ function openQuickAddHajji(groupId){
 function printGroupList(gid){
   const g=db.groups[gid]; if(!g) return;
   const sales=db.sales.filter(s=>s.groupId===gid);
-  const hajjiIds=[...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+  const assignedHajjiIds = normalizeHajjiIds(g.hajjiIds);
+  const salesHajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+  const hajjiIds=[...new Set([...assignedHajjiIds, ...salesHajjiIds])];
   const styleId='grpPrintStyle';
   let styleEl=document.getElementById(styleId);
   if(!styleEl){styleEl=document.createElement('style');styleEl.id=styleId;document.head.appendChild(styleEl);}
@@ -2517,7 +2579,9 @@ function renderGroupsPage(){
     }
     const rows = filtered.map(function([gid,g]){
       const sales = db.sales.filter(s=>s.groupId===gid);
-      const hajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+      const assignedHajjiIds = normalizeHajjiIds(g.hajjiIds);
+      const salesHajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
+      const hajjiIds = [...new Set([...assignedHajjiIds, ...salesHajjiIds])];
       const total = sales.reduce((s,x)=>s+Number(x.total),0);
       return '<tr style="cursor:pointer;" data-grptoggle="'+gid+'">'
         +'<td><strong>'+escapeHtml(g.name)+'</strong></td>'
@@ -2538,7 +2602,9 @@ function renderGroupsPage(){
 
     filtered.forEach(function([gid,g]){
       const s2=db.sales.filter(s=>s.groupId===gid);
-      const h2=[...new Set(s2.map(s=>s.customerId).filter(Boolean))];
+      const assignedH2 = normalizeHajjiIds(g.hajjiIds);
+      const salesH2 = s2.map(s=>s.customerId).filter(Boolean);
+      const h2=[...new Set([...assignedH2, ...salesH2])];
       const hr=h2.map((hid,i)=>{
         const c=db.customers[hid]; if(!c) return '';
         return '<tr style="background:'+(i%2===0?'#fff':'#f5faf7')+';">'
@@ -2662,7 +2728,9 @@ function renderGroupReport(body){
       const lots = Object.entries(db.groups).filter(([,g])=>g.memberId===mid);
       const allSales = db.sales.filter(s=>lots.some(([gid])=>s.groupId===gid));
       const totalBooking = allSales.reduce((s,x)=>s+Number(x.total),0);
-      const hajjiIds = [...new Set(allSales.map(s=>s.customerId).filter(Boolean))];
+      const assignedAllIds = lots.flatMap(([,g])=>normalizeHajjiIds(g.hajjiIds));
+      const salesAllIds = allSales.map(s=>s.customerId).filter(Boolean);
+      const hajjiIds = [...new Set([...assignedAllIds, ...salesAllIds])];
       const totalDue = hajjiIds.reduce((s,hid)=>s+Number((db.customers[hid]||{}).due||0),0);
 
       html += '<div class="panel" style="margin-bottom:16px;border-left:4px solid var(--hajj-green);">'
@@ -2685,7 +2753,9 @@ function renderGroupReport(body){
           +'</tr></thead><tbody>';
         lots.forEach(function([gid,g]){
           const ls = db.sales.filter(s=>s.groupId===gid);
-          const lh = [...new Set(ls.map(s=>s.customerId).filter(Boolean))];
+          const assignedIds = normalizeHajjiIds(g.hajjiIds);
+          const salesIds = ls.map(s=>s.customerId).filter(Boolean);
+          const lh = [...new Set([...assignedIds, ...salesIds])];
           const lt = ls.reduce((s,x)=>s+Number(x.total),0);
           const ld = lh.reduce((s,hid)=>s+Number((db.customers[hid]||{}).due||0),0);
           html += '<tr><td>'+escapeHtml(g.name)+'</td><td>'+(g.year||'—')+'</td>'
@@ -2700,7 +2770,7 @@ function renderGroupReport(body){
   }
   refresh();
   document.getElementById('grpRptSearch').addEventListener('input', refresh);
-  document.getElementById('grpRptPrintBtn').addEventListener('click', ()=>window.print());
+  document.getElementById('grpRptPrintBtn').addEventListener('click', ()=>safePrintPage());
 }
 
 function openGroupMemberReportFromReports(memberId){
@@ -3002,7 +3072,7 @@ function renderSummaryReport(body){
   });
   fromInput.addEventListener('change', () => { summaryFrom = fromInput.value; refresh(); });
   toInput.addEventListener('change', () => { summaryTo = toInput.value; refresh(); });
-  document.getElementById('summaryPrintBtn').addEventListener('click', () => window.print());
+  document.getElementById('summaryPrintBtn').addEventListener('click', () => safePrintPage());
   refresh();
 }
 
@@ -3047,14 +3117,7 @@ function wireRangeToolbar(prefix, getState, setState, refresh){
   });
   fromInput.addEventListener('change', () => { const s=getState(); s.from=fromInput.value; setState(s); refresh(); });
   toInput.addEventListener('change', () => { const s=getState(); s.to=toInput.value; setState(s); refresh(); });
-  document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => {
-    const leakedGrpStyle = document.getElementById('grpPrintStyle');
-    if(leakedGrpStyle) leakedGrpStyle.textContent = '';
-    // a stray overlay left with the 'open' class would trigger
-    // body:has(.overlay.open) .content{display:none} and blank the whole report
-    document.querySelectorAll('.overlay.open').forEach(el => el.classList.remove('open'));
-    window.print();
-  });
+  document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => safePrintPage());
 }
 
 let salesRptQuery = '';
@@ -3173,6 +3236,25 @@ function renderReturnsOnlyReport(body){
 
 let instRptQuery = '';
 let instRptSelectedCustId = null;
+function safePrint(){
+  const leakedGrpStyle = document.getElementById('grpPrintStyle');
+  if(leakedGrpStyle) leakedGrpStyle.textContent = '';
+  window.print();
+}
+
+// Use this variant only for print buttons that live on a normal, full-page
+// view (never inside an open modal/overlay themselves) — e.g. Reports tabs,
+// Group Member Report. It clears any stray overlay left with the 'open'
+// class (which would otherwise blank the whole page via
+// `body:has(.overlay.open) .content{display:none}`). Never use this inside
+// a modal's own print button — it would hide the modal being printed.
+function safePrintPage(){
+  const leakedGrpStyle = document.getElementById('grpPrintStyle');
+  if(leakedGrpStyle) leakedGrpStyle.textContent = '';
+  document.querySelectorAll('.overlay.open').forEach(el => el.classList.remove('open'));
+  window.print();
+}
+
 function printIsolated(title, tableHtml){
   const oldFrame = document.getElementById('isolatedPrintFrame');
   if(oldFrame) oldFrame.remove();
@@ -3506,7 +3588,7 @@ function renderStockReport(body){
   }
   document.getElementById('stockSearch').addEventListener('input', refresh);
   document.getElementById('stockCatFilter').addEventListener('change', refresh);
-  document.getElementById('stockPrintBtn').addEventListener('click', () => window.print());
+  document.getElementById('stockPrintBtn').addEventListener('click', () => safePrintPage());
   refresh();
 }
 
@@ -3579,12 +3661,74 @@ function renderReportsOverview(body){
   });
   fromInput.addEventListener('change', () => { overviewFrom = fromInput.value; refresh(); });
   toInput.addEventListener('change', () => { overviewTo = toInput.value; refresh(); });
-  document.getElementById('printReportBtn').addEventListener('click', () => window.print());
+  document.getElementById('printReportBtn').addEventListener('click', () => safePrintPage());
   refresh();
 }
 
 function custRptPrint(){
-  window.print();
+  safePrintPage();
+}
+
+function printCustLedger(cid){
+  const cust = cid ? db.customers[cid] : null;
+  if(!cust) return;
+  const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
+  const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalPaid = totalInitialPaid + totalInstPaid;
+  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+
+  const ledgerRaw = [
+    ...sales.map(s=>({
+      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+      total: Number(s.total), discount: Number(s.discount||0),
+      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+      profit: saleNetProfit(s)
+    })),
+    ...payments.map(p=>({
+      ts: p.ts, date: p.date, type: 'installment', qty: null,
+      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('nav_installments'),
+      total: 0, discount: Number(p.discount||0),
+      paid: Number(p.amount),
+      profit: null
+    }))
+  ].sort((a,b)=> a.date===b.date ? a.ts-b.ts : (a.date<b.date?-1:1));
+
+  let runningDue = 0;
+  const ledger = ledgerRaw.map(tx=>{
+    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    else runningDue -= (tx.paid + tx.discount);
+    return { ...tx, runningDue: Math.round(runningDue) };
+  });
+
+  const body = `
+    <div style="margin-bottom:10px;"><strong>${escapeHtml(cust.name)}</strong><br>${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div>
+    <table>
+      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+      <tbody>${ledger.map(tx=>`<tr>
+        <td>${formatDateDMY(tx.date)}</td>
+        <td>${tx.label}</td>
+        <td>${tx.qty!==null?tx.qty:'—'}</td>
+        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+        <td>৳${money(tx.paid)}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+        <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr>
+        <td colspan="3">${t('totals_label')}</td>
+        <td>৳${money(totalBought)}</td>
+        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+        <td>৳${money(totalPaid)}</td>
+        <td>${cust.due>0?'৳'+money(cust.due):'৳0'}</td>
+        <td>৳${money(totalProfit)}</td>
+      </tr></tfoot>
+    </table>
+  `;
+  printIsolated(cust.name, body);
 }
 
 function renderCustomerReport(body){
@@ -3716,95 +3860,64 @@ function renderCustomerReport(body){
     const totalPaid = totalInitialPaid + totalInstPaid;
     const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
 
-    // সব transaction একটা timeline এ — booking payment + installments
-    const allTx = [
+    // একটাই ব্যাংক-স্টেটমেন্ট স্টাইল লেজার — বুকিং ও কিস্তি, তারিখ অনুযায়ী,
+    // চলমান ব্যালেন্স নিজে হিসাব করে বসানো হচ্ছে (কোনো আগের সেভ করা "due" এর উপর নির্ভর করছি না)
+    const ledgerRaw = [
       ...sales.map(s=>({
-        ts: s.ts, date: s.date,
-        type: 'booking',
-        invoiceNo: s.invoiceNo,
-        label: escapeHtml(s.productName),
-        total: s.total,
-        amount: Number(s.paid||0),
-        due: s.due,
-        discount: s.discount||0,
-        note: t('col_paid') + ' (Booking)'
+        ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+        label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+        total: Number(s.total), discount: Number(s.discount||0),
+        paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+        profit: saleNetProfit(s)
       })),
       ...payments.map(p=>({
-        ts: p.ts, date: p.date,
-        type: 'installment',
-        receiptNo: p.receiptNo,
-        label: '—',
-        total: 0,
-        amount: Number(p.amount),
-        due: p.newDue,
-        discount: p.discount||0,
-        note: p.note||'—'
+        ts: p.ts, date: p.date, type: 'installment', qty: null,
+        label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('nav_installments'),
+        total: 0, discount: Number(p.discount||0),
+        paid: Number(p.amount),
+        profit: null
       }))
-    ].sort((a,b)=>a.ts-b.ts);
+    ].sort((a,b)=> a.date===b.date ? a.ts-b.ts : (a.date<b.date?-1:1));
+
+    let runningDue = 0;
+    const ledger = ledgerRaw.map(tx=>{
+      if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+      else runningDue -= (tx.paid + tx.discount);
+      return { ...tx, runningDue: Math.round(runningDue) };
+    });
 
     return `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3>
           <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
-          <button class="btn ghost no-print" onclick="window.print()">${t('print_report')}</button>
+          <button class="btn ghost no-print" onclick="printCustLedger('${cid}')">${t('print_report')}</button>
         </div>
         <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
 
-        <!-- Bookings table -->
-        <h3 style="margin:14px 0 8px;">📦 ${t('nav_sales')}</h3>
-        ${sales.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
-        <div style="overflow-x:auto;"><table class="data">
-          <thead><tr><th>${t('col_invoice_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('return_already')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
-          <tbody>${sales.map(s=>{
-            const profit = saleNetProfit(s);
-            const returned = saleReturnedQty(s.id);
-            return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.initialPaid!==undefined?s.initialPaid:s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
-          }).join('')}</tbody>
-          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
-            <td colspan="5">${t('totals_label')}</td>
-            <td>৳${money(totalBought)}</td>
-            <td>৳${money(sales.reduce((s,x)=>s+Number(x.discount||0),0))}</td>
-            <td>৳${money(totalInitialPaid)}</td>
-            <td>${cust.due>0?'৳'+money(cust.due):'—'}</td>
-            <td>৳${money(totalProfit)}</td>
-          </tr></tfoot>
-        </table></div>`}
-      </div>
-
-      <!-- Unified payment history -->
-      <div class="panel">
-        <h3>💳 ${t('installment_history_title')}</h3>
-        ${allTx.length===0 ? `<div class="field-hint">${t('inst_no_history')}</div>` : `
-        <div style="overflow-x:auto;"><table class="data">
-          <thead><tr>
-            <th>${t('col_date')}</th>
-            <th>${t('hdr_type')}</th>
-            <th>${t('f_note')}</th>
-            <th>${t('inst_col_amount')}</th>
-            <th>${t('inst_col_discount')}</th>
-            <th>${t('inst_col_new_due')}</th>
-          </tr></thead>
-          <tbody>${allTx.map(tx=>{
-            const typePill = tx.type==='booking'
-              ? '<span class="pill" style="background:#2E6B8A;color:#fff;font-size:10px;">'+t('nav_sales')+'</span>'
-              : '<span class="pill green" style="font-size:10px;">'+t('nav_installments')+'</span>';
-            return `<tr>
-              <td>${formatDateDMY(tx.date)}</td>
-              <td>${typePill}</td>
-              <td>${tx.note}</td>
-              <td>৳${money(tx.amount)}</td>
-              <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-              <td>${tx.due>=0?'৳'+money(tx.due):'—'}</td>
-            </tr>`;
-          }).join('')}</tbody>
+        <h3 style="margin:14px 0 8px;">🧾 লেনদেনের হিসাব</h3>
+        ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+        <table class="data">
+          <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+          <tbody>${ledger.map(tx=>`<tr>
+            <td>${formatDateDMY(tx.date)}</td>
+            <td>${tx.label}</td>
+            <td>${tx.qty!==null?tx.qty:'—'}</td>
+            <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+            <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+            <td>৳${money(tx.paid)}</td>
+            <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+            <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+          </tr>`).join('')}</tbody>
           <tfoot><tr style="font-weight:700;background:var(--paper-card);">
             <td colspan="3">${t('totals_label')}</td>
+            <td>৳${money(totalBought)}</td>
+            <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
             <td>৳${money(totalPaid)}</td>
-            <td>৳${money(payments.reduce((s,p)=>s+Number(p.discount||0),0))}</td>
             <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+            <td>৳${money(totalProfit)}</td>
           </tr></tfoot>
-        </table></div>`}
+        </table>`}
 
         <!-- Summary box -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;">
@@ -3873,7 +3986,7 @@ function renderSupplierReport(body){
   });
   document.getElementById('suppFromDate').addEventListener('change', (e) => { suppFromDate=e.target.value; renderSuppList(); renderSuppDetail(); });
   document.getElementById('suppToDate').addEventListener('change', (e) => { suppToDate=e.target.value; renderSuppList(); renderSuppDetail(); });
-  document.getElementById('suppRptPrintBtn').addEventListener('click', ()=>window.print());
+  document.getElementById('suppRptPrintBtn').addEventListener('click', ()=>safePrintPage());
   function renderSuppList(){
     const q = reportsSuppQuery.trim().toLowerCase();
     const entries = Object.entries(db.suppliers).filter(([id,s]) => !q || s.name.toLowerCase().includes(q) || (s.phone && s.phone.toLowerCase().includes(q)));
@@ -3920,7 +4033,7 @@ function renderSupplierReport(body){
         </table>`}
       </div>
     `;
-    document.getElementById('suppPrintBtn').addEventListener('click', () => window.print());
+    document.getElementById('suppPrintBtn').addEventListener('click', () => safePrintPage());
   }
   renderSuppList();
   renderSuppDetail();
@@ -4121,7 +4234,18 @@ function renderTable(tab, items, search){
   const cfg = CONFIG[tab];
   let filtered = items;
   if(search){
-    filtered = items.filter(([id,item]) => JSON.stringify(item).toLowerCase().includes(search));
+    let memberMatchIds = new Set();
+    if(tab==='customers'){
+      const q = search.replace(/^#/,'').trim();
+      const matchingMembers = Object.entries(db.groupMembers).filter(([mid,m])=>String(m.memberNo)===q);
+      matchingMembers.forEach(([mid])=>{
+        Object.entries(db.groups).filter(([,g])=>g.memberId===mid).forEach(([gid,g])=>{
+          normalizeHajjiIds(g.hajjiIds).forEach(hid=>memberMatchIds.add(hid));
+          db.sales.filter(s=>s.groupId===gid).forEach(s=>{ if(s.customerId) memberMatchIds.add(s.customerId); });
+        });
+      });
+    }
+    filtered = items.filter(([id,item]) => JSON.stringify(item).toLowerCase().includes(search) || memberMatchIds.has(id));
   }
   const wrap = document.getElementById('pgTableWrap');
   if(filtered.length===0){
@@ -4537,6 +4661,16 @@ async function deleteHajji(custId){
   delete db.customers[custId];
   await safeRemove('customers', custId);
 
+  // ── যেকোনো লটের রোস্টার (hajjiIds) থেকেও এই হাজীর আইডি সরাও, না হলে
+  //    ডিলিট হয়ে যাওয়া হাজীও লটের সংখ্যায় গণনায় থেকে যায় ──────────────
+  for(const [gid, grp] of Object.entries(db.groups)){
+    const ids = normalizeHajjiIds(grp.hajjiIds);
+    if(ids.includes(custId)){
+      grp.hajjiIds = ids.filter(hid=>hid!==custId);
+      await safePut('groups', gid, grp);
+    }
+  }
+
   showToast(t('deleted_toast'));
   renderNav();
   renderPage();
@@ -4580,12 +4714,34 @@ function openCustomerHistory(custId){
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
   const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-  const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
+  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalPaid = totalInitialPaid + totalInstPaid;
+  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
 
-  const timeline = [
-    ...sales.map(s => ({ ts:s.ts, date:s.date, type:'sale', label:s.productName, ref:s.voucherTag||s.voucherNo||'', amount:s.total, note:'' })),
-    ...payments.map(p => ({ ts:p.ts, date:p.date, type:'payment', label:t('installment_receipt_title'), ref:'', amount:p.amount+Number(p.discount||0), note:p.note||'' })),
-  ].sort((a,b)=>a.ts-b.ts);
+  const ledgerRaw = [
+    ...sales.map(s=>({
+      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+      total: Number(s.total), discount: Number(s.discount||0),
+      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+      profit: saleNetProfit(s)
+    })),
+    ...payments.map(p=>({
+      ts: p.ts, date: p.date, type: 'installment', qty: null,
+      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
+      total: 0, discount: Number(p.discount||0),
+      paid: Number(p.amount),
+      profit: null
+    }))
+  ].sort((a,b)=> a.date===b.date ? a.ts-b.ts : (a.date<b.date?-1:1));
+
+  let runningDue = 0;
+  const ledger = ledgerRaw.map(tx=>{
+    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    else runningDue -= (tx.paid + tx.discount);
+    return { ...tx, runningDue: Math.round(runningDue) };
+  });
 
   document.getElementById('historyTitle').textContent = cust.name + ' — ' + t('history_title');
   document.getElementById('historyBody').innerHTML = `
@@ -4593,14 +4749,29 @@ function openCustomerHistory(custId){
       ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
     <div class="field-hint" style="margin-bottom:10px;">
-      ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
+      ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''} · ${t('col_profit')}: ৳${money(totalProfit)}
     </div>
-    ${timeline.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+    ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
     <table class="data">
-      <thead><tr><th>${t('col_date')}</th><th>${t('history_type_label')}</th><th>${t('col_product')}</th><th>${t('col_amount')}</th><th>${t('f_note')}</th></tr></thead>
-      <tbody>
-        ${timeline.map(x=>`<tr><td>${formatDateDMY(x.date)}</td><td>${x.type==='sale'?t('history_type_sale'):t('history_type_payment')}</td><td>${escapeHtml(x.label)}${x.ref?' ('+escapeHtml(x.ref)+')':''}</td><td>৳${money(x.amount)}</td><td>${escapeHtml(x.note||'—')}</td></tr>`).join('')}
-      </tbody>
+      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+      <tbody>${ledger.map(tx=>`<tr>
+        <td>${formatDateDMY(tx.date)}</td>
+        <td>${tx.label}</td>
+        <td>${tx.qty!==null?tx.qty:'—'}</td>
+        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+        <td>৳${money(tx.paid)}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+        <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+        <td colspan="3">${t('totals_label')}</td>
+        <td>৳${money(totalBought)}</td>
+        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+        <td>৳${money(totalPaid)}</td>
+        <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+        <td>৳${money(totalProfit)}</td>
+      </tr></tfoot>
     </table>`}
   `;
   document.getElementById('historyCloseBtn').textContent = t('close');
@@ -4610,7 +4781,7 @@ function openCustomerHistory(custId){
 document.getElementById('historyCloseBtn').addEventListener('click', () => {
   document.getElementById('historyOverlay').classList.remove('open');
 });
-document.getElementById('historyPrintBtn').addEventListener('click', () => window.print());
+document.getElementById('historyPrintBtn').addEventListener('click', () => safePrint());
 setupOverlayBackdropClose('historyOverlay');
 
 /* ---------- Quick Add (inline create from within another form) ---------- */
@@ -5128,7 +5299,7 @@ function openSaleView(id){
 document.getElementById('saleViewCloseBtn').addEventListener('click', () => {
   document.getElementById('saleViewOverlay').classList.remove('open');
 });
-document.getElementById('saleViewPrintBtn').addEventListener('click', () => window.print());
+document.getElementById('saleViewPrintBtn').addEventListener('click', () => safePrint());
 setupOverlayBackdropClose('saleViewOverlay');
 
 /* ---------- Multi-Item Sale Builder ---------- */
@@ -5262,7 +5433,7 @@ function onMsCustomerSearch(){
   if(!input || !resultsEl) return;
   const q = input.value.trim().toLowerCase();
   const selectedGroupId = document.getElementById('msGroupSelect') ? document.getElementById('msGroupSelect').value : '';
-  const grpHajjiIds = selectedGroupId && db.groups[selectedGroupId] ? new Set(db.groups[selectedGroupId].hajjiIds||[]) : null;
+  const grpHajjiIds = selectedGroupId && db.groups[selectedGroupId] ? new Set(normalizeHajjiIds(db.groups[selectedGroupId].hajjiIds)) : null;
   let entries = Object.entries(db.customers);
   if(grpHajjiIds && grpHajjiIds.size>0) entries = entries.filter(([cid])=>grpHajjiIds.has(cid));
   const matches = q
@@ -5568,7 +5739,7 @@ function openInstallmentReceipt(rec){
 document.getElementById('instReceiptCloseBtn').addEventListener('click', () => {
   document.getElementById('instReceiptOverlay').classList.remove('open');
 });
-document.getElementById('instReceiptPrintBtn').addEventListener('click', () => window.print());
+document.getElementById('instReceiptPrintBtn').addEventListener('click', () => safePrint());
 setupOverlayBackdropClose('instReceiptOverlay');
 
 
@@ -5703,7 +5874,7 @@ function openInstallmentHistory(custId){
 document.getElementById('instHistoryCloseBtn').addEventListener('click', () => {
   document.getElementById('instHistoryOverlay').classList.remove('open');
 });
-document.getElementById('instHistoryPrintBtn').addEventListener('click', () => window.print());
+document.getElementById('instHistoryPrintBtn').addEventListener('click', () => safePrint());
 setupOverlayBackdropClose('instHistoryOverlay');
 
 function attachPageEvents(){ /* per-page listeners are wired inside each render function */ }
