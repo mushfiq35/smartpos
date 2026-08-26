@@ -1298,6 +1298,24 @@ function showToast(msg){
   showToast._timer = setTimeout(()=>t.classList.remove('show'), 2500);
 }
 
+/* Global safety net: if any JS error slips through, show it visibly
+   instead of silently freezing the screen — so problems are caught
+   immediately instead of looking like "nothing happens". */
+window.addEventListener('error', function(e){
+  console.error('Unhandled error:', e.error || e.message);
+  try{
+    const msg = (e.error && e.error.message) ? e.error.message : String(e.message||'Unknown error');
+    showToast('⚠️ কিছু একটা সমস্যা হয়েছে: '+msg);
+  }catch(_){}
+});
+window.addEventListener('unhandledrejection', function(e){
+  console.error('Unhandled promise rejection:', e.reason);
+  try{
+    const msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason||'Unknown error');
+    showToast('⚠️ কিছু একটা সমস্যা হয়েছে: '+msg);
+  }catch(_){}
+});
+
 const NAV = [
   {id:'dashboard', ic:'📊', key:'nav_dashboard'},
   {id:'customers', ic:'👥', key:'nav_customers'},
