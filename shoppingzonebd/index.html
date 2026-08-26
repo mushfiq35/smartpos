@@ -117,11 +117,15 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 #suppReportList{overflow-x:auto;}
 table.data{width:100%;border-collapse:collapse;font-size:14px;}
 table.data th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;color:var(--ink-soft);padding:8px 10px;border-bottom:2px solid var(--line);}
-table.data td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;}
+table.data td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap;}
 table.data td.wrap-cell{
-  white-space:normal;max-width:220px;overflow:hidden;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  white-space:normal;max-width:220px;
 }
+table.data td.wrap-cell .wrap-inner{
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+}
+table.data .actions-cell{padding:6px;}
+table.data .actions-cell .actions-wrap{display:flex;flex-flow:row wrap;gap:4px;max-width:68px;}
 table.data th{white-space:nowrap;}
 table.data tr.low td{background:var(--red-bg);}
 table.data tr:hover td{background:rgba(193,119,46,0.06);}
@@ -1351,6 +1355,24 @@ function showToast(msg){
   showToast._timer = setTimeout(()=>t.classList.remove('show'), 2500);
 }
 
+/* Global safety net: if any JS error slips through, show it visibly
+   instead of silently freezing the screen — so problems are caught
+   immediately instead of looking like "nothing happens". */
+window.addEventListener('error', function(e){
+  console.error('Unhandled error:', e.error || e.message);
+  try{
+    const msg = (e.error && e.error.message) ? e.error.message : String(e.message||'Unknown error');
+    showToast('⚠️ কিছু একটা সমস্যা হয়েছে: '+msg);
+  }catch(_){}
+});
+window.addEventListener('unhandledrejection', function(e){
+  console.error('Unhandled promise rejection:', e.reason);
+  try{
+    const msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason||'Unknown error');
+    showToast('⚠️ কিছু একটা সমস্যা হয়েছে: '+msg);
+  }catch(_){}
+});
+
 const NAV = [
   {id:'dashboard', ic:'📊', key:'nav_dashboard'},
   {id:'customers', ic:'👥', key:'nav_customers'},
@@ -1688,7 +1710,11 @@ function pad2(n){ return String(n).padStart(2,'0'); }
 function toISODate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
 
 function getEarliestDate(){
-  const allDates = [...db.sales, ...db.purchases, ...db.expenses].map(x=>x.date).filter(Boolean).sort();
+  const isValidISODate = (d) => typeof d==='string' && /^\d{4}-\d{2}-\d{2}/.test(d);
+  const allDates = [
+    ...db.sales, ...db.purchases, ...db.expenses,
+    ...(db.installments||[]), ...(db.returns||[])
+  ].map(x=>x.date).filter(isValidISODate).sort();
   return allDates.length ? allDates[0] : todayStr();
 }
 
@@ -1994,7 +2020,7 @@ function renderSummaryReport(body){
 /* ---------- Separate Sales / Returns / Installment Reports ---------- */
 let salesRptRange='last14', salesRptFrom='', salesRptTo='';
 let returnsRptRange='last14', returnsRptFrom='', returnsRptTo='';
-let instRptRange='last14', instRptFrom='', instRptTo='';
+let instRptRange='allTime', instRptFrom='', instRptTo='';
 
 function buildRangeToolbar(prefix, state){
   return `
@@ -2032,7 +2058,10 @@ function wireRangeToolbar(prefix, getState, setState, refresh){
   });
   fromInput.addEventListener('change', () => { const s=getState(); s.from=fromInput.value; setState(s); refresh(); });
   toInput.addEventListener('change', () => { const s=getState(); s.to=toInput.value; setState(s); refresh(); });
-  document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => window.print());
+  document.getElementById(`${prefix}PrintBtn`).addEventListener('click', () => {
+    document.querySelectorAll('.overlay.open').forEach(el => el.classList.remove('open'));
+    window.print();
+  });
 }
 
 const REPORT_PAGE_SIZE = 50;
@@ -2129,15 +2158,119 @@ function renderReturnsOnlyReport(body){
   refresh();
 }
 
+let instRptSelectedCustId = null;
+let instRptQuery = '';
+function printIsolated(title, tableHtml){
+  const oldFrame = document.getElementById('isolatedPrintFrame');
+  if(oldFrame) oldFrame.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'isolatedPrintFrame';
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.style.visibility = 'hidden';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(title)}</title>
+<style>
+  @page{ margin:12mm; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:Arial,Helvetica,sans-serif;padding:16px;color:#222;}
+  h2{margin:0 0 14px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:6px 8px;border-bottom:1px solid #ccc;text-align:left;}
+  th{background:#f0f0f0;text-transform:uppercase;font-size:11px;}
+  tfoot td{font-weight:700;border-top:2px solid #333;}
+  .no-print, .actions-cell{display:none !important;}
+</style>
+</head>
+<body>
+<h2>${escapeHtml(title)}</h2>
+${tableHtml}
+</body>
+</html>`);
+  doc.close();
+
+  iframe.onload = () => {
+    const frameWin = iframe.contentWindow;
+    frameWin.focus();
+    frameWin.print();
+  };
+  const cleanup = () => { setTimeout(() => { iframe.remove(); }, 500); };
+  iframe.contentWindow.onafterprint = cleanup;
+}
+
 function renderInstallmentOnlyReport(body){
+  let lastPrintTableHtml = '';
   body.innerHTML = buildRangeToolbar('instRpt');
   function refresh(){
     const st = {range:instRptRange, from:instRptFrom, to:instRptTo};
     const { fromStr, toStr } = resolveRange(st.range, st.from || document.getElementById('instRptFromDate').value, st.to || document.getElementById('instRptToDate').value);
-    const list = db.installments.filter(i=>i.date>=fromStr && i.date<=toStr).sort((a,b)=>b.ts-a.ts);
+    const list = db.installments.filter(i=>i.date>=fromStr && i.date<=toStr);
     const totalPaid = list.reduce((s,x)=>s+Number(x.amount),0);
     const totalDiscount = list.reduce((s,x)=>s+Number(x.discount||0),0);
-    const totalNewDue = list.reduce((s,x)=>s+Number(x.newDue),0);
+
+    const byCust = {};
+    list.forEach(i => {
+      const cid = i.customerId || 'walkin';
+      if(!byCust[cid]) byCust[cid] = { customerId:i.customerId, customerName:i.customerName||t('walk_in'), count:0, paid:0, discount:0 };
+      byCust[cid].count++;
+      byCust[cid].paid += Number(i.amount);
+      byCust[cid].discount += Number(i.discount||0);
+    });
+    // also include every customer relevant to installments (due>0, or any payment/plan history)
+    // even if they have no payment within the selected date range — matching the Installment page
+    const historyIds = new Set(db.installments.map(i=>i.customerId).filter(Boolean));
+    const planIds = new Set(db.installmentPlans.map(p=>p.customerId).filter(Boolean));
+    Object.entries(db.customers).forEach(([cid,cust]) => {
+      if(Number(cust.due)>0 || historyIds.has(cid) || planIds.has(cid)){
+        if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0 };
+      }
+    });
+    function accountNumbersFor(custId){
+      return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
+    }
+    Object.values(byCust).forEach(c => {
+      c.due = c.customerId && db.customers[c.customerId] ? Number(db.customers[c.customerId].due||0) : 0;
+      c.accountNos = c.customerId ? accountNumbersFor(c.customerId) : [];
+    });
+    const q = instRptQuery.trim().toLowerCase();
+    const custRows = Object.values(byCust)
+      .filter(c => !q
+        || c.customerName.toLowerCase().includes(q)
+        || (c.customerId && db.customers[c.customerId] && (db.customers[c.customerId].phone||'').toLowerCase().includes(q))
+        || c.accountNos.some(a => String(a).toLowerCase().includes(q)))
+      .sort((a,b)=>b.paid-a.paid);
+    const totalDueAll = custRows.reduce((s,c)=>s+Number(c.due||0),0);
+
+    function buildCustInstDetail(cid){
+      const rows = list.filter(i=>(i.customerId||'walkin')===cid).sort((a,b)=>b.ts-a.ts);
+      const cust = cid!=='walkin' ? db.customers[cid] : null;
+      const rowsTotalAmount = rows.reduce((s,x)=>s+Number(x.amount),0);
+      const rowsTotalDiscount = rows.reduce((s,x)=>s+Number(x.discount||0),0);
+      return `
+        <div class="panel">
+          <table class="data">
+            <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
+            <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${i.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${i.id}')">🗑️</button></td></tr>`).join('')}</tbody>
+            <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>—</td><td colspan="2"></td></tr></tfoot>
+          </table>
+          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')} (${t('inst_col_new_due')}): ৳${money(cust?cust.due:0)}</div>` : ''}
+        </div>
+      `;
+    }
+
     document.getElementById('instRptBody').innerHTML = `
       <div class="stat-grid no-print cols-2">
         <div class="stat-card c4"><div class="val">৳${money(totalPaid)}</div><div class="lbl">${t('inst_col_amount')} (${t('totals_label')})</div></div>
@@ -2145,14 +2278,62 @@ function renderInstallmentOnlyReport(body){
       </div>
       <div class="panel">
         <h3>${t('nav_installments')}</h3>
-        ${renderReportTableWithPagination('instRptTable', list,
-          `<tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('col_customer')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr>`,
-          i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>${escapeHtml(i.customerName||'')}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${i.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${i.id}')">🗑️</button></td></tr>`,
-          `<tfoot><tr style="font-weight:700;"><td colspan="4">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalNewDue)}</td><td colspan="2"></td></tr></tfoot>`
-        )}
+        <div class="toolbar no-print" style="margin-bottom:12px;">
+          <input type="text" id="instRptSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(instRptQuery)}">
+        </div>
+        <table class="data no-print">
+          <thead><tr><th>${t('col_voucher')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th><th></th></tr></thead>
+          <tbody>${custRows.map(c => `
+            <tr style="${instRptSelectedCustId===c.customerId?'background:rgba(193,119,46,0.12);':''}">
+              <td>${c.accountNos && c.accountNos.length ? escapeHtml(c.accountNos.join(', ')) : '—'}</td>
+              <td>${escapeHtml(c.customerName)}</td>
+              <td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td>
+              <td>৳${money(c.paid)}</td>
+              <td>${Number(c.discount)>0?'৳'+money(c.discount):'—'}</td>
+              <td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td>
+              <td class="actions-cell"><button class="icon-btn inst-rpt-pick-btn" data-id="${c.customerId||'walkin'}" title="${t('view_title')}">👁</button></td>
+            </tr>
+            ${instRptSelectedCustId===(c.customerId||'walkin') ? `<tr><td colspan="7" style="padding:0;border-bottom:none;"><div style="padding:14px 0;">${buildCustInstDetail(c.customerId||'walkin')}</div></td></tr>` : ''}
+          `).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalDueAll)}</td><td></td></tr></tfoot>
+        </table>
       </div>
     `;
-    wirePaginationEvents('instRptTable', refresh);
+    lastPrintTableHtml = `
+      <table>
+        <thead><tr><th>${t('col_voucher')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th></tr></thead>
+        <tbody>${custRows.map(c => `<tr><td>${c.accountNos && c.accountNos.length ? escapeHtml(c.accountNos.join(', ')) : '—'}</td><td>${escapeHtml(c.customerName)}</td><td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td><td>৳${money(c.paid)}</td><td>${Number(c.discount)>0?'৳'+money(c.discount):'—'}</td><td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td colspan="3">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalDueAll)}</td></tr></tfoot>
+      </table>
+    `;
+    let lastPrintDetailHtml = '';
+    let lastPrintDetailTitle = t('nav_installments');
+    if(instRptSelectedCustId){
+      lastPrintDetailTitle = (custRows.find(c => (c.customerId||'walkin')===instRptSelectedCustId) || {}).customerName || t('nav_installments');
+      lastPrintDetailHtml = buildCustInstDetail(instRptSelectedCustId);
+    }
+    const printBtnEl = document.getElementById('instRptPrintBtn');
+    if(printBtnEl){
+      const freshBtn = printBtnEl.cloneNode(true);
+      printBtnEl.parentNode.replaceChild(freshBtn, printBtnEl);
+      freshBtn.addEventListener('click', () => {
+        if(instRptSelectedCustId) printIsolated(lastPrintDetailTitle, lastPrintDetailHtml);
+        else printIsolated(t('nav_installments'), lastPrintTableHtml);
+      });
+    }
+    document.querySelectorAll('.inst-rpt-pick-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        instRptSelectedCustId = (instRptSelectedCustId===b.dataset.id) ? null : b.dataset.id;
+        refresh();
+      });
+    });
+    document.getElementById('instRptSearch').addEventListener('input', (e) => {
+      instRptQuery = e.target.value;
+      const cursorPos = e.target.selectionStart;
+      refresh();
+      const newInput = document.getElementById('instRptSearch');
+      if(newInput){ newInput.focus(); newInput.setSelectionRange(cursorPos, cursorPos); }
+    });
   }
   wireRangeToolbar('instRpt',
     () => ({range:instRptRange, from:instRptFrom, to:instRptTo}),
@@ -2357,6 +2538,109 @@ function renderReportsOverview(body){
   refresh();
 }
 
+function printCustLedger(cid){
+  const cust = cid ? db.customers[cid] : null;
+  if(!cust) return;
+  const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
+  const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalPaid = totalInitialPaid + totalInstPaid;
+  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+
+  const ledgerRaw = [
+    ...sales.map(s=>({
+      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+      total: Number(s.total), discount: Number(s.discount||0),
+      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+      profit: saleNetProfit(s)
+    })),
+    ...payments.map(p=>({
+      ts: p.ts, date: p.date, type: 'installment', qty: null,
+      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
+      total: 0, discount: Number(p.discount||0),
+      paid: Number(p.amount),
+      profit: null
+    }))
+  ].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    if(a.type!==b.type) return a.type==='booking'?-1:1;
+    return a.ts-b.ts;
+  });
+
+  let runningDue = 0;
+  const ledger = ledgerRaw.map(tx=>{
+    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    else runningDue -= (tx.paid + tx.discount);
+    return { ...tx, runningDue: Math.round(runningDue) };
+  });
+
+  const body = `
+    <div style="margin-bottom:10px;"><strong>${escapeHtml(cust.name)}</strong><br>${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div>
+    <table>
+      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+      <tbody>${ledger.map(tx=>`<tr>
+        <td>${formatDateDMY(tx.date)}</td>
+        <td>${tx.label}</td>
+        <td>${tx.qty!==null?tx.qty:'—'}</td>
+        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+        <td>৳${money(tx.paid)}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+        <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr>
+        <td colspan="3">${t('totals_label')}</td>
+        <td>৳${money(totalBought)}</td>
+        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+        <td>৳${money(totalPaid)}</td>
+        <td>${cust.due>0?'৳'+money(cust.due):'৳0'}</td>
+        <td>৳${money(totalProfit)}</td>
+      </tr></tfoot>
+    </table>
+  `;
+  printIsolated(cust.name, body);
+}
+
+function printCustReportList(){
+  const q = reportsCustQuery.trim().toLowerCase();
+  const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)));
+  const rows = entries.map(([id,c]) => {
+    const sales = db.sales.filter(s=>s.customerId===id && matchesYearMonth(s.date, custReportYear, custReportMonth));
+    const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
+    const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
+    const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+    const instPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const paid = initialPaid + instPaid;
+    const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+    return { c, qty, paid, profit };
+  });
+  const body = `
+    <table>
+      <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_qty')}</th><th>${t('col_paid')}</th><th>${t('col_due_amt')}</th><th>${t('col_profit')}</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr>
+        <td>${r.c.displayId?('#'+r.c.displayId):'—'}</td>
+        <td>${escapeHtml(r.c.name)}</td>
+        <td>${escapeHtml(r.c.phone||'—')}</td>
+        <td>${r.qty||'—'}</td>
+        <td>৳${money(r.paid)}</td>
+        <td>৳${money(r.c.due)}</td>
+        <td>৳${money(r.profit)}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr>
+        <td colspan="3">${t('totals_label')} (${entries.length})</td>
+        <td>${rows.reduce((s,r)=>s+r.qty,0)}</td>
+        <td>৳${money(rows.reduce((s,r)=>s+r.paid,0))}</td>
+        <td>৳${money(entries.reduce((s,[,c])=>s+Number(c.due||0),0))}</td>
+        <td>৳${money(rows.reduce((s,r)=>s+r.profit,0))}</td>
+      </tr></tfoot>
+    </table>
+  `;
+  printIsolated(t('nav_customers'), body);
+}
+
 function renderCustomerReport(body){
   const years = getAvailableYears();
   body.innerHTML = `
@@ -2370,6 +2654,7 @@ function renderCustomerReport(body){
         <option value="all">${t('all_months')}</option>
         ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(custReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
       </select>
+      <button class="btn ghost no-print" style="margin-left:auto;" onclick="printCustReportList()">${t('print_report')}</button>
     </div>
     <div id="custReportList"></div>
   `;
@@ -2381,40 +2666,58 @@ function renderCustomerReport(body){
   });
   document.getElementById('custYearSelect').addEventListener('change', (e) => {
     custReportYear = e.target.value;
-    renderCustDetail();
+    renderCustList();
   });
   document.getElementById('custMonthSelect').addEventListener('change', (e) => {
     custReportMonth = e.target.value;
-    renderCustDetail();
+    renderCustList();
   });
   function renderCustList(){
     const q = reportsCustQuery.trim().toLowerCase();
     const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)));
+    const rows = entries.map(([id,c]) => {
+      const sales = db.sales.filter(s=>s.customerId===id && matchesYearMonth(s.date, custReportYear, custReportMonth));
+      const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
+      const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
+      const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+      const instPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+      const paid = initialPaid + instPaid;
+      const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+      return { id, c, qty, paid, profit };
+    });
     const listEl = document.getElementById('custReportList');
     listEl.innerHTML = entries.length===0
       ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
       : `<table class="data no-print">
-          <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_due_amt')}</th><th></th></tr></thead>
-          <tbody>${entries.map(([id,c]) => `
-            <tr style="${reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':''}">
-              <td>${c.displayId?('#'+c.displayId):'—'}</td>
-              <td>${escapeHtml(c.name)}</td>
-              <td>${escapeHtml(c.phone||'—')}</td>
-              <td>৳${money(c.due)}</td>
-              <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${id}" title="${t('view_title')}">👁</button></td>
+          <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_qty')}</th><th>${t('col_paid')}</th><th>${t('col_due_amt')}</th><th>${t('col_profit')}</th><th></th></tr></thead>
+          <tbody>${rows.map(r => `
+            <tr style="${reportsSelectedCustId===r.id?'background:rgba(193,119,46,0.12);':''}">
+              <td>${r.c.displayId?('#'+r.c.displayId):'—'}</td>
+              <td>${escapeHtml(r.c.name)}</td>
+              <td>${escapeHtml(r.c.phone||'—')}</td>
+              <td>${r.qty||'—'}</td>
+              <td>৳${money(r.paid)}</td>
+              <td>৳${money(r.c.due)}</td>
+              <td>৳${money(r.profit)}</td>
+              <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${r.id}" title="${t('view_title')}">👁</button></td>
             </tr>
-            ${reportsSelectedCustId===id ? `<tr><td colspan="5" style="padding:0;border-bottom:none;background:transparent;"><div style="padding:14px 0;">${buildCustDetailHtml(id)}</div></td></tr>` : ''}
+            ${reportsSelectedCustId===r.id ? `<tr><td colspan="8" style="padding:0;border-bottom:none;background:transparent;"><div style="padding:14px 0;">${buildCustDetailHtml(r.id)}</div></td></tr>` : ''}
           `).join('')}</tbody>
-        </table>
-        ${reportsSelectedCustId ? `<div class="print-only-block">${buildCustDetailHtml(reportsSelectedCustId)}</div>` : ''}`;
+          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+            <td colspan="3">${t('totals_label')} (${entries.length})</td>
+            <td>${rows.reduce((s,r)=>s+r.qty,0)}</td>
+            <td>৳${money(rows.reduce((s,r)=>s+r.paid,0))}</td>
+            <td>৳${money(entries.reduce((s,[,c])=>s+Number(c.due||0),0))}</td>
+            <td>৳${money(rows.reduce((s,r)=>s+r.profit,0))}</td>
+            <td></td>
+          </tr></tfoot>
+        </table>`;
     listEl.querySelectorAll('.cust-pick-btn').forEach(b => {
       b.addEventListener('click', () => {
         reportsSelectedCustId = (reportsSelectedCustId===b.dataset.id) ? null : b.dataset.id;
         renderCustList();
       });
     });
-    const printBtns = listEl.querySelectorAll('.cust-print-btn');
-    printBtns.forEach(b => b.addEventListener('click', () => window.print()));
   }
 
   function buildCustDetailHtml(custId){
@@ -2427,32 +2730,70 @@ function renderCustomerReport(body){
       .filter(p=>p.customerId===custId && matchesYearMonth(p.date, custReportYear, custReportMonth))
       .sort((a,b)=>b.ts-a.ts);
     const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-    const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
+    const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const totalPaid = totalInitialPaid + totalInstPaid;
     const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
-    const firstSale = sales.length ? [...sales].sort((a,b)=>a.ts-b.ts)[0] : null;
+
+    const ledgerRaw = [
+      ...sales.map(s=>({
+        ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+        label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+        total: Number(s.total), discount: Number(s.discount||0),
+        paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+        profit: saleNetProfit(s)
+      })),
+      ...payments.map(p=>({
+        ts: p.ts, date: p.date, type: 'installment', qty: null,
+        label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
+        total: 0, discount: Number(p.discount||0),
+        paid: Number(p.amount),
+        profit: null
+      }))
+    ].sort((a,b)=>{
+      if(a.date!==b.date) return a.date<b.date?-1:1;
+      if(a.type!==b.type) return a.type==='booking'?-1:1;
+      return a.ts-b.ts;
+    });
+
+    let runningDue = 0;
+    const ledger = ledgerRaw.map(tx=>{
+      if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+      else runningDue -= (tx.paid + tx.discount);
+      return { ...tx, runningDue: Math.round(runningDue) };
+    });
+
     return `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
-          <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3><div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address? ' · '+escapeHtml(cust.address):''}</div></div>
-          <button class="btn ghost no-print cust-print-btn">${t('print_report')}</button>
+          <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3>
+          <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
+          <button class="btn ghost no-print" onclick="printCustLedger('${custId}')">${t('print_report')}</button>
         </div>
-        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}${firstSale ? ' · ' + t('first_booking_label') + ': ' + firstSale.date + (firstSale.invoiceNo ? ' (#'+firstSale.invoiceNo+')' : '') : ''}</div>
-        ${sales.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
+
+        <h3 style="margin:14px 0 8px;">🧾 লেনদেনের হিসাব</h3>
+        ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
         <table class="data">
-          <thead><tr><th>${t('col_invoice_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('return_already')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
-          <tbody>${sales.map(s=>{
-            const profit = saleNetProfit(s);
-            const returned = saleReturnedQty(s.id);
-            return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
-          }).join('')}</tbody>
-        </table>`}
-      </div>
-      <div class="panel">
-        <h3>${t('installment_history_title')}</h3>
-        ${payments.length===0 ? `<div class="field-hint">${t('inst_no_history')}</div>` : `
-        <table class="data">
-          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
-          <tbody>${payments.map(p=>`<tr><td>${p.receiptNo?'#'+p.receiptNo:'—'}</td><td>${formatDateDMY(p.date)}</td><td>৳${money(p.previousDue)}</td><td>৳${money(p.amount)}</td><td>${Number(p.discount)>0?'৳'+money(p.discount):'—'}</td><td>৳${money(p.newDue)}</td><td>${escapeHtml(p.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${p.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${p.id}')">🗑️</button></td></tr>`).join('')}</tbody>
+          <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+          <tbody>${ledger.map(tx=>`<tr>
+            <td>${formatDateDMY(tx.date)}</td>
+            <td>${tx.label}</td>
+            <td>${tx.qty!==null?tx.qty:'—'}</td>
+            <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+            <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+            <td>৳${money(tx.paid)}</td>
+            <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+            <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+          </tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+            <td colspan="3">${t('totals_label')}</td>
+            <td>৳${money(totalBought)}</td>
+            <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+            <td>৳${money(totalPaid)}</td>
+            <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+            <td>৳${money(totalProfit)}</td>
+          </tr></tfoot>
         </table>`}
       </div>
     `;
@@ -2744,12 +3085,17 @@ function renderTable(tab, items, search){
           const isLow = cfg.isLow && cfg.isLow(item);
           const isGroup = !!item._groupIds;
           return `<tr class="${isLow?'low':''}">
-            ${cfg.columns.map(c => `<td${c.wrap?' class="wrap-cell"':''}>${c.fmt ? c.fmt(item[c.k], item) : escapeHtml(item[c.k]==null?'—':item[c.k])}</td>`).join('')}
-            <td class="actions-cell">
+            ${cfg.columns.map(c => {
+              const cellContent = c.fmt ? c.fmt(item[c.k], item) : escapeHtml(item[c.k]==null?'—':item[c.k]);
+              return c.wrap
+                ? `<td class="wrap-cell"><div class="wrap-inner">${cellContent}</div></td>`
+                : `<td>${cellContent}</td>`;
+            }).join('')}
+            <td class="actions-cell"><div class="actions-wrap">
               ${cfg.extraRowActions ? cfg.extraRowActions(id,item) : ''}
               ${!cfg.noEdit ? `<button class="icon-btn" title="${t('edit_title')}" onclick="${isGroup ? `openMultiSale('${item.invoiceId}')` : `openForm('${tab}','${id}')`}">✏️</button>` : ''}
               <button class="icon-btn" title="${t('delete_title')}" onclick="${isGroup ? `deleteInvoiceGroup('${id}')` : `deleteItem('${tab}','${id}')`}">🗑️</button>
-            </td>
+            </div></td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -3369,12 +3715,35 @@ function openCustomerHistory(custId){
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
   const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-  const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
+  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalPaid = totalInitialPaid + totalInstPaid;
 
-  const timeline = [
-    ...sales.map(s => ({ ts:s.ts, date:s.date, type:'sale', label:s.productName, ref:s.voucherTag||s.voucherNo||'', amount:s.total, note:'' })),
-    ...payments.map(p => ({ ts:p.ts, date:p.date, type:'payment', label:t('installment_receipt_title'), ref:'', amount:p.amount+Number(p.discount||0), note:p.note||'' })),
-  ].sort((a,b)=>a.ts-b.ts);
+  const ledgerRaw = [
+    ...sales.map(s=>({
+      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+      total: Number(s.total), discount: Number(s.discount||0),
+      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid)
+    })),
+    ...payments.map(p=>({
+      ts: p.ts, date: p.date, type: 'installment', qty: null,
+      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
+      total: 0, discount: Number(p.discount||0),
+      paid: Number(p.amount)
+    }))
+  ].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    if(a.type!==b.type) return a.type==='booking'?-1:1;
+    return a.ts-b.ts;
+  });
+
+  let runningDue = 0;
+  const ledger = ledgerRaw.map(tx=>{
+    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    else runningDue -= (tx.paid + tx.discount);
+    return { ...tx, runningDue: Math.round(runningDue) };
+  });
 
   document.getElementById('historyTitle').textContent = cust.name + ' — ' + t('history_title');
   document.getElementById('historyBody').innerHTML = `
@@ -3384,12 +3753,25 @@ function openCustomerHistory(custId){
     <div class="field-hint" style="margin-bottom:10px;">
       ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
     </div>
-    ${timeline.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+    ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
     <table class="data">
-      <thead><tr><th>${t('col_date')}</th><th>${t('history_type_label')}</th><th>${t('col_product')}</th><th>${t('col_amount')}</th><th>${t('f_note')}</th></tr></thead>
-      <tbody>
-        ${timeline.map(x=>`<tr><td>${formatDateDMY(x.date)}</td><td>${x.type==='sale'?t('history_type_sale'):t('history_type_payment')}</td><td>${escapeHtml(x.label)}${x.ref?' ('+escapeHtml(x.ref)+')':''}</td><td>৳${money(x.amount)}</td><td>${escapeHtml(x.note||'—')}</td></tr>`).join('')}
-      </tbody>
+      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
+      <tbody>${ledger.map(tx=>`<tr>
+        <td>${formatDateDMY(tx.date)}</td>
+        <td>${tx.label}</td>
+        <td>${tx.qty!==null?tx.qty:'—'}</td>
+        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+        <td>৳${money(tx.paid)}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+        <td colspan="3">${t('totals_label')}</td>
+        <td>৳${money(totalBought)}</td>
+        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+        <td>৳${money(totalPaid)}</td>
+        <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+      </tr></tfoot>
     </table>`}
   `;
   document.getElementById('historyCloseBtn').textContent = t('close');
@@ -4283,8 +4665,9 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     r.product.qty = Math.max(0, Number(r.product.qty) - r.qty);
   });
 
-  for(const r of rowsData) await safePut('products', r.pid, r.product);
-  for(const rec of saleRecords){ db.sales.push(rec); await safePut('sales', rec.id, rec); }
+  await Promise.all(rowsData.map(r => safePut('products', r.pid, r.product)));
+  saleRecords.forEach(rec => db.sales.push(rec));
+  await Promise.all(saleRecords.map(rec => safePut('sales', rec.id, rec)));
   if(customerId && cust){
     cust.due = Number(cust.due||0) + overallDue;
     await safePut('customers', customerId, cust);
@@ -4312,6 +4695,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   msEditInvoiceNo = null;
   renderNav();
   renderPage();
+  if(saleRecords.length && typeof openSaleView==='function') openSaleView(saleRecords[0].id);
 });
 
 let dueCtx = null;
@@ -4375,6 +4759,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   let toApply = paid + discount;
   const openSales = db.sales.filter(s=>s.customerId===dueCtx && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
   const adjustments = [];
+  const salesToUpdate = [];
   for(const sale of openSales){
     if(toApply<=0) break;
     const applyAmt = Math.min(Number(sale.due), toApply);
@@ -4382,8 +4767,9 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
     sale.due = Math.max(0, Number(sale.due) - applyAmt);
     toApply -= applyAmt;
     adjustments.push({ saleId: sale.id, amount: applyAmt });
-    await safePut('sales', sale.id, sale);
+    salesToUpdate.push(sale);
   }
+  await Promise.all(salesToUpdate.map(sale => safePut('sales', sale.id, sale)));
 
   const instRecord = {
     id: uid(), receiptNo: nextReceiptNo(), customerId: dueCtx, customerName: cust.name,
