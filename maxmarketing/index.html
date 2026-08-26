@@ -117,11 +117,15 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 #suppReportList{overflow-x:auto;}
 table.data{width:100%;border-collapse:collapse;font-size:14px;}
 table.data th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;color:var(--ink-soft);padding:8px 10px;border-bottom:2px solid var(--line);}
-table.data td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;}
+table.data td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap;}
 table.data td.wrap-cell{
-  white-space:normal;max-width:220px;overflow:hidden;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  white-space:normal;max-width:220px;
 }
+table.data td.wrap-cell .wrap-inner{
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+}
+table.data .actions-cell{padding:6px;}
+table.data .actions-cell .actions-wrap{display:flex;flex-flow:row wrap;gap:4px;max-width:68px;}
 table.data th{white-space:nowrap;}
 table.data tr.low td{background:var(--red-bg);}
 table.data tr:hover td{background:rgba(193,119,46,0.06);}
@@ -2220,11 +2224,10 @@ function renderInstallmentOnlyReport(body){
     const byCust = {};
     list.forEach(i => {
       const cid = i.customerId || 'walkin';
-      if(!byCust[cid]) byCust[cid] = { customerId:i.customerId, customerName:i.customerName||t('walk_in'), count:0, paid:0, discount:0, receiptNos:[] };
+      if(!byCust[cid]) byCust[cid] = { customerId:i.customerId, customerName:i.customerName||t('walk_in'), count:0, paid:0, discount:0 };
       byCust[cid].count++;
       byCust[cid].paid += Number(i.amount);
       byCust[cid].discount += Number(i.discount||0);
-      if(i.receiptNo) byCust[cid].receiptNos.push(i.receiptNo);
     });
     // also include every customer relevant to installments (due>0, or any payment/plan history)
     // even if they have no payment within the selected date range — matching the Installment page
@@ -2232,13 +2235,22 @@ function renderInstallmentOnlyReport(body){
     const planIds = new Set(db.installmentPlans.map(p=>p.customerId).filter(Boolean));
     Object.entries(db.customers).forEach(([cid,cust]) => {
       if(Number(cust.due)>0 || historyIds.has(cid) || planIds.has(cid)){
-        if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0, receiptNos:[] };
+        if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0 };
       }
     });
-    Object.values(byCust).forEach(c => { c.due = c.customerId && db.customers[c.customerId] ? Number(db.customers[c.customerId].due||0) : 0; });
+    function accountNumbersFor(custId){
+      return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
+    }
+    Object.values(byCust).forEach(c => {
+      c.due = c.customerId && db.customers[c.customerId] ? Number(db.customers[c.customerId].due||0) : 0;
+      c.accountNos = c.customerId ? accountNumbersFor(c.customerId) : [];
+    });
     const q = instRptQuery.trim().toLowerCase();
     const custRows = Object.values(byCust)
-      .filter(c => !q || c.customerName.toLowerCase().includes(q) || (c.customerId && db.customers[c.customerId] && (db.customers[c.customerId].phone||'').toLowerCase().includes(q)) || (c.receiptNos && c.receiptNos.some(rn => String(rn).toLowerCase().includes(q))))
+      .filter(c => !q
+        || c.customerName.toLowerCase().includes(q)
+        || (c.customerId && db.customers[c.customerId] && (db.customers[c.customerId].phone||'').toLowerCase().includes(q))
+        || c.accountNos.some(a => String(a).toLowerCase().includes(q)))
       .sort((a,b)=>b.paid-a.paid);
     const totalDueAll = custRows.reduce((s,c)=>s+Number(c.due||0),0);
 
@@ -2247,15 +2259,14 @@ function renderInstallmentOnlyReport(body){
       const cust = cid!=='walkin' ? db.customers[cid] : null;
       const rowsTotalAmount = rows.reduce((s,x)=>s+Number(x.amount),0);
       const rowsTotalDiscount = rows.reduce((s,x)=>s+Number(x.discount||0),0);
-      const rowsTotalNewDue = rows.reduce((s,x)=>s+Number(x.newDue),0);
       return `
         <div class="panel">
           <table class="data">
             <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
             <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${i.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${i.id}')">🗑️</button></td></tr>`).join('')}</tbody>
-            <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>৳${money(rowsTotalNewDue)}</td><td colspan="2"></td></tr></tfoot>
+            <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>—</td><td colspan="2"></td></tr></tfoot>
           </table>
-          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')}: ৳${money(cust?cust.due:0)}</div>` : ''}
+          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')} (${t('inst_col_new_due')}): ৳${money(cust?cust.due:0)}</div>` : ''}
         </div>
       `;
     }
@@ -2271,10 +2282,10 @@ function renderInstallmentOnlyReport(body){
           <input type="text" id="instRptSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(instRptQuery)}">
         </div>
         <table class="data no-print">
-          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th><th></th></tr></thead>
+          <thead><tr><th>${t('col_voucher')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th><th></th></tr></thead>
           <tbody>${custRows.map(c => `
             <tr style="${instRptSelectedCustId===c.customerId?'background:rgba(193,119,46,0.12);':''}">
-              <td>${c.receiptNos && c.receiptNos.length ? c.receiptNos.map(rn=>'#'+rn).join(', ') : '—'}</td>
+              <td>${c.accountNos && c.accountNos.length ? escapeHtml(c.accountNos.join(', ')) : '—'}</td>
               <td>${escapeHtml(c.customerName)}</td>
               <td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td>
               <td>৳${money(c.paid)}</td>
@@ -2290,8 +2301,8 @@ function renderInstallmentOnlyReport(body){
     `;
     lastPrintTableHtml = `
       <table>
-        <thead><tr><th>${t('col_receipt_no')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th></tr></thead>
-        <tbody>${custRows.map(c => `<tr><td>${c.receiptNos && c.receiptNos.length ? c.receiptNos.map(rn=>'#'+rn).join(', ') : '—'}</td><td>${escapeHtml(c.customerName)}</td><td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td><td>৳${money(c.paid)}</td><td>${Number(c.discount)>0?'৳'+money(c.discount):'—'}</td><td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>${t('col_voucher')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th></tr></thead>
+        <tbody>${custRows.map(c => `<tr><td>${c.accountNos && c.accountNos.length ? escapeHtml(c.accountNos.join(', ')) : '—'}</td><td>${escapeHtml(c.customerName)}</td><td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td><td>৳${money(c.paid)}</td><td>${Number(c.discount)>0?'৳'+money(c.discount):'—'}</td><td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td></tr>`).join('')}</tbody>
         <tfoot><tr><td colspan="3">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalDueAll)}</td></tr></tfoot>
       </table>
     `;
@@ -3074,12 +3085,17 @@ function renderTable(tab, items, search){
           const isLow = cfg.isLow && cfg.isLow(item);
           const isGroup = !!item._groupIds;
           return `<tr class="${isLow?'low':''}">
-            ${cfg.columns.map(c => `<td${c.wrap?' class="wrap-cell"':''}>${c.fmt ? c.fmt(item[c.k], item) : escapeHtml(item[c.k]==null?'—':item[c.k])}</td>`).join('')}
-            <td class="actions-cell">
+            ${cfg.columns.map(c => {
+              const cellContent = c.fmt ? c.fmt(item[c.k], item) : escapeHtml(item[c.k]==null?'—':item[c.k]);
+              return c.wrap
+                ? `<td class="wrap-cell"><div class="wrap-inner">${cellContent}</div></td>`
+                : `<td>${cellContent}</td>`;
+            }).join('')}
+            <td class="actions-cell"><div class="actions-wrap">
               ${cfg.extraRowActions ? cfg.extraRowActions(id,item) : ''}
               ${!cfg.noEdit ? `<button class="icon-btn" title="${t('edit_title')}" onclick="${isGroup ? `openMultiSale('${item.invoiceId}')` : `openForm('${tab}','${id}')`}">✏️</button>` : ''}
               <button class="icon-btn" title="${t('delete_title')}" onclick="${isGroup ? `deleteInvoiceGroup('${id}')` : `deleteItem('${tab}','${id}')`}">🗑️</button>
-            </td>
+            </div></td>
           </tr>`;
         }).join('')}
       </tbody>
