@@ -2736,6 +2736,72 @@ function custRptPrint(){
   window.print();
 }
 
+function printCustLedger(cid){
+  const cust = cid ? db.customers[cid] : null;
+  if(!cust) return;
+  const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
+  const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalPaid = totalInitialPaid + totalInstPaid;
+  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+
+  const ledgerRaw = [
+    ...sales.map(s=>({
+      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+      total: Number(s.total), discount: Number(s.discount||0),
+      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+      profit: saleNetProfit(s)
+    })),
+    ...payments.map(p=>({
+      ts: p.ts, date: p.date, type: 'installment', qty: null,
+      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('nav_installments'),
+      total: 0, discount: Number(p.discount||0),
+      paid: Number(p.amount),
+      profit: null
+    }))
+  ].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    if(a.type!==b.type) return a.type==='booking'?-1:1;
+    return a.ts-b.ts;
+  });
+
+  let runningDue = 0;
+  const ledger = ledgerRaw.map(tx=>{
+    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    else runningDue -= (tx.paid + tx.discount);
+    return { ...tx, runningDue: Math.round(runningDue) };
+  });
+
+  const body = `
+    <div style="margin-bottom:10px;"><strong>${escapeHtml(cust.name)}</strong><br>${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div>
+    <table>
+      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+      <tbody>${ledger.map(tx=>`<tr>
+        <td>${formatDateDMY(tx.date)}</td>
+        <td>${tx.label}</td>
+        <td>${tx.qty!==null?tx.qty:'—'}</td>
+        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+        <td>৳${money(tx.paid)}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+        <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr>
+        <td colspan="3">${t('totals_label')}</td>
+        <td>৳${money(totalBought)}</td>
+        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+        <td>৳${money(totalPaid)}</td>
+        <td>${cust.due>0?'৳'+money(cust.due):'৳0'}</td>
+        <td>৳${money(totalProfit)}</td>
+      </tr></tfoot>
+    </table>
+  `;
+  printIsolated(cust.name, body);
+}
+
 function renderCustomerReport(body){
   const years = getAvailableYears();
   body.innerHTML = `
@@ -2865,95 +2931,68 @@ function renderCustomerReport(body){
     const totalPaid = totalInitialPaid + totalInstPaid;
     const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
 
-    // সব transaction একটা timeline এ — booking payment + installments
-    const allTx = [
+    // একটাই ব্যাংক-স্টেটমেন্ট স্টাইল লেজার — বুকিং ও কিস্তি, তারিখ অনুযায়ী,
+    // চলমান ব্যালেন্স নিজে হিসাব করে বসানো হচ্ছে (কোনো আগের সেভ করা "due" এর উপর নির্ভর করছি না)
+    const ledgerRaw = [
       ...sales.map(s=>({
-        ts: s.ts, date: s.date,
-        type: 'booking',
-        invoiceNo: s.invoiceNo,
-        label: escapeHtml(s.productName),
-        total: s.total,
-        amount: Number(s.paid||0),
-        due: s.due,
-        discount: s.discount||0,
-        note: t('col_paid') + ' (Booking)'
+        ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+        label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+        total: Number(s.total), discount: Number(s.discount||0),
+        paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+        profit: saleNetProfit(s)
       })),
       ...payments.map(p=>({
-        ts: p.ts, date: p.date,
-        type: 'installment',
-        receiptNo: p.receiptNo,
-        label: '—',
-        total: 0,
-        amount: Number(p.amount),
-        due: p.newDue,
-        discount: p.discount||0,
-        note: p.note||'—'
+        ts: p.ts, date: p.date, type: 'installment', qty: null,
+        label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('nav_installments'),
+        total: 0, discount: Number(p.discount||0),
+        paid: Number(p.amount),
+        profit: null
       }))
-    ].sort((a,b)=>a.ts-b.ts);
+    ].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    if(a.type!==b.type) return a.type==='booking'?-1:1;
+    return a.ts-b.ts;
+  });
+
+    let runningDue = 0;
+    const ledger = ledgerRaw.map(tx=>{
+      if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+      else runningDue -= (tx.paid + tx.discount);
+      return { ...tx, runningDue: Math.round(runningDue) };
+    });
 
     return `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3>
           <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
-          <button class="btn ghost no-print" onclick="window.print()">${t('print_report')}</button>
+          <button class="btn ghost no-print" onclick="printCustLedger('${cid}')">${t('print_report')}</button>
         </div>
         <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
 
-        <!-- Bookings table -->
-        <h3 style="margin:14px 0 8px;">📦 ${t('nav_sales')}</h3>
-        ${sales.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
-        <div style="overflow-x:auto;"><table class="data">
-          <thead><tr><th>${t('col_invoice_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('return_already')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
-          <tbody>${sales.map(s=>{
-            const profit = saleNetProfit(s);
-            const returned = saleReturnedQty(s.id);
-            return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.initialPaid!==undefined?s.initialPaid:s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
-          }).join('')}</tbody>
-          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
-            <td colspan="5">${t('totals_label')}</td>
-            <td>৳${money(totalBought)}</td>
-            <td>৳${money(sales.reduce((s,x)=>s+Number(x.discount||0),0))}</td>
-            <td>৳${money(totalInitialPaid)}</td>
-            <td>${cust.due>0?'৳'+money(cust.due):'—'}</td>
-            <td>৳${money(totalProfit)}</td>
-          </tr></tfoot>
-        </table></div>`}
-      </div>
-
-      <!-- Unified payment history -->
-      <div class="panel">
-        <h3>💳 ${t('installment_history_title')}</h3>
-        ${allTx.length===0 ? `<div class="field-hint">${t('inst_no_history')}</div>` : `
-        <div style="overflow-x:auto;"><table class="data">
-          <thead><tr>
-            <th>${t('col_date')}</th>
-            <th>${t('hdr_type')}</th>
-            <th>${t('f_note')}</th>
-            <th>${t('inst_col_amount')}</th>
-            <th>${t('inst_col_discount')}</th>
-            <th>${t('inst_col_new_due')}</th>
-          </tr></thead>
-          <tbody>${allTx.map(tx=>{
-            const typePill = tx.type==='booking'
-              ? '<span class="pill" style="background:#2E6B8A;color:#fff;font-size:10px;">'+t('nav_sales')+'</span>'
-              : '<span class="pill green" style="font-size:10px;">'+t('nav_installments')+'</span>';
-            return `<tr>
-              <td>${formatDateDMY(tx.date)}</td>
-              <td>${typePill}</td>
-              <td>${tx.note}</td>
-              <td>৳${money(tx.amount)}</td>
-              <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-              <td>${tx.due>=0?'৳'+money(tx.due):'—'}</td>
-            </tr>`;
-          }).join('')}</tbody>
+        <h3 style="margin:14px 0 8px;">🧾 লেনদেনের হিসাব</h3>
+        ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+        <table class="data">
+          <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+          <tbody>${ledger.map(tx=>`<tr>
+            <td>${formatDateDMY(tx.date)}</td>
+            <td>${tx.label}</td>
+            <td>${tx.qty!==null?tx.qty:'—'}</td>
+            <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+            <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+            <td>৳${money(tx.paid)}</td>
+            <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+            <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+          </tr>`).join('')}</tbody>
           <tfoot><tr style="font-weight:700;background:var(--paper-card);">
             <td colspan="3">${t('totals_label')}</td>
+            <td>৳${money(totalBought)}</td>
+            <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
             <td>৳${money(totalPaid)}</td>
-            <td>৳${money(payments.reduce((s,p)=>s+Number(p.discount||0),0))}</td>
             <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+            <td>৳${money(totalProfit)}</td>
           </tr></tfoot>
-        </table></div>`}
+        </table>`}
 
         <!-- Summary box -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;">
@@ -3753,12 +3792,35 @@ function openCustomerHistory(custId){
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
   const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-  const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
+  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalPaid = totalInitialPaid + totalInstPaid;
 
-  const timeline = [
-    ...sales.map(s => ({ ts:s.ts, date:s.date, type:'sale', label:s.productName, ref:s.voucherTag||s.voucherNo||'', amount:s.total, note:'' })),
-    ...payments.map(p => ({ ts:p.ts, date:p.date, type:'payment', label:t('installment_receipt_title'), ref:'', amount:p.amount+Number(p.discount||0), note:p.note||'' })),
-  ].sort((a,b)=>a.ts-b.ts);
+  const ledgerRaw = [
+    ...sales.map(s=>({
+      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+      total: Number(s.total), discount: Number(s.discount||0),
+      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid)
+    })),
+    ...payments.map(p=>({
+      ts: p.ts, date: p.date, type: 'installment', qty: null,
+      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
+      total: 0, discount: Number(p.discount||0),
+      paid: Number(p.amount)
+    }))
+  ].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    if(a.type!==b.type) return a.type==='booking'?-1:1; // একই তারিখে বুকিং আগে, কিস্তি পরে
+    return a.ts-b.ts;
+  });
+
+  let runningDue = 0;
+  const ledger = ledgerRaw.map(tx=>{
+    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    else runningDue -= (tx.paid + tx.discount);
+    return { ...tx, runningDue: Math.round(runningDue) };
+  });
 
   document.getElementById('historyTitle').textContent = cust.name + ' — ' + t('history_title');
   document.getElementById('historyBody').innerHTML = `
@@ -3768,12 +3830,25 @@ function openCustomerHistory(custId){
     <div class="field-hint" style="margin-bottom:10px;">
       ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
     </div>
-    ${timeline.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+    ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
     <table class="data">
-      <thead><tr><th>${t('col_date')}</th><th>${t('history_type_label')}</th><th>${t('col_product')}</th><th>${t('col_amount')}</th><th>${t('f_note')}</th></tr></thead>
-      <tbody>
-        ${timeline.map(x=>`<tr><td>${formatDateDMY(x.date)}</td><td>${x.type==='sale'?t('history_type_sale'):t('history_type_payment')}</td><td>${escapeHtml(x.label)}${x.ref?' ('+escapeHtml(x.ref)+')':''}</td><td>৳${money(x.amount)}</td><td>${escapeHtml(x.note||'—')}</td></tr>`).join('')}
-      </tbody>
+      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
+      <tbody>${ledger.map(tx=>`<tr>
+        <td>${formatDateDMY(tx.date)}</td>
+        <td>${tx.label}</td>
+        <td>${tx.qty!==null?tx.qty:'—'}</td>
+        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+        <td>৳${money(tx.paid)}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+        <td colspan="3">${t('totals_label')}</td>
+        <td>৳${money(totalBought)}</td>
+        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+        <td>৳${money(totalPaid)}</td>
+        <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+      </tr></tfoot>
     </table>`}
   `;
   document.getElementById('historyCloseBtn').textContent = t('close');
