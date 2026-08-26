@@ -992,11 +992,10 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    ব্রাউজার ট্যাব টাইটেল, প্রিন্ট হেডার, ব্যাকআপ ফাইলের নাম) নিজে থেকেই বদলে যাবে।
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
-const SHOP_NAME = "Abu Lubaba Hajj & Umrah Center";
-const SHOP_OWNER = "Mowlana Masum Billah";
-const SHOP_ADDRESS = "Noapara; Abhaynagar; Jashore-7460";
-const SHOP_EMAIL = "m.masumbillah246@gmail.com";
-const SHOP_CONTACT = "01917241554";
+const SHOP_NAME = "Bashar Air International";
+const SHOP_ADDRESS = "Fynas Tower(Lift-15F);37/2,Cilvert Road;Purana Polton,Dhaka-1000";
+const SHOP_EMAIL = "abasharbd13@gmail.com";
+const SHOP_CONTACT = "01771044444";
 /* Only these logged-in emails will see the "Reports" menu — everyone else's
    staff login will not see Reports at all. Add/remove emails as needed. */
 const ADMIN_EMAILS = ["mushfiq35@gmail.com"];
@@ -1005,12 +1004,12 @@ const ADMIN_EMAILS = ["mushfiq35@gmail.com"];
 const SUMMARY_START_DATE = "2026-07-31";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCa7EuWVMYeLZwN4eQ94zzddYZ7uz0b_M4",
-  authDomain: "abu-lubaba-hajj-center.firebaseapp.com",
-  projectId: "abu-lubaba-hajj-center",
-  storageBucket: "abu-lubaba-hajj-center.firebasestorage.app",
-  messagingSenderId: "495104939104",
-  appId: "1:495104939104:web:b9b9877087ecfeb2235f05"
+  apiKey: "AIzaSyA0InSEmqrWVk5Ugdb0JhdSzc4MBLnyHaM",
+  authDomain: "bashar-air-international.firebaseapp.com",
+  projectId: "bashar-air-international",
+  storageBucket: "bashar-air-international.firebasestorage.app",
+  messagingSenderId: "894372788372",
+  appId: "1:894372788372:web:ffdada116dabdd70965c81"
 };
 
 
@@ -3337,11 +3336,10 @@ function renderInstallmentOnlyReport(body){
     const byCust = {};
     list.forEach(i => {
       const cid = i.customerId || 'walkin';
-      if(!byCust[cid]) byCust[cid] = { customerId:i.customerId, customerName:i.customerName||t('walk_in'), count:0, paid:0, discount:0, receiptNos:[] };
+      if(!byCust[cid]) byCust[cid] = { customerId:i.customerId, customerName:i.customerName||t('walk_in'), count:0, paid:0, discount:0 };
       byCust[cid].count++;
       byCust[cid].paid += Number(i.amount);
       byCust[cid].discount += Number(i.discount||0);
-      if(i.receiptNo) byCust[cid].receiptNos.push(i.receiptNo);
     });
     // also include every customer relevant to installments (due>0, or any payment/plan history)
     // even if they have no payment within the selected date range — matching the Installment page
@@ -3349,10 +3347,16 @@ function renderInstallmentOnlyReport(body){
     const planIds = new Set((db.installmentPlans||[]).map(p=>p.customerId).filter(Boolean));
     Object.entries(db.customers).forEach(([cid,cust]) => {
       if(Number(cust.due)>0 || historyIds.has(cid) || planIds.has(cid)){
-        if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0, receiptNos:[] };
+        if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0 };
       }
     });
-    Object.values(byCust).forEach(c => { c.due = c.customerId && db.customers[c.customerId] ? Number(db.customers[c.customerId].due||0) : 0; });
+    function accountNumbersFor(custId){
+      return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
+    }
+    Object.values(byCust).forEach(c => {
+      c.due = c.customerId && db.customers[c.customerId] ? Number(db.customers[c.customerId].due||0) : 0;
+      c.accountNos = c.customerId ? accountNumbersFor(c.customerId) : [];
+    });
 
     const custRows = Object.values(byCust)
       .filter(c => {
@@ -3362,8 +3366,7 @@ function renderInstallmentOnlyReport(body){
           || (cust && cust.phone && cust.phone.toLowerCase().includes(q))
           || (cust && cust.passport && cust.passport.toLowerCase().includes(q))
           || (cust && cust.tracking && cust.tracking.toLowerCase().includes(q))
-          || (c.receiptNos && c.receiptNos.some(rn => String(rn).toLowerCase().includes(q)))
-          || (c.customerId && db.sales.filter(s=>s.customerId===c.customerId).some(s=>(s.voucherNo||'').toLowerCase().includes(q)));
+          || c.accountNos.some(a => String(a).toLowerCase().includes(q));
       })
       .sort((a,b)=>b.paid-a.paid);
     const totalDueAll = custRows.reduce((s,c)=>s+Number(c.due||0),0);
@@ -3373,15 +3376,14 @@ function renderInstallmentOnlyReport(body){
       const cust = cid!=='walkin' ? db.customers[cid] : null;
       const rowsTotalAmount = rows.reduce((s,x)=>s+Number(x.amount),0);
       const rowsTotalDiscount = rows.reduce((s,x)=>s+Number(x.discount||0),0);
-      const rowsTotalNewDue = rows.reduce((s,x)=>s+Number(x.newDue),0);
       return `
         <div class="panel">
           <table class="data">
             <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
             <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td><td class="actions-cell no-print">${typeof openEditInstallmentPayment==='function'?`<button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${i.id}')">✏️</button>`:''}${typeof deleteInstallmentPayment==='function'?`<button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${i.id}')">🗑️</button>`:''}</td></tr>`).join('')}</tbody>
-            <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>৳${money(rowsTotalNewDue)}</td><td colspan="2"></td></tr></tfoot>
+            <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>—</td><td colspan="2"></td></tr></tfoot>
           </table>
-          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')}: ৳${money(cust?cust.due:0)}</div>` : ''}
+          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')} (${t('inst_col_new_due')}): ৳${money(cust?cust.due:0)}</div>` : ''}
         </div>
       `;
     }
@@ -3394,10 +3396,10 @@ function renderInstallmentOnlyReport(body){
       <div class="panel">
         <h3>${t('nav_installments')}</h3>
         <table class="data no-print">
-          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th><th></th></tr></thead>
+          <thead><tr><th>${t('col_voucher')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th><th></th></tr></thead>
           <tbody>${custRows.map(c => `
             <tr style="${instRptSelectedCustId===c.customerId?'background:rgba(193,119,46,0.12);':''}">
-              <td>${c.receiptNos && c.receiptNos.length ? c.receiptNos.map(rn=>'#'+rn).join(', ') : '—'}</td>
+              <td>${c.accountNos && c.accountNos.length ? escapeHtml(c.accountNos.join(', ')) : '—'}</td>
               <td>${escapeHtml(c.customerName)}</td>
               <td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td>
               <td>৳${money(c.paid)}</td>
@@ -3413,8 +3415,8 @@ function renderInstallmentOnlyReport(body){
     `;
     lastPrintTableHtml = `
       <table>
-        <thead><tr><th>${t('col_receipt_no')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th></tr></thead>
-        <tbody>${custRows.map(c => `<tr><td>${c.receiptNos && c.receiptNos.length ? c.receiptNos.map(rn=>'#'+rn).join(', ') : '—'}</td><td>${escapeHtml(c.customerName)}</td><td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td><td>৳${money(c.paid)}</td><td>${Number(c.discount)>0?'৳'+money(c.discount):'—'}</td><td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>${t('col_voucher')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th></tr></thead>
+        <tbody>${custRows.map(c => `<tr><td>${c.accountNos && c.accountNos.length ? escapeHtml(c.accountNos.join(', ')) : '—'}</td><td>${escapeHtml(c.customerName)}</td><td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td><td>৳${money(c.paid)}</td><td>${Number(c.discount)>0?'৳'+money(c.discount):'—'}</td><td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td></tr>`).join('')}</tbody>
         <tfoot><tr><td colspan="3">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalDueAll)}</td></tr></tfoot>
       </table>
     `;
@@ -3426,13 +3428,12 @@ function renderInstallmentOnlyReport(body){
       const custRow = custRows.find(c => (c.customerId||'walkin')===cid);
       const rowsTotalAmount = rows.reduce((s,x)=>s+Number(x.amount),0);
       const rowsTotalDiscount = rows.reduce((s,x)=>s+Number(x.discount||0),0);
-      const rowsTotalNewDue = rows.reduce((s,x)=>s+Number(x.newDue),0);
       lastPrintDetailTitle = custRow ? custRow.customerName : t('nav_installments');
       lastPrintDetailHtml = `
         <table>
           <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th></tr></thead>
           <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td></tr>`).join('')}</tbody>
-          <tfoot><tr><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>৳${money(rowsTotalNewDue)}</td><td></td></tr></tfoot>
+          <tfoot><tr><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>—</td><td></td></tr></tfoot>
         </table>
       `;
     }
