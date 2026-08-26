@@ -1005,12 +1005,12 @@ function applyFeatureVisibility(){
 const SUMMARY_START_DATE = "2026-07-31";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDqtiFkXiAkoDIm_fqCpJYb6ZhDLORT78k",
-  authDomain: "shoppingzonebd-51823.firebaseapp.com",
-  projectId: "shoppingzonebd-51823",
-  storageBucket: "shoppingzonebd-51823.firebasestorage.app",
-  messagingSenderId: "250367575508",
-  appId: "1:250367575508:web:f1816a1f118613c2874241"
+  apiKey: "AIzaSyA7pvxxc0AEj-As2Uxe0TWsC3kQfMAfY2o",
+  authDomain: "max-marketing-4bcd4.firebaseapp.com",
+  projectId: "max-marketing-4bcd4",
+  storageBucket: "max-marketing-4bcd4.firebasestorage.app",
+  messagingSenderId: "56240417487",
+  appId: "1:56240417487:web:9358a934b2c61e4d9665ba"
 };
 
 let useFirebase = false;
@@ -1350,6 +1350,24 @@ function showToast(msg){
   clearTimeout(showToast._timer);
   showToast._timer = setTimeout(()=>t.classList.remove('show'), 2500);
 }
+
+/* Global safety net: if any JS error slips through, show it visibly
+   instead of silently freezing the screen — so problems are caught
+   immediately instead of looking like "nothing happens". */
+window.addEventListener('error', function(e){
+  console.error('Unhandled error:', e.error || e.message);
+  try{
+    const msg = (e.error && e.error.message) ? e.error.message : String(e.message||'Unknown error');
+    showToast('⚠️ কিছু একটা সমস্যা হয়েছে: '+msg);
+  }catch(_){}
+});
+window.addEventListener('unhandledrejection', function(e){
+  console.error('Unhandled promise rejection:', e.reason);
+  try{
+    const msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason||'Unknown error');
+    showToast('⚠️ কিছু একটা সমস্যা হয়েছে: '+msg);
+  }catch(_){}
+});
 
 const NAV = [
   {id:'dashboard', ic:'📊', key:'nav_dashboard'},
@@ -2509,6 +2527,109 @@ function renderReportsOverview(body){
   refresh();
 }
 
+function printCustLedger(cid){
+  const cust = cid ? db.customers[cid] : null;
+  if(!cust) return;
+  const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
+  const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalPaid = totalInitialPaid + totalInstPaid;
+  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+
+  const ledgerRaw = [
+    ...sales.map(s=>({
+      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+      total: Number(s.total), discount: Number(s.discount||0),
+      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+      profit: saleNetProfit(s)
+    })),
+    ...payments.map(p=>({
+      ts: p.ts, date: p.date, type: 'installment', qty: null,
+      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
+      total: 0, discount: Number(p.discount||0),
+      paid: Number(p.amount),
+      profit: null
+    }))
+  ].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    if(a.type!==b.type) return a.type==='booking'?-1:1;
+    return a.ts-b.ts;
+  });
+
+  let runningDue = 0;
+  const ledger = ledgerRaw.map(tx=>{
+    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    else runningDue -= (tx.paid + tx.discount);
+    return { ...tx, runningDue: Math.round(runningDue) };
+  });
+
+  const body = `
+    <div style="margin-bottom:10px;"><strong>${escapeHtml(cust.name)}</strong><br>${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div>
+    <table>
+      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+      <tbody>${ledger.map(tx=>`<tr>
+        <td>${formatDateDMY(tx.date)}</td>
+        <td>${tx.label}</td>
+        <td>${tx.qty!==null?tx.qty:'—'}</td>
+        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+        <td>৳${money(tx.paid)}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+        <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr>
+        <td colspan="3">${t('totals_label')}</td>
+        <td>৳${money(totalBought)}</td>
+        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+        <td>৳${money(totalPaid)}</td>
+        <td>${cust.due>0?'৳'+money(cust.due):'৳0'}</td>
+        <td>৳${money(totalProfit)}</td>
+      </tr></tfoot>
+    </table>
+  `;
+  printIsolated(cust.name, body);
+}
+
+function printCustReportList(){
+  const q = reportsCustQuery.trim().toLowerCase();
+  const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)));
+  const rows = entries.map(([id,c]) => {
+    const sales = db.sales.filter(s=>s.customerId===id && matchesYearMonth(s.date, custReportYear, custReportMonth));
+    const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
+    const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
+    const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+    const instPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const paid = initialPaid + instPaid;
+    const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+    return { c, qty, paid, profit };
+  });
+  const body = `
+    <table>
+      <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_qty')}</th><th>${t('col_paid')}</th><th>${t('col_due_amt')}</th><th>${t('col_profit')}</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr>
+        <td>${r.c.displayId?('#'+r.c.displayId):'—'}</td>
+        <td>${escapeHtml(r.c.name)}</td>
+        <td>${escapeHtml(r.c.phone||'—')}</td>
+        <td>${r.qty||'—'}</td>
+        <td>৳${money(r.paid)}</td>
+        <td>৳${money(r.c.due)}</td>
+        <td>৳${money(r.profit)}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr>
+        <td colspan="3">${t('totals_label')} (${entries.length})</td>
+        <td>${rows.reduce((s,r)=>s+r.qty,0)}</td>
+        <td>৳${money(rows.reduce((s,r)=>s+r.paid,0))}</td>
+        <td>৳${money(entries.reduce((s,[,c])=>s+Number(c.due||0),0))}</td>
+        <td>৳${money(rows.reduce((s,r)=>s+r.profit,0))}</td>
+      </tr></tfoot>
+    </table>
+  `;
+  printIsolated(t('nav_customers'), body);
+}
+
 function renderCustomerReport(body){
   const years = getAvailableYears();
   body.innerHTML = `
@@ -2522,6 +2643,7 @@ function renderCustomerReport(body){
         <option value="all">${t('all_months')}</option>
         ${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${Number(custReportMonth)===i+1?'selected':''}>${monthName(i+1)}</option>`).join('')}
       </select>
+      <button class="btn ghost no-print" style="margin-left:auto;" onclick="printCustReportList()">${t('print_report')}</button>
     </div>
     <div id="custReportList"></div>
   `;
@@ -2533,40 +2655,58 @@ function renderCustomerReport(body){
   });
   document.getElementById('custYearSelect').addEventListener('change', (e) => {
     custReportYear = e.target.value;
-    renderCustDetail();
+    renderCustList();
   });
   document.getElementById('custMonthSelect').addEventListener('change', (e) => {
     custReportMonth = e.target.value;
-    renderCustDetail();
+    renderCustList();
   });
   function renderCustList(){
     const q = reportsCustQuery.trim().toLowerCase();
     const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)));
+    const rows = entries.map(([id,c]) => {
+      const sales = db.sales.filter(s=>s.customerId===id && matchesYearMonth(s.date, custReportYear, custReportMonth));
+      const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
+      const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
+      const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+      const instPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+      const paid = initialPaid + instPaid;
+      const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+      return { id, c, qty, paid, profit };
+    });
     const listEl = document.getElementById('custReportList');
     listEl.innerHTML = entries.length===0
       ? `<div class="empty"><div class="big">${t('no_data')}</div></div>`
       : `<table class="data no-print">
-          <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_due_amt')}</th><th></th></tr></thead>
-          <tbody>${entries.map(([id,c]) => `
-            <tr style="${reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':''}">
-              <td>${c.displayId?('#'+c.displayId):'—'}</td>
-              <td>${escapeHtml(c.name)}</td>
-              <td>${escapeHtml(c.phone||'—')}</td>
-              <td>৳${money(c.due)}</td>
-              <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${id}" title="${t('view_title')}">👁</button></td>
+          <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_qty')}</th><th>${t('col_paid')}</th><th>${t('col_due_amt')}</th><th>${t('col_profit')}</th><th></th></tr></thead>
+          <tbody>${rows.map(r => `
+            <tr style="${reportsSelectedCustId===r.id?'background:rgba(193,119,46,0.12);':''}">
+              <td>${r.c.displayId?('#'+r.c.displayId):'—'}</td>
+              <td>${escapeHtml(r.c.name)}</td>
+              <td>${escapeHtml(r.c.phone||'—')}</td>
+              <td>${r.qty||'—'}</td>
+              <td>৳${money(r.paid)}</td>
+              <td>৳${money(r.c.due)}</td>
+              <td>৳${money(r.profit)}</td>
+              <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${r.id}" title="${t('view_title')}">👁</button></td>
             </tr>
-            ${reportsSelectedCustId===id ? `<tr><td colspan="5" style="padding:0;border-bottom:none;background:transparent;"><div style="padding:14px 0;">${buildCustDetailHtml(id)}</div></td></tr>` : ''}
+            ${reportsSelectedCustId===r.id ? `<tr><td colspan="8" style="padding:0;border-bottom:none;background:transparent;"><div style="padding:14px 0;">${buildCustDetailHtml(r.id)}</div></td></tr>` : ''}
           `).join('')}</tbody>
-        </table>
-        ${reportsSelectedCustId ? `<div class="print-only-block">${buildCustDetailHtml(reportsSelectedCustId)}</div>` : ''}`;
+          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+            <td colspan="3">${t('totals_label')} (${entries.length})</td>
+            <td>${rows.reduce((s,r)=>s+r.qty,0)}</td>
+            <td>৳${money(rows.reduce((s,r)=>s+r.paid,0))}</td>
+            <td>৳${money(entries.reduce((s,[,c])=>s+Number(c.due||0),0))}</td>
+            <td>৳${money(rows.reduce((s,r)=>s+r.profit,0))}</td>
+            <td></td>
+          </tr></tfoot>
+        </table>`;
     listEl.querySelectorAll('.cust-pick-btn').forEach(b => {
       b.addEventListener('click', () => {
         reportsSelectedCustId = (reportsSelectedCustId===b.dataset.id) ? null : b.dataset.id;
         renderCustList();
       });
     });
-    const printBtns = listEl.querySelectorAll('.cust-print-btn');
-    printBtns.forEach(b => b.addEventListener('click', () => window.print()));
   }
 
   function buildCustDetailHtml(custId){
@@ -2579,32 +2719,70 @@ function renderCustomerReport(body){
       .filter(p=>p.customerId===custId && matchesYearMonth(p.date, custReportYear, custReportMonth))
       .sort((a,b)=>b.ts-a.ts);
     const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-    const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
+    const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const totalPaid = totalInitialPaid + totalInstPaid;
     const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
-    const firstSale = sales.length ? [...sales].sort((a,b)=>a.ts-b.ts)[0] : null;
+
+    const ledgerRaw = [
+      ...sales.map(s=>({
+        ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+        label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+        total: Number(s.total), discount: Number(s.discount||0),
+        paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
+        profit: saleNetProfit(s)
+      })),
+      ...payments.map(p=>({
+        ts: p.ts, date: p.date, type: 'installment', qty: null,
+        label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
+        total: 0, discount: Number(p.discount||0),
+        paid: Number(p.amount),
+        profit: null
+      }))
+    ].sort((a,b)=>{
+      if(a.date!==b.date) return a.date<b.date?-1:1;
+      if(a.type!==b.type) return a.type==='booking'?-1:1;
+      return a.ts-b.ts;
+    });
+
+    let runningDue = 0;
+    const ledger = ledgerRaw.map(tx=>{
+      if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+      else runningDue -= (tx.paid + tx.discount);
+      return { ...tx, runningDue: Math.round(runningDue) };
+    });
+
     return `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
-          <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3><div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address? ' · '+escapeHtml(cust.address):''}</div></div>
-          <button class="btn ghost no-print cust-print-btn">${t('print_report')}</button>
+          <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3>
+          <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
+          <button class="btn ghost no-print" onclick="printCustLedger('${custId}')">${t('print_report')}</button>
         </div>
-        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}${firstSale ? ' · ' + t('first_booking_label') + ': ' + firstSale.date + (firstSale.invoiceNo ? ' (#'+firstSale.invoiceNo+')' : '') : ''}</div>
-        ${sales.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
+
+        <h3 style="margin:14px 0 8px;">🧾 লেনদেনের হিসাব</h3>
+        ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
         <table class="data">
-          <thead><tr><th>${t('col_invoice_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('col_qty')}</th><th>${t('return_already')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
-          <tbody>${sales.map(s=>{
-            const profit = saleNetProfit(s);
-            const returned = saleReturnedQty(s.id);
-            return `<tr><td>${s.invoiceNo?'#'+s.invoiceNo:'—'}</td><td>${s.date}</td><td>${escapeHtml(s.productName)}</td><td>${s.qty}</td><td>${returned>0?returned:'—'}</td><td>৳${money(s.total)}</td><td>${Number(s.discount)>0?'৳'+money(s.discount):'—'}</td><td>৳${money(s.paid)}</td><td>${s.due>0?'৳'+money(s.due):'—'}</td><td>৳${money(profit)}</td></tr>`;
-          }).join('')}</tbody>
-        </table>`}
-      </div>
-      <div class="panel">
-        <h3>${t('installment_history_title')}</h3>
-        ${payments.length===0 ? `<div class="field-hint">${t('inst_no_history')}</div>` : `
-        <table class="data">
-          <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
-          <tbody>${payments.map(p=>`<tr><td>${p.receiptNo?'#'+p.receiptNo:'—'}</td><td>${formatDateDMY(p.date)}</td><td>৳${money(p.previousDue)}</td><td>৳${money(p.amount)}</td><td>${Number(p.discount)>0?'৳'+money(p.discount):'—'}</td><td>৳${money(p.newDue)}</td><td>${escapeHtml(p.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${p.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${p.id}')">🗑️</button></td></tr>`).join('')}</tbody>
+          <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
+          <tbody>${ledger.map(tx=>`<tr>
+            <td>${formatDateDMY(tx.date)}</td>
+            <td>${tx.label}</td>
+            <td>${tx.qty!==null?tx.qty:'—'}</td>
+            <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+            <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+            <td>৳${money(tx.paid)}</td>
+            <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+            <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+          </tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+            <td colspan="3">${t('totals_label')}</td>
+            <td>৳${money(totalBought)}</td>
+            <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+            <td>৳${money(totalPaid)}</td>
+            <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+            <td>৳${money(totalProfit)}</td>
+          </tr></tfoot>
         </table>`}
       </div>
     `;
@@ -3521,12 +3699,35 @@ function openCustomerHistory(custId){
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
   const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-  const totalPaid = sales.reduce((s,x)=>s+Number(x.paid),0);
+  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalPaid = totalInitialPaid + totalInstPaid;
 
-  const timeline = [
-    ...sales.map(s => ({ ts:s.ts, date:s.date, type:'sale', label:s.productName, ref:s.voucherTag||s.voucherNo||'', amount:s.total, note:'' })),
-    ...payments.map(p => ({ ts:p.ts, date:p.date, type:'payment', label:t('installment_receipt_title'), ref:'', amount:p.amount+Number(p.discount||0), note:p.note||'' })),
-  ].sort((a,b)=>a.ts-b.ts);
+  const ledgerRaw = [
+    ...sales.map(s=>({
+      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
+      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
+      total: Number(s.total), discount: Number(s.discount||0),
+      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid)
+    })),
+    ...payments.map(p=>({
+      ts: p.ts, date: p.date, type: 'installment', qty: null,
+      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
+      total: 0, discount: Number(p.discount||0),
+      paid: Number(p.amount)
+    }))
+  ].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    if(a.type!==b.type) return a.type==='booking'?-1:1;
+    return a.ts-b.ts;
+  });
+
+  let runningDue = 0;
+  const ledger = ledgerRaw.map(tx=>{
+    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    else runningDue -= (tx.paid + tx.discount);
+    return { ...tx, runningDue: Math.round(runningDue) };
+  });
 
   document.getElementById('historyTitle').textContent = cust.name + ' — ' + t('history_title');
   document.getElementById('historyBody').innerHTML = `
@@ -3536,12 +3737,25 @@ function openCustomerHistory(custId){
     <div class="field-hint" style="margin-bottom:10px;">
       ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
     </div>
-    ${timeline.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+    ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
     <table class="data">
-      <thead><tr><th>${t('col_date')}</th><th>${t('history_type_label')}</th><th>${t('col_product')}</th><th>${t('col_amount')}</th><th>${t('f_note')}</th></tr></thead>
-      <tbody>
-        ${timeline.map(x=>`<tr><td>${formatDateDMY(x.date)}</td><td>${x.type==='sale'?t('history_type_sale'):t('history_type_payment')}</td><td>${escapeHtml(x.label)}${x.ref?' ('+escapeHtml(x.ref)+')':''}</td><td>৳${money(x.amount)}</td><td>${escapeHtml(x.note||'—')}</td></tr>`).join('')}
-      </tbody>
+      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
+      <tbody>${ledger.map(tx=>`<tr>
+        <td>${formatDateDMY(tx.date)}</td>
+        <td>${tx.label}</td>
+        <td>${tx.qty!==null?tx.qty:'—'}</td>
+        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+        <td>৳${money(tx.paid)}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+        <td colspan="3">${t('totals_label')}</td>
+        <td>৳${money(totalBought)}</td>
+        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
+        <td>৳${money(totalPaid)}</td>
+        <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+      </tr></tfoot>
     </table>`}
   `;
   document.getElementById('historyCloseBtn').textContent = t('close');
