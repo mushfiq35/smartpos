@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/jswplvao/piconetit.com/pos/
+    - /bin/cp -R maxmarketing $DEPLOYPATH
