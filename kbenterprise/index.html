@@ -4562,14 +4562,19 @@
       let prod = products.find(p => p.id == pId);
 
       if (prod) {
+        let perKg = prod.perKgPrice || (prod.bagKg ? (prod.price / prod.bagKg) : 0);
+
         if (unitType === 'Bag') {
           document.getElementById('lblSaleQty').innerText = currentLang === 'BN' ? 'পরিমাণ (বস্তা):' : 'Quantity (Bags):';
           document.getElementById('lblUnitPrice').innerText = currentLang === 'BN' ? 'প্রতি বস্তার দাম (BDT):' : 'Price per Bag (BDT):';
           document.getElementById('saleUnitPrice').value = prod.price;
+        } else if (unitType === 'Ton') {
+          document.getElementById('lblSaleQty').innerText = currentLang === 'BN' ? 'পরিমাণ (টন):' : 'Quantity (Ton):';
+          document.getElementById('lblUnitPrice').innerText = currentLang === 'BN' ? 'প্রতি টনের দাম (BDT):' : 'Price per Ton (BDT):';
+          document.getElementById('saleUnitPrice').value = (perKg * 1000).toFixed(2);
         } else {
           document.getElementById('lblSaleQty').innerText = currentLang === 'BN' ? 'পরিমাণ (কেজি):' : 'Quantity (Kg):';
-          document.getElementById('lblUnitPrice').innerText = currentLang === 'BN' ? 'প্রতি কেজি\'র দাম (BDT):' : 'Price per Kg (BDT):';
-          let perKg = prod.perKgPrice || (prod.bagKg ? (prod.price / prod.bagKg) : 0);
+          document.getElementById('lblUnitPrice').innerText = currentLang === 'BN' ? 'প্রতি কেজির দাম (BDT):' : 'Price per Kg (BDT):';
           document.getElementById('saleUnitPrice').value = perKg.toFixed(2);
         }
         calculateSaleTotal();
@@ -5084,7 +5089,9 @@
 
     function getSaleQtyKg(sale, prod) {
       let bagKg = (prod && prod.bagKg) || 50;
-      return sale.unitType === 'Kg' ? sale.qty : sale.qty * bagKg;
+      if (sale.unitType === 'Kg') return sale.qty;
+      if (sale.unitType === 'Ton') return sale.qty * 1000;
+      return sale.qty * bagKg;
     }
 
     function getReturnedQtyKg(saleId) {
