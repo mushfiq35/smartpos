@@ -7,3 +7,5 @@ deployment:
     - /bin/cp -R shoppingzonebd "$DEPLOYPATH/"
     - /bin/cp -R kbenterprise "$DEPLOYPATH/"
     - /bin/cp -R kbdealer "$DEPLOYPATH/"
+    - /bin/cp -R mushfiqtest "$DEPLOYPATH/"
+    - /bin/cp -R testpos "$DEPLOYPATH/"
