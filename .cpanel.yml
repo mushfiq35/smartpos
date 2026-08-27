@@ -4,3 +4,4 @@ deployment:
     - /bin/cp -R maxmarketing "$DEPLOYPATH/"
     - /bin/cp -R basharair "$DEPLOYPATH/"
     - /bin/cp -R lubabahajj "$DEPLOYPATH/"
+    - /bin/cp -R shoppingzonebd "$DEPLOYPATH/"
