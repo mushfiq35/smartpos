@@ -9,3 +9,4 @@ deployment:
     - /bin/cp -R kbdealer "$DEPLOYPATH/"
     - /bin/cp -R mushfiqtest "$DEPLOYPATH/"
     - /bin/cp -R testpos "$DEPLOYPATH/"
+    - /bin/cp -R hajjdemo "$DEPLOYPATH/"
