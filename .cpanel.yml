@@ -5,3 +5,5 @@ deployment:
     - /bin/cp -R basharair "$DEPLOYPATH/"
     - /bin/cp -R lubabahajj "$DEPLOYPATH/"
     - /bin/cp -R shoppingzonebd "$DEPLOYPATH/"
+    - /bin/cp -R kbenterprise "$DEPLOYPATH/"
+    - /bin/cp -R kbdealer "$DEPLOYPATH/"
