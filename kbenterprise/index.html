@@ -211,7 +211,11 @@
     .login-box input { text-align: left; }
     .login-box .btn-success { width: 100%; padding: 12px; font-size: 14.5px; margin-top: 6px; }
     .login-error { color: #dc2626; font-size: 12.5px; margin-bottom: 10px; min-height: 16px; }
+    .login-error.success { color: #15803d; }
     .login-loading { color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+    .forgot-password-btn { display:block; width:auto; margin:-5px 0 12px auto; padding:2px 0; border:0; background:transparent; color:#1d4ed8; font-size:12px; font-weight:700; cursor:pointer; }
+    .forgot-password-btn:hover { text-decoration:underline; }
+    .forgot-password-btn:disabled { color:#94a3b8; cursor:not-allowed; text-decoration:none; }
 
     /* AUTH SPLASH (shown only if Firebase's session check takes a moment) */
     #authSplash { position: fixed; inset: 0; background: linear-gradient(135deg, var(--navy), var(--navy-2)); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 6000; gap: 14px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
@@ -664,6 +668,7 @@
       <input type="email" id="loginEmail" placeholder="you@example.com" onkeydown="if(event.key==='Enter') doLogin();">
       <label style="text-align:left; display:block;" data-key="lblLoginPassword">পাসওয়ার্ড:</label>
       <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin();">
+      <button type="button" class="forgot-password-btn" id="btnForgotPassword" onclick="sendPasswordRecovery()" data-key="btnForgotPassword">পাসওয়ার্ড ভুলে গেছেন?</button>
       <button class="btn-success" onclick="doLogin()" id="btnDoLogin" data-key="btnLogin">লগইন করুন</button>
       <div class="login-loading" id="loginLoadingMsg" style="display:none;" data-key="loginConnecting">সংযোগ করা হচ্ছে...</div>
     </div>
@@ -3299,6 +3304,11 @@
         loginConnecting: "সংযোগ করা হচ্ছে...",
         loginErrFillFields: "ইমেইল ও পাসওয়ার্ড লিখুন!",
         loginErrInvalid: "ইমেইল বা পাসওয়ার্ড সঠিক নয়!",
+        btnForgotPassword: "পাসওয়ার্ড ভুলে গেছেন?",
+        resetEmailRequired: "Password reset link পেতে আপনার registered email লিখুন।",
+        resetEmailSent: "এই email registered থাকলে password reset link পাঠানো হয়েছে। Inbox ও Spam folder দেখুন।",
+        resetEmailInvalid: "সঠিক email address লিখুন।",
+        resetEmailFailed: "Reset link পাঠানো যায়নি। Internet connection পরীক্ষা করে আবার চেষ্টা করুন।",
         menuUsers: "ব্যবহারকারী ব্যবস্থাপনা",
         titleCreateUser: "➕ নতুন ব্যবহারকারী তৈরি করুন",
         lblUserName: "নাম:",
@@ -3863,6 +3873,11 @@
         loginConnecting: "Connecting...",
         loginErrFillFields: "Please enter both email and password!",
         loginErrInvalid: "Invalid email or password!",
+        btnForgotPassword: "Forgot Password?",
+        resetEmailRequired: "Enter your registered email to receive a password reset link.",
+        resetEmailSent: "If this email is registered, a password reset link has been sent. Check your inbox and spam folder.",
+        resetEmailInvalid: "Enter a valid email address.",
+        resetEmailFailed: "Could not send the reset link. Check your internet connection and try again.",
         menuUsers: "User Management",
         titleCreateUser: "➕ Create New User",
         lblUserName: "Name:",
@@ -10382,7 +10397,45 @@
     let appInitialized = false;
 
     function showLoginError(msg) {
-      document.getElementById('loginError').innerText = msg;
+      let el=document.getElementById('loginError');
+      el.classList.remove('success');
+      el.innerText = msg;
+    }
+
+    function showLoginSuccess(msg) {
+      let el=document.getElementById('loginError');
+      el.classList.add('success');
+      el.innerText=msg;
+    }
+
+    async function sendPasswordRecovery() {
+      let email=document.getElementById('loginEmail').value.trim();
+      let btn=document.getElementById('btnForgotPassword');
+      showLoginError('');
+      if(!email) {
+        document.getElementById('loginEmail').focus();
+        return showLoginError(t('resetEmailRequired'));
+      }
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        document.getElementById('loginEmail').focus();
+        return showLoginError(t('resetEmailInvalid'));
+      }
+      btn.disabled=true;
+      btn.innerText=currentLang==='BN'?'পাঠানো হচ্ছে...':'Sending...';
+      try {
+        await waitForFirebase();
+        if(!window.authSendPasswordReset) throw new Error('Firebase Auth is not ready');
+        await window.authSendPasswordReset(email);
+        showLoginSuccess(t('resetEmailSent'));
+      } catch(err) {
+        console.error('Password reset failed:',err);
+        if(err.code==='auth/invalid-email') showLoginError(t('resetEmailInvalid'));
+        else if(err.code==='auth/too-many-requests') showLoginError(currentLang==='BN'?'অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।':'Too many attempts. Please try again later.');
+        else showLoginError(t('resetEmailFailed'));
+      } finally {
+        btn.disabled=false;
+        btn.innerText=t('btnForgotPassword');
+      }
     }
 
     async function doLogin() {
@@ -10788,6 +10841,7 @@
     window.firestoreCollection = (d,col) => col;
     window.firestoreGetDocs    = async col => { let s=await _db.collection(col).get(); return {docs:s.docs.map(d=>({id:d.id,data:()=>d.data()}))}; };
     window.authSignIn          = (e,p) => _auth.signInWithEmailAndPassword(e,p);
+    window.authSendPasswordReset = e => _auth.sendPasswordResetEmail(e);
     window.authSignOut         = () => _auth.signOut();
 
     _auth.onAuthStateChanged(user => {
