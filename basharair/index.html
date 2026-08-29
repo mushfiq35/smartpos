@@ -2827,6 +2827,100 @@ function resolveRange(rangeKey, customFrom, customTo){
   return { fromStr: toISODate(from), toStr: toISODate(to) };
 }
 
+
+/* ---------- Reporting-safe installment settlement recognition ----------
+   Business rule:
+   - Booking discount is already inside sale.total (net booking value).
+   - Installment amount = real cash received.
+   - Installment discount = later receivable waiver, NOT cash.
+   - A legacy/corrupt installment must never settle more than the customer's
+     real outstanding receivable at that point in time.
+   This helper DOES NOT edit saved data; it only protects accounting reports.
+*/
+function buildRecognizedInstallmentMap(){
+  const result = {};
+  const customerIds = new Set([
+    ...db.sales.map(s=>s.customerId).filter(Boolean),
+    ...db.installments.map(i=>i.customerId).filter(Boolean),
+    ...db.returns.map(r=>r.customerId).filter(Boolean)
+  ]);
+
+  customerIds.forEach(cid=>{
+    const events = [];
+
+    db.sales.filter(s=>s.customerId===cid).forEach(s=>{
+      events.push({
+        type:'booking', date:s.date||'', ts:Number(s.ts||0),
+        amount: Math.max(0, Number(s.total||0) - Number(s.initialPaid!==undefined ? s.initialPaid : s.paid||0))
+      });
+    });
+
+    db.installments.filter(i=>i.customerId===cid).forEach(i=>{
+      events.push({
+        type:'installment', date:i.date||'', ts:Number(i.ts||0), rec:i
+      });
+    });
+
+    db.returns.filter(r=>r.customerId===cid && !r.cancelled).forEach(r=>{
+      events.push({
+        type:'return', date:r.date||'', ts:Number(r.ts||0),
+        amount:Math.max(0,Number(r.dueAdjust||0))
+      });
+    });
+
+    events.sort((a,b)=>{
+      if(a.date!==b.date) return a.date<b.date ? -1 : 1;
+      // Same date: booking must establish the receivable first.
+      if(a.type==='booking' && b.type!=='booking') return -1;
+      if(b.type==='booking' && a.type!=='booking') return 1;
+      return Number(a.ts||0)-Number(b.ts||0);
+    });
+
+    let outstanding = 0;
+    events.forEach(ev=>{
+      if(ev.type==='booking'){
+        outstanding += ev.amount;
+        return;
+      }
+      if(ev.type==='return'){
+        outstanding = Math.max(0, outstanding - ev.amount);
+        return;
+      }
+
+      const rec = ev.rec;
+      const rawCash = Math.max(0, Number(rec.amount||0));
+      const rawDiscount = Math.max(0, Number(rec.discount||0));
+
+      const cash = Math.min(rawCash, outstanding);
+      const afterCash = Math.max(0, outstanding - cash);
+      const discount = Math.min(rawDiscount, afterCash);
+
+      outstanding = Math.max(0, outstanding - cash - discount);
+      result[rec.id] = {
+        cash,
+        discount,
+        rawCash,
+        rawDiscount,
+        ignoredCash: Math.max(0, rawCash-cash),
+        ignoredDiscount: Math.max(0, rawDiscount-discount)
+      };
+    });
+  });
+
+  // Records without a customer cannot be reconciled against a receivable.
+  db.installments.filter(i=>!i.customerId).forEach(i=>{
+    result[i.id] = {
+      cash:Math.max(0,Number(i.amount||0)),
+      discount:Math.max(0,Number(i.discount||0)),
+      rawCash:Math.max(0,Number(i.amount||0)),
+      rawDiscount:Math.max(0,Number(i.discount||0)),
+      ignoredCash:0, ignoredDiscount:0
+    };
+  });
+
+  return result;
+}
+
 function aggregatePeriod(fromStr, toStr){
   const from = new Date(fromStr), to = new Date(toStr);
   const spanDays = Math.max(1, Math.round((to-from)/(24*3600*1000))+1);
@@ -2834,41 +2928,83 @@ function aggregatePeriod(fromStr, toStr){
   const buckets = {};
   if(!groupByMonth){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)){
-      buckets[toISODate(d)] = {s:0,p:0,e:0};
+      buckets[toISODate(d)] = {s:0,d:0,p:0,e:0};
     }
   } else {
     let d = new Date(from.getFullYear(), from.getMonth(), 1);
     const last = new Date(to.getFullYear(), to.getMonth(), 1);
     while(d<=last){
-      buckets[`${d.getFullYear()}-${pad2(d.getMonth()+1)}`] = {s:0,p:0,e:0};
+      buckets[`${d.getFullYear()}-${pad2(d.getMonth()+1)}`] = {s:0,d:0,p:0,e:0};
       d.setMonth(d.getMonth()+1);
     }
   }
+
   const bucketKey = (dateStr) => groupByMonth ? dateStr.slice(0,7) : dateStr;
-  const inRange = (dateStr) => dateStr >= fromStr && dateStr <= toStr;
-  db.sales.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].s += Number(x.total); } });
-  // Installment-time discount is a later revenue waiver, not cash received.
-  db.installments.forEach(i => {
-    if(inRange(i.date) && !i.isOldEntry && Number(i.discount||0)>0){
-      const k=bucketKey(i.date);
-      if(buckets[k]) buckets[k].s -= Number(i.discount||0);
+  const inRange = (dateStr) => !!dateStr && dateStr >= fromStr && dateStr <= toStr;
+  const recognized = buildRecognizedInstallmentMap();
+
+  // Booking Total = actual booked revenue after booking-time discount.
+  // Do NOT subtract later installment discounts from this figure.
+  db.sales.forEach(x => {
+    if(inRange(x.date)){
+      const k=bucketKey(x.date);
+      if(buckets[k]) buckets[k].s += Number(x.total||0);
     }
   });
-  // Purchase: মোট ক্রয় মূল্য (committed amount)
-  db.purchases.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].p += Number(x.total); } });
-  db.expenses.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].e += Number(x.amount); } });
-  // Vendor payments: actual cash paid out → purchase expense
+
+  // Later installment discount is a separate revenue/receivable waiver.
+  // Only the portion that could genuinely settle outstanding due is recognized.
+  let ignoredLegacyAdjustment = 0;
+  db.installments.forEach(i => {
+    if(!inRange(i.date) || i.isOldEntry) return;
+    const k=bucketKey(i.date);
+    if(!buckets[k]) return;
+    const rec = recognized[i.id] || {discount:0,ignoredDiscount:0,ignoredCash:0};
+    buckets[k].d += Number(rec.discount||0);
+    ignoredLegacyAdjustment += Number(rec.ignoredDiscount||0) + Number(rec.ignoredCash||0);
+  });
+
+  // Purchase: committed purchase value.
+  db.purchases.forEach(x => {
+    if(inRange(x.date)){
+      const k=bucketKey(x.date);
+      if(buckets[k]) buckets[k].p += Number(x.total||0);
+    }
+  });
+
+  db.expenses.forEach(x => {
+    if(inRange(x.date)){
+      const k=bucketKey(x.date);
+      if(buckets[k]) buckets[k].e += Number(x.amount||0);
+    }
+  });
+
+  // Cash purchase return reduces effective purchase cost.
   db.vendorPayments.forEach(vp => {
     if(!inRange(vp.date)) return;
-    const k = bucketKey(vp.date);
+    const k=bucketKey(vp.date);
     if(!buckets[k]) return;
-    // payment এবং purchase_payment → cash out (already counted in p as committed, skip double count)
-    // purchase return cash → cash in (reduce purchase cost)
-    if(vp.type==='purchase_return' && vp.returnType==='cash') buckets[k].p -= Number(vp.amount||0);
+    if(vp.type==='purchase_return' && vp.returnType==='cash'){
+      buckets[k].p -= Number(vp.amount||0);
+    }
   });
-  const rows = Object.entries(buckets).map(([k,v]) => ({ d:k, s:v.s, p:v.p, e:v.e, net:v.s-v.p-v.e })).sort((a,b)=>b.d.localeCompare(a.d));
-  const totals = rows.reduce((a,r)=>({s:a.s+r.s,p:a.p+r.p,e:a.e+r.e,net:a.net+r.net}), {s:0,p:0,e:0,net:0});
-  return { rows, totals, groupByMonth };
+
+  const rows = Object.entries(buckets)
+    .map(([k,v]) => ({
+      d:k, s:v.s, disc:v.d, p:v.p, e:v.e,
+      net:v.s-v.d-v.p-v.e
+    }))
+    .sort((a,b)=>b.d.localeCompare(a.d));
+
+  const totals = rows.reduce(
+    (a,r)=>({
+      s:a.s+r.s, disc:a.disc+r.disc, p:a.p+r.p,
+      e:a.e+r.e, net:a.net+r.net
+    }),
+    {s:0,disc:0,p:0,e:0,net:0}
+  );
+
+  return { rows, totals, groupByMonth, ignoredLegacyAdjustment };
 }
 
 function getAvailableYears(){
@@ -3627,23 +3763,29 @@ function renderReportsOverview(body){
 
   function refresh(){
     const { fromStr, toStr } = resolveRange(overviewRange, overviewFrom || fromInput.value, overviewTo || toInput.value);
-    const { rows, totals, groupByMonth } = aggregatePeriod(fromStr, toStr);
-    const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.s,r.p,r.e)));
+    const { rows, totals, groupByMonth, ignoredLegacyAdjustment } = aggregatePeriod(fromStr, toStr);
+    const maxVal = Math.max(1, ...rows.map(r=>Math.max(0,r.s,r.p,r.e,r.disc)));
     const periodColLabel = groupByMonth ? t('filter_month') : t('col_date');
     document.getElementById('ovBody').innerHTML = `
-      <div class="stat-grid rpt-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+      <div class="stat-grid rpt-stat-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px;">
         <div class="stat-card c4"><div class="val">৳${money(totals.s)}</div><div class="lbl">${t('rep_col_sales')} (${t('totals_label')})</div></div>
+        <div class="stat-card c5"><div class="val">৳${money(totals.disc)}</div><div class="lbl">${currentLang==='bn'?'কিস্তির ছাড়':'Installment Discount'}</div></div>
         <div class="stat-card c6"><div class="val">৳${money(totals.p)}</div><div class="lbl">${t('rep_col_purchase')} (${t('totals_label')})</div></div>
         <div class="stat-card c7"><div class="val">৳${money(totals.e)}</div><div class="lbl">${t('rep_col_expense')} (${t('totals_label')})</div></div>
         <div class="stat-card c8"><div class="val">৳${money(totals.net)}</div><div class="lbl">${t('rep_col_net')} (${t('totals_label')})</div></div>
       </div>
+      ${ignoredLegacyAdjustment>0 ? `<div class="storage-banner warn no-print" style="margin:-6px 0 16px;border:1px solid var(--line);border-radius:8px;">
+        ⚠️ ${currentLang==='bn'
+          ? 'পুরোনো/অসম্ভব কিস্তি ডেটার ৳'+money(ignoredLegacyAdjustment)+' রিপোর্টের হিসাব থেকে বাদ দেওয়া হয়েছে, কারণ তা আসল বকেয়ার চেয়ে বেশি ছিল।'
+          : '৳'+money(ignoredLegacyAdjustment)+' of legacy/impossible installment settlement was excluded from report calculations because it exceeded the real outstanding due.'}
+      </div>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="ov-two-col">
         <div class="panel" style="margin-bottom:0;min-width:0;overflow-x:auto;">
           <h3>${t('reports_summary')}</h3>
           <table class="data">
-            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
+            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${currentLang==='bn'?'কিস্তির ছাড়':'Inst. Discount'}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
             <tbody>
-              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
+              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.disc)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
             </tbody>
           </table>
         </div>
