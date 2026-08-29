@@ -543,8 +543,8 @@
     .ml-net-bar .value { font-size:24px; font-weight:900; }
     .ml-section-title { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:18px 0 10px; color:var(--navy); font-size:14px; font-weight:900; }
     .ml-section-title::after { content:""; height:1px; flex:1; background:var(--border); }
-    .ml-kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:10px; margin-bottom:14px; }
-    .ml-kpi-card { position:relative; overflow:hidden; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:13px 14px; box-shadow:var(--shadow); }
+    .ml-kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-bottom:14px; }
+    .ml-kpi-card { position:relative; min-width:0; overflow:hidden; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:13px 14px; box-shadow:var(--shadow); }
     .ml-kpi-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:#94a3b8; }
     .ml-kpi-card.green::before { background:#16a34a; }
     .ml-kpi-card.red::before { background:#dc2626; }
@@ -552,12 +552,13 @@
     .ml-kpi-card.blue::before { background:#2563eb; }
     .ml-kpi-card.purple::before { background:#7c3aed; }
     .ml-kpi-card h6 { font-size:10px; line-height:1.25; text-transform:uppercase; letter-spacing:.45px; color:var(--muted); margin-bottom:6px; font-weight:800; }
-    .ml-kpi-card .kv { font-size:18px; line-height:1.2; font-weight:900; color:var(--ink); white-space:nowrap; }
+    .ml-kpi-card .kv { max-width:100%; font-size:clamp(14px,1.15vw,18px); line-height:1.2; font-weight:900; color:var(--ink); white-space:normal; overflow-wrap:normal; word-break:keep-all; font-variant-numeric:tabular-nums; }
     .ml-kpi-card .ks { font-size:10.5px; color:var(--muted); margin-top:4px; }
     .ml-cost-warning { display:none; padding:10px 13px; margin-bottom:14px; background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #f59e0b; border-radius:7px; color:#9a3412; font-size:12px; }
     .ml-net-bar.professional { background:linear-gradient(135deg,var(--navy),var(--navy-2)); border-color:var(--navy); color:#fff; }
     .ml-net-bar.professional .label, .ml-net-bar.professional #mlPeriodLabel { color:#cbd5e1 !important; }
-    @media(max-width:600px){ .ml-kpi-grid{grid-template-columns:1fr 1fr}.ml-kpi-card{padding:11px 12px}.ml-kpi-card .kv{font-size:15px}.ml-section-title{font-size:12.5px} }
+    @media(max-width:600px){ .ml-kpi-grid{grid-template-columns:1fr 1fr}.ml-kpi-card{padding:11px 12px}.ml-kpi-card .kv{font-size:clamp(12px,3.6vw,15px)}.ml-section-title{font-size:12.5px} }
+    @media(max-width:360px){ .ml-kpi-grid{grid-template-columns:1fr}.ml-kpi-card .kv{font-size:15px} }
 
 
     @media print {
@@ -2086,7 +2087,7 @@
           </div>
 
           <!-- Print area -->
-          <div id="blPrintArea">
+          <div id="blPrintArea" data-currency-glyph>
             <!-- Bank summary header -->
             <div id="blBankHeader" style="display:none; margin-bottom:16px;">
               <div class="card" style="background:var(--navy); color:#fff; padding:16px 20px; margin-bottom:0;">
@@ -2163,7 +2164,7 @@
               <button onclick="printDiv('clPrintArea')" class="btn-warning" style="height:38px;width:auto;padding:0 14px;">🖨️ Print Statement</button>
             </div>
           </div>
-          <div id="clPrintArea">
+          <div id="clPrintArea" data-currency-glyph>
             <div id="clShopHeader"></div>
             <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:14px;padding:0 0 12px;margin-bottom:14px;border-bottom:2px solid #111a27;">
               <div><h2 style="margin:0;color:#111a27;font-size:19px;">CASH LEDGER STATEMENT</h2><p id="clPeriodLabel" style="margin:4px 0 0;color:#64748b;font-size:12px;">All transactions</p></div>
@@ -5461,13 +5462,29 @@
           return sum+(Number(r.qtyKg)||0)*(sale?getSaleCostPerKgForLedger(sale):avgCost);
         },0);
         let productProfit = roundMoney((grossRevenue-returnRevenue)-Math.max(0,issuedCost-returnedCost));
+        let displayUnit = ['Ton','Kg','Bag'].includes(p.defaultUnit) ? p.defaultUnit : 'Bag';
+        let formatProductReportQty = qtyKg => {
+          let value = displayUnit === 'Ton'
+            ? qtyKg / 1000
+            : displayUnit === 'Kg'
+              ? qtyKg
+              : qtyKg / (Number(p.bagKg) || 50);
+          let decimals = displayUnit === 'Ton' ? 3 : 2;
+          let unitLabel = displayUnit === 'Ton'
+            ? t('unitTonLabel')
+            : displayUnit === 'Kg'
+              ? t('unitKgLabel')
+              : t('unitBagLabel');
+          return `${value.toFixed(decimals)} ${unitLabel}`;
+        };
+        let currentStockKg = (Number(p.stock) || 0) * (Number(p.bagKg) || 50);
 
         return `
           <tr>
             <td><b>${p.name}</b></td>
-            <td>${formatQtyKg(soldKg, p.bagKg)}</td>
-            <td style="color:#d97706;">${formatQtyKg(returnedKg, p.bagKg)}</td>
-            <td>${p.stock.toFixed(2)} ${t('unitBagLabel')}</td>
+            <td>${formatProductReportQty(soldKg)}</td>
+            <td style="color:#d97706;">${formatProductReportQty(returnedKg)}</td>
+            <td>${formatProductReportQty(currentStockKg)}</td>
             <td><span class="currency-symbol">৳</span>${avgCost.toFixed(2)}</td>
             <td><span class="currency-symbol">৳</span>${stockValue.toFixed(2)}</td>
             <td><b><span class="currency-symbol">৳</span>${salesValue.toFixed(2)}</b></td>
@@ -5585,8 +5602,11 @@
         const raw = node.nodeValue, trimmed = raw.trim();
         if (!trimmed) return;
         let next = map.has(trimmed) ? raw.replace(trimmed, map.get(trimmed)) : translateManual(raw);
-        // English uses the internationally clear BDT code; Bangla uses ৳.
-        next = lang === 'BN' ? next.replace(/\bBDT\s*/g, '৳') : next.replace(/৳\s*/g, 'BDT ');
+        // Keep the compact Taka glyph inside monetary values in both languages.
+        // Descriptive field labels such as "Price (BDT)" remain translatable.
+        if (!node.parentElement.closest('.currency-symbol, [data-currency-glyph]')) {
+          next = lang === 'BN' ? next.replace(/\bBDT\s*/g, '৳') : next.replace(/৳\s*/g, 'BDT ');
+        }
         if (next !== raw) node.nodeValue = next;
       });
       document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
