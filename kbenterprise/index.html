@@ -2230,6 +2230,23 @@
             </div>
 
             <div class="card" style="margin-bottom:0;">
+              <h3>📱 <span data-key="mobileMgmtTitle">মোবাইল ব্যাংকিং অ্যাকাউন্ট</span></h3>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:12px;" data-key="mobileMgmtNote">প্রতিটি অ্যাকাউন্টের IN, OUT ও বর্তমান ব্যালেন্স আলাদাভাবে থাকবে।</p>
+              <label data-key="mobileServiceLabel">সার্ভিস:</label>
+              <select id="newMobileService"><option value="bKash">bKash</option><option value="Nagad">Nagad</option><option value="Rocket">Rocket</option><option value="Upay">Upay</option><option value="Other">Other</option></select>
+              <label data-key="mobileAccountNameLabel">অ্যাকাউন্টের নাম:</label>
+              <input type="text" id="newMobileName" placeholder="যেমন: Main bKash">
+              <label data-key="mobileAccountNumberLabel">অ্যাকাউন্ট নম্বর:</label>
+              <input type="text" id="newMobileNumber" inputmode="numeric" placeholder="01XXXXXXXXX">
+              <label data-key="mobileAccountTypeLabel">অ্যাকাউন্ট টাইপ:</label>
+              <select id="newMobileType"><option value="Personal">Personal</option><option value="Agent">Agent</option><option value="Merchant">Merchant</option></select>
+              <label data-key="bankOpeningLabel">Opening Balance (৳):</label>
+              <input type="number" id="newMobileOpening" placeholder="0.00" min="0" step="0.01">
+              <button onclick="addMobileAccount()" class="btn-success" data-key="mobileAddBtn">+ মোবাইল অ্যাকাউন্ট যোগ করুন</button>
+              <div id="mobileAccountsList" style="margin-top:12px;"></div>
+            </div>
+
+            <div class="card" style="margin-bottom:0;">
               <h3><span data-key="headMgmtTitle">Head ম্যানেজমেন্ট</span></h3>
               <div id="headMgmtGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                 <div>
@@ -3435,6 +3452,11 @@
         mlAvgCostLabel: "গড় ক্রয়মূল্য/কেজি",
         mlCashBankLabel: "ব্যাংক ব্যালেন্স",
         mlRecordedBanksNote: "রেকর্ডকৃত ব্যাংক অ্যাকাউন্ট",
+        mobileMgmtTitle: "মোবাইল ব্যাংকিং অ্যাকাউন্ট",
+        mobileMgmtNote: "প্রতিটি অ্যাকাউন্টের IN, OUT ও বর্তমান ব্যালেন্স আলাদাভাবে থাকবে।",
+        mobileServiceLabel: "সার্ভিস:", mobileAccountNameLabel: "অ্যাকাউন্টের নাম:",
+        mobileAccountNumberLabel: "অ্যাকাউন্ট নম্বর:", mobileAccountTypeLabel: "অ্যাকাউন্ট টাইপ:",
+        mobileAddBtn: "+ মোবাইল অ্যাকাউন্ট যোগ করুন",
         mlProductsLabel: "মোট পণ্য",
         mlPeriodCashLabel: "সময়ের মোট আদায়",
         mlNotRevenueNote: "Revenue হিসেবে পুনরায় যোগ হয়নি",
@@ -3995,6 +4017,11 @@
         mlAvgCostLabel: "Average Cost / KG",
         mlCashBankLabel: "Bank Balance",
         mlRecordedBanksNote: "Recorded bank accounts",
+        mobileMgmtTitle: "Mobile Banking Accounts",
+        mobileMgmtNote: "IN, OUT and current balance are tracked separately for every account.",
+        mobileServiceLabel: "Service:", mobileAccountNameLabel: "Account Name:",
+        mobileAccountNumberLabel: "Account Number:", mobileAccountTypeLabel: "Account Type:",
+        mobileAddBtn: "+ Add Mobile Account",
         mlProductsLabel: "Products",
         mlPeriodCashLabel: "Period Cash Collection",
         mlNotRevenueNote: "Not counted again as revenue",
@@ -4083,6 +4110,7 @@
       { id: 1, name: 'Dutch-Bangla Bank', number: '1234-XXXX-XXXX' },
       { id: 2, name: 'Islami Bank BD', number: '5678-XXXX-XXXX' }
     ];
+    let mobileAccounts = JSON.parse(localStorage.getItem('pos_mobile_accounts')) || [];
     let payableHeads = JSON.parse(localStorage.getItem('pos_payable_heads')) || [
       'মোবাইল বিল', 'বেতন', 'ইন্টারনেট বিল', 'দোকান ভাড়া', 'বিদ্যুৎ বিল', 'পণ্য ক্রয়'
     ];
@@ -4128,7 +4156,7 @@
         let docRef = window.firestoreDoc(window.firestoreDB, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
         await window.firestoreSetDoc(docRef, {
           shopConfig, customers, products, salesHistory, accountTransactions, categories, salesReturns, deliveries, orderCancellations, payments,
-          payableEntries, receivableEntries, bankAccounts, payableHeads, receivableHeads,
+          payableEntries, receivableEntries, bankAccounts, mobileAccounts, payableHeads, receivableHeads,
           suppliers, purchases, invoiceCounters,
           updatedAt: new Date().toISOString()
         });
@@ -4153,6 +4181,7 @@
       payableEntries = cloud.payableEntries || payableEntries;
       receivableEntries = cloud.receivableEntries || receivableEntries;
       bankAccounts = cloud.bankAccounts || bankAccounts;
+      mobileAccounts = cloud.mobileAccounts || mobileAccounts;
       payableHeads = cloud.payableHeads || payableHeads;
       receivableHeads = cloud.receivableHeads || receivableHeads;
       suppliers = cloud.suppliers || suppliers;
@@ -4175,6 +4204,7 @@
       localStorage.setItem('pos_payable', JSON.stringify(payableEntries));
       localStorage.setItem('pos_receivable', JSON.stringify(receivableEntries));
       localStorage.setItem('pos_bank_accounts', JSON.stringify(bankAccounts));
+      localStorage.setItem('pos_mobile_accounts', JSON.stringify(mobileAccounts));
       localStorage.setItem('pos_payable_heads', JSON.stringify(payableHeads));
       localStorage.setItem('pos_receivable_heads', JSON.stringify(receivableHeads));
     }
@@ -4765,7 +4795,8 @@
         let qtyKg = (Number(p.stock)||0) * ((Number(p.bagKg)||50));
         return sum + qtyKg * getWeightedAverageCostPerKg(p.id);
       },0);
-      let bankBalance = bankAccounts.reduce((sum,b)=>sum+getBankBalance(b.id),0);
+      let bankBalance = bankAccounts.reduce((sum,b)=>sum+getBankBalance(b.id),0)
+        + mobileAccounts.reduce((sum,a)=>sum+getMobileAccountBalance(a.id),0);
       let stockBags = products.reduce((sum,p)=>sum+(Number(p.stock)||0),0);
       let lowStock = products.filter(p=>getAvailableStockBags(p)<=20).length;
 
@@ -5652,7 +5683,7 @@
       let backupData = {
         exportedAt: new Date().toISOString(), shopConfig, customers, products, salesHistory,
         accountTransactions, categories, salesReturns, deliveries, orderCancellations, payments,
-        payableEntries, receivableEntries, bankAccounts, payableHeads, receivableHeads,
+        payableEntries, receivableEntries, bankAccounts, mobileAccounts, payableHeads, receivableHeads,
         suppliers, purchases, invoiceCounters
       };
       let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
@@ -5684,6 +5715,7 @@
             localStorage.setItem('pos_payable', JSON.stringify(data.payableEntries || []));
             localStorage.setItem('pos_receivable', JSON.stringify(data.receivableEntries || []));
             localStorage.setItem('pos_bank_accounts', JSON.stringify(data.bankAccounts || []));
+            localStorage.setItem('pos_mobile_accounts', JSON.stringify(data.mobileAccounts || []));
             localStorage.setItem('pos_payable_heads', JSON.stringify(data.payableHeads || payableHeads));
             localStorage.setItem('pos_receivable_heads', JSON.stringify(data.receivableHeads || receivableHeads));
             localStorage.setItem('pos_suppliers', JSON.stringify(data.suppliers || []));
@@ -5727,6 +5759,7 @@
       payableEntries     = [];
       receivableEntries  = [];
       bankAccounts       = [];
+      mobileAccounts     = [];
       suppliers          = [];
       purchases          = [];
       invoiceCounters    = { SAL:0, SR:0, DC:0, CX:0, PUR:0, PAY:0, RCV:0 };
@@ -5738,7 +5771,7 @@
       const keysToRemove = [
         'pos_customers','pos_products','pos_sales','pos_accounts',
         'pos_categories','pos_returns','pos_deliveries','pos_cancellations',
-        'pos_payments','pos_payable','pos_receivable','pos_bank_accounts',
+        'pos_payments','pos_payable','pos_receivable','pos_bank_accounts','pos_mobile_accounts',
         'pos_suppliers','pos_purchases','pos_invoice_counters',
         'pos_payable_heads','pos_receivable_heads','pos_shop_info'
       ];
@@ -5902,6 +5935,7 @@
           sale.paid = paid; sale.due = due; sale.refundOwed = refundOwed; sale.method = method; sale.remarks = remarks;
           sale.bankId = paymentDetails.bankId; sale.bankName = paymentDetails.bankName;
           sale.mobileProvider = paymentDetails.mobileProvider; sale.mobileNumber = paymentDetails.mobileNumber;
+          sale.mobileAccountId=paymentDetails.mobileAccountId; sale.mobileAccountName=paymentDetails.mobileAccountName;
 
           if (sale.status === 'Approved' && customerType !== 'DO' && prod) {
             prod.stock -= (qtyKg / bagKg);
@@ -5921,6 +5955,7 @@
           bankName: paymentDetails.bankName,
           mobileProvider: paymentDetails.mobileProvider,
           mobileNumber: paymentDetails.mobileNumber,
+          mobileAccountId:paymentDetails.mobileAccountId, mobileAccountName:paymentDetails.mobileAccountName,
           date: new Date().toISOString().split('T')[0],
           createdBy: currentUserRole,
           status: initialStatus
@@ -6228,8 +6263,7 @@
       document.getElementById('paymentType').value = s.method;
       togglePaymentAccountFields('paymentType','saleBankDropdown','sale');
       if (s.bankId) document.getElementById('saleBankAccountId').value = s.bankId;
-      if (document.getElementById('saleMobileProvider')) document.getElementById('saleMobileProvider').value = s.mobileProvider || '';
-      if (document.getElementById('saleMobileNumber')) document.getElementById('saleMobileNumber').value = s.mobileNumber || '';
+      if (document.getElementById('saleMobileAccountId')) document.getElementById('saleMobileAccountId').value = s.mobileAccountId || '';
 
       document.getElementById('saleFormTitle').innerText = t('editSaleTitleLabel');
       document.getElementById('btnSaveSale').innerText = t('btnUpdateSave');
@@ -6251,8 +6285,7 @@
       if (sbd) sbd.style.display = 'none';
       let sba = document.getElementById('saleBankAccountId');
       if (sba) sba.value = '';
-      if (document.getElementById('saleMobileProvider')) document.getElementById('saleMobileProvider').value = '';
-      if (document.getElementById('saleMobileNumber')) document.getElementById('saleMobileNumber').value = '';
+      if (document.getElementById('saleMobileAccountId')) document.getElementById('saleMobileAccountId').value = '';
       if (document.getElementById('saleMobileWrap')) document.getElementById('saleMobileWrap').style.display = 'none';
       document.getElementById('saleFormTitle').innerText = translations[currentLang].titleNewSale;
       document.getElementById('btnSaveSale').innerText = translations[currentLang].btnSaveSale;
@@ -6602,6 +6635,7 @@
         refundBankName: refundDetails.bankName || '',
         mobileProvider: refundDetails.mobileProvider,
         mobileNumber: refundDetails.mobileNumber,
+        mobileAccountId:refundDetails.mobileAccountId, mobileAccountName:refundDetails.mobileAccountName,
         customerDueAfter: settlement.dueAfter,
         reason,
         date: new Date().toISOString().split('T')[0],
@@ -6939,7 +6973,7 @@
         refundPaidAmount:settlement.actualRefund,
         refundMethod:settlement.actualRefund>0?refundMethod:'Due Adjustment',
         refundBankId:cancelDetails.bankId||'', refundBankName:cancelDetails.bankName||'',
-        mobileProvider:cancelDetails.mobileProvider, mobileNumber:cancelDetails.mobileNumber,
+        mobileProvider:cancelDetails.mobileProvider, mobileNumber:cancelDetails.mobileNumber, mobileAccountId:cancelDetails.mobileAccountId, mobileAccountName:cancelDetails.mobileAccountName,
         customerDueAfter:settlement.dueAfter,
         reason,
         date: new Date().toISOString().split('T')[0],
@@ -7193,13 +7227,8 @@
 
     function mobileFieldsHtml(prefix) {
       return `<div id="${prefix}MobileWrap" style="display:none; background:#f8fafc; border:1px solid var(--border-cool); padding:10px; border-radius:8px; margin-bottom:12px;">
-        <label>${currentLang === 'BN' ? 'মোবাইল ব্যাংকিং সার্ভিস:' : 'Mobile Banking Service:'}</label>
-        <select id="${prefix}MobileProvider">
-          <option value="">-- ${currentLang === 'BN' ? 'সার্ভিস নির্বাচন করুন' : 'Select Service'} --</option>
-          <option value="bKash">bKash</option><option value="Nagad">Nagad</option><option value="Rocket">Rocket</option><option value="Upay">Upay</option><option value="Other">Other</option>
-        </select>
-        <label>${currentLang === 'BN' ? 'অ্যাকাউন্ট নম্বর:' : 'Account Number:'}</label>
-        <input type="text" id="${prefix}MobileNumber" inputmode="numeric" placeholder="01XXXXXXXXX" style="margin-bottom:0;">
+        <label>${currentLang === 'BN' ? 'মোবাইল ব্যাংকিং অ্যাকাউন্ট:' : 'Mobile Banking Account:'}</label>
+        <select id="${prefix}MobileAccountId" style="margin-bottom:0;"></select>
       </div>`;
     }
 
@@ -7245,30 +7274,42 @@
         const map = {sale:'saleBankAccountId',duePay:'duePayBankId',returnRefund:'returnRefundBankId',cancelRefund:'cancelRefundBankId',purchase:'purchaseBankAccountId',purchaseDue:'payPurchaseBankId',payable:'payableBankAccount',receivable:'receivableBankAccount',account:'accBankAccountId'};
         populateBankSelect(map[prefix]);
       }
+      if(isMobileMethod(method)) populateMobileAccountSelect(prefix+'MobileAccountId');
+    }
+
+    function populateMobileAccountSelect(selectId) {
+      let sel=document.getElementById(selectId); if(!sel) return;
+      let current=sel.value;
+      sel.innerHTML=`<option value="">-- ${currentLang==='BN'?'মোবাইল অ্যাকাউন্ট নির্বাচন করুন':'Select Mobile Account'} --</option>`;
+      mobileAccounts.forEach(a=>sel.innerHTML+=`<option value="${a.id}">${a.service} — ${a.name} (${a.number}) — ৳${getMobileAccountBalance(a.id).toFixed(2)}</option>`);
+      if(current) sel.value=current;
     }
 
     function readPaymentDetails(method, bankSelectId, prefix, amount, isOut) {
       let bankId = method === 'Bank' ? (document.getElementById(bankSelectId)?.value || '') : '';
       let bank = bankAccounts.find(b => String(b.id) === String(bankId));
-      let mobileProvider = isMobileMethod(method) ? (document.getElementById(prefix + 'MobileProvider')?.value || '') : '';
-      let mobileNumber = isMobileMethod(method) ? (document.getElementById(prefix + 'MobileNumber')?.value.trim() || '') : '';
+      let mobileAccountId=isMobileMethod(method)?(document.getElementById(prefix+'MobileAccountId')?.value||''):'';
+      let mobileAccount=mobileAccounts.find(a=>String(a.id)===String(mobileAccountId));
       if (method === 'Bank' && !bank) {
         alert(currentLang === 'BN' ? 'ব্যাংক পেমেন্টের জন্য একটি ব্যাংক অ্যাকাউন্ট নির্বাচন করুন।' : 'Select a bank account for the bank payment.');
         return null;
       }
-      if (isMobileMethod(method) && (!mobileProvider || !mobileNumber)) {
-        alert(currentLang === 'BN' ? 'মোবাইল ব্যাংকিং সার্ভিস ও অ্যাকাউন্ট নম্বর দিন।' : 'Select a mobile banking service and enter its account number.');
+      if (isMobileMethod(method) && !mobileAccount) {
+        alert(currentLang === 'BN' ? 'একটি সংরক্ষিত মোবাইল ব্যাংকিং অ্যাকাউন্ট নির্বাচন করুন।' : 'Select a saved mobile banking account.');
         return null;
       }
       if (isOut && method === 'Bank' && getBankBalance(bankId) + 0.001 < (Number(amount)||0)) {
         alert(t('alertInsufficientBankBalance')); return null;
       }
-      return {bankId: bank ? Number(bank.id) : null, bankName: bank ? `${bank.name} (${bank.number || '—'})` : '', mobileProvider, mobileNumber};
+      if(isOut&&isMobileMethod(method)&&getMobileAccountBalance(mobileAccountId)+0.001<(Number(amount)||0)) {
+        alert(currentLang==='BN'?'নির্বাচিত মোবাইল ব্যাংকিং অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।':'The selected mobile banking account has insufficient balance.'); return null;
+      }
+      return {bankId: bank ? Number(bank.id) : null, bankName: bank ? `${bank.name} (${bank.number || '—'})` : '', mobileAccountId:mobileAccount?Number(mobileAccount.id):null, mobileProvider:mobileAccount?mobileAccount.service:'', mobileNumber:mobileAccount?mobileAccount.number:'', mobileAccountName:mobileAccount?mobileAccount.name:''};
     }
 
     function paymentMethodDisplay(record) {
       if (record.method === 'Bank' || record.refundMethod === 'Bank') return `${record.bankName || record.refundBankName || 'Bank'}`;
-      if (isMobileMethod(record.method || record.refundMethod)) return `${record.mobileProvider || 'Mobile'}${record.mobileNumber ? ' (' + record.mobileNumber + ')' : ''}`;
+      if (isMobileMethod(record.method || record.refundMethod)) return `${record.mobileProvider || 'Mobile'}${record.mobileAccountName ? ' — '+record.mobileAccountName : ''}${record.mobileNumber ? ' (' + record.mobileNumber + ')' : ''}`;
       return record.method || record.refundMethod || '—';
     }
 
@@ -7803,8 +7844,7 @@
       document.getElementById('paymentMethodInput').value = p.method;
       togglePaymentAccountFields('paymentMethodInput','duePayBankWrap','duePay');
       if (p.bankId) document.getElementById('duePayBankId').value = p.bankId;
-      if (document.getElementById('duePayMobileProvider')) document.getElementById('duePayMobileProvider').value = p.mobileProvider || '';
-      if (document.getElementById('duePayMobileNumber')) document.getElementById('duePayMobileNumber').value = p.mobileNumber || '';
+      if (document.getElementById('duePayMobileAccountId')) document.getElementById('duePayMobileAccountId').value = p.mobileAccountId || '';
       document.getElementById('paymentDateInput').value = p.date;
       document.getElementById('paymentNoteInput').value = p.note || '';
       document.getElementById('btnPaymentSave').innerText = t('btnUpdateOnly');
@@ -7844,6 +7884,7 @@
           amount, method, date, note,
           bankId: paymentDetails.bankId, bankName: paymentDetails.bankName,
           mobileProvider: paymentDetails.mobileProvider, mobileNumber: paymentDetails.mobileNumber,
+          mobileAccountId:paymentDetails.mobileAccountId, mobileAccountName:paymentDetails.mobileAccountName,
           status: initialStatus,
           createdBy: currentUserRole,
           createdByName: document.getElementById('headerUserName') ? document.getElementById('headerUserName').innerText : currentUserRole,
@@ -7861,8 +7902,7 @@
       document.getElementById('paymentEditId').value = '';
       document.getElementById('paymentAmountInput').value = '';
       document.getElementById('paymentNoteInput').value = '';
-      if (document.getElementById('duePayMobileProvider')) document.getElementById('duePayMobileProvider').value='';
-      if (document.getElementById('duePayMobileNumber')) document.getElementById('duePayMobileNumber').value='';
+      if (document.getElementById('duePayMobileAccountId')) document.getElementById('duePayMobileAccountId').value='';
       document.getElementById('btnPaymentSave').innerText = t('btnSavePayment');
 
       renderPaymentHistory(custId);
@@ -8083,6 +8123,10 @@
         let available=getBankBalance(accDetails.bankId)+(oldAcc&&oldAcc.status==='Approved'&&String(oldAcc.bankId)===String(accDetails.bankId)?Number(oldAcc.amount)||0:0);
         if(available+0.001<amount) return alert(t('alertInsufficientBankBalance'));
       }
+      if(accIsOut&&isMobileMethod(method)) {
+        let available=getMobileAccountBalance(accDetails.mobileAccountId)+(oldAcc&&oldAcc.status==='Approved'&&String(oldAcc.mobileAccountId)===String(accDetails.mobileAccountId)?Number(oldAcc.amount)||0:0);
+        if(available+0.001<amount) return alert(currentLang==='BN'?'মোবাইল অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।':'Insufficient mobile account balance.');
+      }
 
       if (editId) {
         if (currentUserRole !== 'admin') return alert(t("alertOnlyAdminAddTransaction"));
@@ -8091,6 +8135,7 @@
           acc.type = type; acc.method = method; acc.amount = amount; acc.date = date; acc.note = note;
           acc.bankId = accDetails.bankId; acc.bankName = accDetails.bankName;
           acc.mobileProvider=accDetails.mobileProvider; acc.mobileNumber=accDetails.mobileNumber;
+          acc.mobileAccountId=accDetails.mobileAccountId; acc.mobileAccountName=accDetails.mobileAccountName;
         }
         saveData();
         renderAccounts();
@@ -8110,6 +8155,7 @@
         bankName:accDetails.bankName,
         mobileProvider:accDetails.mobileProvider,
         mobileNumber:accDetails.mobileNumber,
+        mobileAccountId:accDetails.mobileAccountId, mobileAccountName:accDetails.mobileAccountName,
         status: initialStatus,
         createdBy: currentUserRole,
         createdByUid: window.currentAuthUser ? window.currentAuthUser.uid : null,
@@ -8142,8 +8188,7 @@
       document.getElementById('accNote').value = acc.note;
       togglePaymentAccountFields('accMethod','accBankDropdown','account');
       if(acc.bankId) document.getElementById('accBankAccountId').value=acc.bankId;
-      if(document.getElementById('accountMobileProvider')) document.getElementById('accountMobileProvider').value=acc.mobileProvider||'';
-      if(document.getElementById('accountMobileNumber')) document.getElementById('accountMobileNumber').value=acc.mobileNumber||'';
+      if(document.getElementById('accountMobileAccountId')) document.getElementById('accountMobileAccountId').value=acc.mobileAccountId||'';
 
       document.getElementById('accFormTitle').innerText = t('editAccTitleLabel');
       document.getElementById('btnAccSave').innerText = t('btnUpdateOnly');
@@ -8160,8 +8205,7 @@
       let aba = document.getElementById('accBankAccountId');
       if (aba) aba.value = '';
       if(document.getElementById('accountMobileWrap')) document.getElementById('accountMobileWrap').style.display='none';
-      if(document.getElementById('accountMobileProvider')) document.getElementById('accountMobileProvider').value='';
-      if(document.getElementById('accountMobileNumber')) document.getElementById('accountMobileNumber').value='';
+      if(document.getElementById('accountMobileAccountId')) document.getElementById('accountMobileAccountId').value='';
       document.getElementById('accFormTitle').innerText = translations[currentLang].titleAccEntry;
       document.getElementById('btnAccSave').innerText = translations[currentLang].btnSaveAcc;
       document.getElementById('btnAccCancel').style.display = 'none';
@@ -8184,6 +8228,7 @@
       let entry = payableEntries.find(x => x.id == id);
       if (entry) {
         if(entry.method==='Bank' && getBankBalance(entry.bankId)+0.001<(Number(entry.amount)||0)) return alert(t('alertInsufficientBankBalance'));
+        if(isMobileMethod(entry.method) && getMobileAccountBalance(entry.mobileAccountId)+0.001<(Number(entry.amount)||0)) return alert(currentLang==='BN'?'মোবাইল অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।':'Insufficient mobile account balance.');
         entry.status = 'Approved';
         saveData();
         renderPayable();
@@ -8270,6 +8315,7 @@
       let acc = accountTransactions.find(x => x.id == id);
       if (acc) {
         if(acc.method==='Bank'&&['Kroy','Kharoch'].includes(acc.type)&&getBankBalance(acc.bankId)+0.001<(Number(acc.amount)||0)) return alert(t('alertInsufficientBankBalance'));
+        if(isMobileMethod(acc.method)&&['Kroy','Kharoch'].includes(acc.type)&&getMobileAccountBalance(acc.mobileAccountId)+0.001<(Number(acc.amount)||0)) return alert(currentLang==='BN'?'মোবাইল অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।':'Insufficient mobile account balance.');
         acc.status = 'Approved';
         saveData();
         renderAccounts();
@@ -8365,6 +8411,10 @@
         let available=getBankBalance(payableDetails.bankId)+(oldPayable&&oldPayable.status==='Approved'&&String(oldPayable.bankId)===String(payableDetails.bankId)?Number(oldPayable.amount)||0:0);
         if(available+0.001<amount) return alert(t('alertInsufficientBankBalance'));
       }
+      if(isMobileMethod(method)) {
+        let available=getMobileAccountBalance(payableDetails.mobileAccountId)+(oldPayable&&oldPayable.status==='Approved'&&String(oldPayable.mobileAccountId)===String(payableDetails.mobileAccountId)?Number(oldPayable.amount)||0:0);
+        if(available+0.001<amount) return alert(currentLang==='BN'?'মোবাইল অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।':'Insufficient mobile account balance.');
+      }
 
       let bankName = '';
       if (method === 'Bank' && bankId) {
@@ -8378,7 +8428,7 @@
       if (editId) {
         if (currentUserRole !== 'admin') return alert(t('alertOnlyAdminAddTransaction'));
         let entry = payableEntries.find(x => x.id == editId);
-        if (entry) { entry.head = head; entry.method = method; entry.bankId=payableDetails.bankId; entry.bankName=payableDetails.bankName; entry.mobileProvider=payableDetails.mobileProvider; entry.mobileNumber=payableDetails.mobileNumber; entry.amount = amount; entry.note = note; entry.date = today; }
+        if (entry) { entry.head = head; entry.method = method; entry.bankId=payableDetails.bankId; entry.bankName=payableDetails.bankName; entry.mobileProvider=payableDetails.mobileProvider; entry.mobileNumber=payableDetails.mobileNumber; entry.mobileAccountId=payableDetails.mobileAccountId; entry.mobileAccountName=payableDetails.mobileAccountName; entry.amount = amount; entry.note = note; entry.date = today; }
         document.getElementById('editPayableId').value = '';
         document.getElementById('btnPayableCancel').style.display = 'none';
         saveData(); renderPayable(); renderPRSummary(); renderDashboard(); renderBankAccounts();
@@ -8389,7 +8439,7 @@
 
       payableEntries.unshift({
         id: Date.now(), voucherNo: nextInvoiceNo("PAY"), date: today, head, method, bankName:payableDetails.bankName,
-        bankId: payableDetails.bankId, mobileProvider:payableDetails.mobileProvider, mobileNumber:payableDetails.mobileNumber,
+        bankId: payableDetails.bankId, mobileProvider:payableDetails.mobileProvider, mobileNumber:payableDetails.mobileNumber, mobileAccountId:payableDetails.mobileAccountId, mobileAccountName:payableDetails.mobileAccountName,
         amount, note,
         kind: 'payable', status: prStatus,
         createdBy: currentUserRole,
@@ -8432,7 +8482,7 @@
       if (editId) {
         if (currentUserRole !== 'admin') return alert(t('alertOnlyAdminAddTransaction'));
         let entry = receivableEntries.find(x => x.id == editId);
-        if (entry) { entry.head = head; entry.method = method; entry.bankId=receivableDetails.bankId; entry.bankName=receivableDetails.bankName; entry.mobileProvider=receivableDetails.mobileProvider; entry.mobileNumber=receivableDetails.mobileNumber; entry.amount = amount; entry.note = note; entry.date = today; }
+        if (entry) { entry.head = head; entry.method = method; entry.bankId=receivableDetails.bankId; entry.bankName=receivableDetails.bankName; entry.mobileProvider=receivableDetails.mobileProvider; entry.mobileNumber=receivableDetails.mobileNumber; entry.mobileAccountId=receivableDetails.mobileAccountId; entry.mobileAccountName=receivableDetails.mobileAccountName; entry.amount = amount; entry.note = note; entry.date = today; }
         document.getElementById('editReceivableId').value = '';
         document.getElementById('btnReceivableCancel').style.display = 'none';
         saveData(); renderReceivable(); renderPRSummary(); renderDashboard(); renderBankAccounts();
@@ -8443,7 +8493,7 @@
 
       receivableEntries.unshift({
         id: Date.now(), voucherNo: nextInvoiceNo("RCV"), date: today, head, method, bankName:receivableDetails.bankName,
-        bankId: receivableDetails.bankId, mobileProvider:receivableDetails.mobileProvider, mobileNumber:receivableDetails.mobileNumber,
+        bankId: receivableDetails.bankId, mobileProvider:receivableDetails.mobileProvider, mobileNumber:receivableDetails.mobileNumber, mobileAccountId:receivableDetails.mobileAccountId, mobileAccountName:receivableDetails.mobileAccountName,
         amount, note,
         kind: 'receivable', status: prStatus,
         createdBy: currentUserRole,
@@ -8527,8 +8577,7 @@
       togglePayableBankSelect();
       togglePaymentAccountFields('payableMethod','payableBankSelectWrap','payable');
       if(e.bankId) document.getElementById('payableBankAccount').value=e.bankId;
-      if(document.getElementById('payableMobileProvider')) document.getElementById('payableMobileProvider').value=e.mobileProvider||'';
-      if(document.getElementById('payableMobileNumber')) document.getElementById('payableMobileNumber').value=e.mobileNumber||'';
+      if(document.getElementById('payableMobileAccountId')) document.getElementById('payableMobileAccountId').value=e.mobileAccountId||'';
       document.getElementById('btnPayableCancel').style.display = 'inline-block';
       // Switch to payable section
       document.querySelectorAll('.pr-tab-btn').forEach(b => b.classList.remove('active'));
@@ -8550,8 +8599,7 @@
       toggleReceivableBankSelect();
       togglePaymentAccountFields('receivableMethod','receivableBankSelectWrap','receivable');
       if(e.bankId) document.getElementById('receivableBankAccount').value=e.bankId;
-      if(document.getElementById('receivableMobileProvider')) document.getElementById('receivableMobileProvider').value=e.mobileProvider||'';
-      if(document.getElementById('receivableMobileNumber')) document.getElementById('receivableMobileNumber').value=e.mobileNumber||'';
+      if(document.getElementById('receivableMobileAccountId')) document.getElementById('receivableMobileAccountId').value=e.mobileAccountId||'';
       document.getElementById('btnReceivableCancel').style.display = 'inline-block';
     }
 
@@ -8584,8 +8632,7 @@
       document.getElementById('payableNote').value = '';
       document.getElementById('payableBankSelectWrap').style.display = 'none';
       if(document.getElementById('payableMobileWrap')) document.getElementById('payableMobileWrap').style.display='none';
-      if(document.getElementById('payableMobileProvider')) document.getElementById('payableMobileProvider').value='';
-      if(document.getElementById('payableMobileNumber')) document.getElementById('payableMobileNumber').value='';
+      if(document.getElementById('payableMobileAccountId')) document.getElementById('payableMobileAccountId').value='';
       document.getElementById('btnPayableCancel').style.display = 'none';
     }
 
@@ -8598,8 +8645,7 @@
       document.getElementById('receivableNote').value = '';
       document.getElementById('receivableBankSelectWrap').style.display = 'none';
       if(document.getElementById('receivableMobileWrap')) document.getElementById('receivableMobileWrap').style.display='none';
-      if(document.getElementById('receivableMobileProvider')) document.getElementById('receivableMobileProvider').value='';
-      if(document.getElementById('receivableMobileNumber')) document.getElementById('receivableMobileNumber').value='';
+      if(document.getElementById('receivableMobileAccountId')) document.getElementById('receivableMobileAccountId').value='';
       document.getElementById('btnReceivableCancel').style.display = 'none';
     }
 
@@ -8950,8 +8996,7 @@
       document.getElementById('payPurchaseBankDropdown').style.display = 'none';
       document.getElementById('payPurchaseDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('payPurchaseNote').value = '';
-      if(document.getElementById('purchaseDueMobileProvider')) document.getElementById('purchaseDueMobileProvider').value='';
-      if(document.getElementById('purchaseDueMobileNumber')) document.getElementById('purchaseDueMobileNumber').value='';
+      if(document.getElementById('purchaseDueMobileAccountId')) document.getElementById('purchaseDueMobileAccountId').value='';
       document.getElementById('payPurchaseInfo').innerHTML = `
         <div style="font-size:13px;">
           <b>Supplier:</b> ${p.supplierName || '—'} &nbsp;|&nbsp;
@@ -9015,6 +9060,7 @@
         bankName:purchasePayDetails.bankName,
         mobileProvider:purchasePayDetails.mobileProvider,
         mobileNumber:purchasePayDetails.mobileNumber,
+        mobileAccountId:purchasePayDetails.mobileAccountId, mobileAccountName:purchasePayDetails.mobileAccountName,
         note, payNo
       });
 
@@ -9407,6 +9453,11 @@
         let available = getBankBalance(purchaseDetails.bankId) + (existingPurchase && String(existingPurchase.bankId)===String(purchaseDetails.bankId) ? oldInitial : 0);
         if(available + 0.001 < initialPaidForValidation) return alert(t('alertInsufficientBankBalance'));
       }
+      if(isMobileMethod(method)) {
+        let oldInitial=existingPurchase&&isMobileMethod(existingPurchase.method)?Math.max(0,(Number(existingPurchase.paid)||0)-laterPayments):0;
+        let available=getMobileAccountBalance(purchaseDetails.mobileAccountId)+(existingPurchase&&String(existingPurchase.mobileAccountId)===String(purchaseDetails.mobileAccountId)?oldInitial:0);
+        if(available+0.001<initialPaidForValidation) return alert(currentLang==='BN'?'মোবাইল অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।':'Insufficient mobile account balance.');
+      }
 
       let due = Math.max(0, total - paid);
 
@@ -9427,7 +9478,7 @@
             if((Number(oldProd.stock)||0)+0.0001<oldQtyKg/(oldProd.bagKg||50)) return alert(currentLang==='BN'?'এই Purchase-এর কিছু stock ইতিমধ্যে ব্যবহার হয়েছে; আগে stock/transaction সমন্বয় করুন।':'Some stock from this purchase has already been used; reconcile stock/transactions before editing it.');
             oldProd.stock -= oldQtyKg / (oldProd.bagKg || 50);
           }
-          Object.assign(entry, { supplierId, supplierName, prodId: parseInt(prodId), prodName, unitType, qty, unitPrice, total, paid, due, method, bankId: purchaseDetails.bankId, bankName: purchaseDetails.bankName, mobileProvider:purchaseDetails.mobileProvider, mobileNumber:purchaseDetails.mobileNumber, note, date });
+          Object.assign(entry, { supplierId, supplierName, prodId: parseInt(prodId), prodName, unitType, qty, unitPrice, total, paid, due, method, bankId: purchaseDetails.bankId, bankName: purchaseDetails.bankName, mobileProvider:purchaseDetails.mobileProvider, mobileNumber:purchaseDetails.mobileNumber, mobileAccountId:purchaseDetails.mobileAccountId, mobileAccountName:purchaseDetails.mobileAccountName, note, date });
         }
         document.getElementById('editPurchaseId').value = '';
         document.getElementById('btnPurchaseCancel').style.display = 'none';
@@ -9439,7 +9490,7 @@
           supplierName, prodId: parseInt(prodId) || null, prodName,
           unitType, qty, unitPrice, total, paid, due,
           method, bankId: purchaseDetails.bankId, bankName:purchaseDetails.bankName,
-          mobileProvider:purchaseDetails.mobileProvider, mobileNumber:purchaseDetails.mobileNumber,
+          mobileProvider:purchaseDetails.mobileProvider, mobileNumber:purchaseDetails.mobileNumber, mobileAccountId:purchaseDetails.mobileAccountId, mobileAccountName:purchaseDetails.mobileAccountName,
           note, date
         });
       }
@@ -9484,8 +9535,7 @@
       if (p.bankId) document.getElementById('purchaseBankAccountId').value = p.bankId;
       togglePaymentAccountFields('purchaseMethod','purchaseBankDropdown','purchase');
       if (p.bankId) document.getElementById('purchaseBankAccountId').value = p.bankId;
-      if(document.getElementById('purchaseMobileProvider')) document.getElementById('purchaseMobileProvider').value=p.mobileProvider||'';
-      if(document.getElementById('purchaseMobileNumber')) document.getElementById('purchaseMobileNumber').value=p.mobileNumber||'';
+      if(document.getElementById('purchaseMobileAccountId')) document.getElementById('purchaseMobileAccountId').value=p.mobileAccountId||'';
       document.getElementById('newPurchaseModal').style.display = 'flex';
     }
 
@@ -9523,8 +9573,7 @@
       document.getElementById('purchaseNote').value = '';
       document.getElementById('purchaseBankDropdown').style.display = 'none';
       if(document.getElementById('purchaseMobileWrap')) document.getElementById('purchaseMobileWrap').style.display='none';
-      if(document.getElementById('purchaseMobileProvider')) document.getElementById('purchaseMobileProvider').value='';
-      if(document.getElementById('purchaseMobileNumber')) document.getElementById('purchaseMobileNumber').value='';
+      if(document.getElementById('purchaseMobileAccountId')) document.getElementById('purchaseMobileAccountId').value='';
       document.getElementById('editPurchaseId').value = '';
       document.getElementById('btnPurchaseCancel').style.display = 'none';
       let today = new Date().toISOString().split('T')[0];
@@ -9690,6 +9739,84 @@
       saveData();
       renderBankAccounts();
       populatePRDropdowns();
+    }
+
+    function getMobileAccountTransactions(accountId) {
+      const same = value => value != null && String(value) === String(accountId);
+      const rows = [];
+      const add = (date,type,desc,ref,amount) => {
+        amount = roundMoney(Number(amount)||0);
+        if (amount > 0) rows.push({date:date||'—',type,desc,ref:ref||'—',amount});
+      };
+      salesHistory.filter(s=>s.status==='Approved'&&isMobileMethod(s.method)&&same(s.mobileAccountId))
+        .forEach(s=>add(s.date,'in','Sales collection',s.invNo,s.paid));
+      payments.filter(p=>p.status==='Approved'&&!p.reversed&&same(p.mobileAccountId))
+        .forEach(p=>add(p.date,'in','Customer due collection',p.payNo,p.amount));
+      receivableEntries.filter(e=>e.status==='Approved'&&same(e.mobileAccountId))
+        .forEach(e=>add(e.date,'in',e.head||'Receivable',e.voucherNo,e.amount));
+      payableEntries.filter(e=>e.status==='Approved'&&same(e.mobileAccountId))
+        .forEach(e=>add(e.date,'out',e.head||'Payable',e.voucherNo,e.amount));
+      accountTransactions.filter(a=>a.status==='Approved'&&same(a.mobileAccountId)).forEach(a=>
+        add(a.date,['Joma','Bikroy'].includes(a.type)?'in':'out',a.note||a.type,'ACC-'+String(a.id).slice(-6),a.amount));
+      purchases.forEach(p=>{
+        const later=(p.payments||[]).reduce((s,pm)=>s+(Number(pm.amount)||0),0);
+        if(isMobileMethod(p.method)&&same(p.mobileAccountId)) add(p.date,'out','Initial purchase payment',p.purchaseNo,Math.max(0,(Number(p.paid)||0)-later));
+        (p.payments||[]).filter(pm=>same(pm.mobileAccountId)).forEach(pm=>add(pm.date,'out','Purchase due payment',pm.payNo||p.purchaseNo,pm.amount));
+      });
+      salesReturns.filter(r=>!r.reversed&&isMobileMethod(r.refundMethod)&&same(r.mobileAccountId||r.refundMobileAccountId))
+        .forEach(r=>add(r.date,'out','Customer sales return refund',r.returnNo||r.invNo,r.refundPaidAmount));
+      orderCancellations.filter(c=>!c.reversed&&isMobileMethod(c.refundMethod)&&same(c.mobileAccountId||c.refundMobileAccountId))
+        .forEach(c=>add(c.date,'out','Cancelled order refund',c.cancelNo||c.invNo,c.refundPaidAmount));
+      return rows.sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.ref).localeCompare(String(b.ref)));
+    }
+
+    function getMobileAccountBalance(accountId) {
+      let a=mobileAccounts.find(x=>String(x.id)===String(accountId));
+      if(!a) return 0;
+      return roundMoney((Number(a.openingBalance)||0)+getMobileAccountTransactions(accountId).reduce((s,x)=>s+(x.type==='in'?x.amount:-x.amount),0));
+    }
+
+    function addMobileAccount() {
+      if(currentUserRole!=='admin') return alert(t('alertOnlyAdminAddTransaction'));
+      let service=document.getElementById('newMobileService').value;
+      let name=document.getElementById('newMobileName').value.trim();
+      let number=document.getElementById('newMobileNumber').value.trim();
+      let accountType=document.getElementById('newMobileType').value;
+      let opening=Number(document.getElementById('newMobileOpening').value)||0;
+      if(!name||!number) return alert(currentLang==='BN'?'অ্যাকাউন্টের নাম ও নম্বর আবশ্যক।':'Account name and number are required.');
+      if(opening<0) return alert(currentLang==='BN'?'Opening balance ঋণাত্মক হতে পারবে না।':'Opening balance cannot be negative.');
+      if(mobileAccounts.some(a=>a.service===service&&a.number===number)) return alert(currentLang==='BN'?'এই মোবাইল অ্যাকাউন্টটি ইতিমধ্যে আছে।':'This mobile account already exists.');
+      mobileAccounts.push({id:Date.now(),service,name,number,accountType,openingBalance:roundMoney(opening)});
+      ['newMobileName','newMobileNumber','newMobileOpening'].forEach(id=>document.getElementById(id).value='');
+      saveData(); renderMobileAccounts();
+    }
+
+    function deleteMobileAccount(id) {
+      if(currentUserRole!=='admin') return;
+      if(getMobileAccountTransactions(id).length) return alert(currentLang==='BN'?'এই মোবাইল অ্যাকাউন্টে লেনদেন আছে, তাই ডিলিট করা যাবে না।':'This mobile account has transactions and cannot be deleted.');
+      if(!confirm(currentLang==='BN'?'মোবাইল অ্যাকাউন্টটি ডিলিট করবেন?':'Delete this mobile account?')) return;
+      mobileAccounts=mobileAccounts.filter(a=>a.id!=id); saveData(); renderMobileAccounts();
+    }
+
+    function renderMobileAccounts() {
+      let el=document.getElementById('mobileAccountsList'); if(!el) return;
+      if(!mobileAccounts.length) { el.innerHTML=`<p style="color:var(--muted);font-size:13px;">${currentLang==='BN'?'কোনো মোবাইল অ্যাকাউন্ট যোগ করা হয়নি।':'No mobile account added.'}</p>`; return; }
+      el.innerHTML=mobileAccounts.map(a=>{
+        let tx=getMobileAccountTransactions(a.id), totalIn=roundMoney(tx.filter(x=>x.type==='in').reduce((s,x)=>s+x.amount,0)), totalOut=roundMoney(tx.filter(x=>x.type==='out').reduce((s,x)=>s+x.amount,0)), balance=getMobileAccountBalance(a.id);
+        return `<div class="bank-account-item" style="flex-direction:column;align-items:flex-start;gap:5px;padding:12px 14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;width:100%;"><div><div class="bank-name">📱 ${a.service} — ${a.name}</div><div class="bank-num">${a.number} · ${a.accountType||'Personal'}</div></div>
+          <div style="display:flex;gap:5px;"><button onclick="viewMobileAccountLedger(${a.id})" class="btn-icon-action btn-view" title="Ledger">${SVG_VIEW}</button>${currentUserRole==='admin'?`<button onclick="deleteMobileAccount(${a.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>`:''}</div></div>
+          <div style="display:flex;gap:14px;margin-top:5px;font-size:12px;flex-wrap:wrap;"><span>Opening: <b>৳${(Number(a.openingBalance)||0).toFixed(2)}</b></span><span style="color:var(--green);">IN: <b>৳${totalIn.toFixed(2)}</b></span><span style="color:var(--red);">OUT: <b>৳${totalOut.toFixed(2)}</b></span><span style="color:${balance>=0?'var(--green)':'var(--red)'};font-weight:800;">Balance: ৳${balance.toFixed(2)}</span></div></div>`;
+      }).join('');
+    }
+
+    function viewMobileAccountLedger(id) {
+      let a=mobileAccounts.find(x=>x.id==id); if(!a) return;
+      let running=Number(a.openingBalance)||0;
+      let body=`<tr><td>—</td><td>Opening Balance</td><td>—</td><td style="text-align:right;">৳${running.toFixed(2)}</td><td></td><td style="text-align:right;"><b>৳${running.toFixed(2)}</b></td></tr>`;
+      getMobileAccountTransactions(id).forEach(x=>{ running=roundMoney(running+(x.type==='in'?x.amount:-x.amount)); body+=`<tr><td>${x.date}</td><td>${x.desc}</td><td>${x.ref}</td><td style="text-align:right;color:var(--green);">${x.type==='in'?'৳'+x.amount.toFixed(2):''}</td><td style="text-align:right;color:var(--red);">${x.type==='out'?'৳'+x.amount.toFixed(2):''}</td><td style="text-align:right;"><b>৳${running.toFixed(2)}</b></td></tr>`; });
+      document.getElementById('printablePRVoucher').innerHTML=`<div class="invoice-header">${shopConfig.logoImage?`<img class="invoice-logo" src="${shopConfig.logoImage}">`:''}<h2>${shopConfig.name}</h2><p>${shopConfig.tagline||''}</p><h3 style="margin-top:12px;">Mobile Banking Ledger</h3><p><b>${a.service} — ${a.name}</b><br>${a.number} · ${a.accountType||'Personal'}</p></div><div style="text-align:right;margin:10px 0;font-weight:800;">Current Balance: ৳${getMobileAccountBalance(id).toFixed(2)}</div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#172033;color:white;"><th>Date</th><th>Details</th><th>Reference</th><th>IN</th><th>OUT</th><th>Balance</th></tr></thead><tbody>${body}</tbody></table></div>${signatureBlockTwoParty()}`;
+      document.getElementById('viewPRVoucherModal').style.display='flex';
     }
 
     function getBankBalance(bankId) {
@@ -9947,6 +10074,7 @@
       // Create print area - clone element and remove no-print elements
       const area = document.createElement('div');
       area.id = '__printArea__';
+      if (divId === 'mlPrintArea') area.classList.add('ml-statement-print');
       area.innerHTML = header + el.outerHTML;
       // Remove no-print elements from clone
       area.querySelectorAll('.no-print').forEach(e => e.remove());
@@ -10019,7 +10147,7 @@
           .sig-box { text-align:center; width:40%; }
           [style*="border-top:1.5px solid"] { border-top:1.5px solid #333 !important; padding-top:8px; margin-top:40px; font-size:12px; color:#444; font-weight:600; }
           .currency-symbol { font-weight:700; }
-          @page { margin:1.5cm; size:A4; }
+          ${divId === 'mlPrintArea' ? '@page { margin:10mm; size:A4 landscape; }' : '@page { margin:1.5cm; size:A4; }'}
           .print-only { display:block !important; }
           .no-print { display:none !important; }
           /* Force ALL text black in print */
@@ -10030,6 +10158,42 @@
           /* Restore backgrounds for readability */
           th { background: #f0f0f0 !important; }
           .stat-card { background: #f9f9f9 !important; border: 1px solid #ddd !important; }
+
+          /* Final Ledger: dedicated bank-statement print layout */
+          #__printArea__.ml-statement-print { padding:0 !important; width:100% !important; font-family:Arial,"Noto Sans Bengali",sans-serif !important; }
+          #__printArea__.ml-statement-print, #__printArea__.ml-statement-print * { color:#000 !important; }
+          #__printArea__.ml-statement-print > div:first-child { margin:0 0 7mm !important; padding:0 0 3mm !important; border-bottom:2px solid #1f2937 !important; }
+          #__printArea__.ml-statement-print > div:first-child > div:first-of-type { font-size:18px !important; }
+          #__printArea__.ml-statement-print #mlPrintArea { width:100% !important; min-width:0 !important; overflow:visible !important; }
+          #__printArea__.ml-statement-print .ml-net-bar { display:flex !important; min-height:0 !important; margin:0 0 3mm !important; padding:0 0 2.5mm !important; border:0 !important; border-bottom:1px solid #64748b !important; border-radius:0 !important; page-break-inside:avoid; }
+          #__printArea__.ml-statement-print .ml-net-bar .label { font-size:9px !important; text-transform:uppercase; letter-spacing:.4px; }
+          #__printArea__.ml-statement-print .ml-net-bar .value { font-size:17px !important; white-space:nowrap !important; }
+          #__printArea__.ml-statement-print .ml-section-title { margin:3mm 0 1.5mm !important; font-size:10px !important; text-transform:uppercase; letter-spacing:.4px; }
+          #__printArea__.ml-statement-print .ml-kpi-grid { display:grid !important; grid-template-columns:repeat(6,minmax(0,1fr)) !important; gap:5mm !important; margin:0 0 3mm !important; border:0 !important; page-break-inside:avoid; }
+          #__printArea__.ml-statement-print .ml-kpi-card { min-width:0 !important; padding:3px 0 5px !important; border:0 !important; border-bottom:1px solid #c5c9cf !important; border-radius:0 !important; box-shadow:none !important; overflow:hidden !important; }
+          #__printArea__.ml-statement-print .ml-kpi-card::before { display:none !important; }
+          #__printArea__.ml-statement-print .ml-kpi-card h6 { margin:0 0 3px !important; font-size:7.5px !important; line-height:1.15 !important; white-space:normal !important; }
+          #__printArea__.ml-statement-print .ml-kpi-card .kv { font-size:10.5px !important; line-height:1.15 !important; white-space:nowrap !important; }
+          #__printArea__.ml-statement-print .ml-kpi-card .ks { margin-top:2px !important; font-size:7px !important; line-height:1.15 !important; white-space:normal !important; }
+          #__printArea__.ml-statement-print #mlCostWarning { font-size:8px !important; padding:5px 7px !important; margin:0 0 2mm !important; border-radius:0 !important; }
+          #__printArea__.ml-statement-print #mlTableWrap { margin:3mm 0 0 !important; padding:0 !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; overflow:visible !important; }
+          #__printArea__.ml-statement-print #mlTableWrap .table-responsive { width:100% !important; max-width:none !important; overflow:visible !important; border:0 !important; }
+          #__printArea__.ml-statement-print #mlTable { width:100% !important; min-width:0 !important; table-layout:fixed !important; border-collapse:collapse !important; font-size:8.5px !important; }
+          #__printArea__.ml-statement-print #mlTable thead { display:table-header-group !important; }
+          #__printArea__.ml-statement-print #mlTable tfoot { display:table-row-group !important; }
+          #__printArea__.ml-statement-print #mlTable tr { page-break-inside:avoid !important; break-inside:avoid !important; }
+          #__printArea__.ml-statement-print #mlTable th,
+          #__printArea__.ml-statement-print #mlTable td { box-sizing:border-box !important; padding:4px 5px !important; border:1px solid #b8bec7 !important; font-size:8.5px !important; line-height:1.25 !important; vertical-align:top !important; overflow:visible !important; }
+          #__printArea__.ml-statement-print #mlTable th { background:#e5e7eb !important; font-size:7.5px !important; text-transform:uppercase !important; letter-spacing:.2px !important; }
+          #__printArea__.ml-statement-print #mlTable th:nth-child(1), #__printArea__.ml-statement-print #mlTable td:nth-child(1) { width:10% !important; white-space:nowrap !important; }
+          #__printArea__.ml-statement-print #mlTable th:nth-child(2), #__printArea__.ml-statement-print #mlTable td:nth-child(2) { width:13% !important; }
+          #__printArea__.ml-statement-print #mlTable th:nth-child(3), #__printArea__.ml-statement-print #mlTable td:nth-child(3) { width:31% !important; overflow-wrap:anywhere !important; word-break:normal !important; }
+          #__printArea__.ml-statement-print #mlTable th:nth-child(4), #__printArea__.ml-statement-print #mlTable td:nth-child(4) { width:10% !important; overflow-wrap:anywhere !important; }
+          #__printArea__.ml-statement-print #mlTable th:nth-child(5), #__printArea__.ml-statement-print #mlTable td:nth-child(5),
+          #__printArea__.ml-statement-print #mlTable th:nth-child(6), #__printArea__.ml-statement-print #mlTable td:nth-child(6),
+          #__printArea__.ml-statement-print #mlTable th:nth-child(7), #__printArea__.ml-statement-print #mlTable td:nth-child(7) { width:12% !important; white-space:nowrap !important; text-align:right !important; font-variant-numeric:tabular-nums !important; }
+          #__printArea__.ml-statement-print .ml-type-pill { display:inline !important; padding:0 !important; border-radius:0 !important; font-size:8px !important; white-space:normal !important; font-weight:700 !important; }
+          #__printArea__.ml-statement-print .ml-monthly-header { padding:5px 7px !important; font-size:8.5px !important; border-left:0 !important; }
         }
         #__printArea__ { display: none; }
       `;
@@ -10205,10 +10369,12 @@
       localStorage.setItem('pos_payable', JSON.stringify(payableEntries));
       localStorage.setItem('pos_receivable', JSON.stringify(receivableEntries));
       localStorage.setItem('pos_bank_accounts', JSON.stringify(bankAccounts));
+      localStorage.setItem('pos_mobile_accounts', JSON.stringify(mobileAccounts));
       localStorage.setItem('pos_payable_heads', JSON.stringify(payableHeads));
       localStorage.setItem('pos_receivable_heads', JSON.stringify(receivableHeads));
       localStorage.setItem('pos_suppliers', JSON.stringify(suppliers));
       localStorage.setItem('pos_purchases', JSON.stringify(purchases));
+      if (document.getElementById('mobileAccountsList')) renderMobileAccounts();
       saveToFirestore();
     }
 
@@ -10548,6 +10714,7 @@
       renderReceivable();
       renderPRSummary();
       renderBankAccounts();
+      renderMobileAccounts();
       renderPayableHeads();
       renderReceivableHeads();
       renderSupplierList();
