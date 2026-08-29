@@ -1551,7 +1551,7 @@ function computeTotalBalance(){
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
   db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry && (!s.customerId||db.customers[s.customerId])) dp += Number(s.paid||0); });
-  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])) dp += Number(i.amount)+Number(i.discount||0); });
+  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])) dp += Number(i.amount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
   // Vendor payments: cash out (আমরা vendor কে দিলাম)
@@ -1573,7 +1573,7 @@ function pageDashboard(){
   const todayReturnsValue = db.returns.filter(r=>!r.cancelled && r.date===today).reduce((s,r)=>s+Number(r.value),0);
   const todaySales = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.total),0) - todayReturnsValue;
   const todayExpense = db.expenses.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.amount),0);
-  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0);
+  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0) - db.installments.filter(i=>i.date===today && !i.isOldEntry).reduce((s,i)=>s+Number(i.discount||0),0);
   const todayIncome = todayProfit - todayExpense;
   const lowStock = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold));
   const totalProductQty = Object.values(db.products).reduce((s,p)=>s+Number(p.qty),0);
@@ -2848,6 +2848,13 @@ function aggregatePeriod(fromStr, toStr){
   const bucketKey = (dateStr) => groupByMonth ? dateStr.slice(0,7) : dateStr;
   const inRange = (dateStr) => dateStr >= fromStr && dateStr <= toStr;
   db.sales.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].s += Number(x.total); } });
+  // Installment-time discount is a later revenue waiver, not cash received.
+  db.installments.forEach(i => {
+    if(inRange(i.date) && !i.isOldEntry && Number(i.discount||0)>0){
+      const k=bucketKey(i.date);
+      if(buckets[k]) buckets[k].s -= Number(i.discount||0);
+    }
+  });
   // Purchase: মোট ক্রয় মূল্য (committed amount)
   db.purchases.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].p += Number(x.total); } });
   db.expenses.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].e += Number(x.amount); } });
@@ -3024,7 +3031,7 @@ function renderSummaryReport(body){
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
     db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry && (!s.customerId||db.customers[s.customerId])){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.paid||0); } });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
     // Vendor payments: cash out → de, cash return → dp
@@ -3676,17 +3683,18 @@ function printCustLedger(cid){
   if(!cust) return;
   const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
   const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
   const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
   const totalPaid = totalInitialPaid + totalInstPaid;
-  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+  const installmentDiscount = payments.reduce((s,p)=>s+Number(p.discount||0),0);
+  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - installmentDiscount;
 
   const ledgerRaw = [
     ...sales.map(s=>({
       ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
       label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total), discount: Number(s.discount||0),
+      total: Number(s.total) + Number(s.discount||0), discount: Number(s.discount||0),
       paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
       profit: saleNetProfit(s)
     })),
@@ -3796,15 +3804,15 @@ function renderCustomerReport(body){
     const entries = allEntries.slice((custRptPage-1)*CUST_RPT_PAGE_SIZE, custRptPage*CUST_RPT_PAGE_SIZE);
 
     // Totals
-    const grandTotalBooked = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total),0),0);
+    const grandTotalBooked = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total)+Number(x.discount||0),0),0);
     const grandTotalDue = allEntries.reduce((s,[,c])=>s+Number(c.due||0),0);
-    const grandTotalPaid = grandTotalBooked - grandTotalDue;
-    const grandTotalProfit = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0),0);
+    const grandTotalPaid = allEntries.reduce((sum,[id]) => sum + db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0) + db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.amount||0),0), 0);
+    const grandTotalProfit = allEntries.reduce((s,[id])=>s + db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0) - db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.discount||0),0),0);
 
     const rows = entries.map(([id,c])=>{
-      const booked = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total),0);
-      const paid = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0) + db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.amount)+Number(i.discount||0),0);
-      const profit = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0);
+      const booked = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total)+Number(x.discount||0),0);
+      const paid = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0) + db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.amount||0),0);
+      const profit = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0) - db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.discount||0),0);
       return '<tr style="'+(reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':'')+'">'
         +'<td>'+(c.displayId?('#'+c.displayId):'—')+'</td>'
         +'<td>'+escapeHtml(c.name)+'</td>'
@@ -3860,11 +3868,12 @@ function renderCustomerReport(body){
     const payments = db.installments
       .filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth))
       .sort((a,b)=>b.ts-a.ts);
-    const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+    const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
     const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
     const totalPaid = totalInitialPaid + totalInstPaid;
-    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+    const installmentDiscount = payments.reduce((s,p)=>s+Number(p.discount||0),0);
+    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - installmentDiscount;
 
     // একটাই ব্যাংক-স্টেটমেন্ট স্টাইল লেজার — বুকিং ও কিস্তি, তারিখ অনুযায়ী,
     // চলমান ব্যালেন্স নিজে হিসাব করে বসানো হচ্ছে (কোনো আগের সেভ করা "due" এর উপর নির্ভর করছি না)
@@ -3872,7 +3881,7 @@ function renderCustomerReport(body){
       ...sales.map(s=>({
         ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
         label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-        total: Number(s.total), discount: Number(s.discount||0),
+        total: Number(s.total) + Number(s.discount||0), discount: Number(s.discount||0),
         paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
         profit: saleNetProfit(s)
       })),
@@ -4723,16 +4732,16 @@ function openCustomerHistory(custId){
   if(!cust) return;
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
   const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
   const totalPaid = totalInitialPaid + totalInstPaid;
 
   const ledgerRaw = [
     ...sales.map(s=>({
       ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
       label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total), discount: Number(s.discount||0),
+      total: Number(s.total) + Number(s.discount||0), discount: Number(s.discount||0),
       paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid)
     })),
     ...payments.map(p=>({
@@ -5690,13 +5699,17 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const instPaymentSystem = document.getElementById('duePaymentSystem').value || 'cash';
   if(paid<=0 && discount<=0) return;
   const previousDue = Number(cust.due);
+  if(paid + discount > previousDue){
+    alert(currentLang==='bn' ? 'পরিশোধ + ছাড় বর্তমান বকেয়ার চেয়ে বেশি হতে পারবে না।' : 'Payment + discount cannot exceed the current due.');
+    return;
+  }
   const newDue = Math.max(0, previousDue - (paid+discount));
   cust.due = newDue;
   await safePut('customers', dueCtx, cust);
 
   // distribute this payment across the customer's outstanding sales (oldest first)
   // so each sale's own paid/due fields stay accurate too
-  let toApply = paid + discount;
+  let toApply = paid + discount; // both cash and waiver settle receivable; cash reports count only `paid`
   const openSales = db.sales.filter(s=>s.customerId===dueCtx && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
   const salesToUpdate = [];
   for(const sale of openSales){
@@ -5780,6 +5793,12 @@ function openInstallmentEdit(instId, custId){
     if(newAmt < 0){ alert(t('inst_col_amount')); return; }
     const oldTotal = Number(rec.amount) + Number(rec.discount||0);
     const newTotal = newAmt + newDisc;
+    const custForLimit = db.customers[rec.customerId];
+    const maxSettlement = oldTotal + Number(custForLimit ? custForLimit.due||0 : 0);
+    if(newTotal > maxSettlement){
+      alert(currentLang==='bn' ? 'পরিশোধ + ছাড় বর্তমান বকেয়ার চেয়ে বেশি হতে পারবে না।' : 'Payment + discount cannot exceed the available due.');
+      return;
+    }
     const diff = newTotal - oldTotal;
     // customer.due
     const cust2 = db.customers[rec.customerId];
