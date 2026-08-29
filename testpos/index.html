@@ -112,6 +112,7 @@
     .stat-card.stat-danger::before { background: var(--red); }
     .stat-card h4 { font-size: 12px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; }
     .stat-card .value { font-size: 24px; font-weight: 800; color: var(--ink); }
+    .stat-card .stock-unit-breakdown { margin-top: 5px; color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1.35; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
     .card { background: var(--card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; box-shadow: var(--shadow); }
@@ -765,8 +766,9 @@
             <div class="value" id="dashTotalDue" style="color: #dc2626;"><span class="currency-symbol">৳</span>0.00</div>
           </div>
           <div class="stat-card">
-            <h4 data-key="lblTotalStock">মোট স্টক (বস্তা)</h4>
+            <h4 data-key="lblTotalStock">মোট স্টক</h4>
             <div class="value" id="dashTotalStock">0</div>
+            <div class="stock-unit-breakdown" id="dashTotalStockUnits">0 Bag · 0 KG · 0 Ton</div>
           </div>
           <div class="stat-card">
             <h4 data-key="lblTotalReturns">মোট রিটার্ন</h4>
@@ -3261,7 +3263,7 @@
         menuSettings: "সেটিং",
         lblTotalSales: "আজকের মোট বিক্রি",
         lblTotalDue: "মোট বাকির পরিমাণ",
-        lblTotalStock: "মোট স্টক (বস্তা)",
+        lblTotalStock: "মোট স্টক",
         lblRecentSales: "সাম্প্রতিক বিক্রয়সমূহ",
         thInvoice: "ইনভয়েস",
         thCustomer: "গ্রাহক",
@@ -3835,7 +3837,7 @@
         menuSettings: "Settings",
         lblTotalSales: "Today's Total Sales",
         lblTotalDue: "Total Due Amount",
-        lblTotalStock: "Total Stock (Bags)",
+        lblTotalStock: "Total Stock",
         lblRecentSales: "Recent Sales History",
         thInvoice: "Invoice",
         thCustomer: "Customer",
@@ -6076,12 +6078,16 @@
       // Summed per-customer (never negative per customer) so one customer's
       // overpayment can never mask another customer's real due.
       let totalDueAmt = customers.reduce((sum, c) => sum + getCustomerTotalDue(c.id).due, 0);
-      let totalStockBags = products.reduce((sum, p) => sum + p.stock, 0);
+      let totalStockBags = products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0);
+      let totalStockKg = products.reduce((sum, p) => sum + ((Number(p.stock) || 0) * (Number(p.bagKg) || 50)), 0);
+      let totalStockTon = totalStockKg / 1000;
       let totalReturnsAmt = salesReturns.filter(r => !r.reversed).reduce((sum, r) => sum + r.refundValue, 0)+orderCancellations.filter(c=>!c.reversed).reduce((sum,c)=>sum+(Number(c.refundValue)||0),0);
 
       document.getElementById('dashTotalSales').innerHTML = '<span class="currency-symbol">৳</span>' + totalSalesAmt.toFixed(2);
       document.getElementById('dashTotalDue').innerHTML = '<span class="currency-symbol">৳</span>' + totalDueAmt.toFixed(2);
-      document.getElementById('dashTotalStock').innerText = totalStockBags.toFixed(1);
+      document.getElementById('dashTotalStock').innerText = totalStockKg.toFixed(2) + ' KG';
+      let stockUnitsEl = document.getElementById('dashTotalStockUnits');
+      if (stockUnitsEl) stockUnitsEl.innerText = totalStockBags.toFixed(2) + ' Bag · ' + totalStockKg.toFixed(2) + ' KG · ' + totalStockTon.toFixed(3) + ' Ton';
       document.getElementById('dashTotalReturns').innerHTML = '<span class="currency-symbol">৳</span>' + totalReturnsAmt.toFixed(2);
       if(document.getElementById('statTotalPurchase')) document.getElementById('statTotalPurchase').innerHTML='<span class="currency-symbol">৳</span>'+totalPurchaseAmt.toFixed(2);
       if(document.getElementById('statPurchaseDue')) document.getElementById('statPurchaseDue').innerHTML='<span class="currency-symbol">৳</span>'+totalPurchaseDue.toFixed(2);
@@ -9789,12 +9795,28 @@
       if (editId) {
         let entry = purchases.find(p => p.id == editId);
         if (entry) {
-          // Revert stock change
           let oldProd = products.find(p => p.id == entry.prodId);
-          if (oldProd) {
-            let oldQtyKg = entry.unitType === 'Ton' ? entry.qty * 1000 : entry.unitType === 'Kg' ? entry.qty : entry.qty * (oldProd.bagKg || 50);
-            if((Number(oldProd.stock)||0)+0.0001<oldQtyKg/(oldProd.bagKg||50)) return alert(currentLang==='BN'?'এই Purchase-এর কিছু stock ইতিমধ্যে ব্যবহার হয়েছে; আগে stock/transaction সমন্বয় করুন।':'Some stock from this purchase has already been used; reconcile stock/transactions before editing it.');
-            oldProd.stock -= oldQtyKg / (oldProd.bagKg || 50);
+          let newProd = products.find(p => p.id == parseInt(prodId));
+          let oldBagKg = oldProd ? (Number(oldProd.bagKg) || 50) : 50;
+          let newBagKg = newProd ? (Number(newProd.bagKg) || 50) : 50;
+          let oldQtyKg = entry.unitType === 'Ton' ? Number(entry.qty) * 1000 : entry.unitType === 'Kg' ? Number(entry.qty) : Number(entry.qty) * oldBagKg;
+          let newQtyKg = unitType === 'Ton' ? qty * 1000 : unitType === 'Kg' ? qty : qty * newBagKg;
+
+          if (oldProd && newProd && String(oldProd.id) === String(newProd.id)) {
+            // Adjust only the quantity difference. Rate/amount-only corrections
+            // therefore remain editable even after some stock has been sold.
+            let adjustedStock = (Number(oldProd.stock) || 0) + ((newQtyKg - oldQtyKg) / oldBagKg);
+            if (adjustedStock < -0.0001) return alert(currentLang==='BN'?'এই পরিমাণ কমালে বর্তমান stock ঋণাত্মক হবে। ব্যবহৃত stock-এর চেয়ে কম quantity রাখা যাবে না।':'This reduction would make current stock negative. Quantity cannot be reduced below the stock already used.');
+            oldProd.stock = Math.max(0, adjustedStock);
+          } else {
+            // Moving a purchase to another product is safe only while its old
+            // quantity is still available; otherwise sold stock loses its source.
+            if (oldProd) {
+              let oldStockAfterMove = (Number(oldProd.stock) || 0) - (oldQtyKg / oldBagKg);
+              if (oldStockAfterMove < -0.0001) return alert(currentLang==='BN'?'ব্যবহৃত stock-সহ Purchase অন্য Product-এ নেওয়া যাবে না। শুধু rate/amount অথবা অনুমোদিত quantity পরিবর্তন করুন।':'A purchase with used stock cannot be moved to another product. Change only its rate/amount or an allowed quantity.');
+              oldProd.stock = Math.max(0, oldStockAfterMove);
+            }
+            if (newProd) newProd.stock = (Number(newProd.stock) || 0) + (newQtyKg / newBagKg);
           }
           Object.assign(entry, { supplierId, supplierName, prodId: parseInt(prodId), prodName, unitType, qty, unitPrice, total, paid, due, method, bankId: purchaseDetails.bankId, bankName: purchaseDetails.bankName, mobileProvider:purchaseDetails.mobileProvider, mobileNumber:purchaseDetails.mobileNumber, mobileAccountId:purchaseDetails.mobileAccountId, mobileAccountName:purchaseDetails.mobileAccountName, note, date });
         }
@@ -9813,9 +9835,10 @@
         });
       }
 
-      // Update product stock
+      // New purchases add their full quantity. Edited purchases were adjusted
+      // above by their stock delta to avoid double-counting.
       let prod = products.find(p => p.id == parseInt(prodId));
-      if (prod) {
+      if (!editId && prod) {
         let qtyKg = unitType === 'Ton' ? qty * 1000 : unitType === 'Kg' ? qty : qty * (prod.bagKg || 50);
         prod.stock = (prod.stock || 0) + qtyKg / (prod.bagKg || 50);
       }
