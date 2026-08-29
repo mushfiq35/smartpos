@@ -1524,6 +1524,16 @@ document.getElementById('logoFileInput').addEventListener('change', async (e) =>
   reader.readAsDataURL(file);
 });
 
+function refreshCurrentView(){
+  renderNav();
+  renderPage();
+  // Re-render once after the current click/save stack completes. This makes every
+  // successful create/edit visible immediately even on pages with local list closures.
+  requestAnimationFrame(()=>{
+    renderNav();
+    renderPage();
+  });
+}
 function renderPage(){
   setTitle(currentTab);
   const c = document.getElementById('content');
@@ -2112,7 +2122,7 @@ function openGroupMemberForm(id){
     await safePut('groupMembers', key, record);
     document.getElementById('gmFormOverlay').remove();
     showToast(t('saved_toast'));
-    renderGroupMembersPage();
+    if(currentTab==='group_members') renderGroupMembersPage(); else refreshCurrentView();
   };
 }
 
@@ -2439,7 +2449,7 @@ function openGroupHajjiManager(groupId){
     await safePut('groups', groupId, grp);
     document.getElementById('grpHajjiOverlay').remove();
     showToast(t('saved_toast'));
-    renderGroupsPage();
+    if(currentTab==='groups') renderGroupsPage(); else refreshCurrentView();
   };
 }
 
@@ -2558,7 +2568,6 @@ function renderSettingsPage(){
 }
 function renderGroupsPage(){
   const c = document.getElementById('content');
-  const groups = Object.entries(db.groups).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
 
   c.innerHTML = '<div class="toolbar">'
     +'<input type="text" id="grpSearch" placeholder="'+t('search_placeholder')+'">'
@@ -2566,9 +2575,11 @@ function renderGroupsPage(){
     +'</div><div id="grpBody"></div>';
 
   function renderGrpList(){
+    // Always rebuild from the live db object so newly-created/edited lots appear immediately.
+    const groups = Object.entries(db.groups).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
     const q2 = document.getElementById('grpSearch').value.trim().toLowerCase();
     const filtered = groups.filter(([,g])=>
-      !q2 || g.name.toLowerCase().includes(q2)
+      !q2 || (g.name||'').toLowerCase().includes(q2)
       || (g.memberName&&g.memberName.toLowerCase().includes(q2))
       || String(g.memberNo||'').includes(q2)
       || (g.year&&String(g.year).includes(q2))
@@ -2577,13 +2588,26 @@ function renderGroupsPage(){
     if(filtered.length===0){
       body.innerHTML = '<div class="empty"><div class="big">🏘️</div>'+t('grp_no_groups')+'</div>'; return;
     }
+
     const rows = filtered.map(function([gid,g]){
       const sales = db.sales.filter(s=>s.groupId===gid);
       const assignedHajjiIds = normalizeHajjiIds(g.hajjiIds);
       const salesHajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
       const hajjiIds = [...new Set([...assignedHajjiIds, ...salesHajjiIds])];
-      const total = sales.reduce((s,x)=>s+Number(x.total),0);
-      return '<tr style="cursor:pointer;" data-grptoggle="'+gid+'">'
+      const total = sales.reduce((sum,x)=>sum+Number(x.total),0);
+
+      const hr = hajjiIds.map((hid,i)=>{
+        const cust=db.customers[hid]; if(!cust) return '';
+        return '<tr style="background:'+(i%2===0?'#fff':'#f5faf7')+';">'
+          +'<td style="padding:7px 10px;">'+(cust.displayId?'#'+cust.displayId:'—')+'</td>'
+          +'<td style="padding:7px 10px;font-weight:600;">'+escapeHtml(cust.name||'—')+'</td>'
+          +'<td style="padding:7px 10px;">'+escapeHtml(cust.phone||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(cust.passport||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(cust.tracking||'—')+'</td>'
+          +'</tr>';
+      }).join('');
+
+      const mainRow = '<tr style="cursor:pointer;" data-grptoggle="'+gid+'">'
         +'<td><strong>'+escapeHtml(g.name)+'</strong></td>'
         +'<td>'+(g.memberNo?'#'+g.memberNo+' ':'')+escapeHtml(g.memberName||'—')+'</td>'
         +'<td>'+(g.year||'—')+'</td>'
@@ -2595,37 +2619,26 @@ function renderGroupsPage(){
         +'<button class="icon-btn" data-grpedit="'+gid+'">✏️</button>'
         +'<button class="icon-btn" data-grpdel="'+gid+'">🗑️</button>'
         +'</td></tr>';
+
+      // IMPORTANT: this detail <tr> is returned immediately after its own main row.
+      const detailRow = '<tr id="grpexp-'+gid+'" style="display:none;">'
+        +'<td colspan="6" style="padding:0 0 8px;border-bottom:none;background:transparent;">'
+        +'<div class="panel" style="margin:0;border-top:3px solid var(--hajj-green);border-radius:0 0 10px 10px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" class="no-print">'
+        +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — Hajji List</strong>'
+        +'<button class="btn ghost no-print" data-grpprint="'+gid+'" style="font-size:12px;">🖨 Print</button>'
+        +'</div>'
+        +(hr?'<div style="overflow-x:auto;"><table class="grp-hajji-table"><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Passport</th><th>Tracking No.</th></tr></thead><tbody>'+hr+'</tbody></table></div>':'<div style="color:var(--ink-soft);font-size:13px;">No hajjis yet</div>')
+        +'</div></td></tr>';
+
+      return mainRow + detailRow;
     }).join('');
+
     body.innerHTML = '<div style="overflow-x:auto;"><table class="data"><thead><tr>'
       +'<th>'+t('grp_col_name')+'</th><th>'+t('grp_col_moallem')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th class="no-print"></th>'
       +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 
-    filtered.forEach(function([gid,g]){
-      const s2=db.sales.filter(s=>s.groupId===gid);
-      const assignedH2 = normalizeHajjiIds(g.hajjiIds);
-      const salesH2 = s2.map(s=>s.customerId).filter(Boolean);
-      const h2=[...new Set([...assignedH2, ...salesH2])];
-      const hr=h2.map((hid,i)=>{
-        const c=db.customers[hid]; if(!c) return '';
-        return '<tr style="background:'+(i%2===0?'#fff':'#f5faf7')+';">'
-          +'<td style="padding:7px 10px;">'+(c.displayId?'#'+c.displayId:'—')+'</td>'
-          +'<td style="padding:7px 10px;font-weight:600;">'+escapeHtml(c.name||'—')+'</td>'
-          +'<td style="padding:7px 10px;">'+escapeHtml(c.phone||'—')+'</td>'
-          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(c.passport||'—')+'</td>'
-          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(c.tracking||'—')+'</td>'
-          +'</tr>';
-      }).join('');
-      const panel=document.createElement('div');
-      panel.id='grpexp-'+gid; panel.style.display='none'; panel.className='panel';
-      panel.style.cssText+=';margin:0 0 8px;border-top:3px solid var(--hajj-green);';
-      panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" class="no-print">'
-        +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — Hajji List</strong>'
-        +'<button class="btn ghost no-print" data-grpprint="'+gid+'" style="font-size:12px;">🖨 Print</button>'
-        +'</div>'+(hr?'<div style="overflow-x:auto;"><table class="grp-hajji-table"><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Passport</th><th>Tracking No.</th></tr></thead><tbody>'+hr+'</tbody></table></div>':'<div style="color:var(--ink-soft);font-size:13px;">No hajjis yet</div>');
-      body.appendChild(panel);
-    });
-
-    body.addEventListener('click', function(e){
+    body.onclick = function(e){
       const hb=e.target.closest('[data-grphajji]');
       const vb=e.target.closest('[data-grpview]');
       const eb=e.target.closest('[data-grpedit]');
@@ -2639,10 +2652,15 @@ function renderGroupsPage(){
       const tb=e.target.closest('[data-grptoggle]');
       if(tb && !e.target.closest('.actions-cell')){
         const expRow=document.getElementById('grpexp-'+tb.dataset.grptoggle);
-        if(expRow){const isOpen=expRow.style.display!=='none';expRow.style.display=isOpen?'none':'';tb.style.background=isOpen?'':'rgba(27,107,58,0.08)';}
+        if(expRow){
+          const isOpen=expRow.style.display!=='none';
+          expRow.style.display=isOpen?'none':'table-row';
+          tb.style.background=isOpen?'':'rgba(27,107,58,0.08)';
+        }
       }
-    }, true);
+    };
   }
+
   renderGrpList();
   document.getElementById('grpSearch').addEventListener('input', renderGrpList);
   document.getElementById('grpAddBtn').addEventListener('click', ()=>openGroupForm(null));
@@ -4586,8 +4604,7 @@ document.getElementById('formSaveBtn').addEventListener('click', async () => {
   await handleSave(tab, id, values);
   document.getElementById('formOverlay').classList.remove('open');
   formCtx = null;
-  renderNav();
-  renderPage();
+  refreshCurrentView();
 });
 
 async function handleSave(tab, id, values){
