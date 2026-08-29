@@ -112,6 +112,7 @@
     .stat-card.stat-danger::before { background: var(--red); }
     .stat-card h4 { font-size: 12px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; }
     .stat-card .value { font-size: 24px; font-weight: 800; color: var(--ink); }
+    .stat-card .stock-unit-breakdown { margin-top: 5px; color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1.35; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
     .card { background: var(--card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; box-shadow: var(--shadow); }
@@ -702,11 +703,12 @@
       <li class="admin-only"><button onclick="openTab('suppliers-tab', this)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke-linecap="round"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label">Suppliers</span></button></li>
       <li><button onclick="openTab('returns-tab', this)"><svg viewBox="0 0 24 24"><path d="M3 7v6h6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13a9 9 0 1 0 3-6.7L3 9" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuReturns">রিটার্ন</span></button></li>
       <li><button onclick="openTab('accounts-tab', this)"><svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuAccounts">অ্যাকাউন্টস</span></button></li>
+      <li class="admin-only"><button onclick="openTab('credit-tab', this)"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M7 15h3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label">Loan & Credit Cards</span></button></li>
       <li><button onclick="openTab('ledger-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuLedger">বকেয়া খাতা</span></button></li>
       <li class="admin-only"><button onclick="openTab('reports-tab', this)"><svg viewBox="0 0 24 24"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 15l4-5 3 3 5-7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="15" r="1.2"/><circle cx="11" cy="10" r="1.2"/><circle cx="14" cy="13" r="1.2"/><circle cx="19" cy="6" r="1.2"/></svg><span class="menu-label" data-key="menuReports">রিপোর্টস</span></button></li>
+      <li class="admin-only"><button onclick="openTab('settings-tab', this)"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuSettings">সেটিং</span></button></li>
       <li><button onclick="openTab('unit-config-tab', this)"><svg viewBox="0 0 24 24"><path d="M4 21V14M4 10V3M12 21v-8M12 9V3M20 21v-5M20 12V3M1 14h6M9 9h6M17 12h6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuUnitConfig">ইউনিট কনফিগারেশন</span></button></li>
       <li class="admin-only"><button onclick="openTab('users-tab', this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21c0-3.5 3.5-6 8-6s8 2.5 8 6" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 3.5a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuUsers">ব্যবহারকারী ব্যবস্থাপনা</span></button></li>
-      <li><button onclick="openTab('settings-tab', this)"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu-label" data-key="menuSettings">সেটিং</span></button></li>
     </ul>
   </div>
 
@@ -764,8 +766,9 @@
             <div class="value" id="dashTotalDue" style="color: #dc2626;"><span class="currency-symbol">৳</span>0.00</div>
           </div>
           <div class="stat-card">
-            <h4 data-key="lblTotalStock">মোট স্টক (বস্তা)</h4>
+            <h4 data-key="lblTotalStock">মোট স্টক</h4>
             <div class="value" id="dashTotalStock">0</div>
+            <div class="stock-unit-breakdown" id="dashTotalStockUnits">0 Bag · 0 KG · 0 Ton</div>
           </div>
           <div class="stat-card">
             <h4 data-key="lblTotalReturns">মোট রিটার্ন</h4>
@@ -1335,6 +1338,28 @@
         </div>
       </div>
 
+      <!-- LOANS & CREDIT CARDS TAB -->
+      <div id="credit-tab" class="tab-content">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div><h3 style="margin-bottom:4px;">💳 Loans & Credit Cards</h3><p style="font-size:12px;color:var(--muted);">Card statement, due date, interest/fee, loan principal and payment tracking.</p></div>
+            <button type="button" class="btn-success" style="width:auto;" onclick="openCreditFacilityModal()">+ Add Card / Loan</button>
+          </div>
+        </div>
+        <div class="summary-banner" style="margin-bottom:18px;">
+          <div class="summary-tile"><h5>Total Outstanding</h5><div class="tile-val" id="creditTotalOutstanding">৳0.00</div></div>
+          <div class="summary-tile"><h5>Due within 30 Days</h5><div class="tile-val" id="creditDueSoon">৳0.00</div></div>
+          <div class="summary-tile"><h5>Overdue</h5><div class="tile-val" id="creditOverdue">৳0.00</div></div>
+          <div class="summary-tile"><h5>Interest & Fees Paid</h5><div class="tile-val" id="creditInterestPaid">৳0.00</div></div>
+        </div>
+        <div class="card"><h3>Liability Accounts</h3><div id="creditFacilityCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;"></div></div>
+        <div class="card" id="creditLedgerPrintArea">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><h3>📒 Loan & Card Ledger</h3><button class="btn-warning no-print" style="width:auto;" onclick="printDiv('creditLedgerPrintArea')">🖨️ Print Statement</button></div>
+          <div class="filter-grid no-print"><div><label>Account:</label><select id="creditLedgerFilter" onchange="renderCreditModule()"><option value="All">All Accounts</option></select></div><div><label>From:</label><input type="date" id="creditLedgerFrom" onchange="renderCreditModule()"></div><div><label>To:</label><input type="date" id="creditLedgerTo" onchange="renderCreditModule()"></div></div>
+          <div class="table-responsive"><table><thead><tr><th>Date</th><th>Account</th><th>Activity</th><th>Details</th><th style="text-align:right;">Liability (+)</th><th style="text-align:right;">Payment (-)</th><th style="text-align:right;">Balance</th><th class="no-print" style="text-align:center;">Action</th></tr></thead><tbody id="creditLedgerBody"></tbody></table></div>
+        </div>
+      </div>
+
       <!-- PAYABLE / RECEIVABLE TAB -->
       <div id="payable-receivable-tab" class="tab-content">
 
@@ -1611,6 +1636,7 @@
             <button type="button" class="lang-btn" data-report-tab="payment-ledger" onclick="openReportSubTab('payment-ledger')" data-key="reportTabPaymentLedger">Payment Ledger</button>
             <button type="button" class="lang-btn" data-report-tab="master-ledger" onclick="openReportSubTab('master-ledger')" data-key="reportTabMasterLedger">📒 Final Ledger</button>
             <button type="button" class="lang-btn" data-report-tab="bank-ledger" onclick="openReportSubTab('bank-ledger')">🏦 Bank Ledger</button>
+            <button type="button" class="lang-btn" data-report-tab="cash-ledger" onclick="openReportSubTab('cash-ledger')">💵 Cash Ledger</button>
           </div>
           </div><!-- /scroll-wrapper -->
 
@@ -1999,6 +2025,9 @@
               <div class="ml-kpi-card green"><h6 data-key="mlCashBankLabel">Bank Balance</h6><div class="kv" id="mlCashBank">৳0.00</div><div class="ks" data-key="mlRecordedBanksNote">Recorded bank accounts</div></div>
               <div class="ml-kpi-card"><h6 data-key="mlProductsLabel">Products</h6><div class="kv" id="mlProductCount">0</div><div class="ks" id="mlLowStockCount">0</div></div>
               <div class="ml-kpi-card"><h6 data-key="mlPeriodCashLabel">Period Cash Collection</h6><div class="kv" id="mlPeriodCollection">৳0.00</div><div class="ks" data-key="mlNotRevenueNote">Not counted again as revenue</div></div>
+              <div class="ml-kpi-card blue"><h6>Other Assets</h6><div class="kv" id="mlOtherAssets">৳0.00</div><div class="ks">Opening balance asset</div></div>
+              <div class="ml-kpi-card red"><h6>Loan & Other Liabilities</h6><div class="kv" id="mlOtherLiabilities">৳0.00</div><div class="ks">Excluding supplier payable</div></div>
+              <div class="ml-kpi-card purple"><h6>Current Net Assets</h6><div class="kv" id="mlNetAssets">৳0.00</div><div class="ks">Assets minus liabilities</div></div>
             </div>
 
             <!-- Transaction Table / Monthly View -->
@@ -2124,6 +2153,32 @@
           </div>
         </div><!-- /report-bank-ledger -->
 
+        <!-- CASH LEDGER SUB-TAB -->
+        <div id="report-cash-ledger" class="report-subtab" style="display:none;">
+          <div class="card no-print" style="margin-bottom:14px;">
+            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+              <div><label>From Date:</label><input type="date" id="clFromDate" onchange="renderCashLedger()" style="margin-bottom:0;"></div>
+              <div><label>To Date:</label><input type="date" id="clToDate" onchange="renderCashLedger()" style="margin-bottom:0;"></div>
+              <div><label>Type:</label><select id="clTypeFilter" onchange="renderCashLedger()" style="margin-bottom:0;"><option value="">All</option><option value="in">Cash In</option><option value="out">Cash Out</option></select></div>
+              <button onclick="printDiv('clPrintArea')" class="btn-warning" style="height:38px;width:auto;padding:0 14px;">🖨️ Print Statement</button>
+            </div>
+          </div>
+          <div id="clPrintArea">
+            <div id="clShopHeader"></div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:14px;padding:0 0 12px;margin-bottom:14px;border-bottom:2px solid #111a27;">
+              <div><h2 style="margin:0;color:#111a27;font-size:19px;">CASH LEDGER STATEMENT</h2><p id="clPeriodLabel" style="margin:4px 0 0;color:#64748b;font-size:12px;">All transactions</p></div>
+              <div style="text-align:right;"><span style="font-size:11px;color:#64748b;">CURRENT CASH BALANCE</span><div id="clCurrentBalance" style="font-size:22px;font-weight:900;color:#111a27;">৳0.00</div></div>
+            </div>
+            <div class="no-print" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px;">
+              <div class="stat-card" style="padding:12px;"><p class="label">Period Opening</p><p class="value" id="clOpening" style="font-size:16px;">৳0.00</p></div>
+              <div class="stat-card" style="padding:12px;"><p class="label">Total Cash In</p><p class="value" id="clTotalIn" style="font-size:16px;color:var(--green);">৳0.00</p></div>
+              <div class="stat-card" style="padding:12px;"><p class="label">Total Cash Out</p><p class="value" id="clTotalOut" style="font-size:16px;color:var(--red);">৳0.00</p></div>
+              <div class="stat-card" style="padding:12px;"><p class="label">Closing Balance</p><p class="value" id="clClosing" style="font-size:16px;">৳0.00</p></div>
+            </div>
+            <div class="table-responsive"><table id="clTable"><thead><tr><th>Date</th><th>Type</th><th>Details</th><th>Reference</th><th style="text-align:right;">Cash In (৳)</th><th style="text-align:right;">Cash Out (৳)</th><th style="text-align:right;">Balance (৳)</th></tr></thead><tbody id="clTableBody"></tbody><tfoot><tr style="font-weight:800;background:#f4f1ea;"><td colspan="4" style="text-align:right;">Total:</td><td id="clFootIn" style="text-align:right;">৳0.00</td><td id="clFootOut" style="text-align:right;">৳0.00</td><td id="clFootBalance" style="text-align:right;">৳0.00</td></tr></tfoot></table></div>
+          </div>
+        </div><!-- /report-cash-ledger -->
+
       </div><!-- /reports-tab -->
 
       <!-- USER MANAGEMENT TAB (Super User only) -->
@@ -2201,8 +2256,9 @@
               <button onclick="saveShopSettings()" class="btn-success" data-key="btnSaveShop">তথ্য সেভ করুন</button>
             </div>
 
-            <div class="card" style="margin-bottom:0;">
+            <div class="card" id="dataProtectionToolsCard" style="margin-bottom:0;display:none;">
               <h3 data-key="titleBackup">💾 ডাটা ব্যাকআপ ও রিস্টোর</h3>
+              <div style="padding:8px 10px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:12px;font-size:11.5px;color:#166534;">🔐 Owner-authorized data tools</div>
               <p style="font-size:13px;color:#475569;margin-bottom:12px;" data-key="backupDownloadNote">ব্যাকআপ ডাউনলোড করে রাখুন।</p>
               <button onclick="exportSystemData()" class="btn-warning" style="margin-bottom:12px;" data-key="btnExport">📥 Export Backup</button>
               <label data-key="lblRestore">ব্যাকআপ ফাইল রিস্টোর:</label>
@@ -2216,6 +2272,41 @@
               </div>
             </div>
 
+            <div class="card" id="dataProtectionAdminCard" style="margin-bottom:0;display:none;">
+              <h3>🔐 Data Protection Access</h3>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Only the fixed Owner can authorize additional Super Users to use Backup, Restore and Clear All Data.</p>
+              <label>Fixed Owner Email:</label>
+              <input type="text" value="mushfiq35@gmail.com" readonly style="background:#f1f5f9;font-weight:700;">
+              <label>Authorized Super User Emails:</label>
+              <textarea id="dataProtectionAllowedEmails" rows="5" placeholder="One email per line"></textarea>
+              <small style="display:block;color:var(--muted);margin:-6px 0 12px;">One email per line. The account must also have Super User role.</small>
+              <button type="button" class="btn-success" onclick="saveDataProtectionAccess()">💾 Save Access List</button>
+            </div>
+
+          </div>
+
+          <!-- ERP Opening Balance Setup -->
+          <div class="card" id="openingBalanceSetupCard" style="margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+              <div><h3 data-key="openingTitle">📘 ERP Opening Balance Setup</h3><p style="font-size:12px;color:var(--muted);margin-top:4px;" data-key="openingHelp">অ্যাপ ব্যবহারের আগের নগদ, কাস্টমার পাওনা, সাপ্লায়ার দেনা ও স্টক কস্ট এখানে সেট করুন। এগুলো লাভ/ক্ষতি নয়—Opening Balance হিসেবে গণনা হবে।</p></div>
+              <span id="openingStatusBadge" class="badge badge-pending">Not configured</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:14px;">
+              <div><label data-key="openingStartDate">System Start Date:</label><input type="date" id="openingDate"></div>
+              <div><label data-key="openingCashLabel">Cash in Hand (৳):</label><input type="number" id="openingCash" min="0" step="0.01" placeholder="0.00"></div>
+              <div><label data-key="openingOtherAssetsLabel">Other Assets (৳):</label><input type="number" id="openingOtherAssets" min="0" step="0.01" placeholder="0.00"></div>
+              <div><label data-key="openingLoanLabel">Loan Payable (৳):</label><input type="number" id="openingLoan" min="0" step="0.01" placeholder="0.00"></div>
+              <div><label data-key="openingOtherLiabilityLabel">Other Liabilities (৳):</label><input type="number" id="openingOtherLiabilities" min="0" step="0.01" placeholder="0.00"></div>
+            </div>
+            <label>Opening Note:</label><input type="text" id="openingNote" placeholder="যেমন: পুরোনো খাতা থেকে নেওয়া opening balance">
+            <div class="ml-section-title"><span data-key="openingCustomerTitle">Customer Opening Receivable</span><button type="button" onclick="showQuickAddCustomer()" class="btn-success" style="width:auto;padding:5px 10px;font-size:11px;margin-left:auto;">+ Add Customer</button></div>
+            <div class="table-responsive"><table style="font-size:12px;"><thead><tr><th>Customer</th><th>Phone</th><th style="text-align:right;">আগের পাওনা (৳)</th><th style="text-align:center;">Action</th></tr></thead><tbody id="openingCustomerBody"></tbody></table></div>
+            <div class="ml-section-title"><span data-key="openingSupplierTitle">Supplier Opening Payable</span><button type="button" onclick="openAddSupplierModal()" class="btn-success" style="width:auto;padding:5px 10px;font-size:11px;margin-left:auto;">+ Add Supplier</button></div>
+            <div class="table-responsive"><table style="font-size:12px;"><thead><tr><th>Supplier</th><th>Phone</th><th style="text-align:right;">আগের দেনা (৳)</th><th style="text-align:center;">Action</th></tr></thead><tbody id="openingSupplierBody"></tbody></table></div>
+            <div class="ml-section-title"><span data-key="openingInventoryTitle">Opening Inventory</span><button type="button" onclick="showQuickAddProduct()" class="btn-success" style="width:auto;padding:5px 10px;font-size:11px;margin-left:auto;">+ Add Product</button></div>
+            <div class="table-responsive"><table style="font-size:12px;"><thead><tr><th>Product</th><th>Bag Size</th><th>Unit</th><th style="text-align:right;">Opening Quantity</th><th style="text-align:right;">Cost / Selected Unit (৳)</th><th style="text-align:right;">Stock Value (৳)</th><th style="text-align:center;">Action</th></tr></thead><tbody id="openingProductBody"></tbody></table></div>
+            <div id="openingBalanceSummary" style="margin:14px 0;padding:12px;border-top:2px solid var(--navy);border-bottom:1px solid var(--border);font-size:12px;"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;"><button onclick="saveOpeningBalances()" class="btn-success" style="max-width:260px;">💾 Save Opening Balances</button><button onclick="openOpeningLiabilityPayment('loan')" class="btn-warning" style="width:auto;">Pay Opening Loan</button><button onclick="openOpeningLiabilityPayment('other')" class="btn-warning" style="width:auto;">Pay Other Liability</button></div>
           </div>
 
           <!-- Row 2: Bank Accounts + Head Management -->
@@ -2224,13 +2315,16 @@
             <div class="card" style="margin-bottom:0;">
               <h3><span data-key="bankMgmtTitle">🏦 ব্যাংক অ্যাকাউন্ট ম্যানেজমেন্ট</span></h3>
               <p style="font-size:12px;color:var(--muted);margin-bottom:12px;" data-key="bankMgmtNote">প্রতিটি অ্যাকাউন্টের নিজস্ব লেজার ট্র্যাক হবে।</p>
+              <input type="hidden" id="editBankAccountId">
+              <label data-key="bankInstitutionLabel">ব্যাংকের নাম:</label>
+              <input type="text" id="newBankInstitution" placeholder="যেমন: Dutch-Bangla Bank">
               <label data-key="bankNameLabel">অ্যাকাউন্টের নাম:</label>
-              <input type="text" id="newBankName" placeholder="যেমন: Dutch-Bangla Bank">
+              <input type="text" id="newBankName" placeholder="যেমন: M/S KB Enterprise">
               <label data-key="bankNumLabel">অ্যাকাউন্ট নম্বর:</label>
               <input type="text" id="newBankNumber" placeholder="যেমন: 1234-XXXXX">
               <label data-key="bankOpeningLabel">Opening Balance (৳):</label>
               <input type="number" id="newBankOpening" placeholder="0.00" min="0" step="0.01">
-              <button onclick="addBankAccount()" class="btn-success" data-key="bankAddBtn">+ অ্যাকাউন্ট যোগ করুন</button>
+              <div style="display:flex;gap:8px;"><button id="bankSaveBtn" onclick="addBankAccount()" class="btn-success" data-key="bankAddBtn">+ অ্যাকাউন্ট যোগ করুন</button><button id="bankCancelEditBtn" onclick="resetBankAccountForm()" class="btn-danger" style="display:none;">Cancel</button></div>
               <div id="bankAccountsList" style="margin-top:12px;"></div>
             </div>
 
@@ -3169,7 +3263,7 @@
         menuSettings: "সেটিং",
         lblTotalSales: "আজকের মোট বিক্রি",
         lblTotalDue: "মোট বাকির পরিমাণ",
-        lblTotalStock: "মোট স্টক (বস্তা)",
+        lblTotalStock: "মোট স্টক",
         lblRecentSales: "সাম্প্রতিক বিক্রয়সমূহ",
         thInvoice: "ইনভয়েস",
         thCustomer: "গ্রাহক",
@@ -3373,7 +3467,7 @@
         prTotalReceivableSum: "মোট Receivable",
         bankMgmtTitle: "ব্যাংক অ্যাকাউন্ট ম্যানেজমেন্ট",
         bankMgmtNote: "Payable/Receivable-এ ব্যাংক ট্রান্সফার বেছে নিলে এই অ্যাকাউন্টগুলো দেখাবে।",
-        bankNameLabel: "অ্যাকাউন্টের নাম:",
+        bankInstitutionLabel: "ব্যাংকের নাম:", bankNameLabel: "অ্যাকাউন্টের নাম:",
         bankNamePlaceholder: "যেমন: Dutch-Bangla Bank, Islami Bank",
         bankNumLabel: "অ্যাকাউন্ট নম্বর:",
         bankNumPlaceholder: "যেমন: 1234-XXXXX-XXXXX",
@@ -3460,13 +3554,18 @@
         mlSupplierDueLabel: "সরবরাহকারীকে প্রদেয়",
         mlInventoryValueLabel: "স্টকের ক্রয়মূল্য",
         mlAvgCostLabel: "গড় ক্রয়মূল্য/কেজি",
-        mlCashBankLabel: "ব্যাংক ব্যালেন্স",
-        mlRecordedBanksNote: "রেকর্ডকৃত ব্যাংক অ্যাকাউন্ট",
+        mlCashBankLabel: "ক্যাশ, ব্যাংক ও মোবাইল ব্যালেন্স",
+        mlRecordedBanksNote: "বর্তমান মোট অর্থ ব্যালেন্স",
         mobileMgmtTitle: "মোবাইল ব্যাংকিং অ্যাকাউন্ট",
         mobileMgmtNote: "প্রতিটি অ্যাকাউন্টের IN, OUT ও বর্তমান ব্যালেন্স আলাদাভাবে থাকবে।",
         mobileServiceLabel: "সার্ভিস:", mobileAccountNameLabel: "অ্যাকাউন্টের নাম:",
         mobileAccountNumberLabel: "অ্যাকাউন্ট নম্বর:", mobileAccountTypeLabel: "অ্যাকাউন্ট টাইপ:",
         mobileAddBtn: "+ মোবাইল অ্যাকাউন্ট যোগ করুন",
+        openingTitle: "📘 ERP Opening Balance Setup",
+        openingHelp: "অ্যাপ ব্যবহারের আগের নগদ, কাস্টমার পাওনা, সাপ্লায়ার দেনা ও স্টক কস্ট এখানে সেট করুন। এগুলো লাভ/ক্ষতি নয়—Opening Balance হিসেবে গণনা হবে।",
+        openingStartDate: "সিস্টেম শুরুর তারিখ:", openingCashLabel: "হাতে নগদ (৳):", openingOtherAssetsLabel: "অন্যান্য সম্পদ (৳):",
+        openingLoanLabel: "ঋণ পরিশোধযোগ্য (৳):", openingOtherLiabilityLabel: "অন্যান্য দায় (৳):",
+        openingCustomerTitle: "কাস্টমারের প্রারম্ভিক পাওনা", openingSupplierTitle: "সাপ্লায়ারের প্রারম্ভিক দেনা", openingInventoryTitle: "প্রারম্ভিক স্টক",
         mlProductsLabel: "মোট পণ্য",
         mlPeriodCashLabel: "সময়ের মোট আদায়",
         mlNotRevenueNote: "Revenue হিসেবে পুনরায় যোগ হয়নি",
@@ -3738,7 +3837,7 @@
         menuSettings: "Settings",
         lblTotalSales: "Today's Total Sales",
         lblTotalDue: "Total Due Amount",
-        lblTotalStock: "Total Stock (Bags)",
+        lblTotalStock: "Total Stock",
         lblRecentSales: "Recent Sales History",
         thInvoice: "Invoice",
         thCustomer: "Customer",
@@ -3943,7 +4042,7 @@
         bankMgmtTitle: "Bank Account Management",
         bankMgmtNote: "Each account tracks its own balance automatically.",
         bankOpeningLabel: "Opening Balance (৳):",
-        bankNameLabel: "Account Name:",
+        bankInstitutionLabel: "Bank Name:", bankNameLabel: "Account Name:",
         bankNamePlaceholder: "e.g. Dutch-Bangla Bank, Islami Bank",
         bankNumLabel: "Account Number:",
         bankNumPlaceholder: "e.g. 1234-XXXXX-XXXXX",
@@ -4030,13 +4129,18 @@
         mlSupplierDueLabel: "Supplier Payable",
         mlInventoryValueLabel: "Inventory Value at Cost",
         mlAvgCostLabel: "Average Cost / KG",
-        mlCashBankLabel: "Bank Balance",
-        mlRecordedBanksNote: "Recorded bank accounts",
+        mlCashBankLabel: "Cash, Bank & Mobile Balance",
+        mlRecordedBanksNote: "Current total fund balance",
         mobileMgmtTitle: "Mobile Banking Accounts",
         mobileMgmtNote: "IN, OUT and current balance are tracked separately for every account.",
         mobileServiceLabel: "Service:", mobileAccountNameLabel: "Account Name:",
         mobileAccountNumberLabel: "Account Number:", mobileAccountTypeLabel: "Account Type:",
         mobileAddBtn: "+ Add Mobile Account",
+        openingTitle: "📘 ERP Opening Balance Setup",
+        openingHelp: "Set cash, customer receivables, supplier payables and stock cost from before the app start date. These are opening balances, not profit or loss.",
+        openingStartDate: "System Start Date:", openingCashLabel: "Cash in Hand (৳):", openingOtherAssetsLabel: "Other Assets (৳):",
+        openingLoanLabel: "Loan Payable (৳):", openingOtherLiabilityLabel: "Other Liabilities (৳):",
+        openingCustomerTitle: "Customer Opening Receivable", openingSupplierTitle: "Supplier Opening Payable", openingInventoryTitle: "Opening Inventory",
         mlProductsLabel: "Products",
         mlPeriodCashLabel: "Period Cash Collection",
         mlNotRevenueNote: "Not counted again as revenue",
@@ -4103,6 +4207,41 @@
     let salesHistory = JSON.parse(localStorage.getItem('pos_sales')) || [];
     let suppliers = JSON.parse(localStorage.getItem('pos_suppliers')) || [];
     let purchases = JSON.parse(localStorage.getItem('pos_purchases')) || [];
+    let openingConfig = JSON.parse(localStorage.getItem('pos_opening_config')) || {
+      date:'', cash:0, otherAssets:0, loanPayable:0, otherLiabilities:0, note:'', saved:false
+    };
+    let creditFacilities = JSON.parse(localStorage.getItem('pos_credit_facilities')) || [];
+    let creditTransactions = JSON.parse(localStorage.getItem('pos_credit_transactions')) || [];
+    const DATA_PROTECTION_OWNER_EMAIL = 'mushfiq35@gmail.com';
+    const DATA_PROTECTION_COLLECTION = 'pos_security';
+    const DATA_PROTECTION_DOC_ID = 'data_tools_access';
+    let dataProtectionConfig = JSON.parse(localStorage.getItem('pos_data_protection_access')) || {allowedEmails:[]};
+    dataProtectionConfig.allowedEmails = Array.isArray(dataProtectionConfig.allowedEmails) ? dataProtectionConfig.allowedEmails.map(x=>String(x).trim().toLowerCase()).filter(Boolean) : [];
+
+    function currentLoginEmail(){return String(window.currentAuthUser?.email||'').trim().toLowerCase();}
+    function isDataProtectionOwner(){return currentLoginEmail()===DATA_PROTECTION_OWNER_EMAIL;}
+    function canManageDataTools(){return currentUserRole==='admin'&&(isDataProtectionOwner()||dataProtectionConfig.allowedEmails.includes(currentLoginEmail()));}
+    function renderDataProtectionAccess(){
+      let tools=document.getElementById('dataProtectionToolsCard'),admin=document.getElementById('dataProtectionAdminCard'),allowed=document.getElementById('dataProtectionAllowedEmails');
+      if(tools)tools.style.display=canManageDataTools()?'block':'none';
+      if(admin)admin.style.display=currentUserRole==='admin'&&isDataProtectionOwner()?'block':'none';
+      if(allowed&&document.activeElement!==allowed)allowed.value=dataProtectionConfig.allowedEmails.join('\n');
+    }
+    async function loadDataProtectionAccess(){
+      try{
+        if(window.firestoreDB){let ref=window.firestoreDoc(window.firestoreDB,DATA_PROTECTION_COLLECTION,DATA_PROTECTION_DOC_ID),snap=await window.firestoreGetDoc(ref);if(snap.exists()){let d=snap.data();dataProtectionConfig.allowedEmails=Array.isArray(d.allowedEmails)?d.allowedEmails.map(x=>String(x).trim().toLowerCase()).filter(x=>x&&x!==DATA_PROTECTION_OWNER_EMAIL):[];}}
+      }catch(err){console.error('Data protection access load failed; using local cache.',err);}
+      localStorage.setItem('pos_data_protection_access',JSON.stringify(dataProtectionConfig));renderDataProtectionAccess();
+    }
+    async function saveDataProtectionAccess(){
+      if(currentUserRole!=='admin'||!isDataProtectionOwner())return alert('Only the fixed Owner Email can change this access list.');
+      let raw=document.getElementById('dataProtectionAllowedEmails').value.split(/[,\n;]+/).map(x=>x.trim().toLowerCase()).filter(Boolean),invalid=raw.filter(x=>!/^\S+@\S+\.\S+$/.test(x));
+      if(invalid.length)return alert('Invalid email: '+invalid.join(', '));
+      let next=[...new Set(raw.filter(x=>x!==DATA_PROTECTION_OWNER_EMAIL))];
+      try{if(!window.firestoreDB)throw new Error('Cloud database unavailable');let ref=window.firestoreDoc(window.firestoreDB,DATA_PROTECTION_COLLECTION,DATA_PROTECTION_DOC_ID);await window.firestoreSetDoc(ref,{ownerEmail:DATA_PROTECTION_OWNER_EMAIL,allowedEmails:next,updatedAt:new Date().toISOString(),updatedBy:currentLoginEmail()});}catch(err){console.error(err);return alert('Access list could not be saved to cloud. Please try again.');}
+      dataProtectionConfig.allowedEmails=next;localStorage.setItem('pos_data_protection_access',JSON.stringify(dataProtectionConfig));
+      renderDataProtectionAccess();alert('Data protection access list saved.');
+    }
     // ── Invoice Counters ──
     let invoiceCounters = JSON.parse(localStorage.getItem('pos_invoice_counters')) || {
       SAL: 0, SR: 0, DC: 0, CX: 0, PUR: 0, PAY: 0, RCV: 0
@@ -4125,6 +4264,12 @@
       { id: 1, name: 'Dutch-Bangla Bank', number: '1234-XXXX-XXXX' },
       { id: 2, name: 'Islami Bank BD', number: '5678-XXXX-XXXX' }
     ];
+    function bankDisplayName(bank) {
+      if (!bank) return '—';
+      let institution=(bank.bankName||'').trim(), account=(bank.name||'').trim();
+      return institution && account && institution.toLowerCase()!==account.toLowerCase()
+        ? `${institution} — ${account}` : (institution || account || '—');
+    }
     let mobileAccounts = JSON.parse(localStorage.getItem('pos_mobile_accounts')) || [];
     let payableHeads = JSON.parse(localStorage.getItem('pos_payable_heads')) || [
       'মোবাইল বিল', 'বেতন', 'ইন্টারনেট বিল', 'দোকান ভাড়া', 'বিদ্যুৎ বিল', 'পণ্য ক্রয়'
@@ -4172,7 +4317,7 @@
         await window.firestoreSetDoc(docRef, {
           shopConfig, customers, products, salesHistory, accountTransactions, categories, salesReturns, deliveries, orderCancellations, payments,
           payableEntries, receivableEntries, bankAccounts, mobileAccounts, payableHeads, receivableHeads,
-          suppliers, purchases, invoiceCounters,
+          suppliers, purchases, invoiceCounters, openingConfig, creditFacilities, creditTransactions,
           updatedAt: new Date().toISOString()
         });
        } catch (err) {
@@ -4202,6 +4347,9 @@
       suppliers = cloud.suppliers || suppliers;
       purchases = cloud.purchases || purchases;
       invoiceCounters = cloud.invoiceCounters || invoiceCounters;
+      openingConfig = cloud.openingConfig || openingConfig;
+      creditFacilities = cloud.creditFacilities || creditFacilities;
+      creditTransactions = cloud.creditTransactions || creditTransactions;
 
       localStorage.setItem('pos_shop_info', JSON.stringify(shopConfig));
       localStorage.setItem('pos_customers', JSON.stringify(customers));
@@ -4210,6 +4358,7 @@
       localStorage.setItem('pos_suppliers', JSON.stringify(suppliers));
       localStorage.setItem('pos_purchases', JSON.stringify(purchases));
       localStorage.setItem('pos_invoice_counters', JSON.stringify(invoiceCounters));
+      localStorage.setItem('pos_opening_config', JSON.stringify(openingConfig));
       localStorage.setItem('pos_accounts', JSON.stringify(accountTransactions));
       localStorage.setItem('pos_categories', JSON.stringify(categories));
       localStorage.setItem('pos_returns', JSON.stringify(salesReturns));
@@ -4222,9 +4371,22 @@
       localStorage.setItem('pos_mobile_accounts', JSON.stringify(mobileAccounts));
       localStorage.setItem('pos_payable_heads', JSON.stringify(payableHeads));
       localStorage.setItem('pos_receivable_heads', JSON.stringify(receivableHeads));
+      localStorage.setItem('pos_credit_facilities', JSON.stringify(creditFacilities));
+      localStorage.setItem('pos_credit_transactions', JSON.stringify(creditTransactions));
+    }
+
+    function applyMenuSequence(){
+      const sequence=['dashboard-tab','order-notifications-tab','sales-tab','purchase-tab','payable-receivable-tab','accounts-tab','customers-tab','suppliers-tab','products-tab','categories-tab','returns-tab','ledger-tab','settings-tab','reports-tab','credit-tab','unit-config-tab','users-tab'];
+      const menu=document.querySelector('.sidebar-menu');if(!menu)return;
+      sequence.forEach(tabId=>{let button=[...menu.querySelectorAll('button')].find(b=>(b.getAttribute('onclick')||'').includes(`'${tabId}'`));let item=button?.closest('li');if(item)menu.appendChild(item);});
     }
 
     function openTab(tabId, btn) {
+      if (tabId === 'settings-tab' && currentUserRole !== 'admin') {
+        alert(currentLang === 'BN' ? 'Settings শুধুমাত্র Super User দেখতে পারবেন।' : 'Only the Super User can access Settings.');
+        return;
+      }
+      if (tabId === 'credit-tab' && currentUserRole !== 'admin') return alert(currentLang==='BN'?'Loans & Credit Cards শুধুমাত্র Super User দেখতে পারবেন।':'Only the Super User can access Loans & Credit Cards.');
       // Reset all tabs
       document.querySelectorAll('.tab-content').forEach(t => {
         t.classList.remove('active');
@@ -4258,10 +4420,14 @@
       }
 
       if (tabId === 'settings-tab') {
+        renderDataProtectionAccess();
         renderBankAccounts();
+        renderMobileAccounts();
+        renderOpeningBalanceSetup();
         renderPayableHeads();
         renderReceivableHeads();
       }
+      if (tabId === 'credit-tab') renderCreditModule();
 
       if (window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('active')) {
         toggleSidebar();
@@ -4284,6 +4450,7 @@
       if (name === 'customers') searchReportCustomers();
       if (name === 'products') runProductsReport();
       if (name === 'bank-ledger') initBankLedger();
+      if (name === 'cash-ledger') renderCashLedger();
     }
 
     function initBankLedger() {
@@ -4292,7 +4459,7 @@
       let cur = sel.value;
       sel.innerHTML = '<option value="">-- Select Account --</option>';
       bankAccounts.forEach(b => {
-        sel.innerHTML += `<option value="${b.id}" ${String(b.id) === cur ? 'selected' : ''}>${b.name} (${b.number})</option>`;
+        sel.innerHTML += `<option value="${b.id}" ${String(b.id) === cur ? 'selected' : ''}>${bankDisplayName(b)} (${b.number})</option>`;
       });
       renderBankLedger();
     }
@@ -4366,6 +4533,17 @@
       orderCancellations.filter(c=>!c.reversed&&c.refundMethod==='Bank'&&String(c.refundBankId)===String(bankId)).forEach(c=>{
         txns.push({date:c.date,type:'out',desc:`DO Cancellation Refund — ${c.custName||'—'} (${c.invNo||'—'})`,ref:c.cancelNo||'—',amount:Number(c.refundPaidAmount)||0});
       });
+      (openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&String(p.bankId)===String(bankId)).forEach(p=>{
+        let s=suppliers.find(x=>String(x.id)===String(p.supplierId));
+        txns.push({date:p.date,type:'out',desc:`Opening Payable — ${s?s.name:'Supplier'}`,ref:p.payNo||'—',amount:Number(p.amount)||0});
+      });
+      (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&String(p.bankId)===String(bankId)).forEach(p=>{
+        txns.push({date:p.date,type:'out',desc:p.type==='loan'?'Opening Loan Payment':'Opening Liability Payment',ref:p.payNo||'—',amount:Number(p.amount)||0});
+      });
+      accountTransactions.filter(a=>a.status==='Approved'&&String(a.bankId)===String(bankId)).forEach(a=>{
+        let isIn=['Joma','Bikroy'].includes(a.type);
+        txns.push({date:a.date,type:isIn?'in':'out',desc:a.creditFacilityId?(isIn?'Loan Disbursement':'Loan / Card Payment'):`Accounts — ${a.type}`,ref:a.note||'—',amount:Number(a.amount)||0});
+      });
 
       // Sort by date
       txns.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
@@ -4390,7 +4568,7 @@
 
       // Update header
       header.style.display = 'block';
-      document.getElementById('blBankName').innerText = `🏦 ${bank.name}`;
+      document.getElementById('blBankName').innerText = `🏦 ${bankDisplayName(bank)}`;
       document.getElementById('blBankNumber').innerText = bank.number;
 
       let totalIn = filtered.filter(t => t.type === 'in').reduce((s, t) => s + t.amount, 0);
@@ -4437,6 +4615,41 @@
       }).join('');
     }
 
+    function getCashLedgerTransactions(){
+      let txns=[],seq=0;
+      const add=(date,type,desc,ref,amount)=>{amount=roundMoney(Number(amount)||0);if(amount>0)txns.push({date:date||'',type,desc,ref:ref||'—',amount,seq:seq++});};
+      salesHistory.filter(s=>s.status==='Approved'&&s.method==='Cash').forEach(s=>add(s.date,'in',`Cash Sale — ${s.custName||'—'}`,s.invNo,s.paid));
+      payments.filter(p=>p.status==='Approved'&&!p.reversed&&p.method==='Cash').forEach(p=>{let c=customers.find(x=>x.id==p.custId);add(p.date,'in',`Customer Due Collection — ${c?c.name:'—'}`,p.payNo,p.amount);});
+      receivableEntries.filter(e=>e.status==='Approved'&&e.method==='Cash').forEach(e=>add(e.date,'in',`Receivable — ${e.head}`,e.note,e.amount));
+      accountTransactions.filter(a=>a.status==='Approved'&&a.method==='Cash'&&['Joma','Bikroy'].includes(a.type)).forEach(a=>add(a.date,'in',a.creditFacilityId?'Loan Disbursement':`Accounts — ${a.type}`,a.note,a.amount));
+
+      payableEntries.filter(e=>e.status==='Approved'&&e.method==='Cash').forEach(e=>add(e.date,'out',`Payable — ${e.head}`,e.note,e.amount));
+      accountTransactions.filter(a=>a.status==='Approved'&&a.method==='Cash'&&['Kroy','Kharoch'].includes(a.type)).forEach(a=>add(a.date,'out',a.creditFacilityId?'Loan / Card Payment':`Accounts — ${a.type}`,a.note,a.amount));
+      salesReturns.filter(r=>!r.reversed&&r.refundMethod==='Cash').forEach(r=>add(r.date,'out',`Sales Return Refund — ${r.custName||'—'}`,r.returnNo||r.invNo,r.refundPaidAmount));
+      orderCancellations.filter(c=>!c.reversed&&c.refundMethod==='Cash').forEach(c=>add(c.date,'out',`Order Cancellation Refund — ${c.custName||'—'}`,c.cancelNo||c.invNo,c.refundPaidAmount));
+      purchases.forEach(p=>{let later=(p.payments||[]).reduce((s,pm)=>s+(Number(pm.amount)||0),0);if(p.method==='Cash')add(p.date,'out',`Purchase — ${p.supplierName||'—'} (${p.prodName||'—'})`,p.purchaseNo,Math.max(0,(Number(p.paid)||0)-later));(p.payments||[]).filter(pm=>pm.method==='Cash').forEach(pm=>add(pm.date,'out',`Purchase Due Payment — ${p.supplierName||'—'}`,pm.payNo||p.purchaseNo,pm.amount));});
+      (openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&p.method==='Cash').forEach(p=>{let s=suppliers.find(x=>String(x.id)===String(p.supplierId));add(p.date,'out',`Opening Supplier Payable — ${s?s.name:'—'}`,p.payNo,p.amount);});
+      (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.method==='Cash').forEach(p=>add(p.date,'out',p.type==='loan'?'Opening Loan Payment':'Opening Liability Payment',p.payNo,p.amount));
+      return txns.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.seq-b.seq);
+    }
+
+    function renderCashLedger(){
+      let tbody=document.getElementById('clTableBody');if(!tbody)return;
+      let from=document.getElementById('clFromDate').value,to=document.getElementById('clToDate').value,typeFilter=document.getElementById('clTypeFilter').value;
+      let txns=getCashLedgerTransactions(),opening=Number(openingConfig.cash)||0;
+      let periodOpening=roundMoney(opening+txns.filter(x=>from&&x.date<from).reduce((s,x)=>s+(x.type==='in'?x.amount:-x.amount),0));
+      let periodTxns=txns.filter(x=>(!from||x.date>=from)&&(!to||x.date<=to)),running=periodOpening;
+      periodTxns.forEach(x=>{running=roundMoney(running+(x.type==='in'?x.amount:-x.amount));x.runningBalance=running;});
+      let closing=running,filtered=periodTxns.filter(x=>!typeFilter||x.type===typeFilter),totalIn=roundMoney(filtered.filter(x=>x.type==='in').reduce((s,x)=>s+x.amount,0)),totalOut=roundMoney(filtered.filter(x=>x.type==='out').reduce((s,x)=>s+x.amount,0));
+      document.getElementById('clShopHeader').innerHTML=shopPrintHeader();
+      document.getElementById('clCurrentBalance').innerText=`৳${getCashBalance().toFixed(2)}`;
+      document.getElementById('clOpening').innerText=`৳${periodOpening.toFixed(2)}`;document.getElementById('clTotalIn').innerText=`৳${totalIn.toFixed(2)}`;document.getElementById('clTotalOut').innerText=`৳${totalOut.toFixed(2)}`;document.getElementById('clClosing').innerText=`৳${closing.toFixed(2)}`;
+      document.getElementById('clFootIn').innerText=`৳${totalIn.toFixed(2)}`;document.getElementById('clFootOut').innerText=`৳${totalOut.toFixed(2)}`;document.getElementById('clFootBalance').innerText=`৳${closing.toFixed(2)}`;
+      document.getElementById('clPeriodLabel').innerText=from&&to?`${from} to ${to}`:from?`From ${from}`:to?`Up to ${to}`:'All transactions';
+      let openingRow=`<tr style="font-weight:700;background:#f8f6f1;"><td>${from||openingConfig.date||'—'}</td><td>Opening</td><td>Period Opening Cash Balance</td><td>—</td><td>—</td><td>—</td><td style="text-align:right;">৳${periodOpening.toFixed(2)}</td></tr>`;
+      tbody.innerHTML=openingRow+(filtered.length?filtered.map(x=>`<tr><td>${x.date||'—'}</td><td>${x.type==='in'?'Cash In':'Cash Out'}</td><td>${x.desc}</td><td style="font-size:12px;color:var(--muted);">${x.ref}</td><td style="text-align:right;">${x.type==='in'?'৳'+x.amount.toFixed(2):'—'}</td><td style="text-align:right;">${x.type==='out'?'৳'+x.amount.toFixed(2):'—'}</td><td style="text-align:right;font-weight:700;">৳${x.runningBalance.toFixed(2)}</td></tr>`).join(''):`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:22px;">No cash transactions found</td></tr>`);
+    }
+
     function runOverviewReport() {
       let fromDate = document.getElementById('ovFromDate').value;
       let toDate = document.getElementById('ovToDate').value;
@@ -4464,8 +4677,8 @@
         salesInRange.reduce((sum, s) => sum + s.paid, 0) +
         paymentsInRange.reduce((sum, p) => sum + p.amount, 0) - refundedInRange
       );
-      let accountExpense = accInRange.filter(a => a.type === 'Kharoch' || a.type === 'Kroy').reduce((sum, a) => sum + a.amount, 0);
-      let accountIncome = accInRange.filter(a => a.type === 'Joma' || a.type === 'Bikroy').reduce((sum, a) => sum + a.amount, 0);
+      let accountExpense = accInRange.filter(a => a.type === 'Kharoch' || a.type === 'Kroy').reduce((sum, a) => sum + (a.creditFacilityId ? (Number(a.liabilityExpense)||0) : (Number(a.amount)||0)), 0);
+      let accountIncome = accInRange.filter(a => a.type === 'Joma' || a.type === 'Bikroy').reduce((sum, a) => sum + (a.creditFacilityId ? 0 : (Number(a.amount)||0)), 0);
 
       // Payment Ledger data in range (Approved only)
       let payableInRange    = payableEntries.filter(e => e.status === 'Approved' && inRange(e.date));
@@ -4531,7 +4744,7 @@
       if (bsel) {
         let cur = bsel.value;
         bsel.innerHTML = '<option value="All">— সকল ব্যাংক —</option>';
-        bankAccounts.forEach(b => bsel.innerHTML += `<option value="${b.id}" ${String(b.id)===cur?'selected':''}>${b.name} (${b.number})</option>`);
+        bankAccounts.forEach(b => bsel.innerHTML += `<option value="${b.id}" ${String(b.id)===cur?'selected':''}>${bankDisplayName(b)} (${b.number})</option>`);
       }
     }
 
@@ -4703,6 +4916,9 @@
       let prod = products.find(p => String(p.id) === String(prodId));
       if (!prod) return 0;
       let events = [];
+      let openingQty=(Number(prod.openingStockBags)||0)*((Number(prod.bagKg)||50));
+      let openingCost=Number(prod.openingCostPerKg)||0;
+      if(openingQty>0&&openingCost>0) events.push({date:openingConfig.date||'0000-01-01',id:-1,kind:'purchase',qtyKg:openingQty,unitCost:openingCost});
       purchases.filter(p => String(p.prodId) === String(prodId)).forEach(p => events.push({
         date:p.date||'', id:Number(p.id)||0, kind:'purchase', qtyKg:getPurchaseQtyKgForLedger(p,prod), unitCost:getPurchaseCostPerKgForLedger(p,prod)
       }));
@@ -4734,6 +4950,27 @@
         }
       });
       return qtyOnHand>0 ? roundMoney(inventoryCost/qtyOnHand) : 0;
+    }
+
+    function getCashBalance() {
+      let incoming =
+        salesHistory.filter(s=>s.status==='Approved'&&s.method==='Cash').reduce((x,s)=>x+(Number(s.paid)||0),0) +
+        payments.filter(p=>p.status==='Approved'&&!p.reversed&&p.method==='Cash').reduce((x,p)=>x+(Number(p.amount)||0),0) +
+        receivableEntries.filter(e=>e.status==='Approved'&&e.method==='Cash').reduce((x,e)=>x+(Number(e.amount)||0),0) +
+        accountTransactions.filter(a=>a.status==='Approved'&&a.method==='Cash'&&['Joma','Bikroy'].includes(a.type)).reduce((x,a)=>x+(Number(a.amount)||0),0);
+      let outgoing =
+        payableEntries.filter(e=>e.status==='Approved'&&e.method==='Cash').reduce((x,e)=>x+(Number(e.amount)||0),0) +
+        accountTransactions.filter(a=>a.status==='Approved'&&a.method==='Cash'&&['Kroy','Kharoch'].includes(a.type)).reduce((x,a)=>x+(Number(a.amount)||0),0) +
+        salesReturns.filter(r=>!r.reversed&&r.refundMethod==='Cash').reduce((x,r)=>x+(Number(r.refundPaidAmount)||0),0) +
+        orderCancellations.filter(c=>!c.reversed&&c.refundMethod==='Cash').reduce((x,c)=>x+(Number(c.refundPaidAmount)||0),0);
+      purchases.forEach(p=>{
+        let later=(p.payments||[]).reduce((x,pm)=>x+(Number(pm.amount)||0),0);
+        if(p.method==='Cash') outgoing+=Math.max(0,(Number(p.paid)||0)-later);
+        outgoing+=(p.payments||[]).filter(pm=>pm.method==='Cash').reduce((x,pm)=>x+(Number(pm.amount)||0),0);
+      });
+      outgoing+=(openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&p.method==='Cash').reduce((x,p)=>x+(Number(p.amount)||0),0);
+      outgoing+=(openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.method==='Cash').reduce((x,p)=>x+(Number(p.amount)||0),0);
+      return roundMoney((Number(openingConfig.cash)||0)+incoming-outgoing);
     }
 
     function getSaleOriginalValueForLedger(sale) {
@@ -4786,11 +5023,11 @@
       let grossProfit = roundMoney(netSales - cogs);
 
       let otherIncome = roundMoney(
-        approvedAccounts.filter(a => inRange(a.date) && (a.type === 'Joma' || a.type === 'Bikroy')).reduce((s,a)=>s+(Number(a.amount)||0),0) +
+        approvedAccounts.filter(a => inRange(a.date) && (a.type === 'Joma' || a.type === 'Bikroy')).reduce((s,a)=>s+(a.creditFacilityId?0:(Number(a.amount)||0)),0) +
         approvedReceivables.filter(e => inRange(e.date)).reduce((s,e)=>s+(Number(e.amount)||0),0)
       );
       let operatingExpense = roundMoney(
-        approvedAccounts.filter(a => inRange(a.date) && (a.type === 'Kharoch' || a.type === 'Kroy')).reduce((s,a)=>s+(Number(a.amount)||0),0) +
+        approvedAccounts.filter(a => inRange(a.date) && (a.type === 'Kharoch' || a.type === 'Kroy')).reduce((s,a)=>s+(a.creditFacilityId?(Number(a.liabilityExpense)||0):(Number(a.amount)||0)),0) +
         approvedPayables.filter(e => inRange(e.date)).reduce((s,e)=>s+(Number(e.amount)||0),0)
       );
       let netProfit = roundMoney(grossProfit + otherIncome - operatingExpense);
@@ -4805,15 +5042,20 @@
 
       // ── Current business position (live snapshot) ───
       let customerDue = customers.reduce((sum,c)=>sum+getCustomerTotalDue(c.id).due,0);
-      let supplierDue = purchases.reduce((sum,p)=>sum+(Number(p.due)||0),0);
+      let supplierDue = purchases.reduce((sum,p)=>sum+(Number(p.due)||0),0)
+        + suppliers.reduce((sum,s)=>sum+getSupplierOpeningDue(s.id),0);
       let inventoryValue = products.reduce((sum,p) => {
         let qtyKg = (Number(p.stock)||0) * ((Number(p.bagKg)||50));
         return sum + qtyKg * getWeightedAverageCostPerKg(p.id);
       },0);
-      let bankBalance = bankAccounts.reduce((sum,b)=>sum+getBankBalance(b.id),0)
+      let bankBalance = getCashBalance() + bankAccounts.reduce((sum,b)=>sum+getBankBalance(b.id),0)
         + mobileAccounts.reduce((sum,a)=>sum+getMobileAccountBalance(a.id),0);
       let stockBags = products.reduce((sum,p)=>sum+(Number(p.stock)||0),0);
       let lowStock = products.filter(p=>getAvailableStockBags(p)<=20).length;
+      let otherAssets=Number(openingConfig.otherAssets)||0;
+      let creditLiabilities=creditFacilities.reduce((s,f)=>s+creditOutstanding(f.id),0);
+      let otherLiabilities=getOpeningLiabilityDue('loan')+getOpeningLiabilityDue('other')+creditLiabilities;
+      let currentNetAssets=roundMoney(bankBalance+customerDue+inventoryValue+otherAssets-supplierDue-otherLiabilities);
 
       const fmt = v => '<span class="currency-symbol">৳</span>' + Math.abs(Number(v)||0).toFixed(2);
       const signedFmt = v => (v < 0 ? '− ' : '') + fmt(v);
@@ -4836,6 +5078,9 @@
       setMoney('mlInventoryValue',inventoryValue,'#2563eb');
       setMoney('mlCashBank',bankBalance,'var(--green)');
       setMoney('mlPeriodCollection',periodCollection,'#2563eb');
+      setMoney('mlOtherAssets',otherAssets,'#2563eb');
+      setMoney('mlOtherLiabilities',otherLiabilities,'var(--red)');
+      setMoney('mlNetAssets',currentNetAssets,'#7c3aed');
       document.getElementById('mlProductCount').innerText=products.length;
       document.getElementById('mlCustomerCount').innerText=`${customers.length} ${t('mlCustomersCountWord')}`;
       document.getElementById('mlSupplierCount').innerText=`${suppliers.length} ${t('mlSuppliersCountWord')}`;
@@ -4874,8 +5119,10 @@
         allTxns.push({date:c.date,kind:'return',label:t('statementCancelLabel'),detail:`${c.prodName||'—'} — #${c.invNo||'—'} · ${currentLang==='BN'?'বকেয়া সমন্বয়':'Due adjusted'}: ${currentLang==='BN'?'৳':'BDT '}${adjusted.toFixed(2)} · ${currentLang==='BN'?'ফেরত':'Refund paid'}: ${currentLang==='BN'?'৳':'BDT '}${paidRefund.toFixed(2)}`,method:paidRefund>0?(c.refundMethod||'—'):'—',income:0,expense:Number(c.refundValue)||0,ref:c.cancelNo||''});
       });
       activePayments.forEach(p=>{let c=customers.find(c=>c.id==p.custId);allTxns.push({date:p.date,kind:'payment',label:t('mlLabelPayment'),detail:`${c?c.name:'—'} — ${currentLang==='BN'?'আদায়':'Collected'}: ${currentLang==='BN'?'৳':'BDT '}${(Number(p.amount)||0).toFixed(2)}`,method:p.method||'—',income:0,expense:0,ref:''});});
+      (openingConfig.supplierPayments||[]).filter(p=>!p.reversed).forEach(p=>{let s=suppliers.find(x=>String(x.id)===String(p.supplierId));allTxns.push({date:p.date,kind:'purchase',label:'Opening Payable Payment',detail:s?s.name:'Supplier',method:p.method||'—',income:0,expense:0,ref:p.payNo||''});});
+      (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed).forEach(p=>allTxns.push({date:p.date,kind:'purchase',label:p.type==='loan'?'Opening Loan Payment':'Opening Liability Payment',detail:p.note||'Balance sheet settlement',method:p.method||'—',income:0,expense:0,ref:p.payNo||''}));
       purchases.forEach(p=>allTxns.push({date:p.date,kind:'purchase',label:t('mlKindPurchase'),detail:`${p.supplierName||'—'} — ${p.prodName||'—'} — ${currentLang==='BN'?'৳':'BDT '}${(Number(p.total)||0).toFixed(2)}`,method:p.method||'—',income:0,expense:0,ref:p.purchaseNo||''}));
-      approvedAccounts.forEach(a=>{let isIn=a.type==='Joma'||a.type==='Bikroy';allTxns.push({date:a.date,kind:isIn?'account-in':'account-out',label:`A/C — ${a.type}`,detail:a.note||'—',method:a.method||'—',income:isIn?(Number(a.amount)||0):0,expense:isIn?0:(Number(a.amount)||0),ref:''});});
+      approvedAccounts.forEach(a=>{let isIn=a.type==='Joma'||a.type==='Bikroy',liability=!!a.creditFacilityId,income=isIn?(liability?0:(Number(a.amount)||0)):0,expense=isIn?0:(liability?(Number(a.liabilityExpense)||0):(Number(a.amount)||0));allTxns.push({date:a.date,kind:liability?'purchase':(isIn?'account-in':'account-out'),label:liability?'Loan / Card Activity':`A/C — ${a.type}`,detail:a.note||'—',method:a.method||'—',income,expense,ref:''});});
       approvedPayables.forEach(e=>allTxns.push({date:e.date,kind:'payable',label:`Payable — ${e.head}`,detail:e.note||'—',method:e.method||'—',income:0,expense:Number(e.amount)||0,ref:''}));
       approvedReceivables.forEach(e=>allTxns.push({date:e.date,kind:'receivable',label:`Receivable — ${e.head}`,detail:e.note||'—',method:e.method||'—',income:Number(e.amount)||0,expense:0,ref:''}));
       allTxns.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
@@ -5071,7 +5318,7 @@
               <div style="display:flex; align-items:center; gap:10px;">
                 <span style="font-size:20px;">🏦</span>
                 <div>
-                  <div style="font-weight:800; font-size:15px;">${b ? b.name : '—'}</div>
+                  <div style="font-weight:800; font-size:15px;">${bankDisplayName(b)}</div>
                   <div style="font-size:12px; color:var(--muted);">${b ? b.number : ''}</div>
                 </div>
               </div>
@@ -5233,6 +5480,14 @@
     function setUserRole(role) {
       currentUserRole = role;
 
+      // Settings contains business identity, backups, accounts and reset tools;
+      // it must remain completely unavailable to staff/modify users.
+      let settingsMenu = document.querySelector(`.sidebar-menu button[onclick*="settings-tab"]`)?.closest('li');
+      let settingsTab = document.getElementById('settings-tab');
+      if (settingsMenu) settingsMenu.classList.toggle('role-hidden', role !== 'admin');
+      if (settingsTab) settingsTab.classList.toggle('role-hidden', role !== 'admin');
+      if (role !== 'admin' && settingsTab?.classList.contains('active')) openTab('dashboard-tab', null);
+
       // Use class toggle — more reliable than inline style across browsers/devices
       document.querySelectorAll('.admin-only').forEach(el => {
         el.classList.toggle('role-hidden', role === 'staff');
@@ -5253,6 +5508,7 @@
         headerPill.innerText = role === 'admin' ? t('roleAdminBtn') : t('roleStaffBtn');
         headerPill.className = 'role-pill-badge ' + (role === 'admin' ? 'role-admin' : 'role-staff');
       }
+      renderDataProtectionAccess();
 
       renderSales();
       renderNotifications();
@@ -5695,11 +5951,12 @@
     }
 
     function exportSystemData() {
+      if(!canManageDataTools())return alert('Backup access is restricted to the Owner-authorized Super Users.');
       let backupData = {
         exportedAt: new Date().toISOString(), shopConfig, customers, products, salesHistory,
         accountTransactions, categories, salesReturns, deliveries, orderCancellations, payments,
         payableEntries, receivableEntries, bankAccounts, mobileAccounts, payableHeads, receivableHeads,
-        suppliers, purchases, invoiceCounters
+        suppliers, purchases, invoiceCounters, openingConfig, creditFacilities, creditTransactions
       };
       let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
       let dlAnchorElem = document.createElement('a');
@@ -5709,6 +5966,7 @@
     }
 
     function importSystemData() {
+      if(!canManageDataTools())return alert('Restore access is restricted to the Owner-authorized Super Users.');
       let fileInput = document.getElementById('importFile');
       if (!fileInput.files.length) return alert(t("alertSelectBackupFile"));
 
@@ -5736,6 +5994,9 @@
             localStorage.setItem('pos_suppliers', JSON.stringify(data.suppliers || []));
             localStorage.setItem('pos_purchases', JSON.stringify(data.purchases || []));
             localStorage.setItem('pos_invoice_counters', JSON.stringify(data.invoiceCounters || invoiceCounters));
+            localStorage.setItem('pos_opening_config', JSON.stringify(data.openingConfig || openingConfig));
+            localStorage.setItem('pos_credit_facilities', JSON.stringify(data.creditFacilities || []));
+            localStorage.setItem('pos_credit_transactions', JSON.stringify(data.creditTransactions || []));
 
             alert(t("alertDataRestored"));
             location.reload();
@@ -5750,7 +6011,7 @@
     }
 
     async function resetAllSystemData() {
-      if (currentUserRole !== 'admin') return alert(t('alertResetOnlyAdmin'));
+      if (!canManageDataTools()) return alert('Clear All Data is restricted to the Owner-authorized Super Users.');
 
       // Step 1: First confirm
       if (!confirm(t('confirmResetAll'))) return;
@@ -5777,6 +6038,9 @@
       mobileAccounts     = [];
       suppliers          = [];
       purchases          = [];
+      creditFacilities   = [];
+      creditTransactions = [];
+      openingConfig      = {date:'',cash:0,otherAssets:0,loanPayable:0,otherLiabilities:0,note:'',saved:false};
       invoiceCounters    = { SAL:0, SR:0, DC:0, CX:0, PUR:0, PAY:0, RCV:0 };
       payableHeads       = ['মোবাইল বিল', 'বেতন', 'ইন্টারনেট বিল', 'দোকান ভাড়া', 'বিদ্যুৎ বিল'];
       receivableHeads    = ['পণ্য বিক্রয়', 'সার্ভিস চার্জ', 'কমিশন', 'ডেলিভারি চার্জ'];
@@ -5787,8 +6051,8 @@
         'pos_customers','pos_products','pos_sales','pos_accounts',
         'pos_categories','pos_returns','pos_deliveries','pos_cancellations',
         'pos_payments','pos_payable','pos_receivable','pos_bank_accounts','pos_mobile_accounts',
-        'pos_suppliers','pos_purchases','pos_invoice_counters',
-        'pos_payable_heads','pos_receivable_heads','pos_shop_info'
+        'pos_suppliers','pos_purchases','pos_invoice_counters','pos_opening_config',
+        'pos_payable_heads','pos_receivable_heads','pos_credit_facilities','pos_credit_transactions','pos_shop_info'
       ];
       keysToRemove.forEach(k => localStorage.removeItem(k));
 
@@ -5810,17 +6074,23 @@
       let approvedSales = salesHistory.filter(s => s.status === 'Approved');
       let totalSalesAmt = approvedSales.reduce((sum, s) => sum + s.total, 0);
       let totalPurchaseAmt = purchases.reduce((s, x) => s + (x.total || 0), 0);
-      let totalPurchaseDue = purchases.reduce((s, x) => s + (x.due || 0), 0);
+      let totalPurchaseDue = purchases.reduce((s, x) => s + (x.due || 0), 0)+suppliers.reduce((s,x)=>s+getSupplierOpeningDue(x.id),0);
       // Summed per-customer (never negative per customer) so one customer's
       // overpayment can never mask another customer's real due.
       let totalDueAmt = customers.reduce((sum, c) => sum + getCustomerTotalDue(c.id).due, 0);
-      let totalStockBags = products.reduce((sum, p) => sum + p.stock, 0);
+      let totalStockBags = products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0);
+      let totalStockKg = products.reduce((sum, p) => sum + ((Number(p.stock) || 0) * (Number(p.bagKg) || 50)), 0);
+      let totalStockTon = totalStockKg / 1000;
       let totalReturnsAmt = salesReturns.filter(r => !r.reversed).reduce((sum, r) => sum + r.refundValue, 0)+orderCancellations.filter(c=>!c.reversed).reduce((sum,c)=>sum+(Number(c.refundValue)||0),0);
 
       document.getElementById('dashTotalSales').innerHTML = '<span class="currency-symbol">৳</span>' + totalSalesAmt.toFixed(2);
       document.getElementById('dashTotalDue').innerHTML = '<span class="currency-symbol">৳</span>' + totalDueAmt.toFixed(2);
-      document.getElementById('dashTotalStock').innerText = totalStockBags.toFixed(1);
+      document.getElementById('dashTotalStock').innerText = totalStockKg.toFixed(2) + ' KG';
+      let stockUnitsEl = document.getElementById('dashTotalStockUnits');
+      if (stockUnitsEl) stockUnitsEl.innerText = totalStockBags.toFixed(2) + ' Bag · ' + totalStockKg.toFixed(2) + ' KG · ' + totalStockTon.toFixed(3) + ' Ton';
       document.getElementById('dashTotalReturns').innerHTML = '<span class="currency-symbol">৳</span>' + totalReturnsAmt.toFixed(2);
+      if(document.getElementById('statTotalPurchase')) document.getElementById('statTotalPurchase').innerHTML='<span class="currency-symbol">৳</span>'+totalPurchaseAmt.toFixed(2);
+      if(document.getElementById('statPurchaseDue')) document.getElementById('statPurchaseDue').innerHTML='<span class="currency-symbol">৳</span>'+totalPurchaseDue.toFixed(2);
 
       // Payable / Receivable dashboard stats
       let totalPayable = payableEntries.filter(e=>e.status==='Approved').reduce((s, e) => s + e.amount, 0);
@@ -6513,7 +6783,7 @@
       sel.innerHTML = `<option value="">${currentLang === 'BN' ? '-- ব্যাংক নির্বাচন করুন --' : '-- Select Bank --'}</option>`;
       bankAccounts.forEach(b => {
         let bal = getBankBalance(b.id);
-        sel.innerHTML += `<option value="${b.id}">${b.name} (${b.number || '—'}) — ${currentLang === 'BN' ? '৳' : 'BDT '}${bal.toFixed(2)}</option>`;
+        sel.innerHTML += `<option value="${b.id}">${bankDisplayName(b)} (${b.number || '—'}) — ${currentLang === 'BN' ? '৳' : 'BDT '}${bal.toFixed(2)}</option>`;
       });
     }
 
@@ -7225,7 +7495,7 @@
 
     function deleteProduct(id) {
       let inUse = salesHistory.some(s => s.prodId == id) || purchases.some(p => p.prodId == id) ||
-        salesReturns.some(r => r.prodId == id) || deliveries.some(d => d.prodId == id);
+        salesReturns.some(r => r.prodId == id) || deliveries.some(d => d.prodId == id) || Number(products.find(p=>p.id==id)?.openingStockBags)>0;
       if (inUse) return alert(currentLang === 'BN' ? 'এই পণ্যের লেনদেন আছে, তাই এটি ডিলিট করা যাবে না।' : 'This product has transactions and cannot be deleted.');
       if (confirm(t("confirmDeleteProduct"))) {
         products = products.filter(p => p.id != id);
@@ -7275,7 +7545,7 @@
       let sel = document.getElementById(selectId); if (!sel) return;
       let current = sel.value;
       sel.innerHTML = `<option value="">-- ${currentLang==='BN'?'অ্যাকাউন্ট নির্বাচন করুন':'Select Account'} --</option>`;
-      bankAccounts.forEach(b => sel.innerHTML += `<option value="${b.id}">${b.name} (${b.number || '—'}) — ৳${getBankBalance(b.id).toFixed(2)}</option>`);
+      bankAccounts.forEach(b => sel.innerHTML += `<option value="${b.id}">${bankDisplayName(b)} (${b.number || '—'}) — ৳${getBankBalance(b.id).toFixed(2)}</option>`);
       if (current) sel.value = current;
     }
 
@@ -7319,7 +7589,7 @@
       if(isOut&&isMobileMethod(method)&&getMobileAccountBalance(mobileAccountId)+0.001<(Number(amount)||0)) {
         alert(currentLang==='BN'?'নির্বাচিত মোবাইল ব্যাংকিং অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।':'The selected mobile banking account has insufficient balance.'); return null;
       }
-      return {bankId: bank ? Number(bank.id) : null, bankName: bank ? `${bank.name} (${bank.number || '—'})` : '', mobileAccountId:mobileAccount?Number(mobileAccount.id):null, mobileProvider:mobileAccount?mobileAccount.service:'', mobileNumber:mobileAccount?mobileAccount.number:'', mobileAccountName:mobileAccount?mobileAccount.name:''};
+      return {bankId: bank ? Number(bank.id) : null, bankName: bank ? `${bankDisplayName(bank)} (${bank.number || '—'})` : '', mobileAccountId:mobileAccount?Number(mobileAccount.id):null, mobileProvider:mobileAccount?mobileAccount.service:'', mobileNumber:mobileAccount?mobileAccount.number:'', mobileAccountName:mobileAccount?mobileAccount.name:''};
     }
 
     function paymentMethodDisplay(record) {
@@ -7342,7 +7612,7 @@
         sel.innerHTML = '<option value="">-- অ্যাকাউন্ট সিলেক্ট করুন --</option>';
         bankAccounts.forEach(b => {
           let bal = getBankBalance(b.id);
-          sel.innerHTML += `<option value="${b.id}">${b.name} (${b.number}) — Balance: ৳${bal.toFixed(2)}</option>`;
+          sel.innerHTML += `<option value="${b.id}">${bankDisplayName(b)} (${b.number}) — Balance: ৳${bal.toFixed(2)}</option>`;
         });
       } else {
         div.style.display = 'none';
@@ -7508,6 +7778,8 @@
     // that sale (credit) — with a running balance carried through.
     function getCustomerStatementLines(custId) {
       let lines = [];
+      let customer=customers.find(c=>c.id==custId);
+      if((Number(customer?.openingDue)||0)>0) lines.push({date:openingConfig.date||'0000-01-01',ref:'OPENING',description:currentLang==='BN'?'আগের পাওনা (Opening Receivable)':'Opening Receivable',debit:Number(customer.openingDue)||0,credit:0});
       let custSales = salesHistory.filter(s => s.custId == custId && s.status === 'Approved');
 
       custSales.forEach(sale => {
@@ -7697,7 +7969,7 @@
 
     function deleteCustomer(id) {
       if (currentUserRole !== 'admin') return;
-      if (salesHistory.some(s=>s.custId==id) || payments.some(p=>p.custId==id)) {
+      if (salesHistory.some(s=>s.custId==id) || payments.some(p=>p.custId==id) || Number(customers.find(c=>c.id==id)?.openingDue)>0) {
         return alert(currentLang==='BN' ? 'এই কাস্টমারের লেনদেন আছে, তাই ডিলিট করা যাবে না।' : 'This customer has transactions and cannot be deleted.');
       }
       if (confirm(t("confirmDeleteCustomer"))) {
@@ -7731,7 +8003,8 @@
 
     function getCustomerTotalDue(custId) {
       let cSales = salesHistory.filter(s => s.custId == custId && s.status === 'Approved');
-      let totalBilled = roundMoney(cSales.reduce((sum, s) => sum + s.total, 0));
+      let openingDue=Number(customers.find(c=>c.id==custId)?.openingDue)||0;
+      let totalBilled = roundMoney(openingDue+cSales.reduce((sum, s) => sum + s.total, 0));
       let totalPaidAtSale = roundMoney(cSales.reduce((sum, s) => sum + s.paid, 0));
       let totalPaymentsLater = getCustomerPaymentsTotal(custId);
       let totalRefunded = getCustomerRefundedTotal(custId);
@@ -8036,7 +8309,9 @@
           ? `<button onclick="viewAccountVoucher(${acc.id})" class="btn-icon-action btn-view" title="${t('titlePrintView')}">${SVG_VIEW}</button>`
           : '';
 
-        let actionBtns = (currentUserRole === 'admin')
+        let actionBtns = acc.creditFacilityId
+          ? `<div style="text-align:center;color:var(--muted);font-size:11px;">Managed in Loans & Cards</div>`
+          : (currentUserRole === 'admin')
           ? `<div style="text-align:center;">
                ${printBtn}
                <button onclick="editAccount(${acc.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button>
@@ -8108,7 +8383,7 @@
         sel.innerHTML = '<option value="">-- অ্যাকাউন্ট সিলেক্ট করুন --</option>';
         bankAccounts.forEach(b => {
           let bal = getBankBalance(b.id);
-          sel.innerHTML += `<option value="${b.id}">${b.name} (${b.number}) — ৳${bal.toFixed(2)}</option>`;
+          sel.innerHTML += `<option value="${b.id}">${bankDisplayName(b)} (${b.number}) — ৳${bal.toFixed(2)}</option>`;
         });
       } else {
         div.style.display = 'none';
@@ -8126,7 +8401,7 @@
       let bankName = '';
       if (method === 'Bank' && bankId) {
         let b = bankAccounts.find(x => String(x.id) === String(bankId));
-        bankName = b ? b.name + ' (' + b.number + ')' : '';
+        bankName = b ? bankDisplayName(b) + ' (' + b.number + ')' : '';
       }
 
       if (!amount || amount <= 0) return alert(t("alertEnterValidAmount"));
@@ -8194,6 +8469,7 @@
     function editAccount(id) {
       let acc = accountTransactions.find(x => x.id == id);
       if (!acc) return;
+      if(acc.creditFacilityId) return alert('Edit this entry from Loans & Credit Cards.');
 
       document.getElementById('editAccId').value = acc.id;
       document.getElementById('accType').value = acc.type;
@@ -8228,6 +8504,7 @@
 
     function deleteAccount(id) {
       if (currentUserRole !== 'admin') return;
+      let linked=accountTransactions.find(x=>x.id===id);if(linked&&linked.creditFacilityId)return alert('Reverse this entry from Loans & Credit Cards.');
       if (confirm(t("confirmDeleteAccount"))) {
         accountTransactions = accountTransactions.filter(x => x.id !== id);
         saveData();
@@ -8394,7 +8671,7 @@
         let sel = document.getElementById(selId);
         if (sel) {
           sel.innerHTML = `<option value="">${t('prBankSelectDefault')}</option>`;
-          bankAccounts.forEach(b => sel.innerHTML += `<option value="${b.id}">${b.name} (${b.number})</option>`);
+          bankAccounts.forEach(b => sel.innerHTML += `<option value="${b.id}">${bankDisplayName(b)} (${b.number})</option>`);
         }
       });
     }
@@ -8434,7 +8711,7 @@
       let bankName = '';
       if (method === 'Bank' && bankId) {
         let b = bankAccounts.find(x => x.id == bankId);
-        bankName = b ? b.name + ' (' + b.number + ')' : '';
+        bankName = b ? bankDisplayName(b) + ' (' + b.number + ')' : '';
       }
 
       let today = document.getElementById('payableDate').value || new Date().toISOString().split('T')[0];
@@ -8488,7 +8765,7 @@
       let bankName = '';
       if (method === 'Bank' && bankId) {
         let b = bankAccounts.find(x => x.id == bankId);
-        bankName = b ? b.name + ' (' + b.number + ')' : '';
+        bankName = b ? bankDisplayName(b) + ' (' + b.number + ')' : '';
       }
 
       let today = document.getElementById('receivableDate').value || new Date().toISOString().split('T')[0];
@@ -8670,7 +8947,7 @@
       let ph = document.getElementById('payableFilterHead');
       if (pb) {
         pb.innerHTML = '<option value="">🏦 সকল ব্যাংক</option>';
-        bankAccounts.forEach(b => pb.innerHTML += `<option value="${b.id}">${b.name} (${b.number})</option>`);
+        bankAccounts.forEach(b => pb.innerHTML += `<option value="${b.id}">${bankDisplayName(b)} (${b.number})</option>`);
       }
       if (ph) {
         ph.innerHTML = '<option value="">📌 সকল Head</option>';
@@ -8682,7 +8959,7 @@
       let rh = document.getElementById('receivableFilterHead');
       if (rb) {
         rb.innerHTML = '<option value="">🏦 সকল ব্যাংক</option>';
-        bankAccounts.forEach(b => rb.innerHTML += `<option value="${b.id}">${b.name} (${b.number})</option>`);
+        bankAccounts.forEach(b => rb.innerHTML += `<option value="${b.id}">${bankDisplayName(b)} (${b.number})</option>`);
       }
       if (rh) {
         rh.innerHTML = '<option value="">📌 সকল Head</option>';
@@ -8753,7 +9030,7 @@
             <span style="font-size:16px;">🏦</span>
             <div>
               <div style="font-weight:800; font-size:14px; color:${color};">
-                ${b ? b.name : '—'}
+                ${bankDisplayName(b)}
               </div>
               <div style="font-size:11.5px; color:var(--muted);">
                 ${b ? b.number : ''} &nbsp;·&nbsp; ${filtered.length} টি এন্ট্রি
@@ -9032,7 +9309,7 @@
         sel.innerHTML = '<option value="">-- Select Account --</option>';
         bankAccounts.forEach(b => {
           let bal = getBankBalance(b.id);
-          sel.innerHTML += `<option value="${b.id}">${b.name} (${b.number}) — ৳${bal.toFixed(2)}</option>`;
+          sel.innerHTML += `<option value="${b.id}">${bankDisplayName(b)} (${b.number}) — ৳${bal.toFixed(2)}</option>`;
         });
       } else {
         div.style.display = 'none';
@@ -9058,7 +9335,7 @@
       let bankName = '';
       if (method === 'Bank' && bankId) {
         let b = bankAccounts.find(x => String(x.id) === String(bankId));
-        bankName = b ? b.name + ' (' + b.number + ')' : '';
+        bankName = b ? bankDisplayName(b) + ' (' + b.number + ')' : '';
       }
 
       let payNo = nextInvoiceNo("PAY");
@@ -9157,10 +9434,35 @@
       renderSupplierTable();
       renderSupplierList();
       populatePurchaseSupplierFilter();
+      renderOpeningBalanceSetup();
       closeModal('addSupplierModal');
     }
 
     function addSupplier() { saveSupplier(); }
+
+    function openSupplierOpeningPayment(id) {
+      let s=suppliers.find(x=>x.id==id), due=getSupplierOpeningDue(id); if(!s||due<=0)return;
+      let old=document.getElementById('supplierOpeningPayModal'); if(old)old.remove();
+      document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="supplierOpeningPayModal" style="display:flex;"><div class="modal-content" style="max-width:520px;"><h2>💳 Opening Payable Payment</h2><p style="padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:12px;"><b>${s.name}</b><br>Remaining Opening Due: <b>৳${due.toFixed(2)}</b></p><input type="hidden" id="openingPaySupplierId" value="${s.id}"><label>Amount:</label><input type="number" id="openingPayAmount" min="0.01" max="${due}" step="0.01" value="${due}"><label>Date:</label><input type="date" id="openingPayDate" value="${new Date().toISOString().split('T')[0]}"><label>Payment Method:</label><select id="openingPayMethod" onchange="toggleOpeningSupplierPaymentFields()"><option value="Cash">Cash</option><option value="Bank">Bank</option><option value="Mobile Banking">Mobile Banking</option></select><div id="openingPayBankWrap" style="display:none;"><label>Bank Account:</label><select id="openingPayBankId"></select></div><div id="openingSupplierMobileWrap" style="display:none;"><label>Mobile Banking Account:</label><select id="openingSupplierMobileAccountId"></select></div><label>Note:</label><input type="text" id="openingPayNote" placeholder="Opening payable settlement"><div style="display:flex;gap:10px;"><button class="btn-success" onclick="saveSupplierOpeningPayment()">Save Payment</button><button class="btn-danger" onclick="document.getElementById('supplierOpeningPayModal').remove()">Cancel</button></div></div></div>`);
+      toggleOpeningSupplierPaymentFields();
+    }
+
+    function toggleOpeningSupplierPaymentFields() {
+      let method=document.getElementById('openingPayMethod')?.value;
+      document.getElementById('openingPayBankWrap').style.display=method==='Bank'?'block':'none';
+      document.getElementById('openingSupplierMobileWrap').style.display=isMobileMethod(method)?'block':'none';
+      if(method==='Bank') populateBankSelect('openingPayBankId');
+      if(isMobileMethod(method)) populateMobileAccountSelect('openingSupplierMobileAccountId');
+    }
+
+    function saveSupplierOpeningPayment() {
+      let supplierId=Number(document.getElementById('openingPaySupplierId').value), amount=openingNum(document.getElementById('openingPayAmount').value), due=getSupplierOpeningDue(supplierId), method=document.getElementById('openingPayMethod').value;
+      if(amount<=0||amount>due+0.001)return alert(`Maximum payable amount is ৳${due.toFixed(2)}`);
+      let details=readPaymentDetails(method,'openingPayBankId','openingSupplier',amount,true); if(!details)return;
+      if(!openingConfig.supplierPayments)openingConfig.supplierPayments=[];
+      openingConfig.supplierPayments.push({id:Date.now(),payNo:nextInvoiceNo('PAY'),supplierId,date:document.getElementById('openingPayDate').value||new Date().toISOString().split('T')[0],amount,method,note:document.getElementById('openingPayNote').value.trim(),bankId:details.bankId,bankName:details.bankName,mobileAccountId:details.mobileAccountId,mobileAccountName:details.mobileAccountName,mobileProvider:details.mobileProvider,mobileNumber:details.mobileNumber,reversed:false});
+      saveData(); document.getElementById('supplierOpeningPayModal').remove(); renderSupplierTable(); renderBankAccounts(); renderMobileAccounts(); renderDashboard(); alert('Opening payable payment saved.');
+    }
 
     function editSupplier(id) {
       let s = suppliers.find(x => x.id == id);
@@ -9175,6 +9477,7 @@
     }
 
     function deleteSupplier(id) {
+      if(purchases.some(p=>p.supplierId==id)||Number(suppliers.find(s=>s.id==id)?.openingDue)>0||(openingConfig.supplierPayments||[]).some(p=>p.supplierId==id)) return alert('This supplier has opening balance or transactions and cannot be deleted.');
       if (!confirm('Delete this supplier?')) return;
       suppliers = suppliers.filter(s => s.id != id);
       saveData();
@@ -9188,13 +9491,17 @@
       if (!s) return;
       let supPurchases = purchases.filter(p => String(p.supplierId) === String(id));
       supPurchases.sort((a,b) => (a.date||'').localeCompare(b.date||''));
-      let totalAmt = supPurchases.reduce((sum, p) => sum + (p.total||0), 0);
-      let totalPaid = supPurchases.reduce((sum, p) => sum + (p.paid||0), 0);
-      let totalDue = supPurchases.reduce((sum, p) => sum + (p.due||0), 0);
+      let openingDue=Number(s.openingDue)||0;
+      let totalAmt = openingDue+supPurchases.reduce((sum, p) => sum + (p.total||0), 0);
+      let openingPaid=getSupplierOpeningPaid(id);
+      let totalPaid = openingPaid+supPurchases.reduce((sum, p) => sum + (p.paid||0), 0);
+      let totalDue = getSupplierOpeningDue(id)+supPurchases.reduce((sum, p) => sum + (p.due||0), 0);
       document.getElementById('viewSupplierTitle').innerText = `👤 ${s.name}`;
 
       // Screen rows (with action buttons + payment history)
-      let screenRows = supPurchases.length ? supPurchases.map(p => {
+      let openingPayRows=(openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&String(p.supplierId)===String(id)).map(p=>`<tr style="background:#f0fff4;"><td><b>${p.payNo}</b></td><td>${p.date}</td><td>↳ Opening Payable Payment</td><td>—</td><td style="text-align:right;">—</td><td style="text-align:right;color:var(--green);">৳${p.amount.toFixed(2)}</td><td style="text-align:right;">${paymentMethodDisplay(p)}</td><td class="no-print"></td></tr>`).join('');
+      let openingSupplierRow=openingDue>0?`<tr style="background:#f8fafc;"><td><b>OPENING</b></td><td>${openingConfig.date||'—'}</td><td>Previous supplier payable</td><td>—</td><td style="text-align:right;"><b>৳${openingDue.toFixed(2)}</b></td><td style="text-align:right;">৳${openingPaid.toFixed(2)}</td><td style="text-align:right;font-weight:700;">৳${getSupplierOpeningDue(id).toFixed(2)}</td><td class="no-print"></td></tr>${openingPayRows}`:'';
+      let screenRows = openingSupplierRow+(supPurchases.length ? supPurchases.map(p => {
         let purNo = p.purchaseNo || ('PUR-' + String(p.id).slice(-6));
         let unitLabel = p.unitType === 'Ton' ? 'Ton' : p.unitType === 'Kg' ? 'Kg' : 'Bag';
         let payRows = (p.payments || []).map(pm => `
@@ -9220,7 +9527,7 @@
             ? `<button onclick="closeModal('viewSupplierModal');openPurchasePayModal(${p.id})" style="background:#fff8e1;border:1px solid #f59e0b;border-radius:6px;padding:3px 8px;cursor:pointer;color:#b45309;font-size:11px;">💳 Pay</button>`
             : '<span style="color:var(--green);font-size:12px;">✅ Paid</span>'}</td>
         </tr>${payRows}`;
-      }).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">No purchase records</td></tr>`;
+      }).join('') : (openingSupplierRow?'':`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">No purchase records</td></tr>`));
 
       let shop = shopConfig;
       let logoHtml = shop.logoImage
@@ -9321,9 +9628,10 @@
       }
       tbody.innerHTML = filtered.map(s => {
         let sp = purchases.filter(p => String(p.supplierId) === String(s.id));
-        let tAmt = sp.reduce((sum,p)=>sum+(p.total||0),0);
-        let tPaid = sp.reduce((sum,p)=>sum+(p.paid||0),0);
-        let tDue = sp.reduce((sum,p)=>sum+(p.due||0),0);
+        let openingDue=Number(s.openingDue)||0;
+        let tAmt = openingDue+sp.reduce((sum,p)=>sum+(p.total||0),0);
+        let tPaid = getSupplierOpeningPaid(s.id)+sp.reduce((sum,p)=>sum+(p.paid||0),0);
+        let tDue = getSupplierOpeningDue(s.id)+sp.reduce((sum,p)=>sum+(p.due||0),0);
         return `<tr>
           <td style="font-size:11px;color:var(--muted);">#${String(s.id).slice(-8)}</td>
           <td><b>${s.name}</b></td>
@@ -9335,6 +9643,7 @@
           <td style="text-align:center;">
             <div style="display:flex;gap:4px;justify-content:center;">
               <button onclick="viewSupplier(${s.id})" class="btn-icon-action btn-view" title="View">${SVG_VIEW}</button>
+              ${getSupplierOpeningDue(s.id)>0?`<button onclick="openSupplierOpeningPayment(${s.id})" class="btn-icon-action btn-pay" title="Pay Opening Due">${SVG_PAY}</button>`:''}
               <button onclick="editSupplier(${s.id})" class="btn-icon-action btn-edit" title="Edit">${SVG_EDIT}</button>
               <button onclick="deleteSupplier(${s.id})" class="btn-icon-action btn-delete" title="Delete">${SVG_DELETE}</button>
             </div>
@@ -9429,7 +9738,7 @@
         sel.innerHTML = '<option value="">-- অ্যাকাউন্ট সিলেক্ট করুন --</option>';
         bankAccounts.forEach(b => {
           let bal = getBankBalance(b.id);
-          sel.innerHTML += `<option value="${b.id}">${b.name} (${b.number}) — Balance: ৳${bal.toFixed(2)}</option>`;
+          sel.innerHTML += `<option value="${b.id}">${bankDisplayName(b)} (${b.number}) — Balance: ৳${bal.toFixed(2)}</option>`;
         });
       } else {
         div.style.display = 'none';
@@ -9480,18 +9789,34 @@
       let bankName = '';
       if (method === 'Bank' && bankId) {
         let b = bankAccounts.find(x => String(x.id) === String(bankId));
-        bankName = b ? b.name + ' (' + b.number + ')' : '';
+        bankName = b ? bankDisplayName(b) + ' (' + b.number + ')' : '';
       }
 
       if (editId) {
         let entry = purchases.find(p => p.id == editId);
         if (entry) {
-          // Revert stock change
           let oldProd = products.find(p => p.id == entry.prodId);
-          if (oldProd) {
-            let oldQtyKg = entry.unitType === 'Ton' ? entry.qty * 1000 : entry.unitType === 'Kg' ? entry.qty : entry.qty * (oldProd.bagKg || 50);
-            if((Number(oldProd.stock)||0)+0.0001<oldQtyKg/(oldProd.bagKg||50)) return alert(currentLang==='BN'?'এই Purchase-এর কিছু stock ইতিমধ্যে ব্যবহার হয়েছে; আগে stock/transaction সমন্বয় করুন।':'Some stock from this purchase has already been used; reconcile stock/transactions before editing it.');
-            oldProd.stock -= oldQtyKg / (oldProd.bagKg || 50);
+          let newProd = products.find(p => p.id == parseInt(prodId));
+          let oldBagKg = oldProd ? (Number(oldProd.bagKg) || 50) : 50;
+          let newBagKg = newProd ? (Number(newProd.bagKg) || 50) : 50;
+          let oldQtyKg = entry.unitType === 'Ton' ? Number(entry.qty) * 1000 : entry.unitType === 'Kg' ? Number(entry.qty) : Number(entry.qty) * oldBagKg;
+          let newQtyKg = unitType === 'Ton' ? qty * 1000 : unitType === 'Kg' ? qty : qty * newBagKg;
+
+          if (oldProd && newProd && String(oldProd.id) === String(newProd.id)) {
+            // Adjust only the quantity difference. Rate/amount-only corrections
+            // therefore remain editable even after some stock has been sold.
+            let adjustedStock = (Number(oldProd.stock) || 0) + ((newQtyKg - oldQtyKg) / oldBagKg);
+            if (adjustedStock < -0.0001) return alert(currentLang==='BN'?'এই পরিমাণ কমালে বর্তমান stock ঋণাত্মক হবে। ব্যবহৃত stock-এর চেয়ে কম quantity রাখা যাবে না।':'This reduction would make current stock negative. Quantity cannot be reduced below the stock already used.');
+            oldProd.stock = Math.max(0, adjustedStock);
+          } else {
+            // Moving a purchase to another product is safe only while its old
+            // quantity is still available; otherwise sold stock loses its source.
+            if (oldProd) {
+              let oldStockAfterMove = (Number(oldProd.stock) || 0) - (oldQtyKg / oldBagKg);
+              if (oldStockAfterMove < -0.0001) return alert(currentLang==='BN'?'ব্যবহৃত stock-সহ Purchase অন্য Product-এ নেওয়া যাবে না। শুধু rate/amount অথবা অনুমোদিত quantity পরিবর্তন করুন।':'A purchase with used stock cannot be moved to another product. Change only its rate/amount or an allowed quantity.');
+              oldProd.stock = Math.max(0, oldStockAfterMove);
+            }
+            if (newProd) newProd.stock = (Number(newProd.stock) || 0) + (newQtyKg / newBagKg);
           }
           Object.assign(entry, { supplierId, supplierName, prodId: parseInt(prodId), prodName, unitType, qty, unitPrice, total, paid, due, method, bankId: purchaseDetails.bankId, bankName: purchaseDetails.bankName, mobileProvider:purchaseDetails.mobileProvider, mobileNumber:purchaseDetails.mobileNumber, mobileAccountId:purchaseDetails.mobileAccountId, mobileAccountName:purchaseDetails.mobileAccountName, note, date });
         }
@@ -9510,9 +9835,10 @@
         });
       }
 
-      // Update product stock
+      // New purchases add their full quantity. Edited purchases were adjusted
+      // above by their stock delta to avoid double-counting.
       let prod = products.find(p => p.id == parseInt(prodId));
-      if (prod) {
+      if (!editId && prod) {
         let qtyKg = unitType === 'Ton' ? qty * 1000 : unitType === 'Kg' ? qty : qty * (prod.bagKg || 50);
         prod.stock = (prod.stock || 0) + qtyKg / (prod.bagKg || 50);
       }
@@ -9740,20 +10066,136 @@
       document.getElementById('viewPurchaseModal').style.display = 'flex';
     }
 
+    function openingNum(v){ return Math.max(0,roundMoney(Number(v)||0)); }
+
+    function getSupplierOpeningPaid(supplierId) {
+      return roundMoney((openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&String(p.supplierId)===String(supplierId)).reduce((s,p)=>s+(Number(p.amount)||0),0));
+    }
+    function getSupplierOpeningDue(supplierId) {
+      let s=suppliers.find(x=>String(x.id)===String(supplierId));
+      return roundMoney(Math.max(0,(Number(s?.openingDue)||0)-getSupplierOpeningPaid(supplierId)));
+    }
+
+    function calculateOpeningSummary() {
+      let customerDue=customers.reduce((s,c)=>s+openingNum(c.openingDue),0);
+      let supplierDue=suppliers.reduce((s,x)=>s+openingNum(x.openingDue),0);
+      let stockValue=products.reduce((s,p)=>s+openingNum(p.openingStockBags)*(Number(p.bagKg)||50)*openingNum(p.openingCostPerKg),0);
+      let bank=bankAccounts.reduce((s,b)=>s+openingNum(b.openingBalance),0);
+      let mobile=mobileAccounts.reduce((s,a)=>s+openingNum(a.openingBalance),0);
+      let assets=openingNum(openingConfig.cash)+bank+mobile+customerDue+stockValue+openingNum(openingConfig.otherAssets);
+      let liabilities=supplierDue+openingNum(openingConfig.loanPayable)+openingNum(openingConfig.otherLiabilities);
+      return {customerDue,supplierDue,stockValue,bank,mobile,assets:roundMoney(assets),liabilities:roundMoney(liabilities),equity:roundMoney(assets-liabilities)};
+    }
+
+    function openingQtyToBags(qty,unit,bagKg){qty=openingNum(qty);bagKg=Number(bagKg)||50;return unit==='Ton'?qty*1000/bagKg:unit==='Kg'?qty/bagKg:qty;}
+    function openingCostToKg(cost,unit,bagKg){cost=openingNum(cost);bagKg=Number(bagKg)||50;return unit==='Ton'?cost/1000:unit==='Bag'?cost/bagKg:cost;}
+    function openingBagsToUnit(bags,unit,bagKg){bags=openingNum(bags);bagKg=Number(bagKg)||50;return unit==='Ton'?bags*bagKg/1000:unit==='Kg'?bags*bagKg:bags;}
+    function openingKgCostToUnit(cost,unit,bagKg){cost=openingNum(cost);bagKg=Number(bagKg)||50;return unit==='Ton'?cost*1000:unit==='Bag'?cost*bagKg:cost;}
+    function updateOpeningInventoryRow(id){let p=products.find(x=>String(x.id)===String(id)),q=document.querySelector(`[data-opening-product-qty="${id}"]`),c=document.querySelector(`[data-opening-product-cost="${id}"]`),u=document.querySelector(`[data-opening-product-unit="${id}"]`),v=document.getElementById('openingProductValue-'+id),e=document.getElementById('openingEquivalent-'+id);if(v)v.innerText='৳'+roundMoney(openingNum(q?.value)*openingNum(c?.value)).toFixed(2);if(p&&q&&u&&e){let bags=openingQtyToBags(q.value,u.value,p.bagKg),kg=bags*(Number(p.bagKg)||50);e.innerText=`${bags.toFixed(3)} Bag = ${kg.toFixed(3)} KG = ${(kg/1000).toFixed(3)} Ton`;}}
+    function changeOpeningInventoryUnit(id){let p=products.find(x=>String(x.id)===String(id)),u=document.querySelector(`[data-opening-product-unit="${id}"]`),q=document.querySelector(`[data-opening-product-qty="${id}"]`),c=document.querySelector(`[data-opening-product-cost="${id}"]`);if(!p||!u||!q||!c)return;let old=u.dataset.previousUnit||'Bag',next=u.value,bags=openingQtyToBags(q.value,old,p.bagKg),kgCost=openingCostToKg(c.value,old,p.bagKg);q.value=Number(openingBagsToUnit(bags,next,p.bagKg).toFixed(3));c.value=Number(openingKgCostToUnit(kgCost,next,p.bagKg).toFixed(2));u.dataset.previousUnit=next;let label=document.getElementById('openingCostLabel-'+id);if(label)label.innerText='Cost / '+(next==='Kg'?'KG':next);updateOpeningInventoryRow(id);}
+
+    function renderOpeningBalanceSetup() {
+      let date=document.getElementById('openingDate'); if(!date) return;
+      date.value=openingConfig.date||'';
+      document.getElementById('openingCash').value=openingConfig.cash||'';
+      document.getElementById('openingOtherAssets').value=openingConfig.otherAssets||'';
+      document.getElementById('openingLoan').value=openingConfig.loanPayable||'';
+      document.getElementById('openingOtherLiabilities').value=openingConfig.otherLiabilities||'';
+      document.getElementById('openingNote').value=openingConfig.note||'';
+      document.getElementById('openingCustomerBody').innerHTML=customers.length?customers.map(c=>`<tr><td><b>${c.name}</b></td><td>${c.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-customer="${c.id}" value="${openingNum(c.openingDue)||''}" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editCustomer(${c.id})" class="btn-icon-action btn-edit" title="Edit Customer">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;">আগে Customer তৈরি করুন</td></tr>';
+      document.getElementById('openingSupplierBody').innerHTML=suppliers.length?suppliers.map(s=>`<tr><td><b>${s.name}</b></td><td>${s.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-supplier="${s.id}" value="${openingNum(s.openingDue)||''}" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editSupplier(${s.id})" class="btn-icon-action btn-edit" title="Edit Supplier">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;">আগে Supplier তৈরি করুন</td></tr>';
+      document.getElementById('openingProductBody').innerHTML=products.length?products.map(p=>{
+        let bags=Number.isFinite(Number(p.openingStockBags))?openingNum(p.openingStockBags):openingNum(p.stock),bagKg=Number(p.bagKg)||50;
+        let unit=['Kg','Bag','Ton'].includes(p.openingInputUnit)?p.openingInputUnit:((['Kg','Bag','Ton'].includes(p.defaultUnit)?p.defaultUnit:'Bag'));
+        let qty=Number.isFinite(Number(p.openingInputQty))?openingNum(p.openingInputQty):openingBagsToUnit(bags,unit,bagKg);
+        let cost=Number.isFinite(Number(p.openingInputCost))?openingNum(p.openingInputCost):openingKgCostToUnit(p.openingCostPerKg,unit,bagKg);
+        return `<tr><td><b>${p.name}</b></td><td>${bagKg} KG</td><td><select data-opening-product-unit="${p.id}" data-previous-unit="${unit}" onchange="changeOpeningInventoryUnit(${p.id})" style="margin:0;min-width:80px;"><option value="Kg" ${unit==='Kg'?'selected':''}>KG</option><option value="Bag" ${unit==='Bag'?'selected':''}>Bag</option><option value="Ton" ${unit==='Ton'?'selected':''}>Ton</option></select></td><td><input type="number" min="0" step="0.001" data-opening-product-qty="${p.id}" value="${qty||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"><small id="openingEquivalent-${p.id}" style="display:block;color:var(--muted);margin-top:3px;white-space:nowrap;">${bags.toFixed(3)} Bag = ${(bags*bagKg).toFixed(3)} KG = ${(bags*bagKg/1000).toFixed(3)} Ton</small></td><td><small id="openingCostLabel-${p.id}" style="display:block;color:var(--muted);margin-bottom:3px;">Cost / ${unit==='Kg'?'KG':unit}</small><input type="number" min="0" step="0.01" data-opening-product-cost="${p.id}" value="${cost||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"></td><td id="openingProductValue-${p.id}" style="text-align:right;font-weight:700;">৳${roundMoney(qty*cost).toFixed(2)}</td><td style="text-align:center;"><button type="button" onclick="editProduct(${p.id})" class="btn-icon-action btn-edit" title="Edit Product">${SVG_EDIT}</button></td></tr>`;
+      }).join(''):'<tr><td colspan="7" style="text-align:center;">আগে Product তৈরি করুন</td></tr>';
+      let x=calculateOpeningSummary();
+      document.getElementById('openingBalanceSummary').innerHTML=`<b>Opening Position:</b> Assets ৳${x.assets.toFixed(2)} &nbsp; | &nbsp; Liabilities ৳${x.liabilities.toFixed(2)} &nbsp; | &nbsp; <b>Opening Equity ৳${x.equity.toFixed(2)}</b><br><span style="color:var(--muted);">Customer Due ৳${x.customerDue.toFixed(2)} · Supplier Due ৳${x.supplierDue.toFixed(2)} · Stock ৳${x.stockValue.toFixed(2)} · Bank ৳${x.bank.toFixed(2)} · Mobile ৳${x.mobile.toFixed(2)}</span>`;
+      let badge=document.getElementById('openingStatusBadge'); badge.className='badge '+(openingConfig.saved?'badge-ok':'badge-pending'); badge.innerText=openingConfig.saved?'Configured':'Not configured';
+    }
+
+    function saveOpeningBalances() {
+      if(currentUserRole!=='admin') return alert('Only Super User can set opening balances.');
+      let date=document.getElementById('openingDate').value;
+      if(!date) return alert(currentLang==='BN'?'System Start Date দিন।':'Select the system start date.');
+      let transactionDates=[...salesHistory,...purchases,...payments,...accountTransactions,...payableEntries,...receivableEntries].map(x=>x.date).filter(Boolean).sort();
+      if(transactionDates.length&&date>transactionDates[0]) return alert(`${currentLang==='BN'?'Start Date প্রথম transaction-এর পরে হতে পারবে না':'Start Date cannot be after the first transaction'} (${transactionDates[0]}).`);
+      let newLoan=openingNum(document.getElementById('openingLoan').value),newOtherLiability=openingNum(document.getElementById('openingOtherLiabilities').value);
+      let loanPaid=(openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.type==='loan').reduce((s,p)=>s+(Number(p.amount)||0),0),otherPaid=(openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.type==='other').reduce((s,p)=>s+(Number(p.amount)||0),0);
+      if(newLoan+0.001<loanPaid||newOtherLiability+0.001<otherPaid)return alert('Opening liability cannot be less than its already recorded payments.');
+      let invalidSupplier=false;document.querySelectorAll('[data-opening-supplier]').forEach(el=>{if(openingNum(el.value)+0.001<getSupplierOpeningPaid(el.dataset.openingSupplier))invalidSupplier=true;});if(invalidSupplier)return alert('Supplier opening payable cannot be less than its recorded opening payments.');
+      if(openingConfig.saved&&!confirm(currentLang==='BN'?'Opening balance পরিবর্তন করলে সব বর্তমান balance পুনরায় হিসাব হবে। চালিয়ে যাবেন?':'Changing opening balances recalculates all current balances. Continue?')) return;
+      openingConfig={date,cash:openingNum(document.getElementById('openingCash').value),otherAssets:openingNum(document.getElementById('openingOtherAssets').value),loanPayable:newLoan,otherLiabilities:newOtherLiability,note:document.getElementById('openingNote').value.trim(),saved:true,supplierPayments:openingConfig.supplierPayments||[],liabilityPayments:openingConfig.liabilityPayments||[]};
+      document.querySelectorAll('[data-opening-customer]').forEach(el=>{let c=customers.find(x=>String(x.id)===el.dataset.openingCustomer);if(c)c.openingDue=openingNum(el.value);});
+      document.querySelectorAll('[data-opening-supplier]').forEach(el=>{let s=suppliers.find(x=>String(x.id)===el.dataset.openingSupplier);if(s)s.openingDue=openingNum(el.value);});
+      products.forEach(p=>{
+        let q=document.querySelector(`[data-opening-product-qty="${p.id}"]`), c=document.querySelector(`[data-opening-product-cost="${p.id}"]`),u=document.querySelector(`[data-opening-product-unit="${p.id}"]`); if(!q||!c||!u)return;
+        let previous=Number.isFinite(Number(p.openingStockBags))?openingNum(p.openingStockBags):openingNum(p.stock);
+        let unit=u.value,inputQty=openingNum(q.value),inputCost=openingNum(c.value),next=openingQtyToBags(inputQty,unit,p.bagKg); p.stock=roundMoney(Math.max(0,(Number(p.stock)||0)+next-previous)); p.openingStockBags=roundMoney(next); p.openingCostPerKg=openingCostToKg(inputCost,unit,p.bagKg);p.openingInputUnit=unit;p.openingInputQty=inputQty;p.openingInputCost=inputCost;
+      });
+      saveData(); renderOpeningBalanceSetup(); renderLedger(); renderSupplierTable(); renderProducts(); renderDashboard();
+      alert(currentLang==='BN'?'Opening balances সফলভাবে সংরক্ষিত হয়েছে।':'Opening balances saved successfully.');
+    }
+
+    function getOpeningLiabilityDue(type) {
+      let original=type==='loan'?(Number(openingConfig.loanPayable)||0):(Number(openingConfig.otherLiabilities)||0);
+      let paid=(openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.type===type).reduce((s,p)=>s+(Number(p.amount)||0),0);
+      return roundMoney(Math.max(0,original-paid));
+    }
+
+    function openOpeningLiabilityPayment(type) {
+      let due=getOpeningLiabilityDue(type); if(!openingConfig.saved)return alert('Save Opening Balances first.'); if(due<=0)return alert('No remaining opening liability.');
+      let old=document.getElementById('openingLiabilityPayModal');if(old)old.remove();
+      document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="openingLiabilityPayModal" style="display:flex;"><div class="modal-content" style="max-width:500px;"><h2>💳 ${type==='loan'?'Opening Loan':'Other Liability'} Payment</h2><p style="padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:12px;">Remaining: <b>৳${due.toFixed(2)}</b></p><input type="hidden" id="openingLiabilityType" value="${type}"><label>Amount:</label><input type="number" id="openingLiabilityAmount" value="${due}" min="0.01" max="${due}" step="0.01"><label>Date:</label><input type="date" id="openingLiabilityDate" value="${new Date().toISOString().split('T')[0]}"><label>Payment Method:</label><select id="openingLiabilityMethod" onchange="toggleOpeningLiabilityFields()"><option value="Cash">Cash</option><option value="Bank">Bank</option><option value="Mobile Banking">Mobile Banking</option></select><div id="openingLiabilityBankWrap" style="display:none;"><label>Bank Account:</label><select id="openingLiabilityBankId"></select></div><div id="openingLiabilityMobileWrap" style="display:none;"><label>Mobile Account:</label><select id="openingLiabilityMobileAccountId"></select></div><label>Note:</label><input type="text" id="openingLiabilityNote" placeholder="Liability settlement"><div style="display:flex;gap:10px;"><button class="btn-success" onclick="saveOpeningLiabilityPayment()">Save Payment</button><button class="btn-danger" onclick="document.getElementById('openingLiabilityPayModal').remove()">Cancel</button></div></div></div>`); toggleOpeningLiabilityFields();
+    }
+    function toggleOpeningLiabilityFields(){let m=document.getElementById('openingLiabilityMethod').value;document.getElementById('openingLiabilityBankWrap').style.display=m==='Bank'?'block':'none';document.getElementById('openingLiabilityMobileWrap').style.display=isMobileMethod(m)?'block':'none';if(m==='Bank')populateBankSelect('openingLiabilityBankId');if(isMobileMethod(m))populateMobileAccountSelect('openingLiabilityMobileAccountId');}
+    function saveOpeningLiabilityPayment(){let type=document.getElementById('openingLiabilityType').value,amount=openingNum(document.getElementById('openingLiabilityAmount').value),due=getOpeningLiabilityDue(type),method=document.getElementById('openingLiabilityMethod').value;if(amount<=0||amount>due+0.001)return alert(`Maximum payable amount is ৳${due.toFixed(2)}`);let d=readPaymentDetails(method,'openingLiabilityBankId','openingLiability',amount,true);if(!d)return;if(!openingConfig.liabilityPayments)openingConfig.liabilityPayments=[];openingConfig.liabilityPayments.push({id:Date.now(),payNo:nextInvoiceNo('PAY'),type,date:document.getElementById('openingLiabilityDate').value||new Date().toISOString().split('T')[0],amount,method,note:document.getElementById('openingLiabilityNote').value.trim(),bankId:d.bankId,bankName:d.bankName,mobileAccountId:d.mobileAccountId,mobileAccountName:d.mobileAccountName,mobileProvider:d.mobileProvider,mobileNumber:d.mobileNumber,reversed:false});saveData();document.getElementById('openingLiabilityPayModal').remove();renderOpeningBalanceSetup();renderBankAccounts();renderMobileAccounts();renderDashboard();alert('Opening liability payment saved.');}
+
     function addBankAccount() {
       if (currentUserRole !== 'admin') return alert(t('alertOnlyAdminAddTransaction'));
+      let editId = document.getElementById('editBankAccountId').value;
+      let bankName = document.getElementById('newBankInstitution').value.trim();
       let name = document.getElementById('newBankName').value.trim();
       let number = document.getElementById('newBankNumber').value.trim();
       let opening = parseFloat(document.getElementById('newBankOpening').value) || 0;
+      if (!bankName) return alert(currentLang==='BN'?'ব্যাংকের নাম আবশ্যক।':'Bank name is required.');
       if (!name) return alert(t('alertBankNameRequired'));
       if (!number) return alert(currentLang==='BN'?'ব্যাংক অ্যাকাউন্ট নম্বর আবশ্যক।':'Bank account number is required.');
-      bankAccounts.push({ id: Date.now(), name, number, openingBalance: opening });
-      document.getElementById('newBankName').value = '';
-      document.getElementById('newBankNumber').value = '';
-      document.getElementById('newBankOpening').value = '';
+      if(editId){let b=bankAccounts.find(x=>String(x.id)===String(editId));if(b){Object.assign(b,{bankName,name,number,openingBalance:opening});syncBankSnapshotDetails(b);}}
+      else bankAccounts.push({ id: Date.now(), bankName, name, number, openingBalance: opening });
+      resetBankAccountForm();
       saveData();
       renderBankAccounts();
       populatePRDropdowns();
+    }
+
+    function editBankAccount(id){
+      if(currentUserRole!=='admin')return;let b=bankAccounts.find(x=>String(x.id)===String(id));if(!b)return;
+      document.getElementById('editBankAccountId').value=b.id;
+      document.getElementById('newBankInstitution').value=b.bankName||b.name||'';
+      document.getElementById('newBankName').value=b.name||'';
+      document.getElementById('newBankNumber').value=b.number||'';
+      document.getElementById('newBankOpening').value=Number(b.openingBalance)||'';
+      document.getElementById('bankSaveBtn').innerText='💾 Update Bank Account';
+      document.getElementById('bankCancelEditBtn').style.display='block';
+      document.getElementById('newBankInstitution').focus();
+    }
+
+    function resetBankAccountForm(){
+      document.getElementById('editBankAccountId').value='';
+      document.getElementById('newBankInstitution').value='';document.getElementById('newBankName').value='';document.getElementById('newBankNumber').value='';document.getElementById('newBankOpening').value='';
+      document.getElementById('bankSaveBtn').innerText=currentLang==='BN'?'+ অ্যাকাউন্ট যোগ করুন':'+ Add Account';document.getElementById('bankCancelEditBtn').style.display='none';
+    }
+
+    function syncBankSnapshotDetails(bank){
+      let same=v=>v!=null&&String(v)===String(bank.id),label=`${bankDisplayName(bank)} (${bank.number||'—'})`;
+      [...salesHistory,...payments,...payableEntries,...receivableEntries,...accountTransactions,...creditTransactions].forEach(x=>{if(same(x.bankId))x.bankName=label;});
+      purchases.forEach(p=>{if(same(p.bankId))p.bankName=label;(p.payments||[]).forEach(pm=>{if(same(pm.bankId))pm.bankName=label;});});
+      salesReturns.forEach(x=>{if(same(x.refundBankId)){x.refundBankName=label;x.bankName=label;}});
+      orderCancellations.forEach(x=>{if(same(x.refundBankId)){x.refundBankName=label;x.bankName=label;}});
+      [...(openingConfig.supplierPayments||[]),...(openingConfig.liabilityPayments||[])].forEach(x=>{if(same(x.bankId))x.bankName=label;});
     }
 
     function getMobileAccountTransactions(accountId) {
@@ -9782,6 +10224,10 @@
         .forEach(r=>add(r.date,'out','Customer sales return refund',r.returnNo||r.invNo,r.refundPaidAmount));
       orderCancellations.filter(c=>!c.reversed&&isMobileMethod(c.refundMethod)&&same(c.mobileAccountId||c.refundMobileAccountId))
         .forEach(c=>add(c.date,'out','Cancelled order refund',c.cancelNo||c.invNo,c.refundPaidAmount));
+      (openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&same(p.mobileAccountId))
+        .forEach(p=>add(p.date,'out','Opening supplier payable',p.payNo,p.amount));
+      (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&same(p.mobileAccountId))
+        .forEach(p=>add(p.date,'out',p.type==='loan'?'Opening loan payment':'Opening liability payment',p.payNo,p.amount));
       return rows.sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.ref).localeCompare(String(b.ref)));
     }
 
@@ -9878,6 +10324,12 @@
       let cancellationRefunds=orderCancellations
         .filter(c=>!c.reversed&&c.refundMethod==='Bank'&&String(c.refundBankId)===String(bankId))
         .reduce((sum,c)=>sum+(Number(c.refundPaidAmount)||0),0);
+      let openingSupplierPaid=(openingConfig.supplierPayments||[])
+        .filter(p=>!p.reversed&&String(p.bankId)===String(bankId))
+        .reduce((sum,p)=>sum+(Number(p.amount)||0),0);
+      let openingLiabilityPaid=(openingConfig.liabilityPayments||[])
+        .filter(p=>!p.reversed&&String(p.bankId)===String(bankId))
+        .reduce((sum,p)=>sum+(Number(p.amount)||0),0);
 
       // Account transactions via bank
       let accIn = accountTransactions
@@ -9887,12 +10339,12 @@
         .filter(a => a.bankId && String(a.bankId) === String(bankId) && a.status === 'Approved' && ['Kroy','Kharoch'].includes(a.type))
         .reduce((sum, a) => sum + (a.amount || 0), 0);
 
-      return roundMoney(opening + received + salesReceived + dueCollections + accIn - paid - purchasePaid - purchaseDuePaid - salesReturnRefunds - cancellationRefunds - accOut);
+      return roundMoney(opening + received + salesReceived + dueCollections + accIn - paid - purchasePaid - purchaseDuePaid - salesReturnRefunds - cancellationRefunds - openingSupplierPaid - openingLiabilityPaid - accOut);
     }
 
     function deleteBankAccount(id) {
       if (currentUserRole !== 'admin') return;
-      let used=salesHistory.some(s=>String(s.bankId)===String(id))||payments.some(p=>String(p.bankId)===String(id))||purchases.some(p=>String(p.bankId)===String(id)||(p.payments||[]).some(pm=>String(pm.bankId)===String(id)))||payableEntries.some(e=>String(e.bankId)===String(id))||receivableEntries.some(e=>String(e.bankId)===String(id))||accountTransactions.some(a=>String(a.bankId)===String(id))||salesReturns.some(r=>String(r.refundBankId)===String(id))||orderCancellations.some(c=>String(c.refundBankId)===String(id));
+      let used=salesHistory.some(s=>String(s.bankId)===String(id))||payments.some(p=>String(p.bankId)===String(id))||purchases.some(p=>String(p.bankId)===String(id)||(p.payments||[]).some(pm=>String(pm.bankId)===String(id)))||payableEntries.some(e=>String(e.bankId)===String(id))||receivableEntries.some(e=>String(e.bankId)===String(id))||accountTransactions.some(a=>String(a.bankId)===String(id))||salesReturns.some(r=>String(r.refundBankId)===String(id))||orderCancellations.some(c=>String(c.refundBankId)===String(id))||(openingConfig.supplierPayments||[]).some(p=>String(p.bankId)===String(id))||(openingConfig.liabilityPayments||[]).some(p=>String(p.bankId)===String(id));
       if(used) return alert(currentLang==='BN'?'এই ব্যাংক অ্যাকাউন্টে লেনদেন আছে, তাই ডিলিট করা যাবে না।':'This bank account has transactions and cannot be deleted.');
       if (!confirm(t('confirmDeleteBank'))) return;
       bankAccounts = bankAccounts.filter(b => b.id != id);
@@ -9924,15 +10376,17 @@
           accountTransactions.filter(a=>a.status==='Approved'&&String(a.bankId)===String(b.id)&&['Kroy','Kharoch'].includes(a.type)).reduce((s,a)=>s+(Number(a.amount)||0),0) +
           salesReturns.filter(r=>!r.reversed&&r.refundMethod==='Bank'&&String(r.refundBankId)===String(b.id)).reduce((s,r)=>s+(Number(r.refundPaidAmount)||0),0)
           + orderCancellations.filter(c=>!c.reversed&&c.refundMethod==='Bank'&&String(c.refundBankId)===String(b.id)).reduce((s,c)=>s+(Number(c.refundPaidAmount)||0),0)
+          + (openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&String(p.bankId)===String(b.id)).reduce((s,p)=>s+(Number(p.amount)||0),0)
+          + (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&String(p.bankId)===String(b.id)).reduce((s,p)=>s+(Number(p.amount)||0),0)
         );
         return `
           <div class="bank-account-item" style="flex-direction:column; align-items:flex-start; gap:4px; padding:12px 14px;">
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
               <div>
-                <div class="bank-name">🏦 ${b.name}</div>
-                <div class="bank-num">${b.number}</div>
+                <div class="bank-name">🏦 ${b.bankName||b.name||'—'}</div>
+                <div class="bank-num">${b.bankName&&b.name?b.name+' · ':''}${b.number}</div>
               </div>
-              ${currentUserRole === 'admin' ? `<button onclick="deleteBankAccount(${b.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}" style="flex-shrink:0;">${SVG_DELETE}</button>` : `<span style="font-size:11px; color:#94a3b8;">${t('lockedLabel')}</span>`}
+              ${currentUserRole === 'admin' ? `<div style="display:flex;gap:5px;"><button onclick="editBankAccount(${b.id})" class="btn-icon-action btn-edit" title="${t('titleEdit')}">${SVG_EDIT}</button><button onclick="deleteBankAccount(${b.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}" style="flex-shrink:0;">${SVG_DELETE}</button></div>` : `<span style="font-size:11px; color:#94a3b8;">${t('lockedLabel')}</span>`}
             </div>
             <div style="display:flex; gap:16px; margin-top:6px; font-size:12px; flex-wrap:wrap;">
               <span style="color:var(--muted);">Opening: <b>৳${(b.openingBalance||0).toFixed(2)}</b></span>
@@ -10071,7 +10525,7 @@
       'printableInvoice','printableAccountVoucher','printablePRVoucher',
       'printableReturnReceipt','printableDeliveryChallan',
       'printableCancellationReceipt','printablePaymentReceipt',
-      'printableCustomerStatement','accountsPrintArea','purchaseInvoiceBox','blPrintArea','viewSupplierContent','purchasePayReceiptBox'
+      'printableCustomerStatement','accountsPrintArea','purchaseInvoiceBox','blPrintArea','clPrintArea','viewSupplierContent','purchasePayReceiptBox'
     ]);
 
     function printDiv(divId) {
@@ -10301,6 +10755,7 @@
       renderCustomers();
       renderSales();
       renderLedger();
+      renderOpeningBalanceSetup();
       closeModal('quickCustomerModal');
     }
 
@@ -10368,7 +10823,138 @@
       renderProducts();
       renderCategories();
       renderUnitConfigTable();
+      renderOpeningBalanceSetup();
       closeModal('quickProductModal');
+    }
+
+    // ================= LOANS & CREDIT CARDS =================
+    function creditOutstanding(id) {
+      let f=creditFacilities.find(x=>String(x.id)===String(id)); if(!f)return 0;
+      let bal=Number(f.openingOutstanding)||0;
+      creditTransactions.filter(x=>String(x.facilityId)===String(id)&&!x.reversed).forEach(x=>{
+        if(['charge','draw','interest','fee','adjustment-plus'].includes(x.kind)) bal+=Number(x.amount)||0;
+        if(x.kind==='payment') bal-=Number.isFinite(Number(x.principal))?(Number(x.principal)||0):(Number(x.amount)||0);
+        if(x.kind==='adjustment-minus') bal-=Number(x.amount)||0;
+      });
+      return roundMoney(Math.max(0,bal));
+    }
+
+    function creditDueAmount(f) {
+      let outstanding=creditOutstanding(f.id); if(!outstanding)return 0;
+      if(f.type==='card') {
+        let statement=Math.min(outstanding,Math.max(0,Number(f.statementBalance)||0));
+        return roundMoney(statement);
+      }
+      return roundMoney(Math.min(outstanding,Number(f.emiAmount)||outstanding));
+    }
+
+    function maskCreditNumber(v){v=String(v||'').replace(/\s+/g,'');return v.length>4?'•••• '+v.slice(-4):(v||'—');}
+    function creditDateDiff(date){if(!date)return 99999;let a=new Date(new Date().toISOString().slice(0,10)+'T00:00:00'),b=new Date(date+'T00:00:00');return Math.round((b-a)/86400000);}
+
+    function openCreditFacilityModal(id) {
+      if(currentUserRole!=='admin')return;
+      let f=creditFacilities.find(x=>String(x.id)===String(id))||{};
+      let old=document.getElementById('creditFacilityModal');if(old)old.remove();
+      document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="creditFacilityModal" style="display:flex;"><div class="modal-content" style="max-width:720px;"><h2>${f.id?'✏️ Edit':'➕ Add'} Loan / Credit Card</h2><input type="hidden" id="creditFacilityId" value="${f.id||''}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;"><div><label>Account Type:</label><select id="creditFacilityType" onchange="toggleCreditFacilityFields()"><option value="card" ${f.type==='card'?'selected':''}>Credit Card</option><option value="loan" ${f.type==='loan'?'selected':''}>Bank Loan</option></select></div><div><label>Bank / Account Name:</label><input id="creditFacilityName" value="${f.name||''}" placeholder="e.g. City Bank Visa"></div><div><label>Card / Loan A/C Number:</label><input id="creditFacilityNumber" value="${f.number||''}" placeholder="Account number"></div><div><label>Opening Outstanding:</label><input type="number" min="0" step="0.01" id="creditFacilityOpening" value="${Number(f.openingOutstanding)||''}"></div><div><label>Annual Interest Rate (%):</label><input type="number" min="0" step="0.01" id="creditFacilityRate" value="${Number(f.annualRate)||''}"></div><div><label>Next Due Date:</label><input type="date" id="creditFacilityDueDate" value="${f.nextDueDate||''}"></div></div><div id="creditCardFields" style="margin-top:6px;"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;"><div><label>Credit Limit:</label><input type="number" min="0" step="0.01" id="creditFacilityLimit" value="${Number(f.creditLimit)||''}"></div><div><label>Statement Day:</label><input type="number" min="1" max="31" id="creditFacilityStatementDay" value="${Number(f.statementDay)||''}"></div><div><label>Due Day:</label><input type="number" min="1" max="31" id="creditFacilityDueDay" value="${Number(f.dueDay)||''}"></div><div><label>Current Statement Balance:</label><input type="number" min="0" step="0.01" id="creditFacilityStatementBalance" value="${Number(f.statementBalance)||''}"></div><div><label>Minimum Payment (%):</label><input type="number" min="0" step="0.01" id="creditFacilityMinPercent" value="${Number(f.minimumPercent)||5}"></div><div><label>Minimum Fixed Amount:</label><input type="number" min="0" step="0.01" id="creditFacilityMinAmount" value="${Number(f.minimumAmount)||''}"></div></div></div><div id="creditLoanFields" style="margin-top:6px;"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;"><div><label>EMI / Installment:</label><input type="number" min="0" step="0.01" id="creditFacilityEmi" value="${Number(f.emiAmount)||''}"></div><div><label>Loan Start Date:</label><input type="date" id="creditFacilityStart" value="${f.startDate||''}"></div><div><label>Maturity Date:</label><input type="date" id="creditFacilityMaturity" value="${f.maturityDate||''}"></div></div></div><label>Note:</label><input id="creditFacilityNote" value="${f.note||''}" placeholder="Optional note"><div style="display:flex;gap:10px;"><button class="btn-success" onclick="saveCreditFacility()">Save Account</button><button class="btn-danger" onclick="document.getElementById('creditFacilityModal').remove()">Cancel</button></div></div></div>`);
+      toggleCreditFacilityFields();
+    }
+
+    function toggleCreditFacilityFields(){let type=document.getElementById('creditFacilityType')?.value;document.getElementById('creditCardFields').style.display=type==='card'?'block':'none';document.getElementById('creditLoanFields').style.display=type==='loan'?'block':'none';}
+
+    function saveCreditFacility(){
+      let id=document.getElementById('creditFacilityId').value,name=document.getElementById('creditFacilityName').value.trim(),type=document.getElementById('creditFacilityType').value;
+      if(!name)return alert('Bank / account name is required.');
+      let obj={id:id?Number(id):Date.now(),type,name,number:document.getElementById('creditFacilityNumber').value.trim(),openingOutstanding:openingNum(document.getElementById('creditFacilityOpening').value),annualRate:openingNum(document.getElementById('creditFacilityRate').value),nextDueDate:document.getElementById('creditFacilityDueDate').value,note:document.getElementById('creditFacilityNote').value.trim(),creditLimit:openingNum(document.getElementById('creditFacilityLimit').value),statementDay:openingNum(document.getElementById('creditFacilityStatementDay').value),dueDay:openingNum(document.getElementById('creditFacilityDueDay').value),statementBalance:openingNum(document.getElementById('creditFacilityStatementBalance').value),minimumPercent:openingNum(document.getElementById('creditFacilityMinPercent').value),minimumAmount:openingNum(document.getElementById('creditFacilityMinAmount').value),emiAmount:openingNum(document.getElementById('creditFacilityEmi').value),startDate:document.getElementById('creditFacilityStart').value,maturityDate:document.getElementById('creditFacilityMaturity').value};
+      let idx=creditFacilities.findIndex(x=>String(x.id)===String(id));if(idx>=0)creditFacilities[idx]=obj;else creditFacilities.push(obj);
+      saveData();document.getElementById('creditFacilityModal').remove();renderCreditModule();runMasterLedger();
+    }
+
+    function openCreditActivityModal(facilityId,defaultKind){
+      let f=creditFacilities.find(x=>String(x.id)===String(facilityId));if(!f)return;
+      let old=document.getElementById('creditActivityModal');if(old)old.remove();
+      let kinds=f.type==='card'?`<option value="charge">Card Purchase / Expense</option><option value="payment">Card Bill Payment</option><option value="interest">Interest Charge</option><option value="fee">Late / Annual Fee</option><option value="adjustment-plus">Liability Increase Adjustment</option><option value="adjustment-minus">Liability Decrease Adjustment</option>`:`<option value="draw">Loan Disbursement Received</option><option value="payment">Loan Installment / Payment</option><option value="interest">Interest Charge</option><option value="fee">Loan Fee / Penalty</option><option value="adjustment-plus">Liability Increase Adjustment</option><option value="adjustment-minus">Liability Decrease Adjustment</option>`;
+      document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="creditActivityModal" style="display:flex;"><div class="modal-content" style="max-width:610px;"><h2>🧾 ${f.name} Activity</h2><p style="padding:10px;background:#f8fafc;border-radius:8px;">Current Outstanding: <b>৳${creditOutstanding(f.id).toFixed(2)}</b></p><input type="hidden" id="creditActivityFacilityId" value="${f.id}"><label>Activity Type:</label><select id="creditActivityKind" onchange="toggleCreditActivityFields()">${kinds}</select><label>Date:</label><input type="date" id="creditActivityDate" value="${new Date().toISOString().slice(0,10)}"><label>Total Amount:</label><input type="number" min="0.01" step="0.01" id="creditActivityAmount" oninput="creditPaymentAllocationChanged()"><div id="creditPaymentAllocation" style="display:none;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"><div><label>Balance Reduction:</label><input type="number" min="0" step="0.01" id="creditActivityPrincipal" value="0"></div><div><label>Interest:</label><input type="number" min="0" step="0.01" id="creditActivityInterest" value="0"></div><div><label>Fee:</label><input type="number" min="0" step="0.01" id="creditActivityFee" value="0"></div></div><small style="color:var(--muted);">Balance Reduction + Interest + Fee must equal Total Amount.</small></div><div id="creditPaymentSource" style="display:none;"><label>Paid / Received Through:</label><select id="creditActivityMethod" onchange="toggleCreditActivityPaymentFields()"><option value="Cash">Cash</option><option value="Bank">Bank</option><option value="Mobile Banking">Mobile Banking</option></select><div id="creditActivityBankWrap" style="display:none;"><label>Bank Account:</label><select id="creditActivityBankId"></select></div><div id="creditActivityMobileWrap" style="display:none;"><label>Mobile Banking Account:</label><select id="creditActivityMobileAccountId"></select></div></div><label>Reference / Note:</label><input id="creditActivityNote" placeholder="Statement reference, purchase details, EMI note..."><div style="display:flex;gap:10px;"><button class="btn-success" onclick="saveCreditActivity()">Save Activity</button><button class="btn-danger" onclick="document.getElementById('creditActivityModal').remove()">Cancel</button></div></div></div>`);
+      if(defaultKind)document.getElementById('creditActivityKind').value=defaultKind;toggleCreditActivityFields();
+    }
+
+    function toggleCreditActivityFields(){let k=document.getElementById('creditActivityKind').value,isPay=k==='payment',cashMove=isPay||k==='draw';document.getElementById('creditPaymentAllocation').style.display=isPay?'block':'none';document.getElementById('creditPaymentSource').style.display=cashMove?'block':'none';if(isPay)creditPaymentAllocationChanged();toggleCreditActivityPaymentFields();}
+    function toggleCreditActivityPaymentFields(){let m=document.getElementById('creditActivityMethod')?.value||'Cash';document.getElementById('creditActivityBankWrap').style.display=m==='Bank'?'block':'none';document.getElementById('creditActivityMobileWrap').style.display=isMobileMethod(m)?'block':'none';if(m==='Bank')populateBankSelect('creditActivityBankId');if(isMobileMethod(m))populateMobileAccountSelect('creditActivityMobileAccountId');}
+    function creditPaymentAllocationChanged(){let amount=openingNum(document.getElementById('creditActivityAmount')?.value),p=document.getElementById('creditActivityPrincipal');if(p&&document.activeElement!==p)p.value=amount;}
+
+    function saveCreditActivity(){
+      let facilityId=Number(document.getElementById('creditActivityFacilityId').value),f=creditFacilities.find(x=>x.id===facilityId),kind=document.getElementById('creditActivityKind').value,amount=openingNum(document.getElementById('creditActivityAmount').value),date=document.getElementById('creditActivityDate').value,note=document.getElementById('creditActivityNote').value.trim();if(!f||amount<=0||!date)return alert('Date and valid amount are required.');
+      let outstanding=creditOutstanding(facilityId),principal=0,interest=0,fee=0,method='Credit Card',details={};
+      if(kind==='payment'){principal=openingNum(document.getElementById('creditActivityPrincipal').value);interest=openingNum(document.getElementById('creditActivityInterest').value);fee=openingNum(document.getElementById('creditActivityFee').value);if(Math.abs(principal+interest+fee-amount)>0.01)return alert('Principal + Interest + Fee must equal Total Amount.');if(principal>outstanding+0.01)return alert(`Balance reduction cannot exceed outstanding ৳${outstanding.toFixed(2)}.`);method=document.getElementById('creditActivityMethod').value;details=readPaymentDetails(method,'creditActivityBankId','creditActivity',amount,true);if(!details)return;}
+      if(kind==='draw'){method=document.getElementById('creditActivityMethod').value;details=readPaymentDetails(method,'creditActivityBankId','creditActivity',amount,false);if(!details)return;principal=amount;}
+      if(kind==='interest')interest=amount;if(kind==='fee')fee=amount;if(kind==='charge'||kind==='adjustment-plus')principal=amount;if(kind==='adjustment-minus'){principal=amount;if(amount>outstanding+0.01)return alert('Adjustment cannot exceed outstanding.');}
+      let id=Date.now(),accountTxnId=null;
+      if(['charge','interest','fee'].includes(kind)){accountTxnId=id+1;accountTransactions.unshift({id:accountTxnId,type:'Kharoch',method:'Credit Card',amount,note:`${f.name} — ${note||kind}`,date,status:'Approved',createdBy:'admin',creditFacilityId:facilityId,liabilityExpense:amount});}
+      if(kind==='draw'){accountTxnId=id+1;accountTransactions.unshift({id:accountTxnId,type:'Joma',method,amount,note:`Loan disbursement — ${f.name}${note?' — '+note:''}`,date,status:'Approved',createdBy:'admin',bankId:details.bankId,bankName:details.bankName,mobileAccountId:details.mobileAccountId,mobileAccountName:details.mobileAccountName,mobileProvider:details.mobileProvider,mobileNumber:details.mobileNumber,creditFacilityId:facilityId,liabilityPrincipal:amount});}
+      if(kind==='payment'){accountTxnId=id+1;accountTransactions.unshift({id:accountTxnId,type:'Kharoch',method,amount,note:`${f.type==='card'?'Card payment':'Loan payment'} — ${f.name}${note?' — '+note:''}`,date,status:'Approved',createdBy:'admin',bankId:details.bankId,bankName:details.bankName,mobileAccountId:details.mobileAccountId,mobileAccountName:details.mobileAccountName,mobileProvider:details.mobileProvider,mobileNumber:details.mobileNumber,creditFacilityId:facilityId,liabilityPrincipal:principal,liabilityExpense:roundMoney(interest+fee)});f.statementBalance=roundMoney(Math.max(0,(Number(f.statementBalance)||0)-principal));}
+      creditTransactions.unshift({id,facilityId,date,kind,amount,principal,interest,fee,method,note,bankId:details.bankId||null,bankName:details.bankName||'',mobileAccountId:details.mobileAccountId||null,mobileAccountName:details.mobileAccountName||'',accountTxnId,reversed:false});
+      saveData();document.getElementById('creditActivityModal').remove();renderCreditModule();renderAccounts();renderBankAccounts();renderMobileAccounts();renderDashboard();runMasterLedger();
+    }
+
+    function deleteCreditActivity(id){let x=creditTransactions.find(t=>t.id===id);if(!x||!confirm('Reverse this activity?'))return;x.reversed=true;let f=creditFacilities.find(y=>y.id===x.facilityId);if(f&&x.kind==='payment')f.statementBalance=roundMoney((Number(f.statementBalance)||0)+(Number(x.principal)||0));if(x.accountTxnId)accountTransactions=accountTransactions.filter(a=>a.id!==x.accountTxnId);saveData();renderCreditModule();renderAccounts();renderBankAccounts();renderMobileAccounts();renderDashboard();runMasterLedger();}
+    function deleteCreditFacility(id){if(creditTransactions.some(x=>String(x.facilityId)===String(id)&&!x.reversed))return alert('This account has activity. Reverse its activities before deleting it.');if(!confirm('Delete this account?'))return;creditFacilities=creditFacilities.filter(x=>x.id!==id);saveData();renderCreditModule();}
+
+    function renderCreditModule(){
+      let cards=document.getElementById('creditFacilityCards');if(!cards)return;let today=new Date().toISOString().slice(0,10),total=0,dueSoon=0,overdue=0,interestPaid=0;
+      creditFacilities.forEach(f=>{let out=creditOutstanding(f.id),due=creditDueAmount(f),days=creditDateDiff(f.nextDueDate);total+=out;if(days>=0&&days<=30)dueSoon+=due;if(days<0)overdue+=due;});creditTransactions.filter(x=>!x.reversed&&x.kind==='payment').forEach(x=>interestPaid+=(Number(x.interest)||0)+(Number(x.fee)||0));
+      document.getElementById('creditTotalOutstanding').innerText='৳'+roundMoney(total).toFixed(2);document.getElementById('creditDueSoon').innerText='৳'+roundMoney(dueSoon).toFixed(2);document.getElementById('creditOverdue').innerText='৳'+roundMoney(overdue).toFixed(2);document.getElementById('creditInterestPaid').innerText='৳'+roundMoney(interestPaid).toFixed(2);
+      cards.innerHTML=creditFacilities.length?creditFacilities.map(f=>{let out=creditOutstanding(f.id),due=creditDueAmount(f),days=creditDateDiff(f.nextDueDate),status=out<=0?'Paid':days<0?'Overdue':days<=7?'Due Soon':'Active',color=status==='Overdue'?'var(--red)':status==='Due Soon'?'var(--gold)':'var(--green)',available=f.type==='card'?Math.max(0,(Number(f.creditLimit)||0)-out):0,minPay=f.type==='card'?Math.min(out,Math.max(Number(f.minimumAmount)||0,out*(Number(f.minimumPercent)||0)/100)):0,estimatedInterest=roundMoney(out*(Number(f.annualRate)||0)/1200);return `<div style="border:1px solid var(--border);border-top:4px solid ${f.type==='card'?'#2563eb':'var(--gold)'};border-radius:10px;padding:14px;background:#fff;"><div style="display:flex;justify-content:space-between;gap:8px;"><div><b>${f.type==='card'?'💳':'🏦'} ${f.name}</b><div style="font-size:11px;color:var(--muted);margin-top:3px;">${maskCreditNumber(f.number)}</div></div><span class="badge" style="background:${color}20;color:${color};">${status}</span></div><div style="font-size:12px;margin-top:12px;line-height:1.8;"><div>Outstanding: <b style="float:right;color:var(--red);">৳${out.toFixed(2)}</b></div><div>${f.type==='card'?'Statement amount to pay':'Next installment'}: <b style="float:right;">৳${due.toFixed(2)}</b></div>${f.type==='card'?`<div>Minimum payment: <b style="float:right;">৳${minPay.toFixed(2)}</b></div><div>Available limit: <b style="float:right;">৳${available.toFixed(2)}</b></div>`:''}<div>Estimated monthly interest*: <b style="float:right;color:var(--gold);">৳${estimatedInterest.toFixed(2)}</b></div><div>Next due: <b style="float:right;color:${days<0?'var(--red)':'inherit'};">${f.nextDueDate||'Not set'}</b></div><div>Annual rate: <b style="float:right;">${Number(f.annualRate)||0}%</b></div></div><small style="display:block;color:var(--muted);margin-top:6px;">*Estimate only; confirm the bank statement.</small><div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;"><button class="btn-success" style="width:auto;padding:7px 10px;" onclick="openCreditActivityModal(${f.id})">+ Activity</button><button class="btn-warning" style="width:auto;padding:7px 10px;" onclick="openCreditFacilityModal(${f.id})">Edit</button><button class="btn-danger" style="width:auto;padding:7px 10px;" onclick="deleteCreditFacility(${f.id})">Delete</button></div></div>`;}).join(''):'<p style="color:var(--muted);">No credit card or loan account added yet.</p>';
+      let filter=document.getElementById('creditLedgerFilter'),selected=filter.value;filter.innerHTML='<option value="All">All Accounts</option>'+creditFacilities.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');filter.value=selected;
+      let from=document.getElementById('creditLedgerFrom').value,to=document.getElementById('creditLedgerTo').value,list=creditTransactions.filter(x=>!x.reversed&&(selected==='All'||String(x.facilityId)===selected)&&(!from||x.date>=from)&&(!to||x.date<=to)).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.id-b.id),balances={};creditFacilities.forEach(f=>balances[f.id]=Number(f.openingOutstanding)||0);
+      document.getElementById('creditLedgerBody').innerHTML=list.length?list.map(x=>{let f=creditFacilities.find(y=>y.id===x.facilityId),inc=['charge','draw','interest','fee','adjustment-plus'].includes(x.kind)?Number(x.amount)||0:(x.kind==='payment'?(Number(x.interest)||0)+(Number(x.fee)||0):0),pay=x.kind==='payment'?(Number(x.amount)||0):(x.kind==='adjustment-minus'?(Number(x.amount)||0):0);balances[x.facilityId]=roundMoney(Math.max(0,(balances[x.facilityId]||0)+inc-pay));return `<tr><td>${x.date}</td><td><b>${f?f.name:'—'}</b></td><td>${x.kind.replaceAll('-',' ')}</td><td>${x.note||'—'}${x.kind==='payment'?`<br><small>Balance reduction ৳${(Number(x.principal)||0).toFixed(2)} · Interest ৳${(Number(x.interest)||0).toFixed(2)} · Fee ৳${(Number(x.fee)||0).toFixed(2)}</small>`:''}</td><td style="text-align:right;">${inc?'৳'+inc.toFixed(2):'—'}</td><td style="text-align:right;">${pay?'৳'+pay.toFixed(2):'—'}</td><td style="text-align:right;font-weight:700;">৳${balances[x.facilityId].toFixed(2)}</td><td class="no-print" style="text-align:center;"><button class="btn-icon-action btn-delete" onclick="deleteCreditActivity(${x.id})" title="Reverse">${SVG_DELETE}</button></td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:25px;">No activity found.</td></tr>';
+    }
+
+    let liveRefreshFrame = null;
+    function scheduleLiveRefresh() {
+      if (!appInitialized || liveRefreshFrame !== null) return;
+      liveRefreshFrame = requestAnimationFrame(() => {
+        liveRefreshFrame = null;
+        const safe = fn => { try { fn(); } catch (err) { console.error('Live view refresh failed:', err); } };
+        safe(populateDropdowns);
+        safe(populatePRDropdowns);
+        safe(populatePRFilters);
+        safe(populatePurchaseSupplierFilter);
+        safe(populatePurchaseProductFilter);
+        safe(renderDashboard);
+        safe(renderSales);
+        safe(renderProducts);
+        safe(renderCategories);
+        safe(renderCustomers);
+        safe(renderLedger);
+        safe(renderAccounts);
+        safe(renderMyVouchers);
+        safe(renderReturns);
+        safe(renderNotifications);
+        safe(renderPayable);
+        safe(renderReceivable);
+        safe(renderPRSummary);
+        safe(renderSupplierList);
+        safe(renderSupplierTable);
+        safe(renderPurchaseList);
+        safe(renderBankAccounts);
+        safe(renderMobileAccounts);
+        safe(renderCreditModule);
+        safe(renderUnitConfigTable);
+        safe(renderPayableHeads);
+        safe(renderReceivableHeads);
+
+        let reports = document.getElementById('reports-tab');
+        if (reports && reports.classList.contains('active')) {
+          let visible = [...document.querySelectorAll('.report-subtab')].find(el => getComputedStyle(el).display !== 'none');
+          if (visible?.id === 'report-overview') safe(runOverviewReport);
+          if (visible?.id === 'report-master-ledger') safe(runMasterLedger);
+          if (visible?.id === 'report-payment-ledger') safe(runPaymentLedgerReport);
+          if (visible?.id === 'report-sales') safe(runSalesReport);
+          if (visible?.id === 'report-customers') safe(searchReportCustomers);
+          if (visible?.id === 'report-products') safe(runProductsReport);
+          if (visible?.id === 'report-bank-ledger') safe(initBankLedger);
+          if (visible?.id === 'report-cash-ledger') safe(renderCashLedger);
+        }
+      });
     }
 
     function saveData() {
@@ -10389,8 +10975,12 @@
       localStorage.setItem('pos_receivable_heads', JSON.stringify(receivableHeads));
       localStorage.setItem('pos_suppliers', JSON.stringify(suppliers));
       localStorage.setItem('pos_purchases', JSON.stringify(purchases));
+      localStorage.setItem('pos_opening_config', JSON.stringify(openingConfig));
+      localStorage.setItem('pos_credit_facilities', JSON.stringify(creditFacilities));
+      localStorage.setItem('pos_credit_transactions', JSON.stringify(creditTransactions));
       if (document.getElementById('mobileAccountsList')) renderMobileAccounts();
       saveToFirestore();
+      scheduleLiveRefresh();
     }
 
     // ================= AUTHENTICATION =================
@@ -10685,6 +11275,7 @@
 
     // ================= APP INITIALIZATION =================
     async function initApp() {
+      applyMenuSequence();
       installPaymentAccountFields();
       document.getElementById('accDate').value = new Date().toISOString().split('T')[0];
 
@@ -10701,6 +11292,7 @@
       } catch (err) {
         console.error('Firebase sync failed, continuing with local data.', err);
       }
+      await loadDataProtectionAccess();
 
       // One-time migration: payments created before status-tracking existed
       // have no `status` field — grandfather them in as Approved so they
@@ -10768,6 +11360,8 @@
       renderPRSummary();
       renderBankAccounts();
       renderMobileAccounts();
+      renderOpeningBalanceSetup();
+      renderCreditModule();
       renderPayableHeads();
       renderReceivableHeads();
       renderSupplierList();
