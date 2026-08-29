@@ -647,7 +647,7 @@ const I18N = {
     add_purchases:'+ নতুন ক্রয়', add_sales:'+ নতুন বুকিং', add_expenses:'+ নতুন খরচ',
     title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
+    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_tracking:'ট্র্যাকিং নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল',
     login_subtitle:'চালিয়ে যেতে লগ ইন করুন', login_email:'ইমেইল', login_password:'পাসওয়ার্ড',
     login_btn:'লগ ইন করুন', login_error:'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে', logout:'লগ আউট',
     backup_btn:'☁️ ব্যাকআপ', restore_btn:'♻️ রিস্টোর',
@@ -746,7 +746,7 @@ const I18N = {
     add_purchases:'+ New Purchase', add_sales:'+ New Booking', add_expenses:'+ New Expense',
     title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_address:'Address', f_email:'Email', col_email:'Email',
+    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_tracking:'Tracking Number', f_address:'Address', f_email:'Email', col_email:'Email',
     login_subtitle:'Please log in to continue', login_email:'Email', login_password:'Password',
     login_btn:'Login', login_error:'Incorrect email or password', logout:'Logout',
     backup_btn:'☁️ Backup', restore_btn:'♻️ Restore',
@@ -3126,6 +3126,7 @@ const CONFIG = {
       {key:'name', labelKey:'f_name', type:'text', required:true, suggest:true},
       {key:'phone', labelKey:'f_phone', type:'text', suggest:true},
       {key:'passport', labelKey:'f_passport', type:'text', suggest:true},
+      {key:'tracking', labelKey:'f_tracking', type:'text', suggest:true},
       {key:'email', labelKey:'f_email', type:'email', suggest:true},
       {key:'address', labelKey:'f_address', type:'text', suggest:true},
       {key:'note', labelKey:'f_note', type:'text', suggest:true},
@@ -3328,7 +3329,14 @@ function renderTable(tab, items, search){
   const cfg = CONFIG[tab];
   let filtered = items;
   if(search){
-    filtered = items.filter(([id,item]) => JSON.stringify(item).toLowerCase().includes(search));
+    filtered = items.filter(([id,item]) => {
+      if(JSON.stringify(item).toLowerCase().includes(search)) return true;
+      if(tab==='sales' && item.customerId){
+        const cust = db.customers[item.customerId];
+        if(cust && ((cust.tracking && cust.tracking.toLowerCase().includes(search)) || (cust.passport && cust.passport.toLowerCase().includes(search)))) return true;
+      }
+      return false;
+    });
   }
   const wrap = document.getElementById('pgTableWrap');
   if(filtered.length===0){
