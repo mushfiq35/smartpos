@@ -1900,7 +1900,7 @@ function renderInstallmentsPage(){
               <td>${accNos.length ? escapeHtml(accNos.join(', ')) : '—'}</td>
               <td>${due>0 ? '৳'+money(due) : `<span class="pill green">${t('inst_paid')} ✓</span>`}</td>
               <td class="actions-cell">
-                ${due>0 ? `` : ''}
+                ${due>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
                 <button class="icon-btn" title="${t('installment_history_title')}" onclick="openInstallmentHistory('${id}')">📋</button>
                 <button class="icon-btn" title="${t('edit_title')}" onclick="openForm('customers','${id}')">✏️</button>
               </td>
