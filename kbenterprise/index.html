@@ -269,6 +269,7 @@
     .invoice-box table td, .invoice-box table th { padding: 6px 8px; border-bottom: 1px solid #f0ece4; font-size: 13px; }
     .invoice-box table td:last-child, .invoice-box table th:last-child { white-space: nowrap; text-align: right; }
     .invoice-box .inv-amount { white-space: nowrap; }
+    #printablePRVoucher { border:0; padding:0; border-radius:0; }
     .invoice-header { text-align: center; border-bottom: 2px dashed var(--border-cool); padding-bottom: 12px; margin-bottom: 15px; }
     .invoice-header img.invoice-logo { max-height: 64px; max-width: 220px; object-fit: contain; margin: 0 auto 10px; display: block; }
 
@@ -2441,7 +2442,7 @@
           <input type="number" id="purchasePaidAmount" placeholder="0.00" min="0" step="0.01">
         </div>
         <div>
-          <label>Date:</label>
+          <label data-key="lblDate">Date:</label>
           <input type="date" id="purchaseDate">
         </div>
       </div>
@@ -2672,6 +2673,9 @@
 
       <label data-key="lblPaid">জমা / পেমেন্ট:</label>
       <input type="number" id="salePaidAmount" placeholder="0.00">
+
+      <label data-key="lblDate">তারিখ:</label>
+      <input type="date" id="saleDate">
 
       <label data-key="lblRemarks">নোট / মন্তব্য:</label>
       <input type="text" id="saleRemarks" list="remarksSuggestions" placeholder="যেমন: গাড়ি নম্বর বা স্পেশাল নোট">
@@ -4179,6 +4183,12 @@
     // into money fields after many repeated partial returns/reversals.
     function roundMoney(x) {
       return Math.round((x + Number.EPSILON) * 100) / 100;
+    }
+
+    // Browser-local calendar date (avoids UTC showing the previous day in Bangladesh).
+    function localISODate() {
+      let now = new Date();
+      return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     }
 
     let shopConfig = JSON.parse(localStorage.getItem('pos_shop_info')) || {
@@ -6060,30 +6070,62 @@
       purchases          = [];
       creditFacilities   = [];
       creditTransactions = [];
-      openingConfig      = {date:'',cash:0,otherAssets:0,loanPayable:0,otherLiabilities:0,note:'',saved:false};
+      openingConfig      = {date:'',cash:0,otherAssets:0,loanPayable:0,otherLiabilities:0,note:'',saved:false,supplierPayments:[],liabilityPayments:[]};
       invoiceCounters    = { SAL:0, SR:0, DC:0, CX:0, PUR:0, PAY:0, RCV:0 };
       payableHeads       = ['মোবাইল বিল', 'বেতন', 'ইন্টারনেট বিল', 'দোকান ভাড়া', 'বিদ্যুৎ বিল'];
       receivableHeads    = ['পণ্য বিক্রয়', 'সার্ভিস চার্জ', 'কমিশন', 'ডেলিভারি চার্জ'];
       categories         = [];
 
-      // ── Wipe localStorage ──
-      const keysToRemove = [
-        'pos_customers','pos_products','pos_sales','pos_accounts',
-        'pos_categories','pos_returns','pos_deliveries','pos_cancellations',
-        'pos_payments','pos_payable','pos_receivable','pos_bank_accounts','pos_mobile_accounts',
-        'pos_suppliers','pos_purchases','pos_invoice_counters','pos_opening_config',
-        'pos_payable_heads','pos_receivable_heads','pos_credit_facilities','pos_credit_transactions','pos_shop_info'
-      ];
-      keysToRemove.forEach(k => localStorage.removeItem(k));
+      // Wait for any older queued save first, so it cannot restore pre-reset data.
+      await firestoreSaveQueue.catch(() => {});
 
-      // ── Wipe Firebase Firestore ──
+      // Remove every present/future POS data cache automatically. Authentication,
+      // data-protection access and business identity are configuration—not ledger data.
+      const protectedResetKeys = new Set(['pos_offline_user','pos_data_protection_access','pos_shop_info']);
+      Object.keys(localStorage).filter(k => k.startsWith('pos_') && !protectedResetKeys.has(k))
+        .forEach(k => localStorage.removeItem(k));
+
+      // Persist explicit empty arrays. Removing a key alone would allow seeded
+      // defaults/sample records to return on reload.
+      localStorage.setItem('pos_customers', '[]');
+      localStorage.setItem('pos_products', '[]');
+      localStorage.setItem('pos_sales', '[]');
+      localStorage.setItem('pos_accounts', '[]');
+      localStorage.setItem('pos_categories', '[]');
+      localStorage.setItem('pos_returns', '[]');
+      localStorage.setItem('pos_deliveries', '[]');
+      localStorage.setItem('pos_cancellations', '[]');
+      localStorage.setItem('pos_payments', '[]');
+      localStorage.setItem('pos_payable', '[]');
+      localStorage.setItem('pos_receivable', '[]');
+      localStorage.setItem('pos_bank_accounts', '[]');
+      localStorage.setItem('pos_mobile_accounts', '[]');
+      localStorage.setItem('pos_suppliers', '[]');
+      localStorage.setItem('pos_purchases', '[]');
+      localStorage.setItem('pos_credit_facilities', '[]');
+      localStorage.setItem('pos_credit_transactions', '[]');
+      localStorage.setItem('pos_invoice_counters', JSON.stringify(invoiceCounters));
+      localStorage.setItem('pos_opening_config', JSON.stringify(openingConfig));
+      localStorage.setItem('pos_payable_heads', JSON.stringify(payableHeads));
+      localStorage.setItem('pos_receivable_heads', JSON.stringify(receivableHeads));
+
+      // Overwrite the complete cloud business document with an empty snapshot.
+      // setDoc without merge also removes fields introduced by future modules.
       try {
-        if (window.firestoreDB && window.firestoreDeleteDoc && window.firestoreDoc) {
+        if (window.firestoreDB && window.firestoreSetDoc && window.firestoreDoc) {
           let docRef = window.firestoreDoc(window.firestoreDB, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
-          await window.firestoreDeleteDoc(docRef);
+          await window.firestoreSetDoc(docRef, {
+            shopConfig, customers, products, salesHistory, accountTransactions, categories,
+            salesReturns, deliveries, orderCancellations, payments, payableEntries,
+            receivableEntries, bankAccounts, mobileAccounts, payableHeads, receivableHeads,
+            suppliers, purchases, invoiceCounters, openingConfig, creditFacilities,
+            creditTransactions, resetAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+          });
         }
       } catch(e) {
-        console.warn('Firestore delete failed (data already cleared locally):', e);
+        console.error('Cloud reset failed:', e);
+        alert(currentLang==='BN' ? 'Local data পরিষ্কার হয়েছে, কিন্তু Cloud reset হয়নি। Internet ঠিক করে আবার Reset দিন।' : 'Local data was cleared, but cloud reset failed. Check the internet and run Reset again.');
+        return;
       }
 
       alert(t('alertDataReset'));
@@ -6177,6 +6219,7 @@
       let unitPrice = parseFloat(document.getElementById('saleUnitPrice').value) || 0;
       let total = parseFloat(document.getElementById('saleTotalAmount').value) || 0;
       let paid = parseFloat(document.getElementById('salePaidAmount').value) || 0;
+      let date = document.getElementById('saleDate').value || localISODate();
       let remarks = document.getElementById('saleRemarks').value;
       let method = document.getElementById('paymentType').value;
 
@@ -6236,7 +6279,8 @@
           sale.unitType = unitType;
           sale.qty = qty; sale.unitPrice = unitPrice; sale.total = total;
           sale.originalTotal = roundMoney(total + salesReturns.filter(r => r.saleId == sale.id && !r.reversed).reduce((sum,r) => sum + (r.refundValue||0), 0) + orderCancellations.filter(c=>c.saleId==sale.id&&!c.reversed).reduce((sum,c)=>sum+(Number(c.refundValue)||0),0));
-          sale.costPerKgSnapshot = getWeightedAverageCostPerKg(prodId, sale.date || new Date().toISOString().split('T')[0]);
+          sale.date = date;
+          sale.costPerKgSnapshot = getWeightedAverageCostPerKg(prodId, date);
           sale.paid = paid; sale.due = due; sale.refundOwed = refundOwed; sale.method = method; sale.remarks = remarks;
           sale.bankId = paymentDetails.bankId; sale.bankName = paymentDetails.bankName;
           sale.mobileProvider = paymentDetails.mobileProvider; sale.mobileNumber = paymentDetails.mobileNumber;
@@ -6255,13 +6299,13 @@
           prodId, prodName: prod.name,
           unitType, qty, unitPrice, total, paid, due, refundOwed, method, remarks,
           originalTotal: total,
-          costPerKgSnapshot: getWeightedAverageCostPerKg(prodId, new Date().toISOString().split('T')[0]),
+          costPerKgSnapshot: getWeightedAverageCostPerKg(prodId, date),
           bankId: paymentDetails.bankId,
           bankName: paymentDetails.bankName,
           mobileProvider: paymentDetails.mobileProvider,
           mobileNumber: paymentDetails.mobileNumber,
           mobileAccountId:paymentDetails.mobileAccountId, mobileAccountName:paymentDetails.mobileAccountName,
-          date: new Date().toISOString().split('T')[0],
+          date,
           createdBy: currentUserRole,
           status: initialStatus
         });
@@ -6564,6 +6608,7 @@
       document.getElementById('saleUnitPrice').value = s.unitPrice;
       document.getElementById('saleTotalAmount').value = s.total;
       document.getElementById('salePaidAmount').value = s.paid;
+      document.getElementById('saleDate').value = s.date || localISODate();
       document.getElementById('saleRemarks').value = s.remarks;
       document.getElementById('paymentType').value = s.method;
       togglePaymentAccountFields('paymentType','saleBankDropdown','sale');
@@ -6585,6 +6630,7 @@
       document.getElementById('saleUnitPrice').value = '';
       document.getElementById('saleTotalAmount').value = '';
       document.getElementById('salePaidAmount').value = '';
+      document.getElementById('saleDate').value = localISODate();
       document.getElementById('saleRemarks').value = '';
       let sbd = document.getElementById('saleBankDropdown');
       if (sbd) sbd.style.display = 'none';
@@ -8572,51 +8618,39 @@
         : receivableEntries.find(x => x.id == id);
       if (!entry) return;
 
-      let kindLabel = kind === 'payable' ? '💸 Payable' : '💰 Receivable';
-      let amtColor = kind === 'payable' ? '#dc2626' : '#16a34a';
+      let isBn = currentLang === 'BN';
+      let voucherNo = entry.voucherNo || (kind === 'payable' ? 'PAY' : 'RCV') + '-' + entry.id.toString().slice(-6);
+      let voucherTitle = kind === 'payable'
+        ? (isBn ? 'পেমেন্ট ভাউচার' : 'PAYMENT VOUCHER')
+        : (isBn ? 'রিসিপ্ট ভাউচার' : 'RECEIPT VOUCHER');
+      let flowLabel = kind === 'payable'
+        ? (isBn ? 'টাকা প্রদান / Balance Out' : 'Payment / Balance Out')
+        : (isBn ? 'টাকা গ্রহণ / Balance In' : 'Receipt / Balance In');
+      let amountHtml = `<span class="currency-symbol">৳</span>${(Number(entry.amount)||0).toFixed(2)}`;
 
-      let html = `
-        <div class="invoice-header">
-          ${shopConfig.logoImage ? `<img class="invoice-logo" src="${shopConfig.logoImage}">` : ''}
-          <h2>${shopConfig.name}</h2>
-          <p>${shopConfig.tagline}</p>
-          ${shopConfig.address ? `<p style="font-size:11px; color:#64748b;">${shopConfig.address}</p>` : ''}
-          ${shopConfig.contact ? `<p style="font-size:11px; color:#64748b;">${t('lblShopContact')} ${shopConfig.contact}</p>` : ''}
-          <p style="font-size:12px; color:#64748b; margin-top:4px;">${t('lblDate')}: ${entry.date} &nbsp;|&nbsp; <b>${kindLabel}</b></p>
-        </div>
-        <table style="width:100%; margin-top:10px; border-collapse:collapse;">
-          <tr style="background:#f8f6f1;">
-            <td style="padding:8px 10px; font-weight:700; width:40%;">Voucher No</td>
-            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.voucherNo || (kind === 'payable' ? 'PAY' : 'RCV') + '-' + entry.id.toString().slice(-6)}</td>
-          </tr>
-          <tr>
-            <td style="padding:8px 10px; font-weight:700;">Head</td>
-            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.head}</td>
-          </tr>
-          <tr style="background:#f8f6f1;">
-            <td style="padding:8px 10px; font-weight:700;">${t('prPaymentSystemLabel')}</td>
-            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${paymentMethodDisplay(entry)}</td>
-          </tr>
-          ${entry.note ? `<tr>
-            <td style="padding:8px 10px; font-weight:700;">${t('prNoteLabel')}</td>
-            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.note}</td>
-          </tr>` : ''}
-          <tr>
-            <td style="padding:8px 10px; font-weight:700;">${t('lblDate')}</td>
-            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.date}</td>
-          </tr>
-          <tr>
-            <td style="padding:8px 10px; font-weight:700;">Created By</td>
-            <td style="padding:8px 10px; text-align:right; white-space:nowrap;">${entry.createdByName || entry.createdBy || '-'}</td>
-          </tr>
-          <tr style="border-top:2px dashed #e2e8f0;">
-            <td style="padding:12px 10px; font-size:15px; font-weight:800;">${t('prAmountLabel')}</td>
-            <td style="padding:12px 10px; text-align:right; font-size:20px; font-weight:800; color:${amtColor};"><span class="currency-symbol">৳</span>${entry.amount.toFixed(2)}</td>
-          </tr>
-        </table>
-        <p style="text-align:center; font-size:11px; color:#94a3b8; margin-top:16px;">${t('voucherFooterNote')}</p>
-        ${signatureBlockTwoParty()}
-      `;
+      let html = buildInvoiceShell(voucherNo, entry.date, [
+        { type:'info', rows:[
+          { label:isBn?'ভাউচারের ধরন':'Voucher Type', value:`<b>${voucherTitle}</b>` },
+          { label:isBn?'লেনদেনের প্রভাব':'Transaction Effect', value:flowLabel },
+          { label:isBn?'স্ট্যাটাস':'Status', value:entry.status || 'Approved' }
+        ]},
+        { type:'table', title:isBn?'লেনদেনের বিবরণ':'Transaction Details', cols:[
+          { label:isBn?'হেড':'Head', key:'head', align:'left' },
+          { label:isBn?'পেমেন্ট মাধ্যম':'Payment Method', key:'method', align:'left' },
+          { label:isBn?'পরিমাণ':'Amount', key:'amount', align:'right' }
+        ], rows:[{
+          head:entry.head || '—',
+          method:paymentMethodDisplay(entry),
+          amount:`<b>${amountHtml}</b>`
+        }]},
+        { type:'info', rows:[
+          { label:isBn?'নোট':'Reference / Note', value:entry.note || 'N/A' },
+          { label:isBn?'তৈরি করেছেন':'Created By', value:entry.createdByName || entry.createdBy || '—' }
+        ]},
+        { type:'summary', rows:[
+          { label:isBn?'মোট পরিমাণ':'Total Amount', value:`<b style="font-size:18px;">${amountHtml}</b>` }
+        ]}
+      ]);
 
       document.getElementById('printablePRVoucher').innerHTML = html;
       document.getElementById('viewPRVoucherModal').style.display = 'flex';
@@ -8743,7 +8777,7 @@
         if (entry) { entry.head = head; entry.method = method; entry.bankId=payableDetails.bankId; entry.bankName=payableDetails.bankName; entry.mobileProvider=payableDetails.mobileProvider; entry.mobileNumber=payableDetails.mobileNumber; entry.mobileAccountId=payableDetails.mobileAccountId; entry.mobileAccountName=payableDetails.mobileAccountName; entry.amount = amount; entry.note = note; entry.date = today; }
         document.getElementById('editPayableId').value = '';
         document.getElementById('btnPayableCancel').style.display = 'none';
-        saveData(); renderPayable(); renderPRSummary(); renderDashboard(); renderBankAccounts();
+        saveData(); refreshAfterPRBalanceChange();
         resetPayableForm();
         alert(t('alertAccSaved'));
         return;
@@ -8759,11 +8793,7 @@
         createdByName: document.getElementById('headerUserName') ? document.getElementById('headerUserName').innerText : currentUserRole
       });
       saveData();
-      renderPayable();
-      renderPRSummary();
-      renderDashboard();
-      renderBankAccounts();
-      renderNotifications();
+      refreshAfterPRBalanceChange();
       resetPayableForm();
       if (currentUserRole === 'staff') alert(t('alertTransactionSentApproval'));
       else alert(t('alertAccSaved'));
@@ -8797,7 +8827,7 @@
         if (entry) { entry.head = head; entry.method = method; entry.bankId=receivableDetails.bankId; entry.bankName=receivableDetails.bankName; entry.mobileProvider=receivableDetails.mobileProvider; entry.mobileNumber=receivableDetails.mobileNumber; entry.mobileAccountId=receivableDetails.mobileAccountId; entry.mobileAccountName=receivableDetails.mobileAccountName; entry.amount = amount; entry.note = note; entry.date = today; }
         document.getElementById('editReceivableId').value = '';
         document.getElementById('btnReceivableCancel').style.display = 'none';
-        saveData(); renderReceivable(); renderPRSummary(); renderDashboard(); renderBankAccounts();
+        saveData(); refreshAfterPRBalanceChange();
         resetReceivableForm();
         alert(t('alertAccSaved'));
         return;
@@ -8813,10 +8843,7 @@
         createdByName: document.getElementById('headerUserName') ? document.getElementById('headerUserName').innerText : currentUserRole
       });
       saveData();
-      renderReceivable();
-      renderPRSummary();
-      renderDashboard();
-      renderNotifications();
+      refreshAfterPRBalanceChange();
       resetReceivableForm();
       if (currentUserRole === 'staff') alert(t('alertTransactionSentApproval'));
       else alert(t('alertAccSaved'));
@@ -8918,21 +8945,42 @@
     function deletePayable(id) {
       if (currentUserRole !== 'admin') return;
       if (!confirm(t('confirmDeletePayableEntry'))) return;
-      payableEntries = payableEntries.filter(x => x.id !== id);
+      let removed = payableEntries.find(x => String(x.id) === String(id));
+      if (!removed) return;
+      payableEntries = payableEntries.filter(x => String(x.id) !== String(id));
       saveData();
-      renderPayable();
-      renderPRSummary();
-      renderDashboard();
+      refreshAfterPRBalanceChange();
     }
 
     function deleteReceivable(id) {
       if (currentUserRole !== 'admin') return;
       if (!confirm(t('confirmDeleteReceivableEntry'))) return;
-      receivableEntries = receivableEntries.filter(x => x.id !== id);
+      let removed = receivableEntries.find(x => String(x.id) === String(id));
+      if (!removed) return;
+      receivableEntries = receivableEntries.filter(x => String(x.id) !== String(id));
       saveData();
+      refreshAfterPRBalanceChange();
+    }
+
+    function refreshAfterPRBalanceChange() {
+      // All balances are derived from approved entries. Re-render every cash
+      // destination and report source immediately after an edit/delete.
+      renderPayable();
       renderReceivable();
       renderPRSummary();
       renderDashboard();
+      renderBankAccounts();
+      renderMobileAccounts();
+      renderAccounts();
+      renderNotifications();
+      let reports = document.getElementById('reports-tab');
+      if (reports && reports.classList.contains('active')) {
+        runOverviewReport();
+        runMasterLedger();
+        runPaymentLedgerReport();
+        initBankLedger();
+        renderCashLedger();
+      }
     }
 
     function resetPayableForm() {
@@ -9778,7 +9826,7 @@
       let method = document.getElementById('purchaseMethod').value;
       let bankId = document.getElementById('purchaseBankAccountId').value || null;
       let note = document.getElementById('purchaseNote').value.trim();
-      let date = document.getElementById('purchaseDate').value || new Date().toISOString().split('T')[0];
+      let date = document.getElementById('purchaseDate').value || localISODate();
       let editId = document.getElementById('editPurchaseId').value;
 
       if (!prodId && !prodName) return alert(t('alertSelectProduct') || 'পণ্য সিলেক্ট করুন!');
@@ -9887,7 +9935,7 @@
       document.getElementById('purchasePaidAmount').value = p.paid;
       document.getElementById('purchaseMethod').value = p.method;
       document.getElementById('purchaseNote').value = p.note || '';
-      document.getElementById('purchaseDate').value = p.date || '';
+      document.getElementById('purchaseDate').value = p.date || localISODate();
       document.getElementById('editPurchaseId').value = p.id;
       document.getElementById('btnPurchaseCancel').style.display = '';
       document.getElementById('purchaseModalTitle').innerText = '✏️ Edit Purchase';
@@ -9937,7 +9985,7 @@
       if(document.getElementById('purchaseMobileAccountId')) document.getElementById('purchaseMobileAccountId').value='';
       document.getElementById('editPurchaseId').value = '';
       document.getElementById('btnPurchaseCancel').style.display = 'none';
-      let today = new Date().toISOString().split('T')[0];
+      let today = localISODate();
       document.getElementById('purchaseDate').value = today;
     }
 
