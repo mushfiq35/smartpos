@@ -965,7 +965,7 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    ব্রাউজার ট্যাব টাইটেল, প্রিন্ট হেডার, ব্যাকআপ ফাইলের নাম) নিজে থেকেই বদলে যাবে।
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
-let SHOP_NAME = "MAX MARKETING";
+let SHOP_NAME = "MAX";
 let SHOP_ADDRESS = "Max Marketing, Noapara Bazar, Abhaynagar, Jashore-7460";
 let SHOP_EMAIL = "maxnoapara@gmail.com";
 let SHOP_CONTACT = "01710448844";
@@ -1340,11 +1340,19 @@ async function removeRecord(name, id){
 }
 async function safePut(name, id, data){
   try{ await putRecord(name, id, data); }
-  catch(e){ console.error('save failed', name, id, e); showToast(t('save_failed_toast')); }
+  catch(e){
+    console.error('save failed', name, id, e);
+    showToast(t('save_failed_toast'));
+    throw e;
+  }
 }
 async function safeRemove(name, id){
   try{ await removeRecord(name, id); }
-  catch(e){ console.error('delete failed', name, id, e); showToast(t('save_failed_toast')); }
+  catch(e){
+    console.error('delete failed', name, id, e);
+    showToast(t('save_failed_toast'));
+    throw e;
+  }
 }
 
 function showToast(msg){
@@ -1590,6 +1598,38 @@ document.getElementById('logoFileInput').addEventListener('change', async (e) =>
   reader.readAsDataURL(file);
 });
 
+function calculateCustomerDueFromLedger(custId){
+  const sales = db.sales.filter(s=>s.customerId===custId);
+  const installments = db.installments.filter(i=>i.customerId===custId);
+
+  // Booking discount is already deducted in sale.total.
+  const bookedNet = sales.reduce((sum,s)=>sum+Number(s.total||0),0);
+  const initialPaid = sales.reduce(
+    (sum,s)=>sum+Number(s.initialPaid!==undefined ? s.initialPaid : s.paid||0), 0
+  );
+
+  // Installment amount is real cash. Installment discount is a later waiver.
+  // Both settle receivable, but only amount counts as cash received.
+  const laterSettlement = installments.reduce(
+    (sum,i)=>sum+Number(i.amount||0)+Number(i.discount||0), 0
+  );
+
+  const returnDueAdjust = db.returns
+    .filter(r=>!r.cancelled && r.customerId===custId)
+    .reduce((sum,r)=>sum+Number(r.dueAdjust||0),0);
+
+  return Math.max(0, Math.round(bookedNet - initialPaid - laterSettlement - returnDueAdjust));
+}
+
+function refreshCurrentView(){
+  renderNav();
+  renderPage();
+  requestAnimationFrame(()=>{
+    renderNav();
+    renderPage();
+  });
+}
+
 function renderPage(){
   if(currentTab==='settings' && !isAdminUser()) currentTab = 'dashboard';
   setTitle(currentTab);
@@ -1616,7 +1656,7 @@ function computeTotalBalance(){
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
   db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
-  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); });
+  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
   db.purchases.forEach(p => { if(inRange(p.date)) de += Number(p.initialPaid!==undefined ? p.initialPaid : p.paid||0); });
@@ -1634,7 +1674,8 @@ function pageDashboard(){
   const todayReturnsValue = db.returns.filter(r=>!r.cancelled && r.date===today).reduce((s,r)=>s+Number(r.value),0);
   const todaySales = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.total),0) - todayReturnsValue;
   const todayExpense = db.expenses.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.amount),0);
-  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0);
+  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0)
+    - db.installments.filter(i=>i.date===today && !i.isOldEntry).reduce((sum,i)=>sum+Number(i.discount||0),0);
   const todayIncome = todayProfit - todayExpense;
   const lowStock = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold));
   const totalProductQty = Object.values(db.products).reduce((s,p)=>s+Number(p.qty),0);
@@ -1743,24 +1784,46 @@ function aggregatePeriod(fromStr, toStr){
   const buckets = {};
   if(!groupByMonth){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)){
-      buckets[toISODate(d)] = {s:0,p:0,e:0};
+      buckets[toISODate(d)] = {s:0,disc:0,p:0,e:0};
     }
   } else {
     let d = new Date(from.getFullYear(), from.getMonth(), 1);
     const last = new Date(to.getFullYear(), to.getMonth(), 1);
     while(d<=last){
-      buckets[`${d.getFullYear()}-${pad2(d.getMonth()+1)}`] = {s:0,p:0,e:0};
+      buckets[`${d.getFullYear()}-${pad2(d.getMonth()+1)}`] = {s:0,disc:0,p:0,e:0};
       d.setMonth(d.getMonth()+1);
     }
   }
-  const bucketKey = (dateStr) => groupByMonth ? dateStr.slice(0,7) : dateStr;
-  const inRange = (dateStr) => dateStr >= fromStr && dateStr <= toStr;
-  db.sales.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].s += Number(x.total); } });
-  db.purchases.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].p += Number(x.total); } });
-  db.expenses.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].e += Number(x.amount); } });
-  const rows = Object.entries(buckets).map(([k,v]) => ({ d:k, s:v.s, p:v.p, e:v.e, net:v.s-v.p-v.e })).sort((a,b)=>b.d.localeCompare(a.d));
-  const totals = rows.reduce((a,r)=>({s:a.s+r.s,p:a.p+r.p,e:a.e+r.e,net:a.net+r.net}), {s:0,p:0,e:0,net:0});
-  return { rows, totals, groupByMonth };
+  const bucketKey = dateStr => groupByMonth ? dateStr.slice(0,7) : dateStr;
+  const inRange = dateStr => !!dateStr && dateStr>=fromStr && dateStr<=toStr;
+
+  // sale.total is booking/sale revenue after booking-time discount.
+  db.sales.forEach(x=>{
+    if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].s += Number(x.total||0); }
+  });
+
+  // Later installment discount is a revenue/receivable waiver, not cash and not a booking-time discount.
+  db.installments.forEach(i=>{
+    if(inRange(i.date) && !i.isOldEntry){
+      const k=bucketKey(i.date); if(buckets[k]) buckets[k].disc += Number(i.discount||0);
+    }
+  });
+
+  db.purchases.forEach(x=>{
+    if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].p += Number(x.total||0); }
+  });
+  db.expenses.forEach(x=>{
+    if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].e += Number(x.amount||0); }
+  });
+
+  const rows = Object.entries(buckets)
+    .map(([k,v])=>({d:k,s:v.s,disc:v.disc,p:v.p,e:v.e,net:v.s-v.disc-v.p-v.e}))
+    .sort((a,b)=>b.d.localeCompare(a.d));
+  const totals = rows.reduce(
+    (a,r)=>({s:a.s+r.s,disc:a.disc+r.disc,p:a.p+r.p,e:a.e+r.e,net:a.net+r.net}),
+    {s:0,disc:0,p:0,e:0,net:0}
+  );
+  return {rows,totals,groupByMonth};
 }
 
 function getAvailableYears(){
@@ -1806,7 +1869,7 @@ function renderInstallmentsPage(){
       return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
     }
     const entries = Object.entries(db.customers).filter(([id,cust]) => {
-      if(!(Number(cust.due)>0 || historyIds.has(id) || planIds.has(id))) return false;
+      if(!(calculateCustomerDueFromLedger(id)>0 || historyIds.has(id) || planIds.has(id))) return false;
       if(!q) return true;
       if(cust.name.toLowerCase().includes(q)) return true;
       if(String(cust.displayId||'').includes(q)) return true;
@@ -1828,7 +1891,7 @@ function renderInstallmentsPage(){
         <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_voucher')}</th><th>${t('inst_remaining')}</th><th></th></tr></thead>
         <tbody>
           ${pageEntries.map(([id,cust]) => {
-            const due = Number(cust.due);
+            const due = calculateCustomerDueFromLedger(id);
             const accNos = accountNumbersFor(id);
             return `<tr>
               <td>${cust.displayId?('#'+cust.displayId):'—'}</td>
@@ -1837,7 +1900,7 @@ function renderInstallmentsPage(){
               <td>${accNos.length ? escapeHtml(accNos.join(', ')) : '—'}</td>
               <td>${due>0 ? '৳'+money(due) : `<span class="pill green">${t('inst_paid')} ✓</span>`}</td>
               <td class="actions-cell">
-                ${due>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
+                ${due>0 ? `` : ''}
                 <button class="icon-btn" title="${t('installment_history_title')}" onclick="openInstallmentHistory('${id}')">📋</button>
                 <button class="icon-btn" title="${t('edit_title')}" onclick="openForm('customers','${id}')">✏️</button>
               </td>
@@ -1953,7 +2016,7 @@ function renderSummaryReport(body){
     let dp = 0, de = 0;
     const inRange = (d) => d>=SUMMARY_START_DATE && d<beforeDateStr;
     db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount||0); });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
     db.purchases.forEach(p => { if(inRange(p.date)) de += Number(p.initialPaid!==undefined ? p.initialPaid : p.paid||0); });
@@ -1971,7 +2034,7 @@ function renderSummaryReport(body){
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
     db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); } });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); } });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
     db.purchases.forEach(p => { if(inRange(p.date)){ const k=bucketKey(p.date); if(buckets[k]) buckets[k].de += Number(p.initialPaid!==undefined ? p.initialPaid : p.paid||0); } });
@@ -2234,7 +2297,7 @@ function renderInstallmentOnlyReport(body){
     const historyIds = new Set(db.installments.map(i=>i.customerId).filter(Boolean));
     const planIds = new Set(db.installmentPlans.map(p=>p.customerId).filter(Boolean));
     Object.entries(db.customers).forEach(([cid,cust]) => {
-      if(Number(cust.due)>0 || historyIds.has(cid) || planIds.has(cid)){
+      if(calculateCustomerDueFromLedger(cid)>0 || historyIds.has(cid) || planIds.has(cid)){
         if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0 };
       }
     });
@@ -2242,7 +2305,7 @@ function renderInstallmentOnlyReport(body){
       return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
     }
     Object.values(byCust).forEach(c => {
-      c.due = c.customerId && db.customers[c.customerId] ? Number(db.customers[c.customerId].due||0) : 0;
+      c.due = c.customerId && db.customers[c.customerId] ? calculateCustomerDueFromLedger(c.customerId) : 0;
       c.accountNos = c.customerId ? accountNumbersFor(c.customerId) : [];
     });
     const q = instRptQuery.trim().toLowerCase();
@@ -2266,7 +2329,7 @@ function renderInstallmentOnlyReport(body){
             <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${i.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${i.id}')">🗑️</button></td></tr>`).join('')}</tbody>
             <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>—</td><td colspan="2"></td></tr></tfoot>
           </table>
-          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')} (${t('inst_col_new_due')}): ৳${money(cust?cust.due:0)}</div>` : ''}
+          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')} (${t('inst_col_new_due')}): ৳${money(cust?calculateCustomerDueFromLedger(cid):0)}</div>` : ''}
         </div>
       `;
     }
@@ -2498,6 +2561,7 @@ function renderReportsOverview(body){
     document.getElementById('ovBody').innerHTML = `
       <div class="stat-grid">
         <div class="stat-card c4"><div class="val">৳${money(totals.s)}</div><div class="lbl">${t('rep_col_sales')} (${t('totals_label')})</div></div>
+        <div class="stat-card c5"><div class="val">৳${money(totals.disc)}</div><div class="lbl">${currentLang==='bn'?'কিস্তির ছাড়':'Installment Discount'}</div></div>
         <div class="stat-card c6"><div class="val">৳${money(totals.p)}</div><div class="lbl">${t('rep_col_purchase')} (${t('totals_label')})</div></div>
         <div class="stat-card c7"><div class="val">৳${money(totals.e)}</div><div class="lbl">${t('rep_col_expense')} (${t('totals_label')})</div></div>
         <div class="stat-card c8"><div class="val">৳${money(totals.net)}</div><div class="lbl">${t('rep_col_net')} (${t('totals_label')})</div></div>
@@ -2506,9 +2570,9 @@ function renderReportsOverview(body){
         <div class="panel">
           <h3>${t('reports_summary')}</h3>
           <table class="data">
-            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
+            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${currentLang==='bn'?'কিস্তির ছাড়':'Inst. Discount'}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
             <tbody>
-              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
+              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.disc)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
             </tbody>
           </table>
         </div>
@@ -2543,17 +2607,17 @@ function printCustLedger(cid){
   if(!cust) return;
   const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
   const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
   const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
   const totalPaid = totalInitialPaid + totalInstPaid;
-  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
 
   const ledgerRaw = [
     ...sales.map(s=>({
       ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
       label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total), discount: Number(s.discount||0),
+      total: Number(s.total)+Number(s.discount||0), discount: Number(s.discount||0),
       paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
       profit: saleNetProfit(s)
     })),
@@ -2612,9 +2676,9 @@ function printCustReportList(){
     const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
     const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
     const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-    const instPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const instPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
     const paid = initialPaid + instPaid;
-    const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+    const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
     return { c, qty, paid, profit };
   });
   const body = `
@@ -2626,14 +2690,14 @@ function printCustReportList(){
         <td>${escapeHtml(r.c.phone||'—')}</td>
         <td>${r.qty||'—'}</td>
         <td>৳${money(r.paid)}</td>
-        <td>৳${money(r.c.due)}</td>
+        <td>৳${money(calculateCustomerDueFromLedger(r.id))}</td>
         <td>৳${money(r.profit)}</td>
       </tr>`).join('')}</tbody>
       <tfoot><tr>
         <td colspan="3">${t('totals_label')} (${entries.length})</td>
         <td>${rows.reduce((s,r)=>s+r.qty,0)}</td>
         <td>৳${money(rows.reduce((s,r)=>s+r.paid,0))}</td>
-        <td>৳${money(entries.reduce((s,[,c])=>s+Number(c.due||0),0))}</td>
+        <td>৳${money(entries.reduce((sum,[id])=>sum+calculateCustomerDueFromLedger(id),0))}</td>
         <td>৳${money(rows.reduce((s,r)=>s+r.profit,0))}</td>
       </tr></tfoot>
     </table>
@@ -2680,9 +2744,9 @@ function renderCustomerReport(body){
       const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
       const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
       const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-      const instPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+      const instPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
       const paid = initialPaid + instPaid;
-      const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+      const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
       return { id, c, qty, paid, profit };
     });
     const listEl = document.getElementById('custReportList');
@@ -2697,7 +2761,7 @@ function renderCustomerReport(body){
               <td>${escapeHtml(r.c.phone||'—')}</td>
               <td>${r.qty||'—'}</td>
               <td>৳${money(r.paid)}</td>
-              <td>৳${money(r.c.due)}</td>
+              <td>৳${money(calculateCustomerDueFromLedger(r.id))}</td>
               <td>৳${money(r.profit)}</td>
               <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${r.id}" title="${t('view_title')}">👁</button></td>
             </tr>
@@ -2707,7 +2771,7 @@ function renderCustomerReport(body){
             <td colspan="3">${t('totals_label')} (${entries.length})</td>
             <td>${rows.reduce((s,r)=>s+r.qty,0)}</td>
             <td>৳${money(rows.reduce((s,r)=>s+r.paid,0))}</td>
-            <td>৳${money(entries.reduce((s,[,c])=>s+Number(c.due||0),0))}</td>
+            <td>৳${money(entries.reduce((sum,[id])=>sum+calculateCustomerDueFromLedger(id),0))}</td>
             <td>৳${money(rows.reduce((s,r)=>s+r.profit,0))}</td>
             <td></td>
           </tr></tfoot>
@@ -2729,17 +2793,17 @@ function renderCustomerReport(body){
     const payments = db.installments
       .filter(p=>p.customerId===custId && matchesYearMonth(p.date, custReportYear, custReportMonth))
       .sort((a,b)=>b.ts-a.ts);
-    const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+    const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
     const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
     const totalPaid = totalInitialPaid + totalInstPaid;
-    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
 
     const ledgerRaw = [
       ...sales.map(s=>({
         ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
         label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-        total: Number(s.total), discount: Number(s.discount||0),
+        total: Number(s.total)+Number(s.discount||0), discount: Number(s.discount||0),
         paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
         profit: saleNetProfit(s)
       })),
@@ -2770,7 +2834,7 @@ function renderCustomerReport(body){
           <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
           <button class="btn ghost no-print" onclick="printCustLedger('${custId}')">${t('print_report')}</button>
         </div>
-        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
+        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, calculateCustomerDueFromLedger(custId))} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
 
         <h3 style="margin:14px 0 8px;">🧾 লেনদেনের হিসাব</h3>
         ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
@@ -2791,7 +2855,7 @@ function renderCustomerReport(body){
             <td>৳${money(totalBought)}</td>
             <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
             <td>৳${money(totalPaid)}</td>
-            <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+            <td>${calculateCustomerDueFromLedger(custId)>0?'<span style="color:var(--red);">৳'+money(calculateCustomerDueFromLedger(custId))+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
             <td>৳${money(totalProfit)}</td>
           </tr></tfoot>
         </table>`}
@@ -2899,7 +2963,7 @@ const CONFIG = {
     extraRowActions:(id,item)=> `
       <button class="icon-btn" title="${t('history_title')}" onclick="openCustomerHistory('${id}')">🧾</button>
       <button class="icon-btn" title="${t('installment_history_title')}" onclick="openInstallmentHistory('${id}')">📋</button>
-      ${item.due>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
+      
     `,
     isObj:true
   },
@@ -3045,10 +3109,11 @@ function renderListPage(tab){
   function applyFilters(){
     const search = document.getElementById('pgSearch').value.trim().toLowerCase();
     const cat = isProducts ? document.getElementById('pgCatFilter').value : '';
-    let filteredItems = items;
-    if(cat) filteredItems = filteredItems.filter(([id,item]) => item.cat===cat);
+    let liveItems = cfg.isObj ? Object.entries(db[tab]) : db[tab].map(x=>[x.id, x]).reverse();
+    if(tab==='sales') liveItems = groupSalesForDisplay(liveItems);
+    if(cat) liveItems = liveItems.filter(([id,item]) => item.cat===cat);
     pageNum[tab] = 1;
-    renderTable(tab, filteredItems, search);
+    renderTable(tab, liveItems, search);
   }
 
   applyFilters();
@@ -3433,8 +3498,7 @@ document.getElementById('formSaveBtn').addEventListener('click', async () => {
   await handleSave(tab, id, values);
   document.getElementById('formOverlay').classList.remove('open');
   formCtx = null;
-  renderNav();
-  renderPage();
+  refreshCurrentView();
 });
 
 async function handleSave(tab, id, values){
@@ -3714,16 +3778,16 @@ function openCustomerHistory(custId){
   if(!cust) return;
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
   const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
   const totalPaid = totalInitialPaid + totalInstPaid;
 
   const ledgerRaw = [
     ...sales.map(s=>({
       ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
       label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total), discount: Number(s.discount||0),
+      total: Number(s.total)+Number(s.discount||0), discount: Number(s.discount||0),
       paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid)
     })),
     ...payments.map(p=>({
@@ -3751,7 +3815,7 @@ function openCustomerHistory(custId){
       ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
     <div class="field-hint" style="margin-bottom:10px;">
-      ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
+      ${t('history_summary')(totalBought, totalPaid, calculateCustomerDueFromLedger(custId))}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
     </div>
     ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
     <table class="data">
@@ -3770,7 +3834,7 @@ function openCustomerHistory(custId){
         <td>৳${money(totalBought)}</td>
         <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
         <td>৳${money(totalPaid)}</td>
-        <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+        <td>${calculateCustomerDueFromLedger(custId)>0?'<span style="color:var(--red);">৳'+money(calculateCustomerDueFromLedger(custId))+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
       </tr></tfoot>
     </table>`}
   `;
@@ -3888,6 +3952,11 @@ document.getElementById('quickAddSaveBtn').addEventListener('click', async () =>
     }
   }
   renderNav();
+  // If Quick Add was used from a standalone list/page, reflect the new record immediately.
+  if(!document.getElementById('formOverlay').classList.contains('open') &&
+     !document.getElementById('multiSaleOverlay').classList.contains('open')){
+    refreshCurrentView();
+  }
 });
 
 function renderInstallmentPlanHtml(plan){
@@ -3938,21 +4007,24 @@ async function markInstallmentPaid(planId, idx){
     remainingToApply -= applyAmt;
     sale.paid = Number(sale.paid||0) + applyAmt;
     sale.due = Math.max(0, Number(sale.due||0) - applyAmt);
-    if(applyAmt>0) adjustments.push({ saleId: sale.id, amount: applyAmt });
+    if(applyAmt>0) adjustments.push({ saleId: sale.id, cashAmount:applyAmt, discountAmount:0, amount:applyAmt });
   });
   for(const sale of groupSales) await safePut('sales', sale.id, sale);
 
   if(plan.customerId && db.customers[plan.customerId]){
     const cust = db.customers[plan.customerId];
-    const previousDue = Number(cust.due);
-    cust.due = Math.max(0, previousDue - Number(item.amount));
-    await safePut('customers', plan.customerId, cust);
+    const previousDue = calculateCustomerDueFromLedger(plan.customerId);
     const instRecord = {
       id: uid(), receiptNo: nextReceiptNo(), customerId: plan.customerId, customerName: plan.customerName,
-      amount: Number(item.amount), discount: 0, previousDue, newDue: cust.due, adjustments,
+      amount: Number(item.amount), discount: 0, previousDue,
+      newDue: Math.max(0,previousDue-Number(item.amount)), adjustments,
       date: todayStr(), ts: Date.now(), planId: plan.id, installmentNo: idx
     };
     db.installments.push(instRecord);
+    await safePut('installments', instRecord.id, instRecord);
+    cust.due = calculateCustomerDueFromLedger(plan.customerId);
+    instRecord.newDue = cust.due;
+    await safePut('customers', plan.customerId, cust);
     await safePut('installments', instRecord.id, instRecord);
     openInstallmentReceipt(instRecord);
   }
@@ -3970,15 +4042,23 @@ async function reverseInstallmentPaymentEffects(rec){
   for(const adj of adjustments){
     const sale = db.sales.find(s=>s.id===adj.saleId);
     if(sale){
-      sale.due = Number(sale.due) + Number(adj.amount);
-      sale.paid = Math.max(0, Number(sale.paid) - Number(adj.amount));
+      if(adj.cashAmount!==undefined || adj.discountAmount!==undefined){
+        const cashAmount = Number(adj.cashAmount||0);
+        const discountAmount = Number(adj.discountAmount||0);
+        sale.due = Number(sale.due||0) + cashAmount + discountAmount;
+        sale.paid = Math.max(0, Number(sale.paid||0) - cashAmount);
+      }else{
+        // Legacy records used one combined settlement amount and also added it to sale.paid.
+        sale.due = Number(sale.due||0) + Number(adj.amount||0);
+        sale.paid = Math.max(0, Number(sale.paid||0) - Number(adj.amount||0));
+      }
       await safePut('sales', sale.id, sale);
     }
   }
-  // undo the customer due change
   if(rec.customerId && db.customers[rec.customerId]){
     const cust = db.customers[rec.customerId];
-    cust.due = Number(cust.due) + Number(rec.amount) + Number(rec.discount||0);
+    // Rebuild cached due from transactions after caller removes/replaces the record.
+    cust.due = calculateCustomerDueFromLedger(rec.customerId);
     await safePut('customers', rec.customerId, cust);
   }
   // if this came from a formal installment plan, put that installment back to pending
@@ -3998,8 +4078,11 @@ async function deleteInstallmentPayment(id){
   await reverseInstallmentPaymentEffects(rec);
   db.installments = db.installments.filter(i=>i.id!==id);
   await safeRemove('installments', id);
-  renderNav();
-  renderPage();
+  if(rec.customerId && db.customers[rec.customerId]){
+    db.customers[rec.customerId].due = calculateCustomerDueFromLedger(rec.customerId);
+    await safePut('customers', rec.customerId, db.customers[rec.customerId]);
+  }
+  refreshCurrentView();
   if(document.getElementById('instHistoryOverlay').classList.contains('open') && rec.customerId) openInstallmentHistory(rec.customerId);
 }
 
@@ -4037,40 +4120,63 @@ async function saveEditedInstallmentPayment(){
   const newNote = document.getElementById('dueNoteInput').value.trim();
   const newIsOldEntry = document.getElementById('dueIsOldEntry').checked;
   if(newAmount<=0 && newDiscount<=0) return;
+  if(newAmount<0 || newDiscount<0) return;
 
-  // reverse the old effects first
+  const custBefore = rec.customerId ? db.customers[rec.customerId] : null;
+  const currentDue = rec.customerId ? calculateCustomerDueFromLedger(rec.customerId) : 0;
+  const maxSettlement = currentDue + Number(rec.amount||0) + Number(rec.discount||0);
+  if(rec.customerId && newAmount + newDiscount > maxSettlement){
+    alert(currentLang==='bn'
+      ? 'পরিশোধ + ছাড় উপলভ্য বকেয়ার চেয়ে বেশি হতে পারবে না।'
+      : 'Payment + discount cannot exceed the available due.');
+    return;
+  }
+
   await reverseInstallmentPaymentEffects(rec);
 
-  // re-apply with the new values, same as creating a fresh flexible payment
-  const cust = rec.customerId ? db.customers[rec.customerId] : null;
-  const previousDue = cust ? Number(cust.due) : Number(rec.previousDue);
-  const newDue = Math.max(0, previousDue - (newAmount+newDiscount));
-  if(cust){ cust.due = newDue; await safePut('customers', rec.customerId, cust); }
+  // Remove the old record from the calculation temporarily before rebuilding previous due.
+  const oldIndex = db.installments.findIndex(i=>i.id===rec.id);
+  if(oldIndex>=0) db.installments.splice(oldIndex,1);
 
-  let toApply = newAmount + newDiscount;
+  const cust = rec.customerId ? db.customers[rec.customerId] : null;
+  const previousDue = rec.customerId ? calculateCustomerDueFromLedger(rec.customerId) : Number(rec.previousDue||0);
+
+  let cashLeft = newAmount, discountLeft = newDiscount;
   const adjustments = [];
   if(rec.customerId){
     const openSales = db.sales.filter(s=>s.customerId===rec.customerId && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
     for(const sale of openSales){
-      if(toApply<=0) break;
-      const applyAmt = Math.min(Number(sale.due), toApply);
-      sale.paid = Number(sale.paid||0) + applyAmt;
-      sale.due = Math.max(0, Number(sale.due) - applyAmt);
-      toApply -= applyAmt;
-      adjustments.push({ saleId: sale.id, amount: applyAmt });
-      await safePut('sales', sale.id, sale);
+      if(cashLeft<=0 && discountLeft<=0) break;
+      let available = Number(sale.due||0);
+      const cashAmount = Math.min(available,cashLeft);
+      available -= cashAmount; cashLeft -= cashAmount;
+      const discountAmount = Math.min(available,discountLeft);
+      discountLeft -= discountAmount;
+      const settled = cashAmount + discountAmount;
+      if(settled>0){
+        sale.paid = Number(sale.paid||0) + cashAmount;
+        sale.due = Math.max(0,Number(sale.due||0)-settled);
+        adjustments.push({saleId:sale.id,cashAmount,discountAmount,amount:settled});
+        await safePut('sales',sale.id,sale);
+      }
     }
   }
 
   rec.amount = newAmount; rec.discount = newDiscount; rec.date = newDate; rec.note = newNote;
-  rec.isOldEntry = newIsOldEntry; rec.previousDue = previousDue; rec.newDue = newDue; rec.adjustments = adjustments;
+  rec.isOldEntry = newIsOldEntry; rec.previousDue = previousDue;
+  rec.newDue = Math.max(0,previousDue-newAmount-newDiscount); rec.adjustments = adjustments;
+  db.installments.push(rec);
+  if(cust){
+    cust.due = calculateCustomerDueFromLedger(rec.customerId);
+    rec.newDue = cust.due;
+    await safePut('customers',rec.customerId,cust);
+  }
   delete rec.planId; delete rec.installmentNo; // editing detaches it from any formal plan item
   await safePut('installments', rec.id, rec);
 
   document.getElementById('dueOverlay').classList.remove('open');
   editInstPayCtx = null;
-  renderNav();
-  renderPage();
+  refreshCurrentView();
   if(document.getElementById('instHistoryOverlay').classList.contains('open') && rec.customerId) openInstallmentHistory(rec.customerId);
 }
 
@@ -4607,12 +4713,24 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     const price = Number(document.getElementById(`ms-price-${rowId}`).value)||0;
     const disc = Number(document.getElementById(`ms-discount-${rowId}`).value)||0;
     if(qty<=0) continue;
-    if(qty > Number(product.qty)){
-      if(!confirm(t('low_stock_more'))) return;
-    }
+    // Stock is validated after all rows are collected, so duplicate-product rows
+    // and edited invoices are checked against the correct combined availability.
     rowsData.push({ pid, product, qty, price, disc, rowTotal: Math.max(0, qty*price - disc) });
   }
   if(rowsData.length===0){ alert(t('product_not_found')); return; }
+
+  // Validate duplicate product rows together, otherwise two rows can each pass stock validation separately.
+  const requiredByProduct = {};
+  rowsData.forEach(r=>requiredByProduct[r.pid]=(requiredByProduct[r.pid]||0)+Number(r.qty||0));
+  for(const [pid,required] of Object.entries(requiredByProduct)){
+    const product=db.products[pid];
+    let effectiveStock=Number(product?.qty||0);
+    if(msEditInvoiceId){
+      effectiveStock += db.sales.filter(x=>x.invoiceId===msEditInvoiceId && x.productId===pid)
+        .reduce((sum,x)=>sum+Number(x.qty||0),0);
+    }
+    if(required>effectiveStock && !confirm(t('low_stock_more'))) return;
+  }
 
   // if editing, first reverse the old invoice's stock/due effects
   if(msEditInvoiceId){
@@ -4669,7 +4787,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   saleRecords.forEach(rec => db.sales.push(rec));
   await Promise.all(saleRecords.map(rec => safePut('sales', rec.id, rec)));
   if(customerId && cust){
-    cust.due = Number(cust.due||0) + overallDue;
+    cust.due = calculateCustomerDueFromLedger(customerId);
     await safePut('customers', customerId, cust);
   }
 
@@ -4693,8 +4811,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   document.getElementById('multiSaleOverlay').classList.remove('open');
   msEditInvoiceId = null;
   msEditInvoiceNo = null;
-  renderNav();
-  renderPage();
+  refreshCurrentView();
   if(saleRecords.length && typeof openSaleView==='function') openSaleView(saleRecords[0].id);
 });
 
@@ -4702,6 +4819,7 @@ let dueCtx = null;
 function openPayDue(custId){
   const cust = db.customers[custId];
   if(!cust) return;
+  cust.due = calculateCustomerDueFromLedger(custId);
   editInstPayCtx = null;
   dueCtx = custId;
   document.getElementById('dueTitle').textContent = t('pay_due_title');
@@ -4749,34 +4867,59 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const note = document.getElementById('dueNoteInput').value.trim();
   const isOldEntry = document.getElementById('dueIsOldEntry').checked;
   if(paid<=0 && discount<=0) return;
-  const previousDue = Number(cust.due);
-  const newDue = Math.max(0, previousDue - (paid+discount));
-  cust.due = newDue;
-  await safePut('customers', dueCtx, cust);
+  if(paid<0 || discount<0){
+    alert(currentLang==='bn' ? 'পরিশোধ বা ছাড় ঋণাত্মক হতে পারবে না।' : 'Payment or discount cannot be negative.');
+    return;
+  }
 
-  // distribute this payment across the customer's outstanding sales (oldest first)
-  // so each sale's own paid/due fields stay accurate too
-  let toApply = paid + discount;
+  const previousDue = calculateCustomerDueFromLedger(dueCtx);
+  if(paid + discount > previousDue){
+    alert(currentLang==='bn'
+      ? 'পরিশোধ + ছাড় বর্তমান বকেয়ার চেয়ে বেশি হতে পারবে না।'
+      : 'Payment + discount cannot exceed the current due.');
+    return;
+  }
+
+  // Cash and waiver are allocated separately. Only cash increases sale.paid.
+  let cashLeft = paid;
+  let discountLeft = discount;
   const openSales = db.sales.filter(s=>s.customerId===dueCtx && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
   const adjustments = [];
   const salesToUpdate = [];
+
   for(const sale of openSales){
-    if(toApply<=0) break;
-    const applyAmt = Math.min(Number(sale.due), toApply);
-    sale.paid = Number(sale.paid||0) + applyAmt;
-    sale.due = Math.max(0, Number(sale.due) - applyAmt);
-    toApply -= applyAmt;
-    adjustments.push({ saleId: sale.id, amount: applyAmt });
-    salesToUpdate.push(sale);
+    if(cashLeft<=0 && discountLeft<=0) break;
+    let available = Number(sale.due||0);
+    const cashAmount = Math.min(available, cashLeft);
+    available -= cashAmount;
+    cashLeft -= cashAmount;
+
+    const discountAmount = Math.min(available, discountLeft);
+    available -= discountAmount;
+    discountLeft -= discountAmount;
+
+    const settled = cashAmount + discountAmount;
+    if(settled>0){
+      sale.paid = Number(sale.paid||0) + cashAmount;
+      sale.due = Math.max(0, Number(sale.due||0) - settled);
+      adjustments.push({saleId:sale.id, cashAmount, discountAmount, amount:settled});
+      salesToUpdate.push(sale);
+    }
   }
   await Promise.all(salesToUpdate.map(sale => safePut('sales', sale.id, sale)));
 
   const instRecord = {
     id: uid(), receiptNo: nextReceiptNo(), customerId: dueCtx, customerName: cust.name,
-    amount: paid, discount, previousDue, newDue, note, isOldEntry, adjustments,
+    amount: paid, discount, previousDue, newDue: Math.max(0, previousDue-paid-discount),
+    note, isOldEntry, adjustments,
     date: payDate, ts: new Date(payDate).getTime() || Date.now()
   };
   db.installments.push(instRecord);
+  await safePut('installments', instRecord.id, instRecord);
+
+  cust.due = calculateCustomerDueFromLedger(dueCtx);
+  instRecord.newDue = cust.due;
+  await safePut('customers', dueCtx, cust);
   await safePut('installments', instRecord.id, instRecord);
   document.getElementById('dueOverlay').classList.remove('open');
   dueCtx = null;
@@ -4816,7 +4959,7 @@ function openInstallmentHistory(custId){
   const cust = db.customers[custId];
   if(!cust) return;
   const list = db.installments.filter(x=>x.customerId===custId).sort((a,b)=>b.ts-a.ts);
-  const totalPaid = list.reduce((s,x)=>s+Number(x.amount)+Number(x.discount||0),0);
+  const totalPaid = list.reduce((s,x)=>s+Number(x.amount||0),0);
   const plans = db.installmentPlans.filter(p=>p.customerId===custId).sort((a,b)=>b.ts-a.ts);
   document.getElementById('instHistoryTitle').textContent = cust.name + ' — ' + t('installment_history_title');
   document.getElementById('instHistoryCloseBtn').textContent = t('close');
@@ -4825,7 +4968,7 @@ function openInstallmentHistory(custId){
     <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
       ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
-    <div class="field-hint" style="margin-bottom:10px;">${t('inst_total_paid')}: ৳${money(totalPaid)} · ${t('col_due')}: ৳${money(cust.due)}</div>
+    <div class="field-hint" style="margin-bottom:10px;">${t('inst_total_paid')}: ৳${money(totalPaid)} · ${t('col_due')}: ৳${money(calculateCustomerDueFromLedger(custId))}</div>
     ${plans.length>0 ? plans.map(p=>`
       <div class="panel">
         <div style="font-weight:700;margin-bottom:6px;">${escapeHtml(p.productName||'')} — ${t('inst_plan_summary')(p.count, p.perAmount)}</div>
