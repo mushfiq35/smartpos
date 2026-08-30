@@ -6031,19 +6031,21 @@
       }
     }
 
-    function exportSystemData() {
+    async function exportSystemData() {
       if(!canManageDataTools())return alert('Backup access is restricted to the Owner-authorized Super Users.');
+      await firestoreSaveQueue.catch(()=>{});
       let backupData = {
-        exportedAt: new Date().toISOString(), shopConfig, customers, products, salesHistory,
+        backupSchemaVersion:2, appName:'KB Trading System POS', exportedAt:new Date().toISOString(),
+        dataCounts:{customers:customers.length,products:products.length,sales:salesHistory.length,purchases:purchases.length,suppliers:suppliers.length,accounts:accountTransactions.length,returns:salesReturns.length,deliveries:deliveries.length,cancellations:orderCancellations.length,dueCollections:payments.length,payable:payableEntries.length,receivable:receivableEntries.length,banks:bankAccounts.length,mobileAccounts:mobileAccounts.length,creditFacilities:creditFacilities.length,creditTransactions:creditTransactions.length},
+        shopConfig, customers, products, salesHistory,
         accountTransactions, categories, salesReturns, deliveries, orderCancellations, payments,
         payableEntries, receivableEntries, bankAccounts, mobileAccounts, payableHeads, receivableHeads,
         suppliers, purchases, invoiceCounters, openingConfig, creditFacilities, creditTransactions
       };
-      let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
-      let dlAnchorElem = document.createElement('a');
-      dlAnchorElem.setAttribute("href", dataStr);
-      dlAnchorElem.setAttribute("download", `POS_Backup_${new Date().toISOString().split('T')[0]}.json`);
-      dlAnchorElem.click();
+      let jsonText=JSON.stringify(backupData,null,2),verify=JSON.parse(jsonText),required=['customers','products','salesHistory','accountTransactions','suppliers','purchases','bankAccounts','mobileAccounts','openingConfig','creditFacilities'];
+      if(required.some(k=>!(k in verify)))return alert('Backup validation failed. No file was downloaded.');
+      let blob=new Blob([jsonText],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`POS_FULL_Backup_${new Date().toISOString().split('T')[0]}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+      alert(`Full backup ready. ${backupData.dataCounts.customers} customers, ${backupData.dataCounts.products} products, ${backupData.dataCounts.sales} sales and all other ledgers are included.`);
     }
 
     function importSystemData() {
@@ -6052,40 +6054,16 @@
       if (!fileInput.files.length) return alert(t("alertSelectBackupFile"));
 
       let reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = async function(e) {
         try {
           let data = JSON.parse(e.target.result);
-          if (data.customers && data.products && data.salesHistory) {
-            localStorage.setItem('pos_shop_info', JSON.stringify(data.shopConfig || shopConfig));
-            localStorage.setItem('pos_customers', JSON.stringify(data.customers));
-            localStorage.setItem('pos_products', JSON.stringify(data.products));
-            localStorage.setItem('pos_sales', JSON.stringify(data.salesHistory));
-            localStorage.setItem('pos_accounts', JSON.stringify(data.accountTransactions || []));
-            localStorage.setItem('pos_categories', JSON.stringify(data.categories || categories));
-            localStorage.setItem('pos_returns', JSON.stringify(data.salesReturns || []));
-            localStorage.setItem('pos_deliveries', JSON.stringify(data.deliveries || []));
-            localStorage.setItem('pos_cancellations', JSON.stringify(data.orderCancellations || []));
-            localStorage.setItem('pos_payments', JSON.stringify(data.payments || []));
-            localStorage.setItem('pos_payable', JSON.stringify(data.payableEntries || []));
-            localStorage.setItem('pos_receivable', JSON.stringify(data.receivableEntries || []));
-            localStorage.setItem('pos_bank_accounts', JSON.stringify(data.bankAccounts || []));
-            localStorage.setItem('pos_mobile_accounts', JSON.stringify(data.mobileAccounts || []));
-            localStorage.setItem('pos_payable_heads', JSON.stringify(data.payableHeads || payableHeads));
-            localStorage.setItem('pos_receivable_heads', JSON.stringify(data.receivableHeads || receivableHeads));
-            localStorage.setItem('pos_suppliers', JSON.stringify(data.suppliers || []));
-            localStorage.setItem('pos_purchases', JSON.stringify(data.purchases || []));
-            localStorage.setItem('pos_invoice_counters', JSON.stringify(data.invoiceCounters || invoiceCounters));
-            localStorage.setItem('pos_opening_config', JSON.stringify(data.openingConfig || openingConfig));
-            localStorage.setItem('pos_credit_facilities', JSON.stringify(data.creditFacilities || []));
-            localStorage.setItem('pos_credit_transactions', JSON.stringify(data.creditTransactions || []));
-
-            alert(t("alertDataRestored"));
-            location.reload();
-          } else {
-            alert(t("alertSelectValidBackup"));
-          }
+          if(!Array.isArray(data.customers)||!Array.isArray(data.products)||!Array.isArray(data.salesHistory))return alert(t("alertSelectValidBackup"));
+          let normalized={shopConfig:data.shopConfig||shopConfig,customers:data.customers,products:data.products,salesHistory:data.salesHistory,accountTransactions:Array.isArray(data.accountTransactions)?data.accountTransactions:[],categories:Array.isArray(data.categories)?data.categories:[],salesReturns:Array.isArray(data.salesReturns)?data.salesReturns:[],deliveries:Array.isArray(data.deliveries)?data.deliveries:[],orderCancellations:Array.isArray(data.orderCancellations)?data.orderCancellations:[],payments:Array.isArray(data.payments)?data.payments:[],payableEntries:Array.isArray(data.payableEntries)?data.payableEntries:[],receivableEntries:Array.isArray(data.receivableEntries)?data.receivableEntries:[],bankAccounts:Array.isArray(data.bankAccounts)?data.bankAccounts:[],mobileAccounts:Array.isArray(data.mobileAccounts)?data.mobileAccounts:[],payableHeads:Array.isArray(data.payableHeads)?data.payableHeads:payableHeads,receivableHeads:Array.isArray(data.receivableHeads)?data.receivableHeads:receivableHeads,suppliers:Array.isArray(data.suppliers)?data.suppliers:[],purchases:Array.isArray(data.purchases)?data.purchases:[],invoiceCounters:data.invoiceCounters||invoiceCounters,openingConfig:data.openingConfig||openingConfig,creditFacilities:Array.isArray(data.creditFacilities)?data.creditFacilities:[],creditTransactions:Array.isArray(data.creditTransactions)?data.creditTransactions:[]};
+          if(!window.firestoreDB||!window.firestoreSetDoc||!window.firestoreDoc)throw new Error('Cloud database is not ready; no data was changed.');
+          let docRef=window.firestoreDoc(window.firestoreDB,FIRESTORE_COLLECTION,FIRESTORE_DOC_ID);await window.firestoreSetDoc(docRef,{...normalized,restoredAt:new Date().toISOString(),updatedAt:new Date().toISOString()});syncCloudFromLocalVars(normalized);
+          alert(t("alertDataRestored"));location.reload();
         } catch (err) {
-          alert(t("alertBackupFileError"));
+          console.error('Restore failed:',err);alert(`${t("alertBackupFileError")} ${err.message||''}`);
         }
       };
       reader.readAsText(fileInput.files[0]);
