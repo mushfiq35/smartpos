@@ -1361,6 +1361,7 @@
         <div class="card" id="personalLoanLedgerPrintArea">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><h3>📒 Person-wise Loan Ledger</h3><button class="btn-warning no-print" style="width:auto;" onclick="printDiv('personalLoanLedgerPrintArea')">🖨️ Print Current List</button></div>
           <div class="filter-grid no-print"><div><label>Person / Account:</label><select id="personalLoanFilter" onchange="renderPersonalLoanModule()"><option value="All">All Accounts</option></select></div><div><label>Type:</label><select id="personalLoanTypeFilter" onchange="renderPersonalLoanModule()"><option value="All">All Types</option><option value="advance">Staff/Person Advance</option><option value="borrowed">Borrowed from Person</option></select></div><div><label>From:</label><input type="date" id="personalLoanFrom" onchange="renderPersonalLoanModule()"></div><div><label>To:</label><input type="date" id="personalLoanTo" onchange="renderPersonalLoanModule()"></div></div>
+          <div class="no-print" style="display:flex;justify-content:flex-end;margin:8px 0;"><label style="width:auto;display:flex;align-items:center;gap:8px;">History: <select id="personalLoanStatusFilter" onchange="renderPersonalLoanModule()" style="width:auto;margin:0;"><option value="active">Active</option><option value="all">Active + Reversed</option><option value="reversed">Reversed Only</option></select></label></div>
           <div class="table-responsive"><table><thead><tr><th>Date</th><th>Person / Account</th><th>Activity</th><th>Method & Details</th><th style="text-align:right;">Principal (+)</th><th style="text-align:right;">Principal Paid (-)</th><th style="text-align:right;">Outstanding</th><th class="no-print" style="text-align:center;">Action</th></tr></thead><tbody id="personalLoanLedgerBody"></tbody></table></div>
         </div>
         <div class="ml-section-title"><span>Bank Loans & Credit Cards</span></div>
@@ -1650,6 +1651,7 @@
             <button type="button" class="lang-btn active" data-report-tab="overview" onclick="openReportSubTab('overview')" data-key="reportTabOverview">ওভারভিউ</button>
             <button type="button" class="lang-btn" data-report-tab="sales" onclick="openReportSubTab('sales')" data-key="reportTabSales">বিক্রয়</button>
             <button type="button" class="lang-btn" data-report-tab="customers" onclick="openReportSubTab('customers')" data-key="reportTabCustomers">কাস্টমার</button>
+            <button type="button" class="lang-btn" data-report-tab="suppliers" onclick="openReportSubTab('suppliers')" data-key="reportTabSuppliers">সাপ্লায়ার</button>
             <button type="button" class="lang-btn" data-report-tab="products" onclick="openReportSubTab('products')" data-key="reportTabProducts">প্রোডাক্ট</button>
             <button type="button" class="lang-btn" data-report-tab="payment-ledger" onclick="openReportSubTab('payment-ledger')" data-key="reportTabPaymentLedger">Payment Ledger</button>
             <button type="button" class="lang-btn" data-report-tab="master-ledger" onclick="openReportSubTab('master-ledger')" data-key="reportTabMasterLedger">📒 Final Ledger</button>
@@ -1809,8 +1811,12 @@
         <!-- CUSTOMERS SUB-TAB -->
         <div id="report-customers" class="report-subtab" style="display:none;">
           <div class="card" style="margin-bottom:15px;">
-            <label data-key="reportSearchCustLabel">Search by Name, Invoice, or Contact Number:</label>
-            <input type="text" id="rcSearchInput" onkeyup="searchReportCustomers()" placeholder="🔎">
+            <div class="filter-grid no-print">
+              <div><label>Customer:</label><select id="rcCustomerFilter" onchange="searchReportCustomers()"><option value="All">All Customers</option></select></div>
+              <div><label data-key="lblFromDate">From Date:</label><input type="date" id="rcFromDate" onchange="searchReportCustomers()"></div>
+              <div><label data-key="lblToDate">To Date:</label><input type="date" id="rcToDate" onchange="searchReportCustomers()"></div>
+              <div><label>Search (Name/Invoice/Phone):</label><input type="text" id="rcSearchInput" onkeyup="searchReportCustomers()" placeholder="🔎"></div>
+            </div>
           </div>
           <div class="card">
             <div class="table-responsive">
@@ -1827,6 +1833,21 @@
                 <tbody></tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <!-- SUPPLIERS SUB-TAB -->
+        <div id="report-suppliers" class="report-subtab" style="display:none;">
+          <div class="card" style="margin-bottom:15px;">
+            <div class="filter-grid no-print">
+              <div><label>Supplier:</label><select id="rspSupplierFilter" onchange="runSuppliersReport()"><option value="All">All Suppliers</option></select></div>
+              <div><label data-key="lblFromDate">From Date:</label><input type="date" id="rspFromDate" onchange="runSuppliersReport()"></div>
+              <div><label data-key="lblToDate">To Date:</label><input type="date" id="rspToDate" onchange="runSuppliersReport()"></div>
+              <div><label>Search (Name/Invoice/Phone):</label><input type="text" id="rspSearchInput" onkeyup="runSuppliersReport()" placeholder="🔎"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="table-responsive"><table id="reportSuppliersTable"><thead><tr><th>Supplier</th><th>Phone</th><th style="text-align:right;">Period Purchase</th><th style="text-align:right;">Period Paid</th><th style="text-align:right;">Closing Payable</th><th style="text-align:center;">Action</th></tr></thead><tbody></tbody></table></div>
           </div>
         </div>
 
@@ -2026,6 +2047,8 @@
                   <option value="account-out">Accounts (Expense)</option>
                   <option value="payable">Payable</option>
                   <option value="receivable">Receivable</option>
+                  <option value="loan-activity">Person Loans / Advances</option>
+                  <option value="credit-activity">Bank Loans / Cards</option>
                 </select>
               </div>
               <div>
@@ -2086,7 +2109,7 @@
                       <th data-key="mlColMethod">মেথড</th>
                       <th style="text-align:right; color:var(--green);" data-key="mlColIncome">আয় (+)</th>
                       <th style="text-align:right; color:var(--red);" data-key="mlColExpense">ব্যয় (-)</th>
-                      <th style="text-align:right;" data-key="mlColBalance">ব্যালেন্স</th>
+                      <th style="text-align:right;" data-key="mlColBalance">P&amp;L ব্যালেন্স</th>
                     </tr>
                   </thead>
                   <tbody id="mlTableBody"></tbody>
@@ -3197,6 +3220,7 @@
         reportTabOverview: "ওভারভিউ",
         reportTabSales: "বিক্রয়",
         reportTabCustomers: "কাস্টমার",
+        reportTabSuppliers: "সাপ্লায়ার",
         reportTabProducts: "প্রোডাক্ট",
         lblFromDate: "শুরুর তারিখ:",
         lblToDate: "শেষের তারিখ:",
@@ -3573,7 +3597,7 @@
         mlColMethod: "মেথড",
         mlColIncome: "আয় (+)",
         mlColExpense: "ব্যয় (-)",
-        mlColBalance: "ব্যালেন্স",
+        mlColBalance: "P&L ব্যালেন্স",
         mlNetPLTitle: "নেট লাভ / ক্ষতি",
         mlSumSales: "বিক্রয়",
         mlSumDue: "Due আদায়",
@@ -3771,6 +3795,7 @@
         reportTabOverview: "Overview",
         reportTabSales: "Sales",
         reportTabCustomers: "Customers",
+        reportTabSuppliers: "Suppliers",
         reportTabProducts: "Products",
         lblFromDate: "From Date:",
         lblToDate: "To Date:",
@@ -4148,7 +4173,7 @@
         mlColMethod: "Method",
         mlColIncome: "Income (+)",
         mlColExpense: "Expense (-)",
-        mlColBalance: "Balance",
+        mlColBalance: "P&L Balance",
         mlNetPLTitle: "Net Profit / Loss",
         mlSumSales: "Sales",
         mlSumDue: "Due Collection",
@@ -4528,6 +4553,7 @@
       if (name === 'payment-ledger') { populateRplHeadFilter(); runPaymentLedgerReport(); }
       if (name === 'sales') runSalesReport();
       if (name === 'customers') searchReportCustomers();
+      if (name === 'suppliers') runSuppliersReport();
       if (name === 'products') runProductsReport();
       if (name === 'bank-ledger') initBankLedger();
       if (name === 'cash-ledger') renderCashLedger();
@@ -5222,7 +5248,21 @@
       (openingConfig.supplierPayments||[]).filter(p=>!p.reversed).forEach(p=>{let s=suppliers.find(x=>String(x.id)===String(p.supplierId));allTxns.push({date:p.date,kind:'purchase',label:'Opening Payable Payment',detail:s?s.name:'Supplier',method:p.method||'—',income:0,expense:0,ref:p.payNo||''});});
       (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed).forEach(p=>allTxns.push({date:p.date,kind:'purchase',label:p.type==='loan'?'Opening Loan Payment':'Opening Liability Payment',detail:p.note||'Balance sheet settlement',method:p.method||'—',income:0,expense:0,ref:p.payNo||''}));
       purchases.forEach(p=>allTxns.push({date:p.date,kind:'purchase',label:t('mlKindPurchase'),detail:`${p.supplierName||'—'} — ${p.prodName||'—'} — ${currentLang==='BN'?'৳':'BDT '}${(Number(p.total)||0).toFixed(2)}`,method:p.method||'—',income:0,expense:0,ref:p.purchaseNo||''}));
-      approvedAccounts.forEach(a=>{let isIn=a.type==='Joma'||a.type==='Bikroy',liability=!!(a.creditFacilityId||a.loanAccountId),income=isIn?(liability?0:(Number(a.amount)||0)):0,expense=isIn?0:(liability?(Number(a.liabilityExpense)||0):(Number(a.amount)||0));allTxns.push({date:a.date,kind:liability?'purchase':(isIn?'account-in':'account-out'),label:liability?(a.loanAccountId?'Person Loan Activity':'Loan / Card Activity'):`A/C — ${a.type}`,detail:a.note||'—',method:a.method||'—',income,expense,ref:''});});
+      approvedAccounts.forEach(a=>{
+        let isIn=a.type==='Joma'||a.type==='Bikroy', isPerson=!!a.loanAccountId, isCredit=!!a.creditFacilityId, liability=isPerson||isCredit, amount=Number(a.amount)||0, income=isIn?(liability?0:amount):0, expense=isIn?0:(liability?(Number(a.liabilityExpense)||0):amount), kind=liability?(isPerson?'loan-activity':'credit-activity'):(isIn?'account-in':'account-out'), label=liability?(isPerson?'Person Loan / Advance':'Bank Loan / Card'):`A/C — ${a.type}`, detail=a.note||'—';
+        if(isPerson){
+          let x=personalLoanTransactions.find(t=>String(t.accountTxnId)===String(a.id)&&!t.reversed), loan=x&&personalLoanAccounts.find(l=>String(l.id)===String(x.loanId)), principal=x?(Number(x.principal)||0):(Number(a.liabilityPrincipal)||0), effect=loan?.type==='advance'?'Advance Receivable':'Loan Liability', sign=x&&Number(x.principalDelta)<0?'−':'+';
+          label=x?personalLoanActivityLabel(x.kind):label;
+          detail=`${loan?.partyName||a.note||'—'} · <b>${isIn?'Fund IN':'Fund OUT'} ৳${amount.toFixed(2)}</b> · ${effect} ${sign}৳${principal.toFixed(2)}${expense>0?` · Interest/Fee Expense ৳${expense.toFixed(2)}`:''}`;
+        } else if(isCredit){
+          let x=creditTransactions.find(t=>String(t.accountTxnId)===String(a.id)&&!t.reversed), facility=x&&creditFacilities.find(f=>String(f.id)===String(x.facilityId)), principal=x?(['charge','interest','fee'].includes(x.kind)?amount:(Number(x.principal)||0)):(Number(a.liabilityPrincipal)||0), cashMove=x&&['draw','payment'].includes(x.kind), liabilitySign=x&&x.kind==='payment'?'−':'+';
+          label=x?`${facility?.name||'Loan / Card'} — ${x.kind.replaceAll('-',' ')}`:label;
+          detail=`${a.note||facility?.name||'—'}${cashMove?` · <b>${isIn?'Fund IN':'Fund OUT'} ৳${amount.toFixed(2)}</b>`:' · No cash movement'} · Loan Liability ${liabilitySign}৳${principal.toFixed(2)}${expense>0?` · Interest/Fee Expense ৳${expense.toFixed(2)}`:''}`;
+        }
+        allTxns.push({date:a.date,kind,label,detail,method:a.method||'—',income,expense,ref:''});
+      });
+      personalLoanTransactions.filter(x=>!x.reversed&&!x.accountTxnId).forEach(x=>{let loan=personalLoanAccounts.find(l=>String(l.id)===String(x.loanId));allTxns.push({date:x.date,kind:'loan-activity',label:personalLoanActivityLabel(x.kind),detail:`${loan?.partyName||'—'} · Opening / non-cash entry · ${loan?.type==='advance'?'Advance Receivable':'Loan Liability'} ${Number(x.principalDelta)<0?'−':'+'}৳${(Number(x.principal)||0).toFixed(2)}`,method:x.method||'Opening Balance',income:0,expense:0,ref:x.txnNo||''});});
+      creditTransactions.filter(x=>!x.reversed&&!x.accountTxnId&&['adjustment-plus','adjustment-minus'].includes(x.kind)).forEach(x=>{let f=creditFacilities.find(y=>String(y.id)===String(x.facilityId));allTxns.push({date:x.date,kind:'credit-activity',label:`${f?.name||'Loan / Card'} — ${x.kind.replaceAll('-',' ')}`,detail:`${x.note||'Non-cash adjustment'} · Loan Liability ${x.kind==='adjustment-minus'?'−':'+'}৳${(Number(x.amount)||0).toFixed(2)} · No cash movement`,method:'Adjustment',income:0,expense:0,ref:''});});
       approvedPayables.forEach(e=>allTxns.push({date:e.date,kind:'payable',label:`Payable — ${e.head}`,detail:e.note||'—',method:e.method||'—',income:0,expense:Number(e.amount)||0,ref:''}));
       approvedReceivables.forEach(e=>allTxns.push({date:e.date,kind:'receivable',label:`Receivable — ${e.head}`,detail:e.note||'—',method:e.method||'—',income:Number(e.amount)||0,expense:0,ref:''}));
       allTxns.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
@@ -5256,6 +5296,8 @@
         'return':      { label: t('mlKindReturn'),      cls: 'ml-return',      row: 'ml-expense' },
         'payable':     { label: t('mlKindPayable'),     cls: 'ml-payable',     row: 'ml-expense' },
         'account-out': { label: t('mlKindAccOut'),      cls: 'ml-account-out', row: 'ml-expense' },
+        'loan-activity': { label: 'Loan / Advance',     cls: 'ml-payment',     row: 'ml-neutral' },
+        'credit-activity': { label: 'Loan / Card',      cls: 'ml-payment',     row: 'ml-neutral' },
       };
 
       let openingRow = openingBalance !== 0 ? `<tr class="ml-neutral">
@@ -5312,6 +5354,8 @@
         'return':      { label: t('mlKindReturn'),      cls: 'ml-return',      row: 'ml-expense' },
         'payable':     { label: t('mlKindPayable'),     cls: 'ml-payable',     row: 'ml-expense' },
         'account-out': { label: t('mlKindAccOut'),      cls: 'ml-account-out', row: 'ml-expense' },
+        'loan-activity': { label: 'Loan / Advance',     cls: 'ml-payment',     row: 'ml-neutral' },
+        'credit-activity': { label: 'Loan / Card',      cls: 'ml-payment',     row: 'ml-neutral' },
       };
 
       const monthNames = currentLang === 'BN'
@@ -5515,17 +5559,21 @@
 
     function searchReportCustomers() {
       let q = document.getElementById('rcSearchInput').value.toLowerCase().trim();
+      let party=document.getElementById('rcCustomerFilter')?.value||'All',from=document.getElementById('rcFromDate')?.value||'',to=document.getElementById('rcToDate')?.value||'';
+      let select=document.getElementById('rcCustomerFilter');
+      if(select){let keep=select.value;select.innerHTML='<option value="All">All Customers</option>'+customers.map(c=>`<option value="${c.id}">${c.name} — ${c.phone||'N/A'}</option>`).join('');select.value=[...select.options].some(o=>o.value===keep)?keep:'All';party=select.value;}
 
       let filtered = customers.filter(c => {
+        if(party!=='All'&&String(c.id)!==party)return false;
         if (!q) return true;
-        let matchesBasic = c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q);
-        let matchesInvoice = salesHistory.some(s => s.custId == c.id && s.invNo.toLowerCase().includes(q));
+        let matchesBasic = (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q);
+        let matchesInvoice = salesHistory.some(s => s.custId == c.id && (s.invNo||'').toLowerCase().includes(q));
         return matchesBasic || matchesInvoice;
       });
 
       let tbody = document.querySelector('#reportCustomersTable tbody');
       tbody.innerHTML = filtered.length ? filtered.map(c => {
-        let { totalBilled, due } = getCustomerTotalDue(c.id);
+        let all=getCustomerStatementLines(c.id),period=filterPartyStatementLines(all,from,to,''),totalBilled=period.lines.reduce((s,x)=>s+(Number(x.debit)||0),0),due=period.closing;
         return `
           <tr>
             <td><b>${c.name}</b></td>
@@ -5533,11 +5581,37 @@
             <td><span class="currency-symbol">৳</span>${totalBilled.toFixed(2)}</td>
             <td style="color:${due > 0 ? '#dc2626' : '#16a34a'};"><b><span class="currency-symbol">৳</span>${due.toFixed(2)}</b></td>
             <td style="text-align:center;">
-              <button onclick="showCustomerStatement(${c.id})" class="btn-icon-action btn-view" title="${t('titleViewStatement')}">${SVG_VIEW}</button>
+              <button onclick="showCustomerStatement(${c.id},document.getElementById('rcFromDate').value,document.getElementById('rcToDate').value,'')" class="btn-icon-action btn-view" title="${t('titleViewStatement')}">${SVG_VIEW}</button>
             </td>
           </tr>
         `;
       }).join('') : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+    }
+
+    function getSupplierStatementLines(supplierId){
+      let lines=[],supplier=suppliers.find(s=>String(s.id)===String(supplierId)),opening=Number(supplier?.openingDue)||0;
+      if(opening>0)lines.push({date:openingConfig.date||'0000-01-01',ref:'OPENING',description:'Opening Supplier Payable',qty:'—',debit:opening,credit:0});
+      (openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&String(p.supplierId)===String(supplierId)).forEach(p=>lines.push({date:p.date,ref:p.payNo||'—',description:`Opening Payable Payment — ${paymentMethodDisplay(p)}`,qty:'—',debit:0,credit:Number(p.amount)||0}));
+      purchases.filter(p=>String(p.supplierId)===String(supplierId)).forEach(p=>{
+        let later=(p.payments||[]).reduce((s,pm)=>s+(Number(pm.amount)||0),0),initial=Math.max(0,(Number(p.paid)||0)-later),unit=p.unitType==='Ton'?'Ton':p.unitType==='Kg'?'Kg':'Bag';
+        lines.push({date:p.date,ref:p.purchaseNo||('PUR-'+String(p.id).slice(-6)),description:`Purchase — ${p.prodName||'—'}`,qty:`${Number(p.qty)||0} ${unit}`,debit:Number(p.total)||0,credit:0});
+        if(initial>0)lines.push({date:p.date,ref:p.purchaseNo||'—',description:`Initial Payment — ${paymentMethodDisplay(p)}`,qty:'—',debit:0,credit:initial});
+        (p.payments||[]).forEach(pm=>lines.push({date:pm.date||p.date,ref:pm.payNo||p.purchaseNo||'—',description:`Due Payment — ${paymentMethodDisplay(pm)}`,qty:'—',debit:0,credit:Number(pm.amount)||0}));
+      });
+      lines.sort((a,b)=>(a.date||'').localeCompare(b.date||''));let balance=0;lines.forEach(x=>{balance=roundMoney(balance+(Number(x.debit)||0)-(Number(x.credit)||0));x.balance=balance;});return lines;
+    }
+
+    function filterPartyStatementLines(all,from='',to='',q=''){
+      q=(q||'').toLowerCase().trim();let opening=from?all.filter(x=>(x.date||'')<from).reduce((s,x)=>s+(Number(x.debit)||0)-(Number(x.credit)||0),0):0;
+      let lines=all.filter(x=>(!from||x.date>=from)&&(!to||x.date<=to)&&(!q||`${x.ref} ${x.description} ${x.qty||''}`.toLowerCase().includes(q)));
+      return {lines,opening:roundMoney(opening),closing:roundMoney(to?(all.filter(x=>(x.date||'')<=to).reduce((s,x)=>s+(Number(x.debit)||0)-(Number(x.credit)||0),0)):(all.length?all[all.length-1].balance:0))};
+    }
+
+    function runSuppliersReport(){
+      let select=document.getElementById('rspSupplierFilter');if(!select)return;let keep=select.value;select.innerHTML='<option value="All">All Suppliers</option>'+suppliers.map(s=>`<option value="${s.id}">${s.name} — ${s.phone||'N/A'}</option>`).join('');select.value=[...select.options].some(o=>o.value===keep)?keep:'All';
+      let party=select.value,from=document.getElementById('rspFromDate').value,to=document.getElementById('rspToDate').value,q=document.getElementById('rspSearchInput').value.toLowerCase().trim();
+      let list=suppliers.filter(s=>(party==='All'||String(s.id)===party)&&(!q||`${s.name} ${s.phone||''} ${s.address||''}`.toLowerCase().includes(q)||purchases.some(p=>String(p.supplierId)===String(s.id)&&`${p.purchaseNo||''} ${p.prodName||''}`.toLowerCase().includes(q))));
+      document.querySelector('#reportSuppliersTable tbody').innerHTML=list.length?list.map(s=>{let period=filterPartyStatementLines(getSupplierStatementLines(s.id),from,to,''),purchase=period.lines.reduce((n,x)=>n+(Number(x.debit)||0),0),paid=period.lines.reduce((n,x)=>n+(Number(x.credit)||0),0);return `<tr><td><b>${s.name}</b></td><td>${s.phone||'N/A'}</td><td style="text-align:right;">৳${purchase.toFixed(2)}</td><td style="text-align:right;color:var(--green);">৳${paid.toFixed(2)}</td><td style="text-align:right;color:${period.closing>0?'var(--red)':'var(--green)'};"><b>৳${Math.abs(period.closing).toFixed(2)}</b></td><td style="text-align:center;"><button onclick="showSupplierReportStatement(${s.id},document.getElementById('rspFromDate').value,document.getElementById('rspToDate').value,'')" class="btn-icon-action btn-view" title="View Statement">${SVG_VIEW}</button></td></tr>`;}).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">No suppliers found.</td></tr>';
     }
 
     function runProductsReport() {
@@ -8050,16 +8124,17 @@
       return lines;
     }
 
-    function showCustomerStatement(custId) {
+    function showCustomerStatement(custId,from='',to='',statementSearch='') {
       let cust = customers.find(c => c.id == custId);
       if (!cust) return;
 
-      let lines = getCustomerStatementLines(custId);
-      let finalBalance = lines.length ? lines[lines.length - 1].balance : 0;
+      let filteredStatement=filterPartyStatementLines(getCustomerStatementLines(custId),from,to,statementSearch),lines=filteredStatement.lines;
+      let finalBalance = filteredStatement.closing;
       let totalDebit = lines.reduce((sum, l) => sum + l.debit, 0);
       let totalCredit = lines.reduce((sum, l) => sum + l.credit, 0);
 
-      let rowsHtml = lines.length ? lines.map(l => `
+      let openingHtml=from?`<tr style="background:#f8fafc;font-weight:700;"><td>${from}</td><td>OPENING</td><td>Balance before selected period</td><td class="cs-qty">—</td><td class="cs-money">—</td><td class="cs-money">—</td><td class="cs-money"><b>${filteredStatement.opening.toFixed(2)}</b></td></tr>`:'';
+      let rowsHtml = openingHtml+(lines.length ? lines.map(l => `
         <tr>
           <td>${l.date}</td>
           <td>${l.ref}</td>
@@ -8069,7 +8144,7 @@
           <td class="cs-money" style="color:#16a34a;">${l.credit > 0 ? l.credit.toFixed(2) : '—'}</td>
           <td class="cs-money"><b>${l.balance.toFixed(2)}</b></td>
         </tr>
-      `).join('') : `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+      `).join('') : `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`);
 
       let html = `
         <div class="invoice-header">
@@ -8079,6 +8154,7 @@
           ${shopConfig.address ? `<p style="font-size:11px; color:#64748b;">${shopConfig.address}</p>` : ''}
           ${shopConfig.contact ? `<p style="font-size:11px; color:#64748b;">${t('lblShopContact')} ${shopConfig.contact}</p>` : ''}
           <p style="font-size:12px; color:#64748b;">${t('titleCustomerStatement')}</p>
+          <p style="font-size:11px; color:#64748b;">Period: ${from||'Beginning'} to ${to||'Current'}</p>
         </div>
 
         <div style="margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px;">
@@ -8126,6 +8202,18 @@
       html += signatureBlockTwoParty();
       document.getElementById('printableCustomerStatement').innerHTML = html;
       document.getElementById('viewCustomerStatementModal').style.display = 'flex';
+    }
+
+    function showSupplierReportStatement(supplierId,from='',to='',statementSearch=''){
+      let supplier=suppliers.find(s=>String(s.id)===String(supplierId));if(!supplier)return;
+      let period=filterPartyStatementLines(getSupplierStatementLines(supplierId),from,to,statementSearch),totalPurchase=period.lines.reduce((s,x)=>s+(Number(x.debit)||0),0),totalPaid=period.lines.reduce((s,x)=>s+(Number(x.credit)||0),0);
+      let openingHtml=from?`<tr style="background:#f8fafc;font-weight:700;"><td>${from}</td><td>OPENING</td><td>Balance before selected period</td><td class="cs-qty">—</td><td class="cs-money">—</td><td class="cs-money">—</td><td class="cs-money"><b>${period.opening.toFixed(2)}</b></td></tr>`:'';
+      let rows=openingHtml+(period.lines.length?period.lines.map(x=>`<tr><td>${x.date}</td><td>${x.ref||'—'}</td><td>${x.description}</td><td class="cs-qty">${x.qty||'—'}</td><td class="cs-money" style="color:#dc2626;">${x.debit>0?x.debit.toFixed(2):'—'}</td><td class="cs-money" style="color:#16a34a;">${x.credit>0?x.credit.toFixed(2):'—'}</td><td class="cs-money"><b>${x.balance.toFixed(2)}</b></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:#94a3b8;">No transactions found.</td></tr>');
+      let html=`<div class="invoice-header">${shopConfig.logoImage?`<img class="invoice-logo" src="${shopConfig.logoImage}">`:''}<h2>${shopConfig.name}</h2><p>${shopConfig.tagline||''}</p>${shopConfig.address?`<p style="font-size:11px;color:#64748b;">${shopConfig.address}</p>`:''}${shopConfig.contact?`<p style="font-size:11px;color:#64748b;">${shopConfig.contact}</p>`:''}<p style="font-size:12px;color:#64748b;"><b>Supplier Statement</b></p><p style="font-size:11px;color:#64748b;">Period: ${from||'Beginning'} to ${to||'Current'}</p></div>
+      <div style="margin-bottom:15px;background:#f8fafc;padding:10px;border-radius:6px;"><p><strong>Name:</strong> ${supplier.name}</p><p><strong>Mobile:</strong> ${supplier.phone||'N/A'}</p><p><strong>Address:</strong> ${supplier.address||'N/A'}</p></div>
+      <div class="table-responsive customer-statement-table-wrap"><table class="customer-statement-table" style="margin-bottom:15px;table-layout:fixed;width:100%;"><colgroup><col style="width:11%;"><col style="width:13%;"><col style="width:22%;"><col style="width:11%;"><col style="width:14%;"><col style="width:14%;"><col style="width:15%;"></colgroup><thead><tr><th>Date</th><th>Reference</th><th>Description</th><th style="text-align:center;">QTY</th><th style="text-align:right;">Purchase (৳)</th><th style="text-align:right;">Payment (৳)</th><th style="text-align:right;">Payable (৳)</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="background:#e2e8f0;padding:12px;border-radius:6px;"><table style="font-size:13px;"><tr><td>Period Purchase:</td><td style="text-align:right;color:#dc2626;"><b>৳${totalPurchase.toFixed(2)}</b></td></tr><tr><td>Period Payment:</td><td style="text-align:right;color:#16a34a;"><b>৳${totalPaid.toFixed(2)}</b></td></tr><tr><td style="font-size:15px;">Closing Payable:</td><td style="text-align:right;font-size:16px;color:${period.closing>0?'#dc2626':'#16a34a'};"><b>৳${Math.abs(period.closing).toFixed(2)}</b></td></tr></table></div>${signatureBlockTwoParty()}`;
+      document.getElementById('printableCustomerStatement').innerHTML=html;document.getElementById('viewCustomerStatementModal').style.display='flex';
     }
 
     function editCustomer(id) {
@@ -11112,7 +11200,7 @@
       saveData();document.getElementById('personalLoanActivityModal').remove();refreshPersonalLoanAccounting();
     }
 
-    function reversePersonalLoanTransaction(id){let x=personalLoanTransactions.find(t=>t.id===id);if(!x||x.reversed)return;let running=0,invalid=personalLoanTransactions.filter(t=>String(t.loanId)===String(x.loanId)&&!t.reversed&&t.id!==x.id).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.id-b.id).some(t=>{running+=Number(t.principalDelta)||0;return running< -0.001;});if(invalid)return alert('Reverse later repayment/collection entries first; otherwise the historical outstanding would become negative.');if(!confirm('Reverse this loan transaction? Cash/Bank/Mobile and outstanding balance will be adjusted.'))return;x.reversed=true;if(x.accountTxnId)accountTransactions=accountTransactions.filter(a=>a.id!==x.accountTxnId);saveData();refreshPersonalLoanAccounting();}
+    function reversePersonalLoanTransaction(id){let x=personalLoanTransactions.find(t=>t.id===id);if(!x||x.reversed)return;let running=0,invalid=personalLoanTransactions.filter(t=>String(t.loanId)===String(x.loanId)&&!t.reversed&&t.id!==x.id).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.id-b.id).some(t=>{running+=Number(t.principalDelta)||0;return running< -0.001;});if(invalid)return alert('Reverse later repayment/collection entries first; otherwise the historical outstanding would become negative.');if(!confirm('Reverse this loan transaction? Cash/Bank/Mobile and outstanding balance will be adjusted, while an audit record will remain.'))return;let reason=prompt('Reversal reason / correction note (optional):','')||'';x.reversed=true;x.reversedAt=new Date().toISOString();x.reversedBy=currentLoginEmail()||'admin';x.reversalReason=reason.trim();if(x.accountTxnId)accountTransactions=accountTransactions.filter(a=>a.id!==x.accountTxnId);saveData();refreshPersonalLoanAccounting();}
     function deletePersonalLoanAccount(id){if(personalLoanTransactions.some(x=>String(x.loanId)===String(id)&&!x.reversed))return alert('Reverse all active transactions before deleting this loan account.');if(!confirm('Delete this person loan account?'))return;personalLoanAccounts=personalLoanAccounts.filter(x=>String(x.id)!==String(id));saveData();renderPersonalLoanModule();}
 
     function refreshPersonalLoanAccounting(){renderPersonalLoanModule();renderAccounts();renderBankAccounts();renderMobileAccounts();renderDashboard();runMasterLedger();if(document.getElementById('report-bank-ledger')?.style.display!=='none')initBankLedger();if(document.getElementById('report-cash-ledger')?.style.display!=='none')renderCashLedger();}
@@ -11125,10 +11213,10 @@
       document.getElementById('personAdvanceOutstanding').innerText='৳'+roundMoney(advance).toFixed(2);document.getElementById('personBorrowedOutstanding').innerText='৳'+roundMoney(borrowed).toFixed(2);document.getElementById('personLoanDueCount').innerText=dueCount;document.getElementById('personLoanInterestPaid').innerText='৳'+roundMoney(interestPaid).toFixed(2);
       cards.innerHTML=personalLoanAccounts.length?personalLoanAccounts.map(l=>{let out=personalLoanOutstanding(l.id),overdue=out>0&&l.dueDate&&l.dueDate<today,status=out<=0?'Paid':overdue?'Overdue':'Active',color=status==='Paid'?'var(--green)':status==='Overdue'?'var(--red)':'var(--gold)';return `<div style="border:1px solid var(--border);border-top:4px solid ${l.type==='advance'?'#2563eb':'#dc2626'};border-radius:10px;padding:14px;background:#fff;"><div style="display:flex;justify-content:space-between;gap:8px;"><div><b>${l.type==='advance'?'👤':'🤝'} ${l.partyName}</b><div style="font-size:11px;color:var(--muted);margin-top:3px;">${l.loanNo||'—'} · ${l.phone||'No phone'}</div></div><span class="badge" style="background:${color}20;color:${color};">${status}</span></div><div style="font-size:12px;margin-top:10px;line-height:1.75;"><div>Type: <b style="float:right;">${personalLoanTypeLabel(l.type)}</b></div><div>Purpose: <b style="float:right;">${l.purpose||'—'}</b></div><div>Outstanding: <b style="float:right;color:${l.type==='advance'?'var(--green)':'var(--red)'};">৳${out.toFixed(2)}</b></div><div>Due Date: <b style="float:right;">${l.dueDate||'Not set'}</b></div></div><div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;"><button class="btn-success" style="width:auto;padding:7px 10px;" onclick="openPersonalLoanActivityModal(${l.id})">+ Pay / Receive</button><button class="btn-warning" style="width:auto;padding:7px 10px;" onclick="viewPersonalLoanStatement(${l.id})">Statement</button><button class="btn-warning" style="width:auto;padding:7px 10px;" onclick="openPersonalLoanModal(${l.id})">Edit</button><button class="btn-danger" style="width:auto;padding:7px 10px;" onclick="deletePersonalLoanAccount(${l.id})">Delete</button></div></div>`;}).join(''):'<p style="color:var(--muted);">No staff/person loan account added yet.</p>';
       let filter=document.getElementById('personalLoanFilter'),selected=filter.value;filter.innerHTML='<option value="All">All Accounts</option>'+personalLoanAccounts.map(l=>`<option value="${l.id}">${l.partyName} — ${personalLoanTypeLabel(l.type)}</option>`).join('');filter.value=[...filter.options].some(o=>o.value===selected)?selected:'All';selected=filter.value;
-      let typeFilter=document.getElementById('personalLoanTypeFilter').value,from=document.getElementById('personalLoanFrom').value,to=document.getElementById('personalLoanTo').value,balances={};personalLoanAccounts.forEach(l=>balances[l.id]=0);
+      let typeFilter=document.getElementById('personalLoanTypeFilter').value,statusFilter=document.getElementById('personalLoanStatusFilter')?.value||'active',from=document.getElementById('personalLoanFrom').value,to=document.getElementById('personalLoanTo').value,balances={};personalLoanAccounts.forEach(l=>balances[l.id]=0);
       let all=personalLoanTransactions.filter(x=>!x.reversed).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.id-b.id);all.forEach(x=>{balances[x.loanId]=roundMoney(Math.max(0,(balances[x.loanId]||0)+(Number(x.principalDelta)||0)));x.runningBalance=balances[x.loanId];});
-      let list=all.filter(x=>{let l=personalLoanAccounts.find(a=>String(a.id)===String(x.loanId));return l&&(selected==='All'||String(l.id)===selected)&&(typeFilter==='All'||l.type===typeFilter)&&(!from||x.date>=from)&&(!to||x.date<=to);});
-      document.getElementById('personalLoanLedgerBody').innerHTML=list.length?list.map(x=>{let l=personalLoanAccounts.find(a=>String(a.id)===String(x.loanId)),inc=(Number(x.principalDelta)||0)>0?Number(x.principal)||0:0,pay=(Number(x.principalDelta)||0)<0?Number(x.principal)||0:0;return `<tr><td>${x.date}</td><td><b>${l?l.partyName:'—'}</b><br><small>${l?personalLoanTypeLabel(l.type):''}</small></td><td>${personalLoanActivityLabel(x.kind)}</td><td>${paymentMethodDisplay(x)}${x.note?'<br><small>'+x.note+'</small>':''}${(Number(x.interest)||0)+(Number(x.fee)||0)>0?`<br><small>Interest ৳${(Number(x.interest)||0).toFixed(2)} · Fee ৳${(Number(x.fee)||0).toFixed(2)}</small>`:''}</td><td style="text-align:right;">${inc?'৳'+inc.toFixed(2):'—'}</td><td style="text-align:right;">${pay?'৳'+pay.toFixed(2):'—'}</td><td style="text-align:right;font-weight:800;">৳${(Number(x.runningBalance)||0).toFixed(2)}</td><td class="no-print" style="text-align:center;"><button class="btn-icon-action btn-delete" onclick="reversePersonalLoanTransaction(${x.id})" title="Reverse">${SVG_REVERSE}</button></td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">No loan transactions found.</td></tr>';
+      let list=personalLoanTransactions.filter(x=>statusFilter==='all'||(statusFilter==='reversed'?x.reversed:!x.reversed)).filter(x=>{let l=personalLoanAccounts.find(a=>String(a.id)===String(x.loanId));return l&&(selected==='All'||String(l.id)===selected)&&(typeFilter==='All'||l.type===typeFilter)&&(!from||x.date>=from)&&(!to||x.date<=to);}).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.id-b.id);
+      document.getElementById('personalLoanLedgerBody').innerHTML=list.length?list.map(x=>{let l=personalLoanAccounts.find(a=>String(a.id)===String(x.loanId)),inc=(Number(x.principalDelta)||0)>0?Number(x.principal)||0:0,pay=(Number(x.principalDelta)||0)<0?Number(x.principal)||0:0,rev=!!x.reversed;return `<tr style="${rev?'opacity:.62;text-decoration:line-through;':''}"><td>${x.date}</td><td><b>${l?l.partyName:'—'}</b><br><small>${l?personalLoanTypeLabel(l.type):''}</small></td><td>${rev?'<span class="badge badge-alert">REVERSED</span><br>':''}${personalLoanActivityLabel(x.kind)}</td><td>${paymentMethodDisplay(x)}${x.note?'<br><small>'+x.note+'</small>':''}${rev&&x.reversalReason?'<br><small>Reason: '+x.reversalReason+'</small>':''}${(Number(x.interest)||0)+(Number(x.fee)||0)>0?`<br><small>Interest ৳${(Number(x.interest)||0).toFixed(2)} · Fee ৳${(Number(x.fee)||0).toFixed(2)}</small>`:''}</td><td style="text-align:right;">${inc?'৳'+inc.toFixed(2):'—'}</td><td style="text-align:right;">${pay?'৳'+pay.toFixed(2):'—'}</td><td style="text-align:right;font-weight:800;">${rev?'No effect':'৳'+(Number(x.runningBalance)||0).toFixed(2)}</td><td class="no-print" style="text-align:center;">${rev?'—':`<button class="btn-icon-action btn-delete" onclick="reversePersonalLoanTransaction(${x.id})" title="Reverse">${SVG_REVERSE}</button>`}</td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">No loan transactions found.</td></tr>';
     }
 
     function viewPersonalLoanStatement(id){let loan=personalLoanAccounts.find(x=>String(x.id)===String(id));if(!loan)return;let bal=0,rows=personalLoanTransactions.filter(x=>String(x.loanId)===String(id)&&!x.reversed).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.id-b.id).map(x=>{bal=roundMoney(Math.max(0,bal+(Number(x.principalDelta)||0)));return {ref:x.txnNo,date:x.date,desc:`${personalLoanActivityLabel(x.kind)}${x.note?' — '+x.note:''}`,method:paymentMethodDisplay(x),amount:`${(Number(x.principalDelta)||0)>0?'+':'−'} ৳${(Number(x.principal)||0).toFixed(2)} · Balance ৳${bal.toFixed(2)}`};});let html=buildInvoiceShell(loan.loanNo||('LON-'+loan.id),localISODate(),[{type:'party',title:'Loan Account Holder',rows:[{label:'Name',value:loan.partyName},{label:'Phone',value:loan.phone||'N/A'},{label:'Account Type',value:personalLoanTypeLabel(loan.type)},{label:'Purpose',value:loan.purpose||'N/A'},{label:'Start Date',value:loan.startDate||'N/A'},{label:'Due Date',value:loan.dueDate||'N/A'}]},{type:'ledger',title:'Person-wise Loan Statement',rows,foot:[{label:'Current Outstanding',value:`৳${personalLoanOutstanding(id).toFixed(2)}`,border:'2px solid #111',size:'16px'}]}]);document.getElementById('printablePRVoucher').innerHTML=html;document.getElementById('viewPRVoucherModal').style.display='flex';}
@@ -11257,6 +11345,7 @@
           if (visible?.id === 'report-payment-ledger') safe(runPaymentLedgerReport);
           if (visible?.id === 'report-sales') safe(runSalesReport);
           if (visible?.id === 'report-customers') safe(searchReportCustomers);
+          if (visible?.id === 'report-suppliers') safe(runSuppliersReport);
           if (visible?.id === 'report-products') safe(runProductsReport);
           if (visible?.id === 'report-bank-ledger') safe(initBankLedger);
           if (visible?.id === 'report-cash-ledger') safe(renderCashLedger);
@@ -11729,13 +11818,13 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyASTzYLrwuTg4-m7OacuTzsL4KZ2_ArJ28",
-      authDomain: "ms-enayet-trading.firebaseapp.com",
-      projectId: "ms-enayet-trading",
-      storageBucket: "ms-enayet-trading.firebasestorage.app",
-      messagingSenderId: "8410806478",
-      appId: "1:8410806478:web:fcdc78e1d5b2868df3389f"
-    };
+  apiKey: "AIzaSyASTzYLrwuTg4-m7OacuTzsL4KZ2_ArJ28",
+  authDomain: "ms-enayet-trading.firebaseapp.com",
+  projectId: "ms-enayet-trading",
+  storageBucket: "ms-enayet-trading.firebasestorage.app",
+  messagingSenderId: "8410806478",
+  appId: "1:8410806478:web:fcdc78e1d5b2868df3389f"
+};
     const _app  = firebase.initializeApp(firebaseConfig);
     const _db   = firebase.firestore();
     const _auth = firebase.auth();
