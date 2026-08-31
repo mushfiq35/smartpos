@@ -630,6 +630,47 @@
       /* Signature lines */
       .sig-box .sig-line, [style*="border-top:1.5px solid #334155"] { border-top: 1.5px solid #333 !important; }
     }
+
+    /* Supplier statement: fit tables to page/screen without horizontal scrollbars */
+    #supplierFullStatementPrint .table-responsive,
+    #supplierBookingFundPrintArea .table-responsive {
+      overflow-x: visible !important;
+      overflow-y: visible !important;
+      width: 100% !important;
+    }
+    #supplierFullStatementPrint .supplier-statement-table,
+    #supplierBookingFundPrintArea .supplier-statement-table {
+      min-width: 0 !important;
+      width: 100% !important;
+      table-layout: fixed !important;
+    }
+    #supplierFullStatementPrint .supplier-statement-table th,
+    #supplierFullStatementPrint .supplier-statement-table td,
+    #supplierBookingFundPrintArea .supplier-statement-table th,
+    #supplierBookingFundPrintArea .supplier-statement-table td {
+      white-space: normal !important;
+      overflow-wrap: anywhere;
+      word-break: normal;
+    }
+    @media print {
+      #supplierFullStatementPrint .table-responsive,
+      #supplierBookingFundPrintArea .table-responsive {
+        overflow: visible !important;
+      }
+      #supplierFullStatementPrint .supplier-statement-table,
+      #supplierBookingFundPrintArea .supplier-statement-table {
+        min-width: 0 !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+      }
+      #supplierFullStatementPrint .supplier-statement-table th,
+      #supplierFullStatementPrint .supplier-statement-table td,
+      #supplierBookingFundPrintArea .supplier-statement-table th,
+      #supplierBookingFundPrintArea .supplier-statement-table td {
+        font-size: 8.5px !important;
+        padding: 4px 3px !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -12001,6 +12042,154 @@
         }
       }, 7000);
     };
+
+    /* ===== Supplier statement: bank-ledger presentation override ===== */
+    function supplierBookingFundHtml(supplierId){
+      let bs=supplierBookings.filter(b=>String(b.supplierId)===String(supplierId)).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.bookingNo||'').localeCompare(String(b.bookingNo||'')));
+      let pos=getSupplierNetPosition(supplierId),fund=Math.max(0,-pos),due=Math.max(0,pos);
+      let contractValue=bs.reduce((n,b)=>n+supplierBookingValue(b),0);
+      let receivedValue=bs.reduce((n,b)=>n+purchases.filter(p=>String(p.bookingId)===String(b.id)).reduce((x,p)=>x+(Number(p.total)||0),0),0);
+      let totalBooked=bs.reduce((n,b)=>n+(Number(b.qty)||0),0);
+      let totalReceived=bs.reduce((n,b)=>n+bookingUsedQty(b.id),0);
+
+      let bookingRows=bs.length?bs.map(b=>{
+        let used=bookingUsedQty(b.id),rem=bookingRemainingQty(b.id),st=bookingStatus(b);
+        return `<tr>
+          <td>${b.date||'—'}<small>${b.bookingNo||'—'}</small></td>
+          <td><b>${b.prodName||'—'}</b>${b.note?`<small>${b.note}</small>`:''}</td>
+          <td class="cs-qty">${Number(b.qty||0).toFixed(3)} ${b.unitType}</td>
+          <td class="cs-qty">${used.toFixed(3)} ${b.unitType}</td>
+          <td class="cs-qty"><b>${rem.toFixed(3)} ${b.unitType}</b></td>
+          <td class="ov-money">${Number(b.rate||0).toFixed(2)}${b.unitType==='Ton'?'/KG':'/'+b.unitType}</td>
+          <td class="ov-money">${supplierBookingValue(b).toFixed(2)}</td>
+          <td class="no-print" style="white-space:nowrap;text-align:center;">${rem>0?`<button onclick="invoiceFromSupplierBooking(${b.id})" class="btn-icon-action btn-pay" title="Create Purchase Invoice">🧾</button>`:''}<button onclick="openSupplierBookingModal(${supplierId},${b.id})" class="btn-icon-action btn-edit" title="Edit Booking">${SVG_EDIT}</button><button onclick="deleteSupplierBooking(${b.id})" class="btn-icon-action btn-delete" title="Delete Booking">${SVG_DELETE}</button></td>
+        </tr>`;
+      }).join(''):'<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:16px;">No supplier booking yet.</td></tr>';
+
+      let money=supplierMoneyStatement(supplierId);
+      let moneyDebit=money.reduce((n,r)=>n+(Number(r.debit)||0),0),moneyCredit=money.reduce((n,r)=>n+(Number(r.credit)||0),0);
+      let moneyRows=money.length?money.map(r=>`<tr>
+        <td>${r.date||'—'}</td>
+        <td>${r.desc||'—'}</td>
+        <td><b>${r.ref||'—'}</b></td>
+        <td class="ov-money">${r.debit?Number(r.debit).toFixed(2):'—'}</td>
+        <td class="ov-money">${r.credit?Number(r.credit).toFixed(2):'—'}</td>
+        <td class="ov-money"><b>${r.balance>0?'DUE '+Number(r.balance).toFixed(2):r.balance<0?'FUND '+Math.abs(Number(r.balance)).toFixed(2):'0.00'}</b></td>
+        <td class="no-print" style="text-align:center;">${r.purchaseId?`<button onclick="viewPurchaseInvoice(${r.purchaseId})" class="btn-icon-action btn-view" title="View / Print Invoice">${SVG_VIEW}</button>`:r.fundId?`<button onclick="openSupplierFundModal(${supplierId},'${supplierFundTransactions.find(x=>x.id==r.fundId)?.type||'deposit'}',${r.fundId})" class="btn-icon-action btn-edit" title="Edit">${SVG_EDIT}</button><button onclick="deleteSupplierFundTransaction(${r.fundId})" class="btn-icon-action btn-delete" title="Delete">${SVG_DELETE}</button>`:''}</td>
+      </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:16px;">No money transactions yet.</td></tr>';
+
+      return `<div id="supplierBookingFundPrintArea">
+        <div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn-success btn-action" onclick="openSupplierBookingModal(${supplierId})">+ New Booking</button>
+          <button class="btn-warning btn-action" onclick="openSupplierFundModal(${supplierId},'deposit')">+ Add Money / Fund</button>
+          <button class="btn-action" style="background:#2563eb;" onclick="openSupplierFundModal(${supplierId},'refund')">↩ Receive Fund Refund</button>
+        </div>
+
+        <div class="ov-statement-title" style="margin-top:4px;">
+          <div><h3>PRODUCT BOOKING LEDGER</h3><small>Contract quantity, received quantity and remaining commitment</small></div>
+          <div class="ov-statement-period"><span>ACTIVE POSITION</span><strong>${bs.length} booking${bs.length===1?'':'s'}</strong></div>
+        </div>
+        <div class="ov-statement-summary">
+          <div><span>BOOKED QTY*</span><strong>${totalBooked.toFixed(3)}</strong></div>
+          <div><span>RECEIVED QTY*</span><strong>${totalReceived.toFixed(3)}</strong></div>
+          <div><span>CONTRACT VALUE</span><strong>${contractValue.toFixed(2)}</strong></div>
+          <div class="ov-closing"><span>INVOICED VALUE</span><strong>${receivedValue.toFixed(2)}</strong></div>
+        </div>
+        <div class="ov-currency-note">*Quantity totals can combine different products/units. Refer to each row for unit. Amounts in BDT.</div>
+        <div class="table-responsive" style="border:0;box-shadow:none;">
+          <table class="ov-bank-table supplier-statement-table">
+            <colgroup><col style="width:13%;"><col style="width:23%;"><col style="width:12%;"><col style="width:12%;"><col style="width:12%;"><col style="width:13%;"><col style="width:15%;"><col class="no-print" style="width:12%;"></colgroup>
+            <thead><tr><th>DATE / REF</th><th>PRODUCT / NOTE</th><th style="text-align:center;">BOOKED</th><th style="text-align:center;">RECEIVED</th><th style="text-align:center;">REMAINING</th><th style="text-align:right;">RATE</th><th style="text-align:right;">CONTRACT VALUE</th><th class="no-print">ACTION</th></tr></thead>
+            <tbody>${bookingRows}</tbody>
+          </table>
+        </div>
+
+        <div class="ov-statement-title" style="margin-top:22px;">
+          <div><h3>SUPPLIER MONEY STATEMENT</h3><small>Running debit, credit and supplier fund/payable balance</small></div>
+          <div class="ov-statement-period"><span>CURRENT POSITION</span><strong>${due>0?'PAYABLE '+due.toFixed(2):fund>0?'FUND '+fund.toFixed(2):'SETTLED 0.00'}</strong></div>
+        </div>
+        <div class="ov-statement-summary">
+          <div><span>OPENING / PURCHASE DEBIT</span><strong>${moneyDebit.toFixed(2)}</strong></div>
+          <div><span>PAYMENT / FUND CREDIT</span><strong>${moneyCredit.toFixed(2)}</strong></div>
+          <div><span>SUPPLIER PAYABLE</span><strong>${due.toFixed(2)}</strong></div>
+          <div class="ov-closing"><span>FUND WITH SUPPLIER</span><strong>${fund.toFixed(2)}</strong></div>
+        </div>
+        <div class="ov-currency-note">All amounts are shown in BDT</div>
+        <div class="table-responsive" style="border:0;box-shadow:none;">
+          <table class="ov-bank-table supplier-statement-table">
+            <colgroup><col style="width:12%;"><col style="width:34%;"><col style="width:16%;"><col style="width:12%;"><col style="width:12%;"><col style="width:14%;"><col class="no-print" style="width:10%;"></colgroup>
+            <thead><tr><th>DATE</th><th>PARTICULARS</th><th>REFERENCE</th><th style="text-align:right;">DEBIT</th><th style="text-align:right;">CREDIT</th><th style="text-align:right;">BALANCE</th><th class="no-print">ACTION</th></tr></thead>
+            <tbody>${moneyRows}</tbody>
+            <tfoot><tr class="ov-total-row"><td colspan="3">TOTAL SUMMARY</td><td>${moneyDebit.toFixed(2)}</td><td>${moneyCredit.toFixed(2)}</td><td>${due>0?'DUE '+due.toFixed(2):fund>0?'FUND '+fund.toFixed(2):'0.00'}</td><td class="no-print"></td></tr></tfoot>
+          </table>
+        </div>
+      </div>`;
+    }
+
+    function viewSupplier(id) {
+      let s=suppliers.find(x=>x.id==id); if(!s)return;
+      let supPurchases=purchases.filter(p=>String(p.supplierId)===String(id)).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.purchaseNo||'').localeCompare(String(b.purchaseNo||'')));
+      let openingDue=Number(s.openingDue)||0;
+      let totalPurchase=openingDue+supPurchases.reduce((sum,p)=>sum+(Number(p.total)||0),0);
+      let netPosition=getSupplierNetPosition(id),totalDue=Math.max(0,netPosition),totalFund=Math.max(0,-netPosition);
+      let statement=supplierMoneyStatement(id),totalDebit=statement.reduce((n,r)=>n+(Number(r.debit)||0),0),totalCredit=statement.reduce((n,r)=>n+(Number(r.credit)||0),0);
+      document.getElementById('viewSupplierTitle').innerText=`👤 ${s.name}`;
+
+      let purchaseRows=supPurchases.length?supPurchases.map(p=>{
+        let purNo=p.purchaseNo||('PUR-'+String(p.id).slice(-6)),unit=p.unitType==='Ton'?'Ton':p.unitType==='Kg'?'Kg':'Bag';
+        return `<tr><td>${p.date||'—'}</td><td><b>${purNo}</b></td><td>${p.prodName||'—'}</td><td class="cs-qty">${Number(p.qty||0).toFixed(3)} ${unit}</td><td class="ov-money">${Number(p.unitPrice||p.price||0).toFixed(2)}</td><td class="ov-money">${Number(p.total||0).toFixed(2)}</td><td class="ov-money">${Number(p.paid||0).toFixed(2)}</td><td class="ov-money">${Number(p.due||0).toFixed(2)}</td><td class="no-print" style="text-align:center;white-space:nowrap;"><button onclick="viewPurchaseInvoice(${p.id})" class="btn-icon-action btn-view" title="View / Print Invoice">${SVG_VIEW}</button>${p.due>0?`<button onclick="closeModal('viewSupplierModal');openPurchasePayModal(${p.id})" class="btn-icon-action btn-pay" title="Pay Due">${SVG_PAY}</button>`:''}</td></tr>`;
+      }).join(''):'<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:16px;">No purchase records.</td></tr>';
+
+      let logo=shopConfig.logoImage?`<img class="invoice-logo" src="${shopConfig.logoImage}">`:'';
+      document.getElementById('viewSupplierContent').innerHTML=`
+        <div id="supplierFullStatementPrint">
+          <div class="invoice-header" style="border-bottom:0;margin-bottom:8px;">
+            ${logo}<h2>${shopConfig.name||'Business'}</h2>
+            <p>${shopConfig.tagline||''}</p>
+            ${shopConfig.address?`<p style="font-size:11px;color:#64748b;">${shopConfig.address}</p>`:''}
+            ${shopConfig.contact?`<p style="font-size:11px;color:#64748b;">${shopConfig.contact}</p>`:''}
+          </div>
+
+          <div class="ov-statement-title">
+            <div><h3>SUPPLIER ACCOUNT STATEMENT</h3><small>Booking, purchases, payments, fund and running balance</small></div>
+            <div class="ov-statement-period"><span>PRINT DATE</span><strong>${new Date().toLocaleDateString('en-GB')}</strong></div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:9px 11px;background:#f8fafc;border:1px solid #cbd5e1;margin-bottom:8px;">
+            <div><b style="font-size:14px;">${s.name}</b><small style="display:block;color:#64748b;margin-top:2px;">${s.phone||'N/A'} · ${s.address||'N/A'}</small></div>
+            <div style="text-align:right;"><small style="display:block;color:#64748b;">CURRENT POSITION</small><b style="font-size:15px;">${totalDue>0?'PAYABLE '+totalDue.toFixed(2):totalFund>0?'FUND '+totalFund.toFixed(2):'SETTLED 0.00'}</b></div>
+          </div>
+
+          <div class="ov-statement-summary">
+            <div><span>TOTAL PURCHASE</span><strong>${totalPurchase.toFixed(2)}</strong></div>
+            <div><span>TOTAL DEBIT</span><strong>${totalDebit.toFixed(2)}</strong></div>
+            <div><span>TOTAL CREDIT</span><strong>${totalCredit.toFixed(2)}</strong></div>
+            <div class="ov-closing"><span>${totalDue>0?'SUPPLIER PAYABLE':totalFund>0?'FUND WITH SUPPLIER':'CLOSING BALANCE'}</span><strong>${(totalDue||totalFund).toFixed(2)}</strong></div>
+          </div>
+          <div class="ov-currency-note">All amounts are shown in BDT</div>
+
+          ${supplierBookingFundHtml(id)}
+
+          <div class="ov-statement-title" style="margin-top:22px;">
+            <div><h3>PURCHASE INVOICE HISTORY</h3><small>Actual goods received and invoiced from this supplier</small></div>
+            <div class="ov-statement-period"><span>INVOICES</span><strong>${supPurchases.length}</strong></div>
+          </div>
+          <div class="table-responsive" style="border:0;box-shadow:none;">
+            <table class="ov-bank-table supplier-statement-table">
+              <colgroup><col style="width:10%;"><col style="width:14%;"><col style="width:20%;"><col style="width:11%;"><col style="width:11%;"><col style="width:12%;"><col style="width:11%;"><col style="width:11%;"><col class="no-print" style="width:10%;"></colgroup>
+              <thead><tr><th>DATE</th><th>INVOICE</th><th>PRODUCT</th><th style="text-align:center;">QTY</th><th style="text-align:right;">RATE</th><th style="text-align:right;">TOTAL</th><th style="text-align:right;">PAID</th><th style="text-align:right;">DUE</th><th class="no-print">ACTION</th></tr></thead>
+              <tbody>${purchaseRows}</tbody>
+              <tfoot><tr class="ov-total-row"><td colspan="5">PURCHASE TOTAL</td><td>${supPurchases.reduce((n,p)=>n+(Number(p.total)||0),0).toFixed(2)}</td><td>${supPurchases.reduce((n,p)=>n+(Number(p.paid)||0),0).toFixed(2)}</td><td>${supPurchases.reduce((n,p)=>n+(Number(p.due)||0),0).toFixed(2)}</td><td class="no-print"></td></tr></tfoot>
+            </table>
+          </div>
+
+          <div class="ov-statement-footer"><span>End of supplier statement</span><strong>Computer-generated supplier account statement</strong></div>
+          <div class="print-only" style="display:none;margin-top:48px;justify-content:space-between;gap:50px;"><div style="width:40%;text-align:center;border-top:1px solid #334155;padding-top:7px;font-size:10px;">Authorized Signature</div><div style="width:40%;text-align:center;border-top:1px solid #334155;padding-top:7px;font-size:10px;">Supplier Signature</div></div>
+          <div class="no-print" style="display:flex;justify-content:flex-end;margin-top:14px;"><button onclick="printDiv('supplierFullStatementPrint')" class="btn-action btn-warning" style="width:auto;">🖨️ Print Statement</button></div>
+        </div>`;
+      document.getElementById('viewSupplierModal').style.display='flex';
+    }
+
   </script>
 
   <!-- FIREBASE (Cloud Data Storage) -->
