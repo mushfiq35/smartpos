@@ -1588,6 +1588,25 @@ async function loadAll(){
   }
   if(hadError) showToast(t('load_error_toast'));
   try{ logoData = await withTimeout(storageGet(K.logo), 8000); }catch(e){ logoData = null; }
+  // Repair legacy sale payment fields that became inconsistent after old sale edits.
+  const salesNeedingRepair = [];
+  db.sales.forEach(sale=>{
+    const oldInitial = sale.initialPaid;
+    const oldPaid = sale.paid;
+    const oldDue = sale.due;
+    const initial = getSaleInitialPaid(sale);
+    const currentPaid = getSaleCurrentCashPaid(sale);
+    const expectedDue = getSaleExpectedDue(sale);
+    if(Math.abs(Number(oldInitial||0)-initial)>0.01 || Math.abs(Number(oldPaid||0)-currentPaid)>0.01 || Math.abs(Number(oldDue||0)-expectedDue)>0.01){
+      sale.initialPaid=initial; sale.paid=currentPaid; sale.due=expectedDue;
+      salesNeedingRepair.push(sale);
+    }
+  });
+  if(salesNeedingRepair.length){
+    try{ await Promise.all(salesNeedingRepair.map(x=>safePut('sales',x.id,x))); }
+    catch(e){ console.error('sale payment reconciliation save failed',e); }
+  }
+
   await loadSettings();
   applyFeatureVisibility();
   renderLangSwitch();
@@ -1702,6 +1721,90 @@ document.getElementById('logoFileInput').addEventListener('change', async (e) =>
   reader.readAsDataURL(file);
 });
 
+function saleInstallmentAllocationTotals(saleId){
+  let cash=0, discount=0, settlement=0;
+  (db.installments||[]).forEach(inst=>{
+    const adjs=Array.isArray(inst.adjustments)?inst.adjustments:[];
+    adjs.forEach(adj=>{
+      if(String(adj.saleId)!==String(saleId)) return;
+      if(adj.cashAmount!==undefined || adj.discountAmount!==undefined){
+        const c=Number(adj.cashAmount||0), d=Number(adj.discountAmount||0);
+        cash+=c; discount+=d; settlement+=c+d;
+      }else{
+        // Legacy installments stored cash+discount together in adj.amount and
+        // also added that whole amount into sale.paid. For initial-paid recovery
+        // the exact amount added to sale.paid is therefore adj.amount.
+        const a=Number(adj.amount||0);
+        settlement+=a;
+        cash+=a;
+      }
+    });
+  });
+  return {cash,discount,settlement};
+}
+
+function saleReturnDueAdjustTotal(saleId){
+  return (db.returns||[])
+    .filter(r=>!r.cancelled)
+    .reduce((sum,r)=>{
+      const adjs=Array.isArray(r.adjustments)&&r.adjustments.length
+        ? r.adjustments
+        : (String(r.saleId)===String(saleId)?[{saleId:r.saleId,amount:r.dueAdjust}]:[]);
+      return sum+adjs.filter(a=>String(a.saleId)===String(saleId)).reduce((x,a)=>x+Number(a.amount||0),0);
+    },0);
+}
+
+function getSaleInitialPaid(sale){
+  if(!sale) return 0;
+  const paidField=Math.max(0,Number(sale.paid||0));
+  const alloc=saleInstallmentAllocationTotals(sale.id);
+
+  // sale.paid is the cumulative CASH field in the transactional sale record.
+  // Recover booking-time cash by removing later installment cash/legacy paid increments.
+  const inferred=Math.max(0,paidField-Number(alloc.cash||0));
+
+  if(sale.initialPaid===undefined || sale.initialPaid===null || sale.initialPaid===''){
+    return inferred;
+  }
+
+  const stored=Math.max(0,Number(sale.initialPaid||0));
+  const expectedCumulative=stored+Number(alloc.cash||0);
+
+  // Critical legacy/self-heal rule:
+  // if an old edit left initialPaid inconsistent with sale.paid, trust the
+  // transaction state rather than the stale snapshot.
+  if(Math.abs(expectedCumulative-paidField)>0.01){
+    return inferred;
+  }
+  return stored;
+}
+
+function getSaleCurrentCashPaid(sale){
+  const alloc=saleInstallmentAllocationTotals(sale.id);
+  return getSaleInitialPaid(sale)+Number(alloc.cash||0);
+}
+
+function getSaleExpectedDue(sale){
+  if(!sale) return 0;
+  const alloc=saleInstallmentAllocationTotals(sale.id);
+  const ret=saleReturnDueAdjustTotal(sale.id);
+  return Math.max(0, Math.round((
+    Number(sale.total||0)
+    - getSaleInitialPaid(sale)
+    - Number(alloc.settlement||0)
+    - Number(ret||0)
+  )*100)/100);
+}
+
+function reconcileSalePaymentFieldsInMemory(){
+  (db.sales||[]).forEach(sale=>{
+    const initial=getSaleInitialPaid(sale);
+    sale.initialPaid=initial;
+    sale.paid=getSaleCurrentCashPaid(sale);
+    sale.due=getSaleExpectedDue(sale);
+  });
+}
+
 function buildCustomerReceivableEvents(custId){
   const sales = db.sales.filter(s=>s.customerId===custId);
   const installments = db.installments.filter(i=>i.customerId===custId);
@@ -1713,7 +1816,7 @@ function buildCustomerReceivableEvents(custId){
       ref:s.invoiceNo ? '#'+s.invoiceNo : (s.voucherNo||'—'),
       label:(s.productName||t('history_type_sale')),
       saleNet:Number(s.total||0),
-      initialPaid:Number(s.initialPaid!==undefined ? s.initialPaid : s.paid||0),
+      initialPaid:getSaleInitialPaid(s),
       amount:0, discount:Number(s.discount||0), dueAdjust:0,
       note:s.voucherTag||''
     })),
@@ -1808,8 +1911,8 @@ function getDerivedInstallmentSnapshot(custId, installmentId){
 }
 
 function reconcileCustomerDueCacheInMemory(){
-  // Some older code paths still read customer.due directly.
-  // Keep that cached field synchronized with the same canonical ledger used by reports.
+  // First self-heal sale initial/cumulative paid fields, then customer due.
+  reconcileSalePaymentFieldsInMemory();
   Object.entries(db.customers).forEach(([custId,cust])=>{
     cust.due = calculateCustomerDueFromLedger(custId);
   });
@@ -1890,7 +1993,7 @@ function computeTotalBalance(){
   const toStr = todayStr();
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
-  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
+  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += getSaleInitialPaid(s); });
   db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
@@ -2603,7 +2706,7 @@ function renderSummaryReport(body){
   function computeOpeningBalance(beforeDateStr){
     let dp = 0, de = 0;
     const inRange = (d) => d>=SUMMARY_START_DATE && d<beforeDateStr;
-    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
+    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += getSaleInitialPaid(s); });
     db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount||0); });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
@@ -2626,7 +2729,7 @@ function renderSummaryReport(body){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)) buckets[toISODate(d)] = {dp:0, de:0};
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
-    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); } });
+    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += getSaleInitialPaid(s); } });
     db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
@@ -3326,11 +3429,11 @@ function printCustReportList(){
     const sales = db.sales.filter(s=>s.customerId===id && matchesYearMonth(s.date, custReportYear, custReportMonth));
     const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
     const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
-    const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+    const initialPaid = sales.reduce((s,x)=>s+getSaleInitialPaid(x),0);
     const instPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
     const paid = initialPaid + instPaid;
     const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
-    return { c, qty, paid, profit };
+    return { id, c, qty, paid, profit };
   });
   const body = `
     <table>
@@ -3394,7 +3497,7 @@ function renderCustomerReport(body){
       const sales = db.sales.filter(s=>s.customerId===id && matchesYearMonth(s.date, custReportYear, custReportMonth));
       const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
       const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
-      const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
+      const initialPaid = sales.reduce((s,x)=>s+getSaleInitialPaid(x),0);
       const instPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
       const paid = initialPaid + instPaid;
       const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
@@ -3441,7 +3544,7 @@ function renderCustomerReport(body){
     const sales = db.sales.filter(s=>s.customerId===custId && matchesYearMonth(s.date, custReportYear, custReportMonth));
     const payments = db.installments.filter(p=>p.customerId===custId && matchesYearMonth(p.date, custReportYear, custReportMonth));
     const totalBought = sales.reduce((sum,x)=>sum+Number(x.total||0)+Number(x.discount||0),0);
-    const totalInitialPaid = sales.reduce((sum,x)=>sum+Number(x.initialPaid!==undefined?x.initialPaid:x.paid||0),0);
+    const totalInitialPaid = sales.reduce((sum,x)=>sum+getSaleInitialPaid(x),0);
     const totalInstPaid = payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
     const totalPaid = totalInitialPaid + totalInstPaid;
     const totalProfit = sales.reduce((sum,x)=>sum+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
@@ -3683,7 +3786,7 @@ function groupSalesForDisplay(rawItems){
       qty: t('items_count')(group.length),
       total: group.reduce((s,[,x])=>s+Number(x.total),0),
       discount: group.reduce((s,[,x])=>s+Number(x.discount||0),0),
-      paid: group.reduce((s,[,x])=>s+Number(x.paid),0),
+      paid: group.reduce((s,[,x])=>s+getSaleInitialPaid(x),0),
       due: group.reduce((s,[,x])=>s+Number(x.due),0),
       _groupIds: group.map(([gid])=>gid),
     };
@@ -4199,8 +4302,20 @@ async function handleSave(tab, id, values){
     const rawTotal = Number(values.qty) * Number(values.unitPrice);
     const discount = Number(values.discount)||0;
     const total = Math.max(0, rawTotal - discount);
-    const paid = values.paid===''||values.paid===undefined ? total : Number(values.paid);
-    const due = Math.max(0, total - paid);
+    const initialPaid = Math.max(0, Math.min(total, values.paid===''||values.paid===undefined ? total : Number(values.paid)||0));
+
+    // Existing installments/returns are separate transactions and must survive a sale edit.
+    // Recalculate cumulative cash + due from those transactions instead of resetting them.
+    const existingAlloc = existing ? saleInstallmentAllocationTotals(existing.id) : {cash:0,discount:0,settlement:0};
+    const existingReturnAdjust = existing ? saleReturnDueAdjustTotal(existing.id) : 0;
+    if(existing && initialPaid + Number(existingAlloc.settlement||0) + Number(existingReturnAdjust||0) > total + 0.01){
+      alert(currentLang==='bn'
+        ? 'এই বিক্রিতে পরে কিস্তি/ছাড়/রিটার্ন সমন্বয় আছে। নতুন Total এত কম করা যাবে না। আগে সংশ্লিষ্ট কিস্তি/রিটার্ন ঠিক করুন।'
+        : 'This sale already has installment/discount/return adjustments. The new total cannot be lower than the amount already settled. Adjust those transactions first.');
+      return;
+    }
+    const paid = initialPaid + Number(existingAlloc.cash||0);
+    const due = Math.max(0, total - initialPaid - Number(existingAlloc.settlement||0) - Number(existingReturnAdjust||0));
     product.qty = Math.max(0, Number(product.qty) - Number(values.qty));
     touchedProducts.add(values.productId);
     let customerName = '';
@@ -4216,7 +4331,7 @@ async function handleSave(tab, id, values){
       customerId: values.customerId||null, customerName,
       productId: values.productId, productName: product.name,
       qty: Number(values.qty), unitPrice: Number(values.unitPrice), unitCost: Number(product.cost||0), discount,
-      total, paid, due, initialPaid: existing ? (existing.initialPaid!==undefined ? existing.initialPaid : paid) : paid,
+      total, paid, due, initialPaid,
       date: values.date, ts: existing ? existing.ts : Date.now()
     };
     if(existing){
@@ -4227,7 +4342,10 @@ async function handleSave(tab, id, values){
     }
     for(const pid of touchedProducts) await safePut('products', pid, db.products[pid]);
     await safePut('sales', record.id, record);
-    for(const cid of touchedCustomers) await safePut('customers', cid, db.customers[cid]);
+    for(const cid of touchedCustomers){
+      if(db.customers[cid]) db.customers[cid].due = calculateCustomerDueFromLedger(cid);
+      await safePut('customers', cid, db.customers[cid]);
+    }
 
     const instCount = Number(values.installmentCount)||0;
     if(!existing && due>0 && instCount>=2){
@@ -4404,7 +4522,7 @@ function buildCustomerBankLedger(custId, year='all', month='all'){
       description:(x.invoiceNo?'Invoice #'+x.invoiceNo+' — ':'')+(x.productName||t('history_type_sale')),
       qty:Number(x.qty||0),
       debit:Number(x.total||0)+Number(x.discount||0),
-      cash:Number(x.initialPaid!==undefined?x.initialPaid:x.paid||0),
+      cash:getSaleInitialPaid(x),
       discount:Number(x.discount||0),
       otherCredit:0,
       profit:saleNetProfit(x)
@@ -4534,7 +4652,7 @@ function openCustomerHistory(custId){
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
   const totalBought = sales.reduce((sum,x)=>sum+Number(x.total||0)+Number(x.discount||0),0);
-  const totalInitialPaid = sales.reduce((sum,x)=>sum+Number(x.initialPaid!==undefined?x.initialPaid:x.paid||0),0);
+  const totalInitialPaid = sales.reduce((sum,x)=>sum+getSaleInitialPaid(x),0);
   const totalInstPaid = payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
   const totalPaid = totalInitialPaid + totalInstPaid;
   const ledgerData = buildCustomerBankLedger(custId,'all','all');
@@ -4870,7 +4988,7 @@ async function saveEditedInstallmentPayment(){
       discountLeft -= discountAmount;
       const settled = cashAmount + discountAmount;
       if(settled>0){
-        sale.paid = Number(sale.paid||0) + cashAmount;
+        sale.paid = getSaleCurrentCashPaid(sale) + cashAmount;
         sale.due = Math.max(0,Number(sale.due||0)-settled);
         adjustments.push({saleId:sale.id,cashAmount,discountAmount,amount:settled});
         await safePut('sales',sale.id,sale);
@@ -5171,7 +5289,7 @@ function openSaleView(id){
     ? db.installmentPlans.find(p=>p.invoiceId===sale.invoiceId)
     : db.installmentPlans.find(p=>p.saleId===id);
   const grandTotal = groupItems.reduce((s,x)=>s+Number(x.total),0);
-  const grandPaid = groupItems.reduce((s,x)=>s+Number(x.paid),0);
+  const grandPaid = groupItems.reduce((s,x)=>s+getSaleInitialPaid(x),0);
   const grandDue = groupItems.reduce((s,x)=>s+Number(x.due),0);
   document.getElementById('saleViewTitle').textContent = (sale.invoiceId ? t('invoice_label') : t('view_title')) + (sale.invoiceNo ? ' #'+sale.invoiceNo : '');
   document.getElementById('saleViewCloseBtn').textContent = t('close');
@@ -5278,7 +5396,7 @@ function openMultiSale(editInvoiceId){
         document.getElementById('msVoucherTag').value = first.voucherTag || '';
         document.getElementById('msPaymentSystem').value = first.paymentSystem || 'cash';
         document.getElementById('msIsOldEntry').checked = !!first.isOldEntry;
-        document.getElementById('msPaid').value = groupSales.reduce((s,x)=>s+Number(x.paid),0);
+        document.getElementById('msPaid').value = groupSales.reduce((s,x)=>s+getSaleInitialPaid(x),0);
         document.getElementById('msInstCount').value = plan ? plan.count : '';
         groupSales.forEach(sale => addMultiSaleRow(sale));
         document.getElementById('multiSaleOverlay').classList.add('open');
@@ -5457,6 +5575,26 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     if(required>effectiveStock && !confirm(t('low_stock_more'))) return;
   }
 
+  // if editing, protect historical installment/return allocations.
+  if(msEditInvoiceId){
+    const protectedSaleIds = new Set(db.sales.filter(s=>s.invoiceId===msEditInvoiceId).map(s=>String(s.id)));
+    const hasFlexiblePayments = db.installments.some(inst =>
+      Array.isArray(inst.adjustments) && inst.adjustments.some(a=>protectedSaleIds.has(String(a.saleId)))
+    );
+    const hasReturns = db.returns.some(r =>
+      !r.cancelled && (
+        protectedSaleIds.has(String(r.saleId)) ||
+        (Array.isArray(r.adjustments) && r.adjustments.some(a=>protectedSaleIds.has(String(a.saleId))))
+      )
+    );
+    if(hasFlexiblePayments || hasReturns){
+      alert(currentLang==='bn'
+        ? 'এই Invoice-এ কিস্তি/রিটার্ন লেনদেন হয়ে গেছে। হিসাবের নিরাপত্তার জন্য আগে সংশ্লিষ্ট কিস্তি/রিটার্ন Reverse/Delete করে তারপর Invoice Edit করুন।'
+        : 'This invoice already has installment/return transactions. Reverse/delete those transactions before editing the invoice to protect the ledger.');
+      return;
+    }
+  }
+
   // if editing, first reverse the old invoice's stock/due effects
   if(msEditInvoiceId){
     const oldSales = db.sales.filter(s=>s.invoiceId===msEditInvoiceId);
@@ -5625,7 +5763,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
 
     const settled = cashAmount + discountAmount;
     if(settled>0){
-      sale.paid = Number(sale.paid||0) + cashAmount;
+      sale.paid = getSaleCurrentCashPaid(sale) + cashAmount;
       sale.due = Math.max(0, Number(sale.due||0) - settled);
       adjustments.push({saleId:sale.id, cashAmount, discountAmount, amount:settled});
       salesToUpdate.push(sale);
