@@ -10385,14 +10385,29 @@
     function openingListSearch(kind,value){openingListState[kind].q=(value||'').toLowerCase().trim();openingListState[kind].page=1;renderOpeningPagedLists();}
     function changeOpeningListPage(kind,delta){let s=openingListState[kind];s.page=Math.max(1,s.page+delta);renderOpeningPagedLists();}
     function setOpeningDraft(kind,id,value){openingDraft[kind][id]=value;}
+    async function savePartyOpeningBalance(kind,id){
+      if(currentUserRole!=='admin')return alert('Only Super User can change opening balances.');
+      let list=kind==='customer'?customers:suppliers,party=list.find(x=>String(x.id)===String(id));if(!party)return alert('Account not found.');
+      let input=document.querySelector(`[data-opening-${kind}="${id}"]`),raw=Object.prototype.hasOwnProperty.call(openingDraft[kind],id)?openingDraft[kind][id]:input?.value,amount=openingNum(raw);
+      let date=openingConfig.date||document.getElementById('openingDate')?.value||'';
+      if(!date)return alert(currentLang==='BN'?'আগে System Start Date দিন।':'Select the System Start Date first.');
+      let transactionDates=[...salesHistory,...purchases,...payments,...accountTransactions,...payableEntries,...receivableEntries,...personalLoanTransactions].map(x=>x.date).filter(Boolean).sort();
+      if(transactionDates.length&&date>transactionDates[0])return alert(`${currentLang==='BN'?'Start Date প্রথম transaction-এর পরে হতে পারবে না':'Start Date cannot be after the first transaction'} (${transactionDates[0]}).`);
+      if(kind==='supplier'&&amount+0.001<getSupplierOpeningPaid(id))return alert(`Opening payable cannot be less than its recorded payment (৳${getSupplierOpeningPaid(id).toFixed(2)}).`);
+      party.openingDue=amount;openingConfig={...openingConfig,date,saved:true,supplierPayments:openingConfig.supplierPayments||[],liabilityPayments:openingConfig.liabilityPayments||[]};delete openingDraft[kind][id];
+      saveData();await firestoreSaveQueue.catch(()=>{});
+      if(firestoreLastSaveError)return alert(currentLang==='BN'?'Local-এ রাখা হয়েছে, কিন্তু Cloud save হয়নি। Internet ঠিক করে আবার Save দিন।':'Saved locally, but cloud save failed. Reconnect and save again.');
+      renderOpeningBalanceSetup();renderLedger();renderSupplierTable();renderDashboard();
+      alert(`${party.name} — ${kind==='customer'?'opening receivable':'opening payable'} ৳${amount.toFixed(2)} saved.`);
+    }
     function renderOpeningPagedLists(){
       if(!document.getElementById('openingCustomerBody'))return;
       let paginate=(kind,list,matcher)=>{let s=openingListState[kind],filtered=list.filter(matcher),pages=Math.max(1,Math.ceil(filtered.length/s.size));s.page=Math.min(s.page,pages);return {rows:filtered.slice((s.page-1)*s.size,s.page*s.size),total:filtered.length,page:s.page,pages};};
       let c=paginate('customer',customers,x=>!openingListState.customer.q||`${x.name||''} ${x.phone||''}`.toLowerCase().includes(openingListState.customer.q));
-      document.getElementById('openingCustomerBody').innerHTML=c.rows.length?c.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-customer="${x.id}" value="${openingDraft.customer[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('customer','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editCustomer(${x.id})" class="btn-icon-action btn-edit" title="Edit Customer">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching customer</td></tr>';
+      document.getElementById('openingCustomerBody').innerHTML=c.rows.length?c.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-customer="${x.id}" value="${openingDraft.customer[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('customer','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;white-space:nowrap;"><button type="button" onclick="savePartyOpeningBalance('customer','${x.id}')" class="btn-success" style="width:auto;padding:6px 9px;font-size:11px;" title="Save Opening Receivable">💾 Save</button> <button type="button" onclick="editCustomer(${x.id})" class="btn-icon-action btn-edit" title="Edit Customer">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching customer</td></tr>';
       document.getElementById('openingCustomerCount').innerText=`Showing ${c.rows.length} of ${c.total}`;document.getElementById('openingCustomerPager').innerHTML=compactPagerHtml('customer',c.page,c.pages,c.total,'changeOpeningListPage');
       let sp=paginate('supplier',suppliers,x=>!openingListState.supplier.q||`${x.name||''} ${x.phone||''}`.toLowerCase().includes(openingListState.supplier.q));
-      document.getElementById('openingSupplierBody').innerHTML=sp.rows.length?sp.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-supplier="${x.id}" value="${openingDraft.supplier[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('supplier','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editSupplier(${x.id})" class="btn-icon-action btn-edit" title="Edit Supplier">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching supplier</td></tr>';
+      document.getElementById('openingSupplierBody').innerHTML=sp.rows.length?sp.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-supplier="${x.id}" value="${openingDraft.supplier[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('supplier','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;white-space:nowrap;"><button type="button" onclick="savePartyOpeningBalance('supplier','${x.id}')" class="btn-success" style="width:auto;padding:6px 9px;font-size:11px;" title="Save Opening Payable">💾 Save</button> <button type="button" onclick="editSupplier(${x.id})" class="btn-icon-action btn-edit" title="Edit Supplier">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching supplier</td></tr>';
       document.getElementById('openingSupplierCount').innerText=`Showing ${sp.rows.length} of ${sp.total}`;document.getElementById('openingSupplierPager').innerHTML=compactPagerHtml('supplier',sp.page,sp.pages,sp.total,'changeOpeningListPage');
       let pr=paginate('product',products,x=>!openingListState.product.q||`${x.name||''} ${x.category||''}`.toLowerCase().includes(openingListState.product.q));
       document.getElementById('openingProductBody').innerHTML=pr.rows.length?pr.rows.map(p=>{let bags=Number.isFinite(Number(p.openingStockBags))?openingNum(p.openingStockBags):openingNum(p.stock),bagKg=Number(p.bagKg)||50,d=openingDraft.product[p.id],unit=d?.unit||(['Kg','Bag','Ton'].includes(p.openingInputUnit)?p.openingInputUnit:(['Kg','Bag','Ton'].includes(p.defaultUnit)?p.defaultUnit:'Bag')),qty=d?openingNum(d.qty):(Number.isFinite(Number(p.openingInputQty))?openingNum(p.openingInputQty):openingBagsToUnit(bags,unit,bagKg)),cost=d?openingNum(d.cost):(Number.isFinite(Number(p.openingInputCost))?openingNum(p.openingInputCost):openingKgCostToUnit(p.openingCostPerKg,unit,bagKg)),displayBags=openingQtyToBags(qty,unit,bagKg);return `<tr><td><b>${p.name}</b></td><td>${bagKg} KG</td><td><select data-opening-product-unit="${p.id}" data-previous-unit="${unit}" onchange="changeOpeningInventoryUnit(${p.id})" style="margin:0;min-width:80px;"><option value="Kg" ${unit==='Kg'?'selected':''}>KG</option><option value="Bag" ${unit==='Bag'?'selected':''}>Bag</option><option value="Ton" ${unit==='Ton'?'selected':''}>Ton</option></select></td><td><input type="number" min="0" step="0.001" data-opening-product-qty="${p.id}" value="${qty||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"><small id="openingEquivalent-${p.id}" style="display:block;color:var(--muted);margin-top:3px;white-space:nowrap;">${displayBags.toFixed(3)} Bag = ${(displayBags*bagKg).toFixed(3)} KG = ${(displayBags*bagKg/1000).toFixed(3)} Ton</small></td><td><small id="openingCostLabel-${p.id}" style="display:block;color:var(--muted);margin-bottom:3px;">Cost / ${unit==='Kg'?'KG':unit}</small><input type="number" min="0" step="0.01" data-opening-product-cost="${p.id}" value="${cost||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"></td><td id="openingProductValue-${p.id}" style="text-align:right;font-weight:700;">৳${roundMoney(qty*cost).toFixed(2)}</td><td style="text-align:center;"><button type="button" onclick="editProduct(${p.id})" class="btn-icon-action btn-edit" title="Edit Product">${SVG_EDIT}</button></td></tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center;padding:18px;">No matching product</td></tr>';
@@ -11897,13 +11912,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyARujswLaRSqYYxzxPAo47jZ3c2vMGRpqw",
-      authDomain: "kb-enterprise-8a6dd.firebaseapp.com",
-      projectId: "kb-enterprise-8a6dd",
-      storageBucket: "kb-enterprise-8a6dd.firebasestorage.app",
-      messagingSenderId: "279055179544",
-      appId: "1:279055179544:web:0b8cfeb33f96356fa3486d"
-    };
+  apiKey: "AIzaSyDERU02jeKq7kSFv_R-SL1GeKmNQHC54WA",
+  authDomain: "kb-enterprise-dealer-point.firebaseapp.com",
+  projectId: "kb-enterprise-dealer-point",
+  storageBucket: "kb-enterprise-dealer-point.firebasestorage.app",
+  messagingSenderId: "919563906958",
+  appId: "1:919563906958:web:d45d4db99f9c9ac0c07edf"
+};
+
     const _app  = firebase.initializeApp(firebaseConfig);
     const _db   = firebase.firestore();
     const _auth = firebase.auth();
