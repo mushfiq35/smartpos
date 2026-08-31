@@ -4348,7 +4348,7 @@
     }
     // ── Invoice Counters ──
     let invoiceCounters = JSON.parse(localStorage.getItem('pos_invoice_counters')) || {
-      SAL: 0, SR: 0, DC: 0, CX: 0, PUR: 0, PAY: 0, RCV: 0, LON: 0
+      SAL: 0, SR: 0, DC: 0, CX: 0, PUR: 0, PAY: 0, RCV: 0, LON: 0, SBK: 0, SFD: 0, SFR: 0
     };
 
     function nextInvoiceNo(prefix) {
@@ -6180,7 +6180,7 @@
       if(!canManageDataTools())return alert('Backup access is restricted to the Owner-authorized Super Users.');
       await firestoreSaveQueue.catch(()=>{});
       let backupData = {
-        backupSchemaVersion: 2,
+        backupSchemaVersion: 3,
         appName: 'KB Trading System POS',
         exportedAt: new Date().toISOString(),
         dataCounts: {
@@ -6190,8 +6190,15 @@
           dueCollections:payments.length, payable:payableEntries.length, receivable:receivableEntries.length,
           banks:bankAccounts.length, mobileAccounts:mobileAccounts.length,
           creditFacilities:creditFacilities.length, creditTransactions:creditTransactions.length,
-          personLoanAccounts:personalLoanAccounts.length, personLoanTransactions:personalLoanTransactions.length
+          personLoanAccounts:personalLoanAccounts.length, personLoanTransactions:personalLoanTransactions.length,
+          categories:categories.length, payableHeads:payableHeads.length, receivableHeads:receivableHeads.length,
+          openingSupplierPayments:(openingConfig.supplierPayments||[]).length, openingLiabilityPayments:(openingConfig.liabilityPayments||[]).length
         },
+        includedModules: [
+          'Shop Settings','Customers','Products','Categories','Sales','Sales Returns','Deliveries','Order Cancellations','Due Collections',
+          'Suppliers','Purchases','Supplier Bookings','Supplier Fund Transactions','Accounts','Payable','Receivable','Banks','Mobile Accounts',
+          'Opening Balance','Credit Facilities','Credit Transactions','People & Loan Accounts','Invoice Counters','Payment/Receivable Heads'
+        ],
         shopConfig, customers, products, salesHistory,
         accountTransactions, categories, salesReturns, deliveries, orderCancellations, payments,
         payableEntries, receivableEntries, bankAccounts, mobileAccounts, payableHeads, receivableHeads,
@@ -6199,11 +6206,17 @@
         personalLoanAccounts, personalLoanTransactions
       };
       let jsonText=JSON.stringify(backupData,null,2),verify=JSON.parse(jsonText);
-      let required=['customers','products','salesHistory','accountTransactions','suppliers','purchases','bankAccounts','mobileAccounts','openingConfig','creditFacilities','personalLoanAccounts'];
+      let required=[
+        'shopConfig','customers','products','categories','salesHistory','accountTransactions','salesReturns','deliveries','orderCancellations','payments',
+        'payableEntries','receivableEntries','bankAccounts','mobileAccounts','payableHeads','receivableHeads','suppliers','purchases',
+        'supplierBookings','supplierFundTransactions','invoiceCounters','openingConfig','creditFacilities','creditTransactions','personalLoanAccounts','personalLoanTransactions'
+      ];
       if(required.some(k=>!(k in verify)))return alert('Backup validation failed. No file was downloaded.');
+      let arrayFields=required.filter(k=>!['shopConfig','invoiceCounters','openingConfig'].includes(k));
+      if(arrayFields.some(k=>!Array.isArray(verify[k])))return alert('Backup validation failed: one or more data modules are invalid. No file was downloaded.');
       let blob=new Blob([jsonText],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
-      a.href=url;a.download=`POS_FULL_Backup_${new Date().toISOString().split('T')[0]}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
-      alert(`Full backup ready. ${backupData.dataCounts.customers} customers, ${backupData.dataCounts.products} products, ${backupData.dataCounts.sales} sales and all other ledgers are included.`);
+      a.href=url;a.download=`POS_FULL_Backup_v3_${new Date().toISOString().split('T')[0]}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+      alert(`Full backup ready. Supplier Bookings: ${backupData.dataCounts.supplierBookings}, Supplier Fund Transactions: ${backupData.dataCounts.supplierFundTransactions}. All business ledgers, accounts and settings are included.`);
     }
 
     function importSystemData() {
@@ -6216,6 +6229,10 @@
         try {
           let data = JSON.parse(e.target.result);
           if(!Array.isArray(data.customers)||!Array.isArray(data.products)||!Array.isArray(data.salesHistory))return alert(t("alertSelectValidBackup"));
+          // Schema v3 backups include the complete Supplier Booking/Fund layer.
+          // Older backups remain compatible; missing new modules are restored as empty arrays.
+          if(data.backupSchemaVersion && Number(data.backupSchemaVersion)>3)
+            return alert('This backup was created by a newer system version and cannot be restored safely here.');
           let normalized={
             shopConfig:data.shopConfig||shopConfig, customers:data.customers, products:data.products, salesHistory:data.salesHistory,
             accountTransactions:Array.isArray(data.accountTransactions)?data.accountTransactions:[], categories:Array.isArray(data.categories)?data.categories:[],
@@ -6274,7 +6291,7 @@
       personalLoanAccounts = [];
       personalLoanTransactions = [];
       openingConfig      = {date:'',cash:0,otherAssets:0,loanPayable:0,otherLiabilities:0,note:'',saved:false,supplierPayments:[],liabilityPayments:[]};
-      invoiceCounters    = { SAL:0, SR:0, DC:0, CX:0, PUR:0, PAY:0, RCV:0, LON:0 };
+      invoiceCounters    = { SAL:0, SR:0, DC:0, CX:0, PUR:0, PAY:0, RCV:0, LON:0, SBK:0, SFD:0, SFR:0 };
       payableHeads       = ['মোবাইল বিল', 'বেতন', 'ইন্টারনেট বিল', 'দোকান ভাড়া', 'বিদ্যুৎ বিল'];
       receivableHeads    = ['পণ্য বিক্রয়', 'সার্ভিস চার্জ', 'কমিশন', 'ডেলিভারি চার্জ'];
       categories         = [];
@@ -11992,12 +12009,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyAhjBFCucUnk8kgqstDeJcifTJDtExJgws",
-  authDomain: "pos-system-bd96e.firebaseapp.com",
-  projectId: "pos-system-bd96e",
-  storageBucket: "pos-system-bd96e.firebasestorage.app",
-  messagingSenderId: "30277024982",
-  appId: "1:30277024982:web:3afa0715cf5450e5d0dd77"
+  apiKey: "AIzaSyASTzYLrwuTg4-m7OacuTzsL4KZ2_ArJ28",
+  authDomain: "ms-enayet-trading.firebaseapp.com",
+  projectId: "ms-enayet-trading",
+  storageBucket: "ms-enayet-trading.firebasestorage.app",
+  messagingSenderId: "8410806478",
+  appId: "1:8410806478:web:fcdc78e1d5b2868df3389f"
 };
     const _app  = firebase.initializeApp(firebaseConfig);
     const _db   = firebase.firestore();
