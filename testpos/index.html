@@ -1360,11 +1360,12 @@
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><h3 style="margin:0;">People & Loan Accounts</h3><span id="loanAccountListCount" class="badge" style="background:#eef2ff;color:#3730a3;">0 accounts</span></div>
           <div class="filter-grid no-print" style="margin-top:12px;">
-            <div><label>Search:</label><input id="loanAccountSearch" type="text" placeholder="🔎 Name, phone, account no..." oninput="renderPersonalLoanModule()" style="margin-bottom:0;"></div>
-            <div><label>Account Type:</label><select id="loanAccountTypeListFilter" onchange="renderPersonalLoanModule()" style="margin-bottom:0;"><option value="All">All Types</option><option value="advance">Staff / Person Advance</option><option value="borrowed">Borrowed from Person</option></select></div>
-            <div><label>Status:</label><select id="loanAccountStatusListFilter" onchange="renderPersonalLoanModule()" style="margin-bottom:0;"><option value="All">All Status</option><option value="Active">Active</option><option value="Overdue">Overdue</option><option value="Paid">Paid</option></select></div>
+            <div><label>Search:</label><input id="loanAccountSearch" type="text" placeholder="🔎 Name, phone, account no..." oninput="resetPersonalLoanAccountPage()" style="margin-bottom:0;"></div>
+            <div><label>Account Type:</label><select id="loanAccountTypeListFilter" onchange="resetPersonalLoanAccountPage()" style="margin-bottom:0;"><option value="All">All Types</option><option value="advance">Staff / Person Advance</option><option value="borrowed">Borrowed from Person</option></select></div>
+            <div><label>Status:</label><select id="loanAccountStatusListFilter" onchange="resetPersonalLoanAccountPage()" style="margin-bottom:0;"><option value="All">All Status</option><option value="Active">Active</option><option value="Overdue">Overdue</option><option value="Paid">Paid</option></select></div>
           </div>
           <div class="table-responsive" style="margin-top:12px;"><table style="min-width:1050px;"><thead><tr><th>Account / Person</th><th>Type</th><th>Purpose</th><th>Start Date</th><th>Due Date</th><th>Status</th><th style="text-align:right;">Outstanding</th><th style="text-align:center;">Actions</th></tr></thead><tbody id="personalLoanCards"></tbody></table></div>
+          <div id="personalLoanAccountPager" class="no-print"></div>
         </div>
         <div class="card" id="personalLoanLedgerPrintArea">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><h3>📒 Person-wise Loan Ledger</h3><button class="btn-warning no-print" style="width:auto;" onclick="printDiv('personalLoanLedgerPrintArea')">🖨️ Print Current List</button></div>
@@ -2375,11 +2376,17 @@
             </div>
             <label>Opening Note:</label><input type="text" id="openingNote" placeholder="যেমন: পুরোনো খাতা থেকে নেওয়া opening balance">
             <div class="ml-section-title"><span data-key="openingCustomerTitle">Customer Opening Receivable</span><button type="button" onclick="showQuickAddCustomer()" class="btn-success" style="width:auto;padding:5px 10px;font-size:11px;margin-left:auto;">+ Add Customer</button></div>
+            <div class="no-print" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;"><input id="openingCustomerSearch" type="text" placeholder="🔎 Search customer / phone..." oninput="openingListSearch('customer',this.value)" style="margin:0;flex:1;min-width:220px;"><span id="openingCustomerCount" style="font-size:11px;color:var(--muted);"></span></div>
             <div class="table-responsive"><table style="font-size:12px;"><thead><tr><th>Customer</th><th>Phone</th><th style="text-align:right;">আগের পাওনা (৳)</th><th style="text-align:center;">Action</th></tr></thead><tbody id="openingCustomerBody"></tbody></table></div>
+            <div id="openingCustomerPager" class="no-print" style="margin-top:7px;"></div>
             <div class="ml-section-title"><span data-key="openingSupplierTitle">Supplier Opening Payable</span><button type="button" onclick="openAddSupplierModal()" class="btn-success" style="width:auto;padding:5px 10px;font-size:11px;margin-left:auto;">+ Add Supplier</button></div>
+            <div class="no-print" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;"><input id="openingSupplierSearch" type="text" placeholder="🔎 Search supplier / phone..." oninput="openingListSearch('supplier',this.value)" style="margin:0;flex:1;min-width:220px;"><span id="openingSupplierCount" style="font-size:11px;color:var(--muted);"></span></div>
             <div class="table-responsive"><table style="font-size:12px;"><thead><tr><th>Supplier</th><th>Phone</th><th style="text-align:right;">আগের দেনা (৳)</th><th style="text-align:center;">Action</th></tr></thead><tbody id="openingSupplierBody"></tbody></table></div>
+            <div id="openingSupplierPager" class="no-print" style="margin-top:7px;"></div>
             <div class="ml-section-title"><span data-key="openingInventoryTitle">Opening Inventory</span><button type="button" onclick="showQuickAddProduct()" class="btn-success" style="width:auto;padding:5px 10px;font-size:11px;margin-left:auto;">+ Add Product</button></div>
+            <div class="no-print" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;"><input id="openingProductSearch" type="text" placeholder="🔎 Search product / category..." oninput="openingListSearch('product',this.value)" style="margin:0;flex:1;min-width:220px;"><span id="openingProductCount" style="font-size:11px;color:var(--muted);"></span></div>
             <div class="table-responsive"><table style="font-size:12px;"><thead><tr><th>Product</th><th>Bag Size</th><th>Unit</th><th style="text-align:right;">Opening Quantity</th><th style="text-align:right;">Cost / Selected Unit (৳)</th><th style="text-align:right;">Stock Value (৳)</th><th style="text-align:center;">Action</th></tr></thead><tbody id="openingProductBody"></tbody></table></div>
+            <div id="openingProductPager" class="no-print" style="margin-top:7px;"></div>
             <div id="openingBalanceSummary" style="margin:14px 0;padding:12px;border-top:2px solid var(--navy);border-bottom:1px solid var(--border);font-size:12px;"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;"><button onclick="saveOpeningBalances()" class="btn-success" style="max-width:260px;">💾 Save Opening Balances</button><button onclick="openOpeningLiabilityPayment('loan')" class="btn-warning" style="width:auto;">Pay Opening Loan</button><button onclick="openOpeningLiabilityPayment('other')" class="btn-warning" style="width:auto;">Pay Other Liability</button></div>
           </div>
@@ -2400,7 +2407,9 @@
               <label data-key="bankOpeningLabel">Opening Balance (৳):</label>
               <input type="number" id="newBankOpening" placeholder="0.00" min="0" step="0.01">
               <div style="display:flex;gap:8px;"><button id="bankSaveBtn" onclick="addBankAccount()" class="btn-success" data-key="bankAddBtn">+ অ্যাকাউন্ট যোগ করুন</button><button id="bankCancelEditBtn" onclick="resetBankAccountForm()" class="btn-danger" style="display:none;">Cancel</button></div>
+              <input id="settingsBankSearch" type="text" placeholder="🔎 Search bank, account or number..." oninput="settingsCompactSearch('bank',this.value)" style="margin:12px 0 0;">
               <div id="bankAccountsList" style="margin-top:12px;"></div>
+              <div id="settingsBankPager" class="no-print"></div>
             </div>
 
             <div class="card" style="margin-bottom:0;">
@@ -2417,7 +2426,9 @@
               <label data-key="bankOpeningLabel">Opening Balance (৳):</label>
               <input type="number" id="newMobileOpening" placeholder="0.00" min="0" step="0.01">
               <button onclick="addMobileAccount()" class="btn-success" data-key="mobileAddBtn">+ মোবাইল অ্যাকাউন্ট যোগ করুন</button>
+              <input id="settingsMobileSearch" type="text" placeholder="🔎 Search service, name or number..." oninput="settingsCompactSearch('mobile',this.value)" style="margin:12px 0 0;">
               <div id="mobileAccountsList" style="margin-top:12px;"></div>
+              <div id="settingsMobilePager" class="no-print"></div>
             </div>
 
             <div class="card" style="margin-bottom:0;">
@@ -10364,8 +10375,29 @@
     function openingCostToKg(cost,unit,bagKg){cost=openingNum(cost);bagKg=Number(bagKg)||50;return unit==='Ton'?cost/1000:unit==='Bag'?cost/bagKg:cost;}
     function openingBagsToUnit(bags,unit,bagKg){bags=openingNum(bags);bagKg=Number(bagKg)||50;return unit==='Ton'?bags*bagKg/1000:unit==='Kg'?bags*bagKg:bags;}
     function openingKgCostToUnit(cost,unit,bagKg){cost=openingNum(cost);bagKg=Number(bagKg)||50;return unit==='Ton'?cost*1000:unit==='Bag'?cost*bagKg:cost;}
-    function updateOpeningInventoryRow(id){let p=products.find(x=>String(x.id)===String(id)),q=document.querySelector(`[data-opening-product-qty="${id}"]`),c=document.querySelector(`[data-opening-product-cost="${id}"]`),u=document.querySelector(`[data-opening-product-unit="${id}"]`),v=document.getElementById('openingProductValue-'+id),e=document.getElementById('openingEquivalent-'+id);if(v)v.innerText='৳'+roundMoney(openingNum(q?.value)*openingNum(c?.value)).toFixed(2);if(p&&q&&u&&e){let bags=openingQtyToBags(q.value,u.value,p.bagKg),kg=bags*(Number(p.bagKg)||50);e.innerText=`${bags.toFixed(3)} Bag = ${kg.toFixed(3)} KG = ${(kg/1000).toFixed(3)} Ton`;}}
+    function updateOpeningInventoryRow(id){let p=products.find(x=>String(x.id)===String(id)),q=document.querySelector(`[data-opening-product-qty="${id}"]`),c=document.querySelector(`[data-opening-product-cost="${id}"]`),u=document.querySelector(`[data-opening-product-unit="${id}"]`),v=document.getElementById('openingProductValue-'+id),e=document.getElementById('openingEquivalent-'+id);if(v)v.innerText='৳'+roundMoney(openingNum(q?.value)*openingNum(c?.value)).toFixed(2);if(p&&q&&u&&e){let bags=openingQtyToBags(q.value,u.value,p.bagKg),kg=bags*(Number(p.bagKg)||50);e.innerText=`${bags.toFixed(3)} Bag = ${kg.toFixed(3)} KG = ${(kg/1000).toFixed(3)} Ton`;openingDraft.product[id]={unit:u.value,qty:q.value,cost:c.value};}}
     function changeOpeningInventoryUnit(id){let p=products.find(x=>String(x.id)===String(id)),u=document.querySelector(`[data-opening-product-unit="${id}"]`),q=document.querySelector(`[data-opening-product-qty="${id}"]`),c=document.querySelector(`[data-opening-product-cost="${id}"]`);if(!p||!u||!q||!c)return;let old=u.dataset.previousUnit||'Bag',next=u.value,bags=openingQtyToBags(q.value,old,p.bagKg),kgCost=openingCostToKg(c.value,old,p.bagKg);q.value=Number(openingBagsToUnit(bags,next,p.bagKg).toFixed(3));c.value=Number(openingKgCostToUnit(kgCost,next,p.bagKg).toFixed(2));u.dataset.previousUnit=next;let label=document.getElementById('openingCostLabel-'+id);if(label)label.innerText='Cost / '+(next==='Kg'?'KG':next);updateOpeningInventoryRow(id);}
+
+    const openingListState={customer:{page:1,q:'',size:4},supplier:{page:1,q:'',size:4},product:{page:1,q:'',size:4}};
+    const openingDraft={customer:{},supplier:{},product:{}};
+    const settingsCompactState={bank:{page:1,q:'',size:4},mobile:{page:1,q:'',size:4}};
+    function compactPagerHtml(kind,page,pages,total,handler){return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;font-size:11px;color:var(--muted);"><span>${total} record${total===1?'':'s'} · Page ${page}/${pages}</span><div style="display:flex;gap:6px;"><button type="button" class="btn-warning" style="width:auto;padding:5px 10px;" onclick="${handler}('${kind}',-1)" ${page<=1?'disabled':''}>‹ Previous</button><button type="button" class="btn-warning" style="width:auto;padding:5px 10px;" onclick="${handler}('${kind}',1)" ${page>=pages?'disabled':''}>Next ›</button></div></div>`;}
+    function openingListSearch(kind,value){openingListState[kind].q=(value||'').toLowerCase().trim();openingListState[kind].page=1;renderOpeningPagedLists();}
+    function changeOpeningListPage(kind,delta){let s=openingListState[kind];s.page=Math.max(1,s.page+delta);renderOpeningPagedLists();}
+    function setOpeningDraft(kind,id,value){openingDraft[kind][id]=value;}
+    function renderOpeningPagedLists(){
+      if(!document.getElementById('openingCustomerBody'))return;
+      let paginate=(kind,list,matcher)=>{let s=openingListState[kind],filtered=list.filter(matcher),pages=Math.max(1,Math.ceil(filtered.length/s.size));s.page=Math.min(s.page,pages);return {rows:filtered.slice((s.page-1)*s.size,s.page*s.size),total:filtered.length,page:s.page,pages};};
+      let c=paginate('customer',customers,x=>!openingListState.customer.q||`${x.name||''} ${x.phone||''}`.toLowerCase().includes(openingListState.customer.q));
+      document.getElementById('openingCustomerBody').innerHTML=c.rows.length?c.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-customer="${x.id}" value="${openingDraft.customer[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('customer','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editCustomer(${x.id})" class="btn-icon-action btn-edit" title="Edit Customer">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching customer</td></tr>';
+      document.getElementById('openingCustomerCount').innerText=`Showing ${c.rows.length} of ${c.total}`;document.getElementById('openingCustomerPager').innerHTML=compactPagerHtml('customer',c.page,c.pages,c.total,'changeOpeningListPage');
+      let sp=paginate('supplier',suppliers,x=>!openingListState.supplier.q||`${x.name||''} ${x.phone||''}`.toLowerCase().includes(openingListState.supplier.q));
+      document.getElementById('openingSupplierBody').innerHTML=sp.rows.length?sp.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-supplier="${x.id}" value="${openingDraft.supplier[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('supplier','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editSupplier(${x.id})" class="btn-icon-action btn-edit" title="Edit Supplier">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching supplier</td></tr>';
+      document.getElementById('openingSupplierCount').innerText=`Showing ${sp.rows.length} of ${sp.total}`;document.getElementById('openingSupplierPager').innerHTML=compactPagerHtml('supplier',sp.page,sp.pages,sp.total,'changeOpeningListPage');
+      let pr=paginate('product',products,x=>!openingListState.product.q||`${x.name||''} ${x.category||''}`.toLowerCase().includes(openingListState.product.q));
+      document.getElementById('openingProductBody').innerHTML=pr.rows.length?pr.rows.map(p=>{let bags=Number.isFinite(Number(p.openingStockBags))?openingNum(p.openingStockBags):openingNum(p.stock),bagKg=Number(p.bagKg)||50,d=openingDraft.product[p.id],unit=d?.unit||(['Kg','Bag','Ton'].includes(p.openingInputUnit)?p.openingInputUnit:(['Kg','Bag','Ton'].includes(p.defaultUnit)?p.defaultUnit:'Bag')),qty=d?openingNum(d.qty):(Number.isFinite(Number(p.openingInputQty))?openingNum(p.openingInputQty):openingBagsToUnit(bags,unit,bagKg)),cost=d?openingNum(d.cost):(Number.isFinite(Number(p.openingInputCost))?openingNum(p.openingInputCost):openingKgCostToUnit(p.openingCostPerKg,unit,bagKg)),displayBags=openingQtyToBags(qty,unit,bagKg);return `<tr><td><b>${p.name}</b></td><td>${bagKg} KG</td><td><select data-opening-product-unit="${p.id}" data-previous-unit="${unit}" onchange="changeOpeningInventoryUnit(${p.id})" style="margin:0;min-width:80px;"><option value="Kg" ${unit==='Kg'?'selected':''}>KG</option><option value="Bag" ${unit==='Bag'?'selected':''}>Bag</option><option value="Ton" ${unit==='Ton'?'selected':''}>Ton</option></select></td><td><input type="number" min="0" step="0.001" data-opening-product-qty="${p.id}" value="${qty||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"><small id="openingEquivalent-${p.id}" style="display:block;color:var(--muted);margin-top:3px;white-space:nowrap;">${displayBags.toFixed(3)} Bag = ${(displayBags*bagKg).toFixed(3)} KG = ${(displayBags*bagKg/1000).toFixed(3)} Ton</small></td><td><small id="openingCostLabel-${p.id}" style="display:block;color:var(--muted);margin-bottom:3px;">Cost / ${unit==='Kg'?'KG':unit}</small><input type="number" min="0" step="0.01" data-opening-product-cost="${p.id}" value="${cost||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"></td><td id="openingProductValue-${p.id}" style="text-align:right;font-weight:700;">৳${roundMoney(qty*cost).toFixed(2)}</td><td style="text-align:center;"><button type="button" onclick="editProduct(${p.id})" class="btn-icon-action btn-edit" title="Edit Product">${SVG_EDIT}</button></td></tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center;padding:18px;">No matching product</td></tr>';
+      document.getElementById('openingProductCount').innerText=`Showing ${pr.rows.length} of ${pr.total}`;document.getElementById('openingProductPager').innerHTML=compactPagerHtml('product',pr.page,pr.pages,pr.total,'changeOpeningListPage');
+    }
 
     function renderOpeningBalanceSetup() {
       let date=document.getElementById('openingDate'); if(!date) return;
@@ -10375,7 +10407,7 @@
       document.getElementById('openingLoan').value=openingConfig.loanPayable||'';
       document.getElementById('openingOtherLiabilities').value=openingConfig.otherLiabilities||'';
       document.getElementById('openingNote').value=openingConfig.note||'';
-      document.getElementById('openingCustomerBody').innerHTML=customers.length?customers.map(c=>`<tr><td><b>${c.name}</b></td><td>${c.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-customer="${c.id}" value="${openingNum(c.openingDue)||''}" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editCustomer(${c.id})" class="btn-icon-action btn-edit" title="Edit Customer">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;">আগে Customer তৈরি করুন</td></tr>';
+      if(false){document.getElementById('openingCustomerBody').innerHTML=customers.length?customers.map(c=>`<tr><td><b>${c.name}</b></td><td>${c.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-customer="${c.id}" value="${openingNum(c.openingDue)||''}" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editCustomer(${c.id})" class="btn-icon-action btn-edit" title="Edit Customer">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;">আগে Customer তৈরি করুন</td></tr>';
       document.getElementById('openingSupplierBody').innerHTML=suppliers.length?suppliers.map(s=>`<tr><td><b>${s.name}</b></td><td>${s.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-supplier="${s.id}" value="${openingNum(s.openingDue)||''}" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editSupplier(${s.id})" class="btn-icon-action btn-edit" title="Edit Supplier">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;">আগে Supplier তৈরি করুন</td></tr>';
       document.getElementById('openingProductBody').innerHTML=products.length?products.map(p=>{
         let bags=Number.isFinite(Number(p.openingStockBags))?openingNum(p.openingStockBags):openingNum(p.stock),bagKg=Number(p.bagKg)||50;
@@ -10383,7 +10415,7 @@
         let qty=Number.isFinite(Number(p.openingInputQty))?openingNum(p.openingInputQty):openingBagsToUnit(bags,unit,bagKg);
         let cost=Number.isFinite(Number(p.openingInputCost))?openingNum(p.openingInputCost):openingKgCostToUnit(p.openingCostPerKg,unit,bagKg);
         return `<tr><td><b>${p.name}</b></td><td>${bagKg} KG</td><td><select data-opening-product-unit="${p.id}" data-previous-unit="${unit}" onchange="changeOpeningInventoryUnit(${p.id})" style="margin:0;min-width:80px;"><option value="Kg" ${unit==='Kg'?'selected':''}>KG</option><option value="Bag" ${unit==='Bag'?'selected':''}>Bag</option><option value="Ton" ${unit==='Ton'?'selected':''}>Ton</option></select></td><td><input type="number" min="0" step="0.001" data-opening-product-qty="${p.id}" value="${qty||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"><small id="openingEquivalent-${p.id}" style="display:block;color:var(--muted);margin-top:3px;white-space:nowrap;">${bags.toFixed(3)} Bag = ${(bags*bagKg).toFixed(3)} KG = ${(bags*bagKg/1000).toFixed(3)} Ton</small></td><td><small id="openingCostLabel-${p.id}" style="display:block;color:var(--muted);margin-bottom:3px;">Cost / ${unit==='Kg'?'KG':unit}</small><input type="number" min="0" step="0.01" data-opening-product-cost="${p.id}" value="${cost||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"></td><td id="openingProductValue-${p.id}" style="text-align:right;font-weight:700;">৳${roundMoney(qty*cost).toFixed(2)}</td><td style="text-align:center;"><button type="button" onclick="editProduct(${p.id})" class="btn-icon-action btn-edit" title="Edit Product">${SVG_EDIT}</button></td></tr>`;
-      }).join(''):'<tr><td colspan="7" style="text-align:center;">আগে Product তৈরি করুন</td></tr>';
+      }).join(''):'<tr><td colspan="7" style="text-align:center;">আগে Product তৈরি করুন</td></tr>';}renderOpeningPagedLists();
       let x=calculateOpeningSummary();
       document.getElementById('openingBalanceSummary').innerHTML=`<b>Opening Position:</b> Assets ৳${x.assets.toFixed(2)} &nbsp; | &nbsp; Liabilities ৳${x.liabilities.toFixed(2)} &nbsp; | &nbsp; <b>Opening Equity ৳${x.equity.toFixed(2)}</b><br><span style="color:var(--muted);">Customer Due ৳${x.customerDue.toFixed(2)} · Supplier Due ৳${x.supplierDue.toFixed(2)} · Stock ৳${x.stockValue.toFixed(2)} · Bank ৳${x.bank.toFixed(2)} · Mobile ৳${x.mobile.toFixed(2)}</span>`;
       let badge=document.getElementById('openingStatusBadge'); badge.className='badge '+(openingConfig.saved?'badge-ok':'badge-pending'); badge.innerText=openingConfig.saved?'Configured':'Not configured';
@@ -10398,16 +10430,19 @@
       let newLoan=openingNum(document.getElementById('openingLoan').value),newOtherLiability=openingNum(document.getElementById('openingOtherLiabilities').value);
       let loanPaid=(openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.type==='loan').reduce((s,p)=>s+(Number(p.amount)||0),0),otherPaid=(openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.type==='other').reduce((s,p)=>s+(Number(p.amount)||0),0);
       if(newLoan+0.001<loanPaid||newOtherLiability+0.001<otherPaid)return alert('Opening liability cannot be less than its already recorded payments.');
-      let invalidSupplier=false;document.querySelectorAll('[data-opening-supplier]').forEach(el=>{if(openingNum(el.value)+0.001<getSupplierOpeningPaid(el.dataset.openingSupplier))invalidSupplier=true;});if(invalidSupplier)return alert('Supplier opening payable cannot be less than its recorded opening payments.');
+      document.querySelectorAll('[data-opening-customer]').forEach(el=>openingDraft.customer[el.dataset.openingCustomer]=el.value);document.querySelectorAll('[data-opening-supplier]').forEach(el=>openingDraft.supplier[el.dataset.openingSupplier]=el.value);document.querySelectorAll('[data-opening-product-qty]').forEach(el=>updateOpeningInventoryRow(el.dataset.openingProductQty));
+      let invalidSupplier=suppliers.some(s=>openingNum(openingDraft.supplier[s.id]??s.openingDue)+0.001<getSupplierOpeningPaid(s.id));if(invalidSupplier)return alert('Supplier opening payable cannot be less than its recorded opening payments.');
       if(openingConfig.saved&&!confirm(currentLang==='BN'?'Opening balance পরিবর্তন করলে সব বর্তমান balance পুনরায় হিসাব হবে। চালিয়ে যাবেন?':'Changing opening balances recalculates all current balances. Continue?')) return;
       openingConfig={date,cash:openingNum(document.getElementById('openingCash').value),otherAssets:openingNum(document.getElementById('openingOtherAssets').value),loanPayable:newLoan,otherLiabilities:newOtherLiability,note:document.getElementById('openingNote').value.trim(),saved:true,supplierPayments:openingConfig.supplierPayments||[],liabilityPayments:openingConfig.liabilityPayments||[]};
       document.querySelectorAll('[data-opening-customer]').forEach(el=>{let c=customers.find(x=>String(x.id)===el.dataset.openingCustomer);if(c)c.openingDue=openingNum(el.value);});
       document.querySelectorAll('[data-opening-supplier]').forEach(el=>{let s=suppliers.find(x=>String(x.id)===el.dataset.openingSupplier);if(s)s.openingDue=openingNum(el.value);});
+      customers.forEach(c=>{if(Object.prototype.hasOwnProperty.call(openingDraft.customer,c.id))c.openingDue=openingNum(openingDraft.customer[c.id]);});suppliers.forEach(s=>{if(Object.prototype.hasOwnProperty.call(openingDraft.supplier,s.id))s.openingDue=openingNum(openingDraft.supplier[s.id]);});
       products.forEach(p=>{
-        let q=document.querySelector(`[data-opening-product-qty="${p.id}"]`), c=document.querySelector(`[data-opening-product-cost="${p.id}"]`),u=document.querySelector(`[data-opening-product-unit="${p.id}"]`); if(!q||!c||!u)return;
+        let q=document.querySelector(`[data-opening-product-qty="${p.id}"]`), c=document.querySelector(`[data-opening-product-cost="${p.id}"]`),u=document.querySelector(`[data-opening-product-unit="${p.id}"]`),draft=openingDraft.product[p.id];if((!q||!c||!u)&&!draft)return;let unitValue=draft?.unit||u.value,qtyValue=draft?.qty??q.value,costValue=draft?.cost??c.value;
         let previous=Number.isFinite(Number(p.openingStockBags))?openingNum(p.openingStockBags):openingNum(p.stock);
-        let unit=u.value,inputQty=openingNum(q.value),inputCost=openingNum(c.value),next=openingQtyToBags(inputQty,unit,p.bagKg); p.stock=roundMoney(Math.max(0,(Number(p.stock)||0)+next-previous)); p.openingStockBags=roundMoney(next); p.openingCostPerKg=openingCostToKg(inputCost,unit,p.bagKg);p.openingInputUnit=unit;p.openingInputQty=inputQty;p.openingInputCost=inputCost;
+        let unit=unitValue,inputQty=openingNum(qtyValue),inputCost=openingNum(costValue),next=openingQtyToBags(inputQty,unit,p.bagKg); p.stock=roundMoney(Math.max(0,(Number(p.stock)||0)+next-previous)); p.openingStockBags=roundMoney(next); p.openingCostPerKg=openingCostToKg(inputCost,unit,p.bagKg);p.openingInputUnit=unit;p.openingInputQty=inputQty;p.openingInputCost=inputCost;
       });
+      openingDraft.customer={};openingDraft.supplier={};openingDraft.product={};
       saveData(); renderOpeningBalanceSetup(); renderLedger(); renderSupplierTable(); renderProducts(); renderDashboard();
       alert(currentLang==='BN'?'Opening balances সফলভাবে সংরক্ষিত হয়েছে।':'Opening balances saved successfully.');
     }
@@ -10532,16 +10567,23 @@
       mobileAccounts=mobileAccounts.filter(a=>a.id!=id); saveData(); renderMobileAccounts();
     }
 
+    function settingsCompactSearch(kind,value){settingsCompactState[kind].q=(value||'').toLowerCase().trim();settingsCompactState[kind].page=1;kind==='bank'?renderBankAccounts():renderMobileAccounts();}
+    function changeSettingsCompactPage(kind,delta){let s=settingsCompactState[kind];s.page=Math.max(1,s.page+delta);kind==='bank'?renderBankAccounts():renderMobileAccounts();}
+    function getSettingsCompactPage(kind,list,searchText){let s=settingsCompactState[kind],filtered=list.filter(x=>!s.q||searchText(x).toLowerCase().includes(s.q)),pages=Math.max(1,Math.ceil(filtered.length/s.size));s.page=Math.min(s.page,pages);return {rows:filtered.slice((s.page-1)*s.size,s.page*s.size),total:filtered.length,page:s.page,pages};}
+
     function renderMobileAccounts() {
       let el=document.getElementById('mobileAccountsList'); if(!el) return;
-      if(!mobileAccounts.length) { el.innerHTML=`<p style="color:var(--muted);font-size:13px;">${currentLang==='BN'?'কোনো মোবাইল অ্যাকাউন্ট যোগ করা হয়নি।':'No mobile account added.'}</p>`; return; }
-      el.innerHTML=mobileAccounts.map(a=>{
+      if(!mobileAccounts.length) { el.innerHTML=`<p style="color:var(--muted);font-size:13px;">${currentLang==='BN'?'কোনো মোবাইল অ্যাকাউন্ট যোগ করা হয়নি।':'No mobile account added.'}</p>`;let pg=document.getElementById('settingsMobilePager');if(pg)pg.innerHTML='';return; }
+      let page=getSettingsCompactPage('mobile',mobileAccounts,a=>`${a.service||''} ${a.name||''} ${a.number||''} ${a.accountType||''}`);
+      el.innerHTML=page.rows.map(a=>{
         let tx=getMobileAccountTransactions(a.id), totalIn=roundMoney(tx.filter(x=>x.type==='in').reduce((s,x)=>s+x.amount,0)), totalOut=roundMoney(tx.filter(x=>x.type==='out').reduce((s,x)=>s+x.amount,0)), balance=getMobileAccountBalance(a.id);
         return `<div class="bank-account-item" style="flex-direction:column;align-items:flex-start;gap:5px;padding:12px 14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;width:100%;"><div><div class="bank-name">📱 ${a.service} — ${a.name}</div><div class="bank-num">${a.number} · ${a.accountType||'Personal'}</div></div>
           <div style="display:flex;gap:5px;"><button onclick="viewMobileAccountLedger(${a.id})" class="btn-icon-action btn-view" title="Ledger">${SVG_VIEW}</button>${currentUserRole==='admin'?`<button onclick="deleteMobileAccount(${a.id})" class="btn-icon-action btn-delete" title="${t('titleDelete')}">${SVG_DELETE}</button>`:''}</div></div>
           <div style="display:flex;gap:14px;margin-top:5px;font-size:12px;flex-wrap:wrap;"><span>Opening: <b>৳${(Number(a.openingBalance)||0).toFixed(2)}</b></span><span style="color:var(--green);">IN: <b>৳${totalIn.toFixed(2)}</b></span><span style="color:var(--red);">OUT: <b>৳${totalOut.toFixed(2)}</b></span><span style="color:${balance>=0?'var(--green)':'var(--red)'};font-weight:800;">Balance: ৳${balance.toFixed(2)}</span></div></div>`;
       }).join('');
+      if(!page.rows.length)el.innerHTML='<p style="color:var(--muted);font-size:13px;padding:10px 0;">No matching mobile account.</p>';
+      let pg=document.getElementById('settingsMobilePager');if(pg)pg.innerHTML=compactPagerHtml('mobile',page.page,page.pages,page.total,'changeSettingsCompactPage');
     }
 
     function viewMobileAccountLedger(id) {
@@ -10631,9 +10673,11 @@
       if (!el) return;
       if (!bankAccounts.length) {
         el.innerHTML = `<p style="color:var(--muted); font-size:13px;">${t('bankNoneMsg')}</p>`;
+        let pg=document.getElementById('settingsBankPager');if(pg)pg.innerHTML='';
         return;
       }
-      el.innerHTML = bankAccounts.map(b => {
+      let page=getSettingsCompactPage('bank',bankAccounts,b=>`${b.bankName||''} ${b.name||''} ${b.number||''}`);
+      el.innerHTML = page.rows.map(b => {
         let balance = getBankBalance(b.id);
         let balColor = balance >= 0 ? 'var(--green)' : 'var(--red)';
         let inTotal = roundMoney(
@@ -10669,6 +10713,8 @@
             </div>
           </div>`;
       }).join('');
+      if(!page.rows.length)el.innerHTML='<p style="color:var(--muted);font-size:13px;padding:10px 0;">No matching bank account.</p>';
+      let pg=document.getElementById('settingsBankPager');if(pg)pg.innerHTML=compactPagerHtml('bank',page.page,page.pages,page.total,'changeSettingsCompactPage');
     }
 
     function addPayableHeadFromSettings() {
@@ -10801,6 +10847,19 @@
       'printableCustomerStatement','accountsPrintArea','purchaseInvoiceBox','blPrintArea','clPrintArea','viewSupplierContent','purchasePayReceiptBox','overviewCashStatement'
     ]);
 
+    const autoTablePagination={};
+    function initAutoTablePagination(){
+      if(document.getElementById('autoTablePaginationStyle'))return;
+      let style=document.createElement('style');style.id='autoTablePaginationStyle';style.textContent='.ui-page-hidden{display:none!important}.auto-table-pager{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 2px 2px;font-size:11px;color:var(--muted);flex-wrap:wrap}.auto-table-pager .pager-actions{display:flex;gap:6px}.auto-table-pager button{width:auto;padding:5px 10px;font-size:11px}@media print{.ui-page-hidden{display:table-row!important}.auto-table-pager{display:none!important}}';document.head.appendChild(style);
+      const configs=[
+        ['final-ledger','#mlTable',15],['overview-cash','#overviewCashStatement .ov-bank-table',15],['bank-ledger','#blTable',15],['cash-ledger','#clTable',15],['person-loan-ledger','#personalLoanLedgerBody',15],['credit-ledger','#creditLedgerBody',15],
+        ['purchases','#purchaseTable',25],['sales','#salesTable',25],['returns','#returnsTable',25],['categories','#categoryTable',25],['suppliers','#supplierTable',25],['notifications','#notificationTable',25],['products','#stockTable',25],['unit-config','#unitConfigTable',25],['customers','#customersTable',25],['due-ledger','#dueLedgerTable',25],['vouchers','#myVouchersTable',25],['accounts','#accTable',25],['payables','#payableTable',25],['receivables','#receivableTable',25],['report-sales','#reportSalesTable',25],['report-customers','#reportCustomersTable',25],['report-suppliers','#reportSuppliersTable',25],['report-products','#reportProductsTable',25],['report-payables','#rplPayableTable',25],['report-receivables','#rplReceivableTable',25],['users','#usersTable',25],['payment-history','#paymentHistoryTable',25]
+      ];
+      configs.forEach(([key,selector,size])=>{let found=document.querySelector(selector),table=found?.tagName==='TABLE'?found:found?.closest('table'),tbody=found?.tagName==='TBODY'?found:table?.tBodies?.[0];if(!table||!tbody||autoTablePagination[key])return;let pager=document.createElement('div');pager.className='auto-table-pager no-print';pager.id='autoPager-'+key;(table.closest('.table-responsive')||table).insertAdjacentElement('afterend',pager);autoTablePagination[key]={key,table,tbody,pager,size,page:1};let observer=new MutationObserver(()=>applyAutoTablePage(key,true));observer.observe(tbody,{childList:true});autoTablePagination[key].observer=observer;applyAutoTablePage(key,true);});
+    }
+    function applyAutoTablePage(key,reset=false){let state=autoTablePagination[key];if(!state)return;if(reset)state.page=1;let rows=[...state.tbody.children].filter(x=>x.tagName==='TR'),total=rows.length,pages=Math.max(1,Math.ceil(total/state.size));state.page=Math.min(Math.max(1,state.page),pages);let start=(state.page-1)*state.size,end=start+state.size;rows.forEach((row,i)=>row.classList.toggle('ui-page-hidden',i<start||i>=end));if(total<=state.size){state.pager.innerHTML='';state.pager.style.display='none';return;}state.pager.style.display='flex';state.pager.innerHTML=`<span>Showing ${start+1}–${Math.min(end,total)} of ${total} records · Page ${state.page}/${pages}</span><div class="pager-actions"><button type="button" class="btn-warning" onclick="changeAutoTablePage('${key}',-1)" ${state.page<=1?'disabled':''}>‹ Previous</button><button type="button" class="btn-warning" onclick="changeAutoTablePage('${key}',1)" ${state.page>=pages?'disabled':''}>Next ›</button></div>`;}
+    function changeAutoTablePage(key,delta){let state=autoTablePagination[key];if(!state)return;state.page+=delta;applyAutoTablePage(key,false);state.table.scrollIntoView({behavior:'smooth',block:'start'});}
+
     function printDiv(divId) {
       const el = document.getElementById(divId);
       if (!el) return;
@@ -10822,6 +10881,7 @@
       area.innerHTML = header + el.outerHTML;
       // Remove no-print elements from clone
       area.querySelectorAll('.no-print').forEach(e => e.remove());
+      area.querySelectorAll('.ui-page-hidden').forEach(e => e.classList.remove('ui-page-hidden'));
       document.body.appendChild(area);
 
       // Inject print styles
@@ -11213,6 +11273,11 @@
 
     function refreshPersonalLoanAccounting(){renderPersonalLoanModule();renderAccounts();renderBankAccounts();renderMobileAccounts();renderDashboard();runMasterLedger();if(document.getElementById('report-bank-ledger')?.style.display!=='none')initBankLedger();if(document.getElementById('report-cash-ledger')?.style.display!=='none')renderCashLedger();}
 
+    let personalLoanAccountPage=1;
+    const personalLoanAccountPageSize=4;
+    function resetPersonalLoanAccountPage(){personalLoanAccountPage=1;renderPersonalLoanModule();}
+    function changePersonalLoanAccountPage(kind,delta){personalLoanAccountPage=Math.max(1,personalLoanAccountPage+delta);renderPersonalLoanModule();}
+
     function renderPersonalLoanModule(){
       let cards=document.getElementById('personalLoanCards');if(!cards)return;
       let advance=0,borrowed=0,dueCount=0,interestPaid=0,today=localISODate();
@@ -11221,8 +11286,10 @@
       document.getElementById('personAdvanceOutstanding').innerText='৳'+roundMoney(advance).toFixed(2);document.getElementById('personBorrowedOutstanding').innerText='৳'+roundMoney(borrowed).toFixed(2);document.getElementById('personLoanDueCount').innerText=dueCount;document.getElementById('personLoanInterestPaid').innerText='৳'+roundMoney(interestPaid).toFixed(2);
       let accountSearch=(document.getElementById('loanAccountSearch')?.value||'').toLowerCase().trim(),accountType=document.getElementById('loanAccountTypeListFilter')?.value||'All',accountStatus=document.getElementById('loanAccountStatusListFilter')?.value||'All';
       let accountList=personalLoanAccounts.map(l=>{let out=personalLoanOutstanding(l.id),overdue=out>0&&l.dueDate&&l.dueDate<today,status=out<=0?'Paid':overdue?'Overdue':'Active';return {...l,_out:out,_status:status};}).filter(l=>(accountType==='All'||l.type===accountType)&&(accountStatus==='All'||l._status===accountStatus)&&(!accountSearch||`${l.partyName||''} ${l.phone||''} ${l.loanNo||''} ${l.purpose||''}`.toLowerCase().includes(accountSearch))).sort((a,b)=>{let rank={Overdue:0,Active:1,Paid:2};return (rank[a._status]-rank[b._status])||(b._out-a._out)||(a.partyName||'').localeCompare(b.partyName||'');});
-      let countEl=document.getElementById('loanAccountListCount');if(countEl)countEl.innerText=`${accountList.length} of ${personalLoanAccounts.length} accounts`;
-      cards.innerHTML=accountList.length?accountList.map(l=>{let color=l._status==='Paid'?'var(--green)':l._status==='Overdue'?'var(--red)':'var(--gold)';return `<tr style="border-left:4px solid ${l.type==='advance'?'#2563eb':'#dc2626'};"><td><b>${l.type==='advance'?'👤':'🤝'} ${l.partyName}</b><br><small style="color:var(--muted);">${l.loanNo||'—'} · ${l.phone||'No phone'}</small></td><td><span class="badge" style="background:${l.type==='advance'?'#dbeafe':'#fee2e2'};color:${l.type==='advance'?'#1d4ed8':'#b91c1c'};">${personalLoanTypeLabel(l.type)}</span></td><td>${l.purpose||'—'}</td><td style="white-space:nowrap;">${l.startDate||'—'}</td><td style="white-space:nowrap;color:${l._status==='Overdue'?'var(--red)':'inherit'};">${l.dueDate||'Not set'}</td><td><span class="badge" style="background:${color}20;color:${color};">${l._status}</span></td><td style="text-align:right;white-space:nowrap;font-size:15px;font-weight:900;color:${l.type==='advance'?'var(--green)':'var(--red)'};">৳${l._out.toFixed(2)}</td><td><div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;"><button class="btn-success" style="width:auto;padding:6px 9px;font-size:11px;" onclick="openPersonalLoanActivityModal(${l.id})">Pay / Receive</button><button class="btn-warning" style="width:auto;padding:6px 9px;font-size:11px;" onclick="viewPersonalLoanStatement(${l.id})">Statement</button><button class="btn-warning" style="width:auto;padding:6px 9px;font-size:11px;" onclick="openPersonalLoanModal(${l.id})">Edit</button><button class="btn-danger" style="width:auto;padding:6px 9px;font-size:11px;" onclick="deletePersonalLoanAccount(${l.id})">Delete</button></div></td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:28px;">No matching loan accounts found.</td></tr>';
+      let accountPages=Math.max(1,Math.ceil(accountList.length/personalLoanAccountPageSize));personalLoanAccountPage=Math.min(personalLoanAccountPage,accountPages);let visibleAccounts=accountList.slice((personalLoanAccountPage-1)*personalLoanAccountPageSize,personalLoanAccountPage*personalLoanAccountPageSize);
+      let countEl=document.getElementById('loanAccountListCount');if(countEl)countEl.innerText=`Showing ${visibleAccounts.length} of ${accountList.length} · Total ${personalLoanAccounts.length}`;
+      cards.innerHTML=visibleAccounts.length?visibleAccounts.map(l=>{let color=l._status==='Paid'?'var(--green)':l._status==='Overdue'?'var(--red)':'var(--gold)';return `<tr style="border-left:4px solid ${l.type==='advance'?'#2563eb':'#dc2626'};"><td><b>${l.type==='advance'?'👤':'🤝'} ${l.partyName}</b><br><small style="color:var(--muted);">${l.loanNo||'—'} · ${l.phone||'No phone'}</small></td><td><span class="badge" style="background:${l.type==='advance'?'#dbeafe':'#fee2e2'};color:${l.type==='advance'?'#1d4ed8':'#b91c1c'};">${personalLoanTypeLabel(l.type)}</span></td><td>${l.purpose||'—'}</td><td style="white-space:nowrap;">${l.startDate||'—'}</td><td style="white-space:nowrap;color:${l._status==='Overdue'?'var(--red)':'inherit'};">${l.dueDate||'Not set'}</td><td><span class="badge" style="background:${color}20;color:${color};">${l._status}</span></td><td style="text-align:right;white-space:nowrap;font-size:15px;font-weight:900;color:${l.type==='advance'?'var(--green)':'var(--red)'};">৳${l._out.toFixed(2)}</td><td><div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;"><button class="btn-success" style="width:auto;padding:6px 9px;font-size:11px;" onclick="openPersonalLoanActivityModal(${l.id})">Pay / Receive</button><button class="btn-warning" style="width:auto;padding:6px 9px;font-size:11px;" onclick="viewPersonalLoanStatement(${l.id})">Statement</button><button class="btn-warning" style="width:auto;padding:6px 9px;font-size:11px;" onclick="openPersonalLoanModal(${l.id})">Edit</button><button class="btn-danger" style="width:auto;padding:6px 9px;font-size:11px;" onclick="deletePersonalLoanAccount(${l.id})">Delete</button></div></td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:28px;">No matching loan accounts found.</td></tr>';
+      let accountPager=document.getElementById('personalLoanAccountPager');if(accountPager)accountPager.innerHTML=compactPagerHtml('loan',personalLoanAccountPage,accountPages,accountList.length,'changePersonalLoanAccountPage');
       let filter=document.getElementById('personalLoanFilter'),selected=filter.value;filter.innerHTML='<option value="All">All Accounts</option>'+personalLoanAccounts.map(l=>`<option value="${l.id}">${l.partyName} — ${personalLoanTypeLabel(l.type)}</option>`).join('');filter.value=[...filter.options].some(o=>o.value===selected)?selected:'All';selected=filter.value;
       let typeFilter=document.getElementById('personalLoanTypeFilter').value,statusFilter=document.getElementById('personalLoanStatusFilter')?.value||'active',from=document.getElementById('personalLoanFrom').value,to=document.getElementById('personalLoanTo').value,balances={};personalLoanAccounts.forEach(l=>balances[l.id]=0);
       let all=personalLoanTransactions.filter(x=>!x.reversed).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.id-b.id);all.forEach(x=>{balances[x.loanId]=roundMoney(Math.max(0,(balances[x.loanId]||0)+(Number(x.principalDelta)||0)));x.runningBalance=balances[x.loanId];});
@@ -11792,6 +11859,7 @@
     window.onload = async function() {
       startSplashRevealTimer();
       setLanguage(currentLang); // applies default language to the login screen too
+      initAutoTablePagination();
 
       await waitForFirebase(6000);
       renderShopInfo(); // shows logo on the login screen too, if already set locally
