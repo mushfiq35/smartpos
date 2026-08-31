@@ -1020,7 +1020,7 @@
                   <th>Address</th>
                   <th style="width:150px; text-align:right;">Total Purchase</th>
                   <th style="width:130px; text-align:right;">Total Paid</th>
-                  <th style="width:120px; text-align:right;">Due</th>
+                  <th style="width:140px; text-align:right;">Due / Fund</th>
                   <th style="width:120px; text-align:center;">Action</th>
                 </tr>
               </thead>
@@ -2498,6 +2498,9 @@
         <div class="combo-list" id="purchaseProductComboList"></div>
         <input type="hidden" id="purchaseProductId">
       </div>
+
+      <input type="hidden" id="purchaseBookingId">
+      <div id="purchaseBookingBanner" style="display:none;margin:-2px 0 14px;padding:10px 12px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:8px;font-size:12px;line-height:1.55;color:#1e3a8a;"></div>
 
       <label>Purchase Unit:</label>
       <select id="purchaseUnitType" onchange="updatePurchaseUnit()" style="margin-bottom:14px;">
@@ -4304,6 +4307,8 @@
     let salesHistory = JSON.parse(localStorage.getItem('pos_sales')) || [];
     let suppliers = JSON.parse(localStorage.getItem('pos_suppliers')) || [];
     let purchases = JSON.parse(localStorage.getItem('pos_purchases')) || [];
+    let supplierBookings = JSON.parse(localStorage.getItem('pos_supplier_bookings')) || [];
+    let supplierFundTransactions = JSON.parse(localStorage.getItem('pos_supplier_fund_transactions')) || [];
     let openingConfig = JSON.parse(localStorage.getItem('pos_opening_config')) || {
       date:'', cash:0, otherAssets:0, loanPayable:0, otherLiabilities:0, note:'', saved:false
     };
@@ -4394,6 +4399,7 @@
       ['payableEntries','payableEntries',()=>payableEntries,v=>payableEntries=v],['receivableEntries','receivableEntries',()=>receivableEntries,v=>receivableEntries=v],
       ['bankAccounts','bankAccounts',()=>bankAccounts,v=>bankAccounts=v],['mobileAccounts','mobileAccounts',()=>mobileAccounts,v=>mobileAccounts=v],
       ['suppliers','suppliers',()=>suppliers,v=>suppliers=v],['purchases','purchases',()=>purchases,v=>purchases=v],
+      ['supplierBookings','supplierBookings',()=>supplierBookings,v=>supplierBookings=v],['supplierFundTransactions','supplierFundTransactions',()=>supplierFundTransactions,v=>supplierFundTransactions=v],
       ['creditFacilities','creditFacilities',()=>creditFacilities,v=>creditFacilities=v],['creditTransactions','creditTransactions',()=>creditTransactions,v=>creditTransactions=v],
       ['personalLoanAccounts','personalLoanAccounts',()=>personalLoanAccounts,v=>personalLoanAccounts=v],['personalLoanTransactions','personalLoanTransactions',()=>personalLoanTransactions,v=>personalLoanTransactions=v]
     ];
@@ -4466,6 +4472,8 @@
       receivableHeads = cloud.receivableHeads || receivableHeads;
       suppliers = cloud.suppliers || suppliers;
       purchases = cloud.purchases || purchases;
+      supplierBookings = cloud.supplierBookings || supplierBookings;
+      supplierFundTransactions = cloud.supplierFundTransactions || supplierFundTransactions;
       invoiceCounters = cloud.invoiceCounters || invoiceCounters;
       openingConfig = cloud.openingConfig || openingConfig;
       creditFacilities = cloud.creditFacilities || creditFacilities;
@@ -4479,6 +4487,8 @@
       localStorage.setItem('pos_sales', JSON.stringify(salesHistory));
       localStorage.setItem('pos_suppliers', JSON.stringify(suppliers));
       localStorage.setItem('pos_purchases', JSON.stringify(purchases));
+      localStorage.setItem('pos_supplier_bookings', JSON.stringify(supplierBookings));
+      localStorage.setItem('pos_supplier_fund_transactions', JSON.stringify(supplierFundTransactions));
       localStorage.setItem('pos_invoice_counters', JSON.stringify(invoiceCounters));
       localStorage.setItem('pos_opening_config', JSON.stringify(openingConfig));
       localStorage.setItem('pos_accounts', JSON.stringify(accountTransactions));
@@ -4662,6 +4672,7 @@
         let s=suppliers.find(x=>String(x.id)===String(p.supplierId));
         txns.push({date:p.date,type:'out',desc:`Opening Payable — ${s?s.name:'Supplier'}`,ref:p.payNo||'—',amount:Number(p.amount)||0});
       });
+      supplierFundTransactions.filter(x=>!x.reversed&&x.bankId&&String(x.bankId)===String(bankId)).forEach(x=>{let s=suppliers.find(a=>String(a.id)===String(x.supplierId));txns.push({date:x.date,type:x.type==='refund'?'in':'out',desc:x.type==='refund'?`Supplier Fund Refund — ${s?s.name:'Supplier'}`:`Supplier Fund Deposit — ${s?s.name:'Supplier'}`,ref:x.txnNo||'—',amount:Number(x.amount)||0});});
       (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&String(p.bankId)===String(bankId)).forEach(p=>{
         txns.push({date:p.date,type:'out',desc:p.type==='loan'?'Opening Loan Payment':'Opening Liability Payment',ref:p.payNo||'—',amount:Number(p.amount)||0});
       });
@@ -4755,6 +4766,7 @@
       orderCancellations.filter(c=>!c.reversed&&c.refundMethod==='Cash').forEach(c=>add(c.date,'out',`Order Cancellation Refund — ${c.custName||'—'}`,c.cancelNo||c.invNo,c.refundPaidAmount));
       purchases.forEach(p=>{let later=(p.payments||[]).reduce((s,pm)=>s+(Number(pm.amount)||0),0);if(p.method==='Cash')add(p.date,'out',`Purchase — ${p.supplierName||'—'} (${p.prodName||'—'})`,p.purchaseNo,Math.max(0,(Number(p.paid)||0)-later));(p.payments||[]).filter(pm=>pm.method==='Cash').forEach(pm=>add(pm.date,'out',`Purchase Due Payment — ${p.supplierName||'—'}`,pm.payNo||p.purchaseNo,pm.amount));});
       (openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&p.method==='Cash').forEach(p=>{let s=suppliers.find(x=>String(x.id)===String(p.supplierId));add(p.date,'out',`Opening Supplier Payable — ${s?s.name:'—'}`,p.payNo,p.amount);});
+      supplierFundTransactions.filter(x=>!x.reversed&&x.method==='Cash').forEach(x=>{let s=suppliers.find(a=>String(a.id)===String(x.supplierId));add(x.date,x.type==='refund'?'in':'out',x.type==='refund'?`Supplier Fund Refund — ${s?s.name:'—'}`:`Supplier Fund Deposit — ${s?s.name:'—'}`,x.txnNo,x.amount);});
       (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.method==='Cash').forEach(p=>add(p.date,'out',p.type==='loan'?'Opening Loan Payment':'Opening Liability Payment',p.payNo,p.amount));
       return txns.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.seq-b.seq);
     }
@@ -5184,8 +5196,8 @@
 
       // ── Current business position (live snapshot) ───
       let customerDue = customers.reduce((sum,c)=>sum+getCustomerTotalDue(c.id).due,0);
-      let supplierDue = purchases.reduce((sum,p)=>sum+(Number(p.due)||0),0)
-        + suppliers.reduce((sum,s)=>sum+getSupplierOpeningDue(s.id),0);
+      let supplierDue = suppliers.reduce((sum,s)=>sum+getSupplierPayableAmount(s.id),0);
+      let supplierFundAsset = suppliers.reduce((sum,s)=>sum+getSupplierFundAmount(s.id),0);
       let inventoryValue = products.reduce((sum,p) => {
         let qtyKg = (Number(p.stock)||0) * ((Number(p.bagKg)||50));
         return sum + qtyKg * getWeightedAverageCostPerKg(p.id);
@@ -5199,7 +5211,7 @@
       let personBorrowedLiabilities=personalLoanAccounts.filter(l=>l.type==='borrowed').reduce((s,l)=>s+personalLoanOutstanding(l.id),0);
       let creditLiabilities=creditFacilities.reduce((s,f)=>s+creditOutstanding(f.id),0);
       let otherLiabilities=getOpeningLiabilityDue('loan')+getOpeningLiabilityDue('other')+creditLiabilities+personBorrowedLiabilities;
-      let otherAssetPosition=otherAssets+personAdvanceAssets;
+      let otherAssetPosition=otherAssets+personAdvanceAssets+supplierFundAsset;
       let currentNetAssets=roundMoney(bankBalance+customerDue+inventoryValue+otherAssetPosition-supplierDue-otherLiabilities);
 
       const fmt = v => '<span class="currency-symbol">৳</span>' + Math.abs(Number(v)||0).toFixed(2);
@@ -5265,6 +5277,7 @@
       });
       activePayments.forEach(p=>{let c=customers.find(c=>c.id==p.custId);allTxns.push({date:p.date,kind:'payment',label:t('mlLabelPayment'),detail:`${c?c.name:'—'} — ${currentLang==='BN'?'আদায়':'Collected'}: ${currentLang==='BN'?'৳':'BDT '}${(Number(p.amount)||0).toFixed(2)}`,method:p.method||'—',income:0,expense:0,ref:''});});
       (openingConfig.supplierPayments||[]).filter(p=>!p.reversed).forEach(p=>{let s=suppliers.find(x=>String(x.id)===String(p.supplierId));allTxns.push({date:p.date,kind:'purchase',label:'Opening Payable Payment',detail:s?s.name:'Supplier',method:p.method||'—',income:0,expense:0,ref:p.payNo||''});});
+      supplierFundTransactions.filter(x=>!x.reversed).forEach(x=>{let s=suppliers.find(a=>String(a.id)===String(x.supplierId));allTxns.push({date:x.date,kind:'purchase',label:x.type==='refund'?'Supplier Fund Refund':'Supplier Fund Deposit',detail:s?s.name:'Supplier',method:x.method||'—',income:0,expense:0,ref:x.txnNo||''});});
       (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed).forEach(p=>allTxns.push({date:p.date,kind:'purchase',label:p.type==='loan'?'Opening Loan Payment':'Opening Liability Payment',detail:p.note||'Balance sheet settlement',method:p.method||'—',income:0,expense:0,ref:p.payNo||''}));
       purchases.forEach(p=>allTxns.push({date:p.date,kind:'purchase',label:t('mlKindPurchase'),detail:`${p.supplierName||'—'} — ${p.prodName||'—'} — ${currentLang==='BN'?'৳':'BDT '}${(Number(p.total)||0).toFixed(2)}`,method:p.method||'—',income:0,expense:0,ref:p.purchaseNo||''}));
       approvedAccounts.forEach(a=>{
@@ -5617,6 +5630,7 @@
         if(initial>0)lines.push({date:p.date,ref:p.purchaseNo||'—',description:`Initial Payment — ${paymentMethodDisplay(p)}`,qty:'—',debit:0,credit:initial});
         (p.payments||[]).forEach(pm=>lines.push({date:pm.date||p.date,ref:pm.payNo||p.purchaseNo||'—',description:`Due Payment — ${paymentMethodDisplay(pm)}`,qty:'—',debit:0,credit:Number(pm.amount)||0}));
       });
+      supplierFundTransactions.filter(x=>!x.reversed&&String(x.supplierId)===String(supplierId)).forEach(x=>lines.push({date:x.date,ref:x.txnNo||'—',description:x.type==='refund'?`Supplier Fund Refund — ${paymentMethodDisplay(x)}`:`Supplier Fund Deposit — ${paymentMethodDisplay(x)}`,qty:'—',debit:x.type==='refund'?(Number(x.amount)||0):0,credit:x.type==='deposit'?(Number(x.amount)||0):0}));
       lines.sort((a,b)=>(a.date||'').localeCompare(b.date||''));let balance=0;lines.forEach(x=>{balance=roundMoney(balance+(Number(x.debit)||0)-(Number(x.credit)||0));x.balance=balance;});return lines;
     }
 
@@ -6171,7 +6185,7 @@
         exportedAt: new Date().toISOString(),
         dataCounts: {
           customers:customers.length, products:products.length, sales:salesHistory.length,
-          purchases:purchases.length, suppliers:suppliers.length, accounts:accountTransactions.length,
+          purchases:purchases.length, suppliers:suppliers.length, supplierBookings:supplierBookings.length, supplierFundTransactions:supplierFundTransactions.length, accounts:accountTransactions.length,
           returns:salesReturns.length, deliveries:deliveries.length, cancellations:orderCancellations.length,
           dueCollections:payments.length, payable:payableEntries.length, receivable:receivableEntries.length,
           banks:bankAccounts.length, mobileAccounts:mobileAccounts.length,
@@ -6181,7 +6195,7 @@
         shopConfig, customers, products, salesHistory,
         accountTransactions, categories, salesReturns, deliveries, orderCancellations, payments,
         payableEntries, receivableEntries, bankAccounts, mobileAccounts, payableHeads, receivableHeads,
-        suppliers, purchases, invoiceCounters, openingConfig, creditFacilities, creditTransactions,
+        suppliers, purchases, supplierBookings, supplierFundTransactions, invoiceCounters, openingConfig, creditFacilities, creditTransactions,
         personalLoanAccounts, personalLoanTransactions
       };
       let jsonText=JSON.stringify(backupData,null,2),verify=JSON.parse(jsonText);
@@ -6210,6 +6224,7 @@
             bankAccounts:Array.isArray(data.bankAccounts)?data.bankAccounts:[], mobileAccounts:Array.isArray(data.mobileAccounts)?data.mobileAccounts:[],
             payableHeads:Array.isArray(data.payableHeads)?data.payableHeads:payableHeads, receivableHeads:Array.isArray(data.receivableHeads)?data.receivableHeads:receivableHeads,
             suppliers:Array.isArray(data.suppliers)?data.suppliers:[], purchases:Array.isArray(data.purchases)?data.purchases:[],
+            supplierBookings:Array.isArray(data.supplierBookings)?data.supplierBookings:[], supplierFundTransactions:Array.isArray(data.supplierFundTransactions)?data.supplierFundTransactions:[],
             invoiceCounters:data.invoiceCounters||invoiceCounters, openingConfig:data.openingConfig||openingConfig,
             creditFacilities:Array.isArray(data.creditFacilities)?data.creditFacilities:[], creditTransactions:Array.isArray(data.creditTransactions)?data.creditTransactions:[],
             personalLoanAccounts:Array.isArray(data.personalLoanAccounts)?data.personalLoanAccounts:[], personalLoanTransactions:Array.isArray(data.personalLoanTransactions)?data.personalLoanTransactions:[]
@@ -6252,6 +6267,8 @@
       mobileAccounts     = [];
       suppliers          = [];
       purchases          = [];
+      supplierBookings    = [];
+      supplierFundTransactions = [];
       creditFacilities   = [];
       creditTransactions = [];
       personalLoanAccounts = [];
@@ -6288,6 +6305,8 @@
       localStorage.setItem('pos_mobile_accounts', '[]');
       localStorage.setItem('pos_suppliers', '[]');
       localStorage.setItem('pos_purchases', '[]');
+      localStorage.setItem('pos_supplier_bookings', '[]');
+      localStorage.setItem('pos_supplier_fund_transactions', '[]');
       localStorage.setItem('pos_credit_facilities', '[]');
       localStorage.setItem('pos_credit_transactions', '[]');
       localStorage.setItem('pos_personal_loan_accounts', '[]');
@@ -6307,7 +6326,7 @@
             shopConfig, customers, products, salesHistory, accountTransactions, categories,
             salesReturns, deliveries, orderCancellations, payments, payableEntries,
             receivableEntries, bankAccounts, mobileAccounts, payableHeads, receivableHeads,
-            suppliers, purchases, invoiceCounters, openingConfig, creditFacilities,
+            suppliers, purchases, supplierBookings, supplierFundTransactions, invoiceCounters, openingConfig, creditFacilities,
             creditTransactions, personalLoanAccounts, personalLoanTransactions,
             resetAt:new Date().toISOString(), updatedAt:new Date().toISOString()
           });
@@ -6327,7 +6346,7 @@
       let approvedSales = salesHistory.filter(s => s.status === 'Approved');
       let totalSalesAmt = approvedSales.reduce((sum, s) => sum + s.total, 0);
       let totalPurchaseAmt = purchases.reduce((s, x) => s + (x.total || 0), 0);
-      let totalPurchaseDue = purchases.reduce((s, x) => s + (x.due || 0), 0)+suppliers.reduce((s,x)=>s+getSupplierOpeningDue(x.id),0);
+      let totalPurchaseDue = suppliers.reduce((sum,x)=>sum+getSupplierPayableAmount(x.id),0);
       // Summed per-customer (never negative per customer) so one customer's
       // overpayment can never mask another customer's real due.
       let totalDueAmt = customers.reduce((sum, c) => sum + getCustomerTotalDue(c.id).due, 0);
@@ -9748,6 +9767,46 @@
       saveData(); document.getElementById('supplierOpeningPayModal').remove(); renderSupplierTable(); renderBankAccounts(); renderMobileAccounts(); renderDashboard(); alert('Opening payable payment saved.');
     }
 
+
+    // ================= SUPPLIER BOOKING & FUND LEDGER =================
+    function bookingRateAmount(qty,rate,unit){ qty=Number(qty)||0;rate=Number(rate)||0;return roundMoney(unit==='Ton'?qty*1000*rate:qty*rate); }
+    function bookingUsedQty(bookingId,excludePurchaseId=null){return purchases.filter(p=>String(p.bookingId)===String(bookingId)&&(!excludePurchaseId||String(p.id)!==String(excludePurchaseId))).reduce((n,p)=>n+(Number(p.qty)||0),0);}
+    function bookingRemainingQty(bookingId,excludePurchaseId=null){let b=supplierBookings.find(x=>String(x.id)===String(bookingId));return b?Math.max(0,(Number(b.qty)||0)-bookingUsedQty(bookingId,excludePurchaseId)):0;}
+    function bookingStatus(b){let used=bookingUsedQty(b.id),remain=Math.max(0,(Number(b.qty)||0)-used);return remain<=0.000001?'Completed':used>0?'Partial':'Open';}
+    function supplierMoneyStatement(supplierId){
+      let rows=[],s=suppliers.find(x=>String(x.id)===String(supplierId));
+      if(Number(s?.openingDue)>0) rows.push({date:openingConfig.date||'0000-01-01',ref:'OPENING',desc:'Opening Supplier Payable',debit:Number(s.openingDue)||0,credit:0,kind:'opening'});
+      (openingConfig.supplierPayments||[]).filter(x=>!x.reversed&&String(x.supplierId)===String(supplierId)).forEach(x=>rows.push({date:x.date,ref:x.payNo||'—',desc:'Opening Payable Payment',debit:0,credit:Number(x.amount)||0,kind:'payment'}));
+      purchases.filter(p=>String(p.supplierId)===String(supplierId)).forEach(p=>{
+        rows.push({date:p.date,ref:p.purchaseNo||'—',desc:`Purchase — ${p.prodName||'—'} (${Number(p.qty)||0} ${p.unitType||''})`,debit:Number(p.total)||0,credit:0,kind:'purchase',purchaseId:p.id});
+        let later=(p.payments||[]).reduce((n,pm)=>n+(Number(pm.amount)||0),0),initial=Math.max(0,(Number(p.paid)||0)-later);
+        if(initial>0) rows.push({date:p.date,ref:p.purchaseNo||'—',desc:`Payment — ${paymentMethodDisplay(p)}`,debit:0,credit:initial,kind:'payment'});
+        (p.payments||[]).forEach(pm=>rows.push({date:pm.date||p.date,ref:pm.payNo||p.purchaseNo||'—',desc:`Payment — ${paymentMethodDisplay(pm)}`,debit:0,credit:Number(pm.amount)||0,kind:'payment'}));
+      });
+      supplierFundTransactions.filter(x=>!x.reversed&&String(x.supplierId)===String(supplierId)).forEach(x=>rows.push({date:x.date,ref:x.txnNo||'—',desc:x.type==='deposit'?`Fund Deposit — ${paymentMethodDisplay(x)}`:`Fund Refund Received — ${paymentMethodDisplay(x)}`,debit:x.type==='refund'?(Number(x.amount)||0):0,credit:x.type==='deposit'?(Number(x.amount)||0):0,kind:'fund',fundId:x.id}));
+      rows.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.ref||'').localeCompare(String(b.ref||'')));
+      let bal=0;rows.forEach(r=>{bal=roundMoney(bal+(Number(r.debit)||0)-(Number(r.credit)||0));r.balance=bal;});return rows;
+    }
+    function getSupplierNetPosition(supplierId){let rows=supplierMoneyStatement(supplierId);return rows.length?roundMoney(rows[rows.length-1].balance):0;}
+    function getSupplierFundAmount(supplierId){return Math.max(0,-getSupplierNetPosition(supplierId));}
+    function getSupplierPayableAmount(supplierId){return Math.max(0,getSupplierNetPosition(supplierId));}
+    function supplierBookingValue(b){return bookingRateAmount(b.qty,b.rate,b.unitType);}
+    function renderPurchaseBookingBanner(bookingId){let el=document.getElementById('purchaseBookingBanner');if(!el)return;if(!bookingId){el.style.display='none';el.innerHTML='';return;}let b=supplierBookings.find(x=>String(x.id)===String(bookingId));if(!b){el.style.display='none';return;}let rem=bookingRemainingQty(b.id,document.getElementById('editPurchaseId')?.value||null);el.style.display='block';el.innerHTML=`<b>Linked Booking ${b.bookingNo}</b> · ${b.prodName} · Rate ৳${Number(b.rate).toFixed(2)}${b.unitType==='Ton'?'/KG':'/'+b.unitType}<br>Booked ${Number(b.qty).toFixed(3)} ${b.unitType} · Remaining <b>${rem.toFixed(3)} ${b.unitType}</b>`;}
+    function openSupplierBookingModal(supplierId,bookingId=null){
+      let s=suppliers.find(x=>String(x.id)===String(supplierId));if(!s)return;let b=bookingId?supplierBookings.find(x=>String(x.id)===String(bookingId)):null,used=b?bookingUsedQty(b.id):0;
+      let old=document.getElementById('supplierBookingModal');if(old)old.remove();
+      document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="supplierBookingModal" style="display:flex;"><div class="modal-content" style="max-width:560px;"><h3>📦 ${b?'Edit':'New'} Supplier Booking</h3><p style="background:#f8fafc;padding:10px;border-radius:8px;margin-bottom:12px;"><b>${s.name}</b>${b?`<br>Already received: ${used.toFixed(3)} ${b.unitType}`:''}</p><input type="hidden" id="sbId" value="${b?.id||''}"><input type="hidden" id="sbSupplierId" value="${s.id}"><label>Product:</label><select id="sbProductId">${products.map(p=>`<option value="${p.id}" ${b&&String(b.prodId)===String(p.id)?'selected':''}>${p.name}</option>`).join('')}</select><label>Unit:</label><select id="sbUnit" onchange="updateSupplierBookingPreview()"><option value="Ton" ${b?.unitType==='Ton'?'selected':''}>Ton</option><option value="Kg" ${b?.unitType==='Kg'?'selected':''}>Kg</option><option value="Bag" ${b?.unitType==='Bag'?'selected':''}>Bag</option></select><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><div><label>Booked Quantity:</label><input type="number" id="sbQty" min="0.001" step="0.001" value="${b?.qty||''}" oninput="updateSupplierBookingPreview()"></div><div><label id="sbRateLabel">Rate:</label><input type="number" id="sbRate" min="0.01" step="0.01" value="${b?.rate||''}" oninput="updateSupplierBookingPreview()"></div></div><div id="sbPreview" style="padding:10px 12px;background:#f8fafc;border-radius:8px;margin-bottom:12px;font-size:12px;"></div><label>Date:</label><input type="date" id="sbDate" value="${b?.date||localISODate()}"><label>Note / Contract Ref:</label><input type="text" id="sbNote" value="${b?.note||''}" placeholder="Contract / challan note"><div style="display:flex;gap:10px;"><button class="btn-success" onclick="saveSupplierBooking()">💾 Save Booking</button><button class="btn-danger" onclick="document.getElementById('supplierBookingModal').remove()">Cancel</button></div></div></div>`);updateSupplierBookingPreview();
+    }
+    function updateSupplierBookingPreview(){let u=document.getElementById('sbUnit')?.value||'Ton',q=Number(document.getElementById('sbQty')?.value)||0,r=Number(document.getElementById('sbRate')?.value)||0,l=document.getElementById('sbRateLabel'),p=document.getElementById('sbPreview');if(l)l.innerText=u==='Ton'?'Rate per KG (৳):':`Rate per ${u} (৳):`;if(p)p.innerHTML=`Contract Value: <b>৳${bookingRateAmount(q,r,u).toFixed(2)}</b> · Booking itself does not change stock or accounts.`;}
+    function saveSupplierBooking(){let id=document.getElementById('sbId').value,supplierId=Number(document.getElementById('sbSupplierId').value),prodId=Number(document.getElementById('sbProductId').value),p=products.find(x=>x.id==prodId),unitType=document.getElementById('sbUnit').value,qty=Number(document.getElementById('sbQty').value),rate=Number(document.getElementById('sbRate').value),date=document.getElementById('sbDate').value||localISODate(),note=document.getElementById('sbNote').value.trim();if(!p||qty<=0||rate<=0)return alert('Product, quantity and rate are required.');if(id){let b=supplierBookings.find(x=>String(x.id)===String(id));if(!b)return;let used=bookingUsedQty(b.id);if(qty+0.000001<used)return alert(`Booked quantity cannot be lower than already received ${used.toFixed(3)} ${b.unitType}.`);if(used>0&&(String(prodId)!==String(b.prodId)||unitType!==b.unitType))return alert('Product and unit cannot be changed after purchase invoices have been created from this booking.');Object.assign(b,{prodId,prodName:p.name,unitType,qty,rate,date,note});}else{let s=suppliers.find(x=>x.id==supplierId);supplierBookings.push({id:Date.now(),bookingNo:nextInvoiceNo('SBK'),supplierId,supplierName:s?.name||'',prodId,prodName:p.name,unitType,qty,rate,date,note});}saveData();document.getElementById('supplierBookingModal').remove();viewSupplier(supplierId);renderSupplierTable();}
+    function deleteSupplierBooking(id){let b=supplierBookings.find(x=>x.id==id);if(!b)return;if(bookingUsedQty(id)>0)return alert('This booking already has purchase invoices and cannot be deleted. Edit the booking instead.');if(!confirm('Delete this booking?'))return;supplierBookings=supplierBookings.filter(x=>x.id!=id);saveData();viewSupplier(b.supplierId);renderSupplierTable();}
+    function invoiceFromSupplierBooking(id){let b=supplierBookings.find(x=>x.id==id);if(!b)return;let rem=bookingRemainingQty(id);if(rem<=0)return alert('This booking is already completed.');resetPurchaseForm();document.getElementById('purchaseSupplierId').value=b.supplierId;document.getElementById('purchaseSupplierSearch').value=b.supplierName;document.getElementById('purchaseProductId').value=b.prodId;document.getElementById('purchaseProductSearch').value=b.prodName;document.getElementById('purchaseBookingId').value=b.id;document.getElementById('purchaseUnitType').value=b.unitType;document.getElementById('purchaseUnitPrice').value=b.rate;document.getElementById('purchaseQty').value='';updatePurchaseUnit();renderPurchaseBookingBanner(b.id);document.getElementById('purchaseModalTitle').innerText=`📦 Invoice from ${b.bookingNo}`;closeModal('viewSupplierModal');document.getElementById('newPurchaseModal').style.display='flex';}
+    function openSupplierFundModal(supplierId,type='deposit',fundId=null){let s=suppliers.find(x=>String(x.id)===String(supplierId));if(!s)return;let x=fundId?supplierFundTransactions.find(t=>String(t.id)===String(fundId)):null;let old=document.getElementById('supplierFundModal');if(old)old.remove();let position=getSupplierNetPosition(supplierId);document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="supplierFundModal" style="display:flex;"><div class="modal-content" style="max-width:520px;"><h3>${type==='deposit'?'💰 Add Money to Supplier Fund':'↩️ Receive Fund Refund'}</h3><p style="padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:12px;"><b>${s.name}</b><br>Current position: <b style="color:${position>0?'var(--red)':'var(--green)'};">${position>0?'Payable ৳'+position.toFixed(2):position<0?'Fund ৳'+Math.abs(position).toFixed(2):'Settled'}</b></p><input type="hidden" id="supplierFundId" value="${x?.id||''}"><input type="hidden" id="supplierFundSupplierId" value="${s.id}"><input type="hidden" id="supplierFundType" value="${type}"><label>Amount:</label><input type="number" id="supplierFundAmount" min="0.01" step="0.01" value="${x?.amount||''}"><label>Date:</label><input type="date" id="supplierFundDate" value="${x?.date||localISODate()}"><label>Method:</label><select id="supplierFundMethod" onchange="toggleSupplierFundFields()"><option value="Cash" ${x?.method==='Cash'?'selected':''}>Cash</option><option value="Bank" ${x?.method==='Bank'?'selected':''}>Bank</option><option value="Mobile Banking" ${isMobileMethod(x?.method)?'selected':''}>Mobile Banking</option></select><div id="supplierFundBankWrap" style="display:none;"><label>Bank Account:</label><select id="supplierFundBankId"></select></div><div id="supplierFundMobileWrap" style="display:none;"><label>Mobile Account:</label><select id="supplierFundMobileAccountId"></select></div><label>Note:</label><input type="text" id="supplierFundNote" value="${x?.note||''}" placeholder="Optional note"><div style="display:flex;gap:10px;"><button class="btn-success" onclick="saveSupplierFundTransaction()">💾 Save</button><button class="btn-danger" onclick="document.getElementById('supplierFundModal').remove()">Cancel</button></div></div></div>`);toggleSupplierFundFields();if(x?.bankId)document.getElementById('supplierFundBankId').value=x.bankId;if(x?.mobileAccountId)document.getElementById('supplierFundMobileAccountId').value=x.mobileAccountId;}
+    function toggleSupplierFundFields(){let m=document.getElementById('supplierFundMethod')?.value;document.getElementById('supplierFundBankWrap').style.display=m==='Bank'?'block':'none';document.getElementById('supplierFundMobileWrap').style.display=isMobileMethod(m)?'block':'none';if(m==='Bank')populateBankSelect('supplierFundBankId');if(isMobileMethod(m))populateMobileAccountSelect('supplierFundMobileAccountId');}
+    function saveSupplierFundTransaction(){let id=document.getElementById('supplierFundId').value,supplierId=Number(document.getElementById('supplierFundSupplierId').value),type=document.getElementById('supplierFundType').value,amount=roundMoney(Number(document.getElementById('supplierFundAmount').value)||0),method=document.getElementById('supplierFundMethod').value,date=document.getElementById('supplierFundDate').value||localISODate(),note=document.getElementById('supplierFundNote').value.trim();if(amount<=0)return alert('Enter a valid amount.');if(type==='refund'&&amount>getSupplierFundAmount(supplierId)+0.001&&!id)return alert(`Only ৳${getSupplierFundAmount(supplierId).toFixed(2)} is currently available as supplier fund.`);let old=id?supplierFundTransactions.find(x=>String(x.id)===String(id)):null,oldOut=old&&old.type==='deposit'?Number(old.amount)||0:0,oldIn=old&&old.type==='refund'?Number(old.amount)||0:0;let d=readPaymentDetails(method,'supplierFundBankId','supplierFund',amount,false);if(!d)return;if(type==='deposit'&&method==='Bank'){let available=getBankBalance(d.bankId)+(old&&old.type==='deposit'&&String(old.bankId)===String(d.bankId)?oldOut:0);if(available+0.001<amount)return alert(t('alertInsufficientBankBalance'));}if(type==='deposit'&&isMobileMethod(method)){let available=getMobileAccountBalance(d.mobileAccountId)+(old&&old.type==='deposit'&&String(old.mobileAccountId)===String(d.mobileAccountId)?oldOut:0);if(available+0.001<amount)return alert('Insufficient mobile account balance.');}let rec={id:old?.id||Date.now(),txnNo:old?.txnNo||nextInvoiceNo(type==='deposit'?'SFD':'SFR'),supplierId,type,amount,date,method,note,bankId:d.bankId,bankName:d.bankName,mobileAccountId:d.mobileAccountId,mobileAccountName:d.mobileAccountName,mobileProvider:d.mobileProvider,mobileNumber:d.mobileNumber,reversed:false};if(old)Object.assign(old,rec);else supplierFundTransactions.push(rec);saveData();document.getElementById('supplierFundModal').remove();viewSupplier(supplierId);renderSupplierTable();renderBankAccounts();renderMobileAccounts();renderDashboard();}
+    function deleteSupplierFundTransaction(id){let x=supplierFundTransactions.find(t=>t.id==id);if(!x)return;if(!confirm('Delete this fund transaction? Account balances will be recalculated.'))return;supplierFundTransactions=supplierFundTransactions.filter(t=>t.id!=id);saveData();viewSupplier(x.supplierId);renderSupplierTable();renderBankAccounts();renderMobileAccounts();renderDashboard();}
+    function supplierBookingFundHtml(supplierId){let bs=supplierBookings.filter(b=>String(b.supplierId)===String(supplierId)).sort((a,b)=>String(b.date).localeCompare(String(a.date))),pos=getSupplierNetPosition(supplierId),fund=Math.max(0,-pos),due=Math.max(0,pos),contractValue=bs.reduce((n,b)=>n+supplierBookingValue(b),0),receivedValue=bs.reduce((n,b)=>n+purchases.filter(p=>String(p.bookingId)===String(b.id)).reduce((x,p)=>x+(Number(p.total)||0),0),0);let bookingRows=bs.length?bs.map(b=>{let used=bookingUsedQty(b.id),rem=bookingRemainingQty(b.id),st=bookingStatus(b);return `<tr><td><b>${b.bookingNo}</b><br><small>${b.date||'—'}</small></td><td>${b.prodName}</td><td>${Number(b.qty).toFixed(3)} ${b.unitType}</td><td>${used.toFixed(3)} ${b.unitType}</td><td><b>${rem.toFixed(3)} ${b.unitType}</b></td><td style="text-align:right;">৳${Number(b.rate).toFixed(2)}${b.unitType==='Ton'?'/KG':'/'+b.unitType}</td><td><span class="badge ${st==='Completed'?'badge-ok':'badge-pending'}">${st}</span></td><td class="no-print" style="white-space:nowrap;text-align:center;">${rem>0?`<button onclick="invoiceFromSupplierBooking(${b.id})" class="btn-icon-action btn-pay" title="Create Purchase Invoice">🧾</button>`:''}<button onclick="openSupplierBookingModal(${supplierId},${b.id})" class="btn-icon-action btn-edit" title="Edit Booking">${SVG_EDIT}</button><button onclick="deleteSupplierBooking(${b.id})" class="btn-icon-action btn-delete" title="Delete Booking">${SVG_DELETE}</button></td></tr>`}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:18px;">No supplier booking yet.</td></tr>';let money=supplierMoneyStatement(supplierId),moneyRows=money.length?money.map(r=>`<tr><td>${r.date||'—'}</td><td><b>${r.ref||'—'}</b></td><td>${r.desc}</td><td style="text-align:right;color:var(--red);">${r.debit?'৳'+r.debit.toFixed(2):'—'}</td><td style="text-align:right;color:var(--green);">${r.credit?'৳'+r.credit.toFixed(2):'—'}</td><td style="text-align:right;font-weight:800;color:${r.balance>0?'var(--red)':'var(--green)'};">${r.balance>0?'Due ৳'+r.balance.toFixed(2):r.balance<0?'Fund ৳'+Math.abs(r.balance).toFixed(2):'৳0.00'}</td><td class="no-print" style="text-align:center;">${r.purchaseId?`<button onclick="viewPurchaseInvoice(${r.purchaseId})" class="btn-icon-action btn-view" title="View / Print Invoice">${SVG_VIEW}</button>`:r.fundId?`<button onclick="openSupplierFundModal(${supplierId},'${supplierFundTransactions.find(x=>x.id==r.fundId)?.type||'deposit'}',${r.fundId})" class="btn-icon-action btn-edit" title="Edit">${SVG_EDIT}</button><button onclick="deleteSupplierFundTransaction(${r.fundId})" class="btn-icon-action btn-delete" title="Delete">${SVG_DELETE}</button>`:''}</td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px;">No money transactions yet.</td></tr>';return `<div id="supplierBookingFundPrintArea"><div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"><button class="btn-success btn-action" onclick="openSupplierBookingModal(${supplierId})">+ New Booking</button><button class="btn-warning btn-action" onclick="openSupplierFundModal(${supplierId},'deposit')">+ Add Money / Fund</button><button class="btn-action" style="background:#2563eb;" onclick="openSupplierFundModal(${supplierId},'refund')">↩ Receive Fund Refund</button><button class="btn-action" onclick="printDiv('supplierBookingFundPrintArea')">🖨️ Print Booking & Fund</button></div><div class="summary-banner"><div class="summary-tile"><h5>Bookings</h5><div class="tile-val">${bs.length}</div></div><div class="summary-tile"><h5>Contract Value</h5><div class="tile-val">৳${contractValue.toFixed(2)}</div></div><div class="summary-tile"><h5>Booked Purchase Value</h5><div class="tile-val">৳${receivedValue.toFixed(2)}</div></div><div class="summary-tile ${due>0?'payable-tile':'receivable-tile'}"><h5>${due>0?'Supplier Payable':'Fund with Supplier'}</h5><div class="tile-val" style="color:${due>0?'var(--red)':'var(--green)'};">৳${(due||fund).toFixed(2)}</div></div></div><h4 style="margin:15px 0 8px;">📦 Product Booking Ledger</h4><div class="table-responsive"><table style="min-width:930px;"><thead><tr><th>Booking</th><th>Product</th><th>Booked</th><th>Received</th><th>Remaining</th><th style="text-align:right;">Rate</th><th>Status</th><th class="no-print">Action</th></tr></thead><tbody>${bookingRows}</tbody></table></div><h4 style="margin:18px 0 8px;">🏦 Supplier Money Statement</h4><div class="table-responsive"><table style="min-width:900px;"><thead><tr><th>Date</th><th>Reference</th><th>Particulars</th><th style="text-align:right;">Debit</th><th style="text-align:right;">Credit</th><th style="text-align:right;">Balance</th><th class="no-print">Action</th></tr></thead><tbody>${moneyRows}</tbody></table></div></div>`;}
+
     function editSupplier(id) {
       let s = suppliers.find(x => x.id == id);
       if (!s) return;
@@ -9761,7 +9820,7 @@
     }
 
     function deleteSupplier(id) {
-      if(purchases.some(p=>p.supplierId==id)||Number(suppliers.find(s=>s.id==id)?.openingDue)>0||(openingConfig.supplierPayments||[]).some(p=>p.supplierId==id)) return alert('This supplier has opening balance or transactions and cannot be deleted.');
+      if(purchases.some(p=>p.supplierId==id)||supplierBookings.some(b=>String(b.supplierId)===String(id))||supplierFundTransactions.some(x=>String(x.supplierId)===String(id))||Number(suppliers.find(s=>s.id==id)?.openingDue)>0||(openingConfig.supplierPayments||[]).some(p=>p.supplierId==id)) return alert('This supplier has booking, fund, opening balance or purchase transactions and cannot be deleted.');
       if (!confirm('Delete this supplier?')) return;
       suppliers = suppliers.filter(s => s.id != id);
       saveData();
@@ -9779,7 +9838,7 @@
       let totalAmt = openingDue+supPurchases.reduce((sum, p) => sum + (p.total||0), 0);
       let openingPaid=getSupplierOpeningPaid(id);
       let totalPaid = openingPaid+supPurchases.reduce((sum, p) => sum + (p.paid||0), 0);
-      let totalDue = getSupplierOpeningDue(id)+supPurchases.reduce((sum, p) => sum + (p.due||0), 0);
+      let netPosition=getSupplierNetPosition(id), totalDue=Math.max(0,netPosition), totalFund=Math.max(0,-netPosition);
       document.getElementById('viewSupplierTitle').innerText = `👤 ${s.name}`;
 
       // Screen rows (with action buttons + payment history)
@@ -9839,8 +9898,8 @@
               <p style="font-size:12px; color:var(--muted);">📞 ${s.phone||'N/A'} &nbsp;|&nbsp; 📍 ${s.address||'N/A'}</p>
             </div>
             <div style="text-align:right;">
-              <p style="font-size:11px; color:var(--muted);">Outstanding Due</p>
-              <p style="font-size:22px; font-weight:900; color:${totalDue>0?'var(--amber)':'var(--green)'};">৳${totalDue.toFixed(2)}</p>
+              <p style="font-size:11px; color:var(--muted);">${totalDue>0?'Supplier Payable':totalFund>0?'Fund with Supplier':'Settled'}</p>
+              <p style="font-size:22px; font-weight:900; color:${totalDue>0?'var(--amber)':'var(--green)'};">৳${(totalDue||totalFund).toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -9859,8 +9918,10 @@
           <span><b>Due:</b> <span style="color:#a8681a;">৳${totalDue.toFixed(2)}</span></span>
         </div>
 
+        ${supplierBookingFundHtml(id)}
+
         <!-- Transaction table -->
-        <h4 style="margin-bottom:8px; font-size:14px;">📋 Purchase Transaction History</h4>
+        <h4 style="margin:18px 0 8px; font-size:14px;">📋 Purchase Invoice History</h4>
         <div class="table-responsive">
           <table>
             <thead>
@@ -9915,7 +9976,7 @@
         let openingDue=Number(s.openingDue)||0;
         let tAmt = openingDue+sp.reduce((sum,p)=>sum+(p.total||0),0);
         let tPaid = getSupplierOpeningPaid(s.id)+sp.reduce((sum,p)=>sum+(p.paid||0),0);
-        let tDue = getSupplierOpeningDue(s.id)+sp.reduce((sum,p)=>sum+(p.due||0),0);
+        let netPos=getSupplierNetPosition(s.id), tDue=Math.max(0,netPos), tFund=Math.max(0,-netPos);
         return `<tr>
           <td style="font-size:11px;color:var(--muted);">#${String(s.id).slice(-8)}</td>
           <td><b>${s.name}</b></td>
@@ -9923,7 +9984,7 @@
           <td>${s.address||'N/A'}</td>
           <td style="text-align:right;color:var(--red);font-weight:700;">৳${tAmt.toFixed(2)}</td>
           <td style="text-align:right;color:var(--green);font-weight:700;">৳${tPaid.toFixed(2)}</td>
-          <td style="text-align:right;color:${tDue>0?'var(--amber)':'var(--green)'};font-weight:700;">৳${tDue.toFixed(2)}</td>
+          <td style="text-align:right;color:${tDue>0?'var(--amber)':'var(--green)'};font-weight:700;">${tDue>0?'Due ৳'+tDue.toFixed(2):tFund>0?'Fund ৳'+tFund.toFixed(2):'৳0.00'}</td>
           <td style="text-align:center;">
             <div style="display:flex;gap:4px;justify-content:center;">
               <button onclick="viewSupplier(${s.id})" class="btn-icon-action btn-view" title="View">${SVG_VIEW}</button>
@@ -10044,13 +10105,21 @@
       let note = document.getElementById('purchaseNote').value.trim();
       let date = document.getElementById('purchaseDate').value || localISODate();
       let editId = document.getElementById('editPurchaseId').value;
+      let bookingId = document.getElementById('purchaseBookingId')?.value || null;
 
       if (!prodId && !prodName) return alert(t('alertSelectProduct') || 'পণ্য সিলেক্ট করুন!');
       if (qty <= 0) return alert(t('alertQtyRequired') || 'পরিমাণ দিন!');
       if (unitPrice <= 0) return alert(t('alertPriceRequired') || 'মূল্য দিন!');
-      if (paid > total + 0.001) return alert(currentLang==='BN'?'পরিশোধের পরিমাণ মোট ক্রয়ের চেয়ে বেশি হতে পারবে না।':'Paid amount cannot exceed purchase total.');
+      // Supplier-level fund is allowed: payment may exceed this invoice and the excess stays as supplier fund.
 
       let existingPurchase = editId ? purchases.find(p=>p.id==editId) : null;
+      if (bookingId) {
+        let bk=supplierBookings.find(b=>String(b.id)===String(bookingId));
+        if(!bk) return alert('Selected booking was not found.');
+        if(String(bk.supplierId)!==String(supplierId)||String(bk.prodId)!==String(prodId)||String(bk.unitType)!==String(unitType)) return alert('Supplier, product or unit does not match the selected booking.');
+        let remaining=bookingRemainingQty(bk.id, editId||null);
+        if(qty>remaining+0.000001) return alert(`Booking balance is only ${remaining.toFixed(3)} ${bk.unitType}.`);
+      }
       let laterPayments = existingPurchase ? (existingPurchase.payments||[]).reduce((s,pm)=>s+(Number(pm.amount)||0),0) : 0;
       if (existingPurchase && paid + 0.001 < laterPayments) return alert(currentLang==='BN'?'মোট Paid পরবর্তী payment history-এর চেয়ে কম হতে পারবে না।':'Total paid cannot be less than the saved later-payment history.');
       let initialPaidForValidation = Math.max(0,paid-laterPayments);
@@ -10102,7 +10171,7 @@
             }
             if (newProd) newProd.stock = (Number(newProd.stock) || 0) + (newQtyKg / newBagKg);
           }
-          Object.assign(entry, { supplierId, supplierName, prodId: parseInt(prodId), prodName, unitType, qty, unitPrice, total, paid, due, method, bankId: purchaseDetails.bankId, bankName: purchaseDetails.bankName, mobileProvider:purchaseDetails.mobileProvider, mobileNumber:purchaseDetails.mobileNumber, mobileAccountId:purchaseDetails.mobileAccountId, mobileAccountName:purchaseDetails.mobileAccountName, note, date });
+          Object.assign(entry, { supplierId, supplierName, prodId: parseInt(prodId), prodName, bookingId:bookingId?Number(bookingId):null, unitType, qty, unitPrice, total, paid, due, method, bankId: purchaseDetails.bankId, bankName: purchaseDetails.bankName, mobileProvider:purchaseDetails.mobileProvider, mobileNumber:purchaseDetails.mobileNumber, mobileAccountId:purchaseDetails.mobileAccountId, mobileAccountName:purchaseDetails.mobileAccountName, note, date });
         }
         document.getElementById('editPurchaseId').value = '';
         document.getElementById('btnPurchaseCancel').style.display = 'none';
@@ -10111,7 +10180,7 @@
           id: Date.now(),
           purchaseNo: nextInvoiceNo("PUR"),
           supplierId: supplierId ? parseInt(supplierId) : null,
-          supplierName, prodId: parseInt(prodId) || null, prodName,
+          supplierName, prodId: parseInt(prodId) || null, prodName, bookingId:bookingId?Number(bookingId):null,
           unitType, qty, unitPrice, total, paid, due,
           method, bankId: purchaseDetails.bankId, bankName:purchaseDetails.bankName,
           mobileProvider:purchaseDetails.mobileProvider, mobileNumber:purchaseDetails.mobileNumber, mobileAccountId:purchaseDetails.mobileAccountId, mobileAccountName:purchaseDetails.mobileAccountName,
@@ -10144,6 +10213,8 @@
       document.getElementById('purchaseSupplierSearch').value = p.supplierName || '';
       document.getElementById('purchaseProductId').value = p.prodId || '';
       document.getElementById('purchaseProductSearch').value = p.prodName || '';
+      document.getElementById('purchaseBookingId').value = p.bookingId || '';
+      renderPurchaseBookingBanner(p.bookingId||'');
       document.getElementById('purchaseUnitType').value = p.unitType || 'Bag';
       document.getElementById('purchaseQty').value = p.qty;
       document.getElementById('purchaseUnitPrice').value = p.unitPrice;
@@ -10190,6 +10261,8 @@
       document.getElementById('purchaseSupplierSearch').value = '';
       document.getElementById('purchaseProductId').value = '';
       document.getElementById('purchaseProductSearch').value = '';
+      document.getElementById('purchaseBookingId').value = '';
+      renderPurchaseBookingBanner('');
       document.getElementById('purchaseQty').value = '';
       document.getElementById('purchaseUnitPrice').value = '';
       document.getElementById('purchaseTotalAmount').value = '';
@@ -10385,14 +10458,29 @@
     function openingListSearch(kind,value){openingListState[kind].q=(value||'').toLowerCase().trim();openingListState[kind].page=1;renderOpeningPagedLists();}
     function changeOpeningListPage(kind,delta){let s=openingListState[kind];s.page=Math.max(1,s.page+delta);renderOpeningPagedLists();}
     function setOpeningDraft(kind,id,value){openingDraft[kind][id]=value;}
+    async function savePartyOpeningBalance(kind,id){
+      if(currentUserRole!=='admin')return alert('Only Super User can change opening balances.');
+      let list=kind==='customer'?customers:suppliers,party=list.find(x=>String(x.id)===String(id));if(!party)return alert('Account not found.');
+      let input=document.querySelector(`[data-opening-${kind}="${id}"]`),raw=Object.prototype.hasOwnProperty.call(openingDraft[kind],id)?openingDraft[kind][id]:input?.value,amount=openingNum(raw);
+      let date=openingConfig.date||document.getElementById('openingDate')?.value||'';
+      if(!date)return alert(currentLang==='BN'?'আগে System Start Date দিন।':'Select the System Start Date first.');
+      let transactionDates=[...salesHistory,...purchases,...payments,...accountTransactions,...payableEntries,...receivableEntries,...personalLoanTransactions].map(x=>x.date).filter(Boolean).sort();
+      if(transactionDates.length&&date>transactionDates[0])return alert(`${currentLang==='BN'?'Start Date প্রথম transaction-এর পরে হতে পারবে না':'Start Date cannot be after the first transaction'} (${transactionDates[0]}).`);
+      if(kind==='supplier'&&amount+0.001<getSupplierOpeningPaid(id))return alert(`Opening payable cannot be less than its recorded payment (৳${getSupplierOpeningPaid(id).toFixed(2)}).`);
+      party.openingDue=amount;openingConfig={...openingConfig,date,saved:true,supplierPayments:openingConfig.supplierPayments||[],liabilityPayments:openingConfig.liabilityPayments||[]};delete openingDraft[kind][id];
+      saveData();await firestoreSaveQueue.catch(()=>{});
+      if(firestoreLastSaveError)return alert(currentLang==='BN'?'Local-এ রাখা হয়েছে, কিন্তু Cloud save হয়নি। Internet ঠিক করে আবার Save দিন।':'Saved locally, but cloud save failed. Reconnect and save again.');
+      renderOpeningBalanceSetup();renderLedger();renderSupplierTable();renderDashboard();
+      alert(`${party.name} — ${kind==='customer'?'opening receivable':'opening payable'} ৳${amount.toFixed(2)} saved.`);
+    }
     function renderOpeningPagedLists(){
       if(!document.getElementById('openingCustomerBody'))return;
       let paginate=(kind,list,matcher)=>{let s=openingListState[kind],filtered=list.filter(matcher),pages=Math.max(1,Math.ceil(filtered.length/s.size));s.page=Math.min(s.page,pages);return {rows:filtered.slice((s.page-1)*s.size,s.page*s.size),total:filtered.length,page:s.page,pages};};
       let c=paginate('customer',customers,x=>!openingListState.customer.q||`${x.name||''} ${x.phone||''}`.toLowerCase().includes(openingListState.customer.q));
-      document.getElementById('openingCustomerBody').innerHTML=c.rows.length?c.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-customer="${x.id}" value="${openingDraft.customer[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('customer','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editCustomer(${x.id})" class="btn-icon-action btn-edit" title="Edit Customer">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching customer</td></tr>';
+      document.getElementById('openingCustomerBody').innerHTML=c.rows.length?c.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-customer="${x.id}" value="${openingDraft.customer[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('customer','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;white-space:nowrap;"><button type="button" onclick="savePartyOpeningBalance('customer','${x.id}')" class="btn-success" style="width:auto;padding:6px 9px;font-size:11px;" title="Save Opening Receivable">💾 Save</button> <button type="button" onclick="editCustomer(${x.id})" class="btn-icon-action btn-edit" title="Edit Customer">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching customer</td></tr>';
       document.getElementById('openingCustomerCount').innerText=`Showing ${c.rows.length} of ${c.total}`;document.getElementById('openingCustomerPager').innerHTML=compactPagerHtml('customer',c.page,c.pages,c.total,'changeOpeningListPage');
       let sp=paginate('supplier',suppliers,x=>!openingListState.supplier.q||`${x.name||''} ${x.phone||''}`.toLowerCase().includes(openingListState.supplier.q));
-      document.getElementById('openingSupplierBody').innerHTML=sp.rows.length?sp.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-supplier="${x.id}" value="${openingDraft.supplier[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('supplier','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;"><button type="button" onclick="editSupplier(${x.id})" class="btn-icon-action btn-edit" title="Edit Supplier">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching supplier</td></tr>';
+      document.getElementById('openingSupplierBody').innerHTML=sp.rows.length?sp.rows.map(x=>`<tr><td><b>${x.name}</b></td><td>${x.phone||'—'}</td><td><input type="number" min="0" step="0.01" data-opening-supplier="${x.id}" value="${openingDraft.supplier[x.id]??(openingNum(x.openingDue)||'')}" oninput="setOpeningDraft('supplier','${x.id}',this.value)" style="margin:0;text-align:right;"></td><td style="text-align:center;white-space:nowrap;"><button type="button" onclick="savePartyOpeningBalance('supplier','${x.id}')" class="btn-success" style="width:auto;padding:6px 9px;font-size:11px;" title="Save Opening Payable">💾 Save</button> <button type="button" onclick="editSupplier(${x.id})" class="btn-icon-action btn-edit" title="Edit Supplier">${SVG_EDIT}</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;">No matching supplier</td></tr>';
       document.getElementById('openingSupplierCount').innerText=`Showing ${sp.rows.length} of ${sp.total}`;document.getElementById('openingSupplierPager').innerHTML=compactPagerHtml('supplier',sp.page,sp.pages,sp.total,'changeOpeningListPage');
       let pr=paginate('product',products,x=>!openingListState.product.q||`${x.name||''} ${x.category||''}`.toLowerCase().includes(openingListState.product.q));
       document.getElementById('openingProductBody').innerHTML=pr.rows.length?pr.rows.map(p=>{let bags=Number.isFinite(Number(p.openingStockBags))?openingNum(p.openingStockBags):openingNum(p.stock),bagKg=Number(p.bagKg)||50,d=openingDraft.product[p.id],unit=d?.unit||(['Kg','Bag','Ton'].includes(p.openingInputUnit)?p.openingInputUnit:(['Kg','Bag','Ton'].includes(p.defaultUnit)?p.defaultUnit:'Bag')),qty=d?openingNum(d.qty):(Number.isFinite(Number(p.openingInputQty))?openingNum(p.openingInputQty):openingBagsToUnit(bags,unit,bagKg)),cost=d?openingNum(d.cost):(Number.isFinite(Number(p.openingInputCost))?openingNum(p.openingInputCost):openingKgCostToUnit(p.openingCostPerKg,unit,bagKg)),displayBags=openingQtyToBags(qty,unit,bagKg);return `<tr><td><b>${p.name}</b></td><td>${bagKg} KG</td><td><select data-opening-product-unit="${p.id}" data-previous-unit="${unit}" onchange="changeOpeningInventoryUnit(${p.id})" style="margin:0;min-width:80px;"><option value="Kg" ${unit==='Kg'?'selected':''}>KG</option><option value="Bag" ${unit==='Bag'?'selected':''}>Bag</option><option value="Ton" ${unit==='Ton'?'selected':''}>Ton</option></select></td><td><input type="number" min="0" step="0.001" data-opening-product-qty="${p.id}" value="${qty||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"><small id="openingEquivalent-${p.id}" style="display:block;color:var(--muted);margin-top:3px;white-space:nowrap;">${displayBags.toFixed(3)} Bag = ${(displayBags*bagKg).toFixed(3)} KG = ${(displayBags*bagKg/1000).toFixed(3)} Ton</small></td><td><small id="openingCostLabel-${p.id}" style="display:block;color:var(--muted);margin-bottom:3px;">Cost / ${unit==='Kg'?'KG':unit}</small><input type="number" min="0" step="0.01" data-opening-product-cost="${p.id}" value="${cost||''}" oninput="updateOpeningInventoryRow(${p.id})" style="margin:0;text-align:right;"></td><td id="openingProductValue-${p.id}" style="text-align:right;font-weight:700;">৳${roundMoney(qty*cost).toFixed(2)}</td><td style="text-align:center;"><button type="button" onclick="editProduct(${p.id})" class="btn-icon-action btn-edit" title="Edit Product">${SVG_EDIT}</button></td></tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center;padding:18px;">No matching product</td></tr>';
@@ -10503,7 +10591,7 @@
       purchases.forEach(p=>{if(same(p.bankId))p.bankName=label;(p.payments||[]).forEach(pm=>{if(same(pm.bankId))pm.bankName=label;});});
       salesReturns.forEach(x=>{if(same(x.refundBankId)){x.refundBankName=label;x.bankName=label;}});
       orderCancellations.forEach(x=>{if(same(x.refundBankId)){x.refundBankName=label;x.bankName=label;}});
-      [...(openingConfig.supplierPayments||[]),...(openingConfig.liabilityPayments||[])].forEach(x=>{if(same(x.bankId))x.bankName=label;});
+      [...(openingConfig.supplierPayments||[]),...(openingConfig.liabilityPayments||[]),...supplierFundTransactions].forEach(x=>{if(same(x.bankId))x.bankName=label;});
     }
 
     function getMobileAccountTransactions(accountId) {
@@ -10534,6 +10622,7 @@
         .forEach(c=>add(c.date,'out','Cancelled order refund',c.cancelNo||c.invNo,c.refundPaidAmount));
       (openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&same(p.mobileAccountId))
         .forEach(p=>add(p.date,'out','Opening supplier payable',p.payNo,p.amount));
+      supplierFundTransactions.filter(x=>!x.reversed&&same(x.mobileAccountId)).forEach(x=>add(x.date,x.type==='refund'?'in':'out',x.type==='refund'?'Supplier fund refund':'Supplier fund deposit',x.txnNo,x.amount));
       (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&same(p.mobileAccountId))
         .forEach(p=>add(p.date,'out',p.type==='loan'?'Opening loan payment':'Opening liability payment',p.payNo,p.amount));
       return rows.sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.ref).localeCompare(String(b.ref)));
@@ -10645,6 +10734,8 @@
       let openingLiabilityPaid=(openingConfig.liabilityPayments||[])
         .filter(p=>!p.reversed&&String(p.bankId)===String(bankId))
         .reduce((sum,p)=>sum+(Number(p.amount)||0),0);
+      let supplierFundIn=supplierFundTransactions.filter(x=>!x.reversed&&x.type==='refund'&&String(x.bankId)===String(bankId)).reduce((n,x)=>n+(Number(x.amount)||0),0);
+      let supplierFundOut=supplierFundTransactions.filter(x=>!x.reversed&&x.type==='deposit'&&String(x.bankId)===String(bankId)).reduce((n,x)=>n+(Number(x.amount)||0),0);
 
       // Account transactions via bank
       let accIn = accountTransactions
@@ -10654,12 +10745,12 @@
         .filter(a => a.bankId && String(a.bankId) === String(bankId) && a.status === 'Approved' && ['Kroy','Kharoch'].includes(a.type))
         .reduce((sum, a) => sum + (a.amount || 0), 0);
 
-      return roundMoney(opening + received + salesReceived + dueCollections + accIn - paid - purchasePaid - purchaseDuePaid - salesReturnRefunds - cancellationRefunds - openingSupplierPaid - openingLiabilityPaid - accOut);
+      return roundMoney(opening + received + salesReceived + dueCollections + supplierFundIn + accIn - paid - purchasePaid - purchaseDuePaid - salesReturnRefunds - cancellationRefunds - openingSupplierPaid - openingLiabilityPaid - supplierFundOut - accOut);
     }
 
     function deleteBankAccount(id) {
       if (currentUserRole !== 'admin') return;
-      let used=salesHistory.some(s=>String(s.bankId)===String(id))||payments.some(p=>String(p.bankId)===String(id))||purchases.some(p=>String(p.bankId)===String(id)||(p.payments||[]).some(pm=>String(pm.bankId)===String(id)))||payableEntries.some(e=>String(e.bankId)===String(id))||receivableEntries.some(e=>String(e.bankId)===String(id))||accountTransactions.some(a=>String(a.bankId)===String(id))||salesReturns.some(r=>String(r.refundBankId)===String(id))||orderCancellations.some(c=>String(c.refundBankId)===String(id))||(openingConfig.supplierPayments||[]).some(p=>String(p.bankId)===String(id))||(openingConfig.liabilityPayments||[]).some(p=>String(p.bankId)===String(id));
+      let used=salesHistory.some(s=>String(s.bankId)===String(id))||payments.some(p=>String(p.bankId)===String(id))||purchases.some(p=>String(p.bankId)===String(id)||(p.payments||[]).some(pm=>String(pm.bankId)===String(id)))||payableEntries.some(e=>String(e.bankId)===String(id))||receivableEntries.some(e=>String(e.bankId)===String(id))||accountTransactions.some(a=>String(a.bankId)===String(id))||salesReturns.some(r=>String(r.refundBankId)===String(id))||orderCancellations.some(c=>String(c.refundBankId)===String(id))||(openingConfig.supplierPayments||[]).some(p=>String(p.bankId)===String(id))||(openingConfig.liabilityPayments||[]).some(p=>String(p.bankId)===String(id))||supplierFundTransactions.some(x=>String(x.bankId)===String(id));
       if(used) return alert(currentLang==='BN'?'এই ব্যাংক অ্যাকাউন্টে লেনদেন আছে, তাই ডিলিট করা যাবে না।':'This bank account has transactions and cannot be deleted.');
       if (!confirm(t('confirmDeleteBank'))) return;
       bankAccounts = bankAccounts.filter(b => b.id != id);
@@ -10684,6 +10775,7 @@
           receivableEntries.filter(e=>e.status==='Approved'&&String(e.bankId)===String(b.id)).reduce((s,e)=>s+(Number(e.amount)||0),0) +
           salesHistory.filter(s=>s.status==='Approved'&&String(s.bankId)===String(b.id)).reduce((sum,s)=>sum+(Number(s.paid)||0),0) +
           payments.filter(p=>p.status==='Approved'&&!p.reversed&&String(p.bankId)===String(b.id)).reduce((sum,p)=>sum+(Number(p.amount)||0),0) +
+          supplierFundTransactions.filter(x=>!x.reversed&&x.type==='refund'&&String(x.bankId)===String(b.id)).reduce((n,x)=>n+(Number(x.amount)||0),0) +
           accountTransactions.filter(a=>a.status==='Approved'&&String(a.bankId)===String(b.id)&&['Joma','Bikroy'].includes(a.type)).reduce((s,a)=>s+(Number(a.amount)||0),0)
         );
         let outTotal = roundMoney(
@@ -10695,6 +10787,7 @@
           + orderCancellations.filter(c=>!c.reversed&&c.refundMethod==='Bank'&&String(c.refundBankId)===String(b.id)).reduce((s,c)=>s+(Number(c.refundPaidAmount)||0),0)
           + (openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&String(p.bankId)===String(b.id)).reduce((s,p)=>s+(Number(p.amount)||0),0)
           + (openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&String(p.bankId)===String(b.id)).reduce((s,p)=>s+(Number(p.amount)||0),0)
+          + supplierFundTransactions.filter(x=>!x.reversed&&x.type==='deposit'&&String(x.bankId)===String(b.id)).reduce((n,x)=>n+(Number(x.amount)||0),0)
         );
         return `
           <div class="bank-account-item" style="flex-direction:column; align-items:flex-start; gap:4px; padding:12px 14px;">
@@ -11449,6 +11542,8 @@
       localStorage.setItem('pos_receivable_heads', JSON.stringify(receivableHeads));
       localStorage.setItem('pos_suppliers', JSON.stringify(suppliers));
       localStorage.setItem('pos_purchases', JSON.stringify(purchases));
+      localStorage.setItem('pos_supplier_bookings', JSON.stringify(supplierBookings));
+      localStorage.setItem('pos_supplier_fund_transactions', JSON.stringify(supplierFundTransactions));
       localStorage.setItem('pos_opening_config', JSON.stringify(openingConfig));
       localStorage.setItem('pos_credit_facilities', JSON.stringify(creditFacilities));
       localStorage.setItem('pos_credit_transactions', JSON.stringify(creditTransactions));
