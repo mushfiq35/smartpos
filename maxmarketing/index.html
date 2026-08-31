@@ -134,7 +134,26 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 .pill.red{background:var(--red-bg);color:var(--red);}
 .actions-cell{display:flex;gap:6px;flex-wrap:nowrap;white-space:nowrap;align-items:center;}
 .icon-btn{border:1px solid var(--line);background:#fff;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+
 .icon-btn:hover{border-color:var(--ink);}
+
+/* Customer bank-style ledger */
+.customer-ledger-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:9px;background:#fff;}
+table.customer-ledger{width:100%;border-collapse:collapse;font-size:13px;min-width:820px;}
+table.customer-ledger th{background:var(--paper-card);color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.035em;padding:9px 10px;border-bottom:2px solid var(--line);text-align:left;white-space:nowrap;}
+table.customer-ledger td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap;}
+table.customer-ledger td.ledger-desc{white-space:normal;min-width:230px;}
+table.customer-ledger tr.ledger-opening td{background:var(--gold-bg);font-weight:700;}
+table.customer-ledger tr.ledger-sale td{background:rgba(54,114,164,.035);}
+table.customer-ledger tr.ledger-payment td{background:rgba(46,139,87,.035);}
+table.customer-ledger tr.ledger-return td{background:rgba(176,141,46,.045);}
+table.customer-ledger tfoot td{font-weight:700;border-top:2px solid var(--ink);background:var(--paper-card);}
+.ledger-debit{color:var(--red);font-weight:600;}
+.ledger-credit{color:var(--green);font-weight:600;}
+.ledger-balance{font-family:'IBM Plex Mono',monospace;font-weight:700;}
+.ledger-meta{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 14px;padding:10px 12px;background:var(--paper-card);border:1px solid var(--line);border-radius:8px;font-size:12px;}
+.ledger-meta strong{color:var(--ink);}
+
 
 .empty{text-align:center;padding:50px 20px;color:var(--ink-soft);border:1px dashed var(--line);border-radius:10px;}
 .pagination-row{
@@ -1598,30 +1617,121 @@ document.getElementById('logoFileInput').addEventListener('change', async (e) =>
   reader.readAsDataURL(file);
 });
 
-function calculateCustomerDueFromLedger(custId){
+function buildCustomerReceivableEvents(custId){
   const sales = db.sales.filter(s=>s.customerId===custId);
   const installments = db.installments.filter(i=>i.customerId===custId);
+  const returns = db.returns.filter(r=>!r.cancelled && r.customerId===custId);
 
-  // Booking discount is already deducted in sale.total.
-  const bookedNet = sales.reduce((sum,s)=>sum+Number(s.total||0),0);
-  const initialPaid = sales.reduce(
-    (sum,s)=>sum+Number(s.initialPaid!==undefined ? s.initialPaid : s.paid||0), 0
-  );
+  const events = [
+    ...sales.map(s=>({
+      id:s.id, type:'sale', date:s.date||'', ts:Number(s.ts||0),
+      ref:s.invoiceNo ? '#'+s.invoiceNo : (s.voucherNo||'—'),
+      label:(s.productName||t('history_type_sale')),
+      saleNet:Number(s.total||0),
+      initialPaid:Number(s.initialPaid!==undefined ? s.initialPaid : s.paid||0),
+      amount:0, discount:Number(s.discount||0), dueAdjust:0,
+      note:s.voucherTag||''
+    })),
+    ...installments.map(i=>({
+      id:i.id, type:'installment', date:i.date||'', ts:Number(i.ts||0),
+      ref:i.receiptNo ? '#'+i.receiptNo : '—',
+      label:t('installment_receipt_title'),
+      saleNet:0, initialPaid:0,
+      amount:Number(i.amount||0), discount:Number(i.discount||0), dueAdjust:0,
+      note:i.note||'',
+      record:i
+    })),
+    ...returns.map(r=>({
+      id:r.id, type:'return', date:r.date||'', ts:Number(r.ts||0),
+      ref:r.returnNo ? '#'+r.returnNo : '—',
+      label:currentLang==='bn' ? 'রিটার্ন সমন্বয়' : 'Return Adjustment',
+      saleNet:0, initialPaid:0, amount:0, discount:0,
+      dueAdjust:Number(r.dueAdjust||0),
+      note:r.note||r.productName||''
+    }))
+  ];
 
-  // Installment amount is real cash. Installment discount is a later waiver.
-  // Both settle receivable, but only amount counts as cash received.
-  const laterSettlement = installments.reduce(
-    (sum,i)=>sum+Number(i.amount||0)+Number(i.discount||0), 0
-  );
+  // Date is the accounting date. On the same date, create receivable first,
+  // then apply installment/return settlements. This avoids stale saved snapshots.
+  const priority = {sale:1, installment:2, return:3};
+  events.sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date ? -1 : 1;
+    if(a.type!==b.type) return (priority[a.type]||9)-(priority[b.type]||9);
+    return a.ts-b.ts;
+  });
+  return events;
+}
 
-  const returnDueAdjust = db.returns
-    .filter(r=>!r.cancelled && r.customerId===custId)
-    .reduce((sum,r)=>sum+Number(r.dueAdjust||0),0);
+function buildCustomerReceivableStatement(custId, fromStr='', toStr=''){
+  const events = buildCustomerReceivableEvents(custId);
+  const hasFrom = !!fromStr;
+  const hasTo = !!toStr;
 
-  return Math.max(0, Math.round(bookedNet - initialPaid - laterSettlement - returnDueAdjust));
+  let running = 0;
+  let opening = 0;
+  const rows = [];
+
+  const applyEvent = ev => {
+    const previousDue = Math.max(0, Math.round(running));
+    if(ev.type==='sale'){
+      // sale.total is already NET of booking-time discount.
+      running += Math.max(0, Number(ev.saleNet||0) - Number(ev.initialPaid||0));
+    }else if(ev.type==='installment'){
+      // Cash + later discount both settle receivable; discount is not cash.
+      running -= Number(ev.amount||0) + Number(ev.discount||0);
+    }else if(ev.type==='return'){
+      running -= Number(ev.dueAdjust||0);
+    }
+    running = Math.max(0, running);
+    return {
+      ...ev,
+      previousDue,
+      newDue:Math.max(0, Math.round(running))
+    };
+  };
+
+  // First calculate opening balance from every due-changing event before the range.
+  for(const ev of events){
+    if(hasFrom && ev.date && ev.date < fromStr){
+      applyEvent(ev);
+    }
+  }
+  opening = Math.max(0, Math.round(running));
+
+  // Then calculate visible period rows from the same running balance.
+  for(const ev of events){
+    if(hasFrom && ev.date && ev.date < fromStr) continue;
+    if(hasTo && ev.date && ev.date > toStr) continue;
+    rows.push(applyEvent(ev));
+  }
+
+  return {rows, opening, closing:Math.max(0,Math.round(running))};
+}
+
+function calculateCustomerDueFromLedger(custId){
+  // One source of truth for every page/report.
+  return buildCustomerReceivableStatement(custId).closing;
+}
+
+function calculateCustomerDueAsOf(custId, toStr){
+  return buildCustomerReceivableStatement(custId, '', toStr||'').closing;
+}
+
+function getDerivedInstallmentSnapshot(custId, installmentId){
+  const st = buildCustomerReceivableStatement(custId);
+  return st.rows.find(x=>x.type==='installment' && x.id===installmentId) || null;
+}
+
+function reconcileCustomerDueCacheInMemory(){
+  // Some older code paths still read customer.due directly.
+  // Keep that cached field synchronized with the same canonical ledger used by reports.
+  Object.entries(db.customers).forEach(([custId,cust])=>{
+    cust.due = calculateCustomerDueFromLedger(custId);
+  });
 }
 
 function refreshCurrentView(){
+  reconcileCustomerDueCacheInMemory();
   renderNav();
   renderPage();
   requestAnimationFrame(()=>{
@@ -1631,6 +1741,7 @@ function refreshCurrentView(){
 }
 
 function renderPage(){
+  reconcileCustomerDueCacheInMemory();
   if(currentTab==='settings' && !isAdminUser()) currentTab = 'dashboard';
   setTitle(currentTab);
   const c = document.getElementById('content');
@@ -2305,7 +2416,9 @@ function renderInstallmentOnlyReport(body){
       return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
     }
     Object.values(byCust).forEach(c => {
-      c.due = c.customerId && db.customers[c.customerId] ? calculateCustomerDueFromLedger(c.customerId) : 0;
+      // Report due is the closing balance AS OF the selected report end date.
+      // This keeps the header Due equal to the final reconciled New Due in the detail.
+      c.due = c.customerId && db.customers[c.customerId] ? calculateCustomerDueAsOf(c.customerId, toStr) : 0;
       c.accountNos = c.customerId ? accountNumbersFor(c.customerId) : [];
     });
     const q = instRptQuery.trim().toLowerCase();
@@ -2318,18 +2431,92 @@ function renderInstallmentOnlyReport(body){
     const totalDueAll = custRows.reduce((s,c)=>s+Number(c.due||0),0);
 
     function buildCustInstDetail(cid){
-      const rows = list.filter(i=>(i.customerId||'walkin')===cid).sort((a,b)=>b.ts-a.ts);
-      const cust = cid!=='walkin' ? db.customers[cid] : null;
-      const rowsTotalAmount = rows.reduce((s,x)=>s+Number(x.amount),0);
-      const rowsTotalDiscount = rows.reduce((s,x)=>s+Number(x.discount||0),0);
+      if(cid==='walkin'){
+        const rows = list.filter(i=>(i.customerId||'walkin')===cid).sort((a,b)=>b.ts-a.ts);
+        const rowsTotalAmount = rows.reduce((sum,x)=>sum+Number(x.amount||0),0);
+        const rowsTotalDiscount = rows.reduce((sum,x)=>sum+Number(x.discount||0),0);
+        return `
+          <div class="panel">
+            <table class="data">
+              <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('f_note')}</th></tr></thead>
+              <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>${escapeHtml(i.note||'—')}</td></tr>`).join('')}</tbody>
+              <tfoot><tr><td colspan="2">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td></td></tr></tfoot>
+            </table>
+          </div>`;
+      }
+
+      const cust = db.customers[cid];
+      const statement = buildCustomerReceivableStatement(cid, fromStr, toStr);
+      const visiblePayments = statement.rows.filter(x=>x.type==='installment');
+      const rowsTotalAmount = visiblePayments.reduce((sum,x)=>sum+Number(x.amount||0),0);
+      const rowsTotalDiscount = visiblePayments.reduce((sum,x)=>sum+Number(x.discount||0),0);
+
+      const detailRows = [];
+      if(statement.opening>0){
+        detailRows.push({
+          type:'opening', id:'', ref:'—', date:fromStr,
+          previousDue:statement.opening, newDue:statement.opening,
+          amount:0, discount:0,
+          note:currentLang==='bn' ? 'Opening Balance / পূর্বের জের' : 'Opening Balance'
+        });
+      }
+      detailRows.push(...statement.rows);
+
       return `
         <div class="panel">
+          <div class="field-hint" style="margin-bottom:10px;">
+            ${currentLang==='bn'?'এই তালিকার Previous Due / New Due সরাসরি Sale, Installment, Discount ও Return থেকে পুনরায় হিসাব করা হয়েছে।':'Previous/New Due below is recalculated directly from Sales, Installments, Discounts and Returns.'}
+          </div>
           <table class="data">
-            <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
-            <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${i.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${i.id}')">🗑️</button></td></tr>`).join('')}</tbody>
-            <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>—</td><td colspan="2"></td></tr></tfoot>
+            <thead><tr>
+              <th>${currentLang==='bn'?'রেফারেন্স':'Reference'}</th>
+              <th>${t('inst_col_date')}</th>
+              <th>${currentLang==='bn'?'ধরন':'Type'}</th>
+              <th>${t('inst_col_previous_due')}</th>
+              <th>${t('inst_col_amount')}</th>
+              <th>${t('inst_col_discount')}</th>
+              <th>${t('inst_col_new_due')}</th>
+              <th>${t('f_note')}</th>
+              <th class="no-print"></th>
+            </tr></thead>
+            <tbody>${detailRows.map(x=>{
+              const isInst=x.type==='installment';
+              const typeLabel = x.type==='opening'
+                ? (currentLang==='bn'?'Opening':'Opening')
+                : x.type==='sale'
+                  ? (currentLang==='bn'?'বিক্রি/বুকিং':'Sale/Booking')
+                  : x.type==='return'
+                    ? (currentLang==='bn'?'রিটার্ন সমন্বয়':'Return Adjustment')
+                    : (currentLang==='bn'?'কিস্তি':'Installment');
+              const amountCell = isInst
+                ? '৳'+money(x.amount)
+                : x.type==='sale'
+                  ? `<span class="field-hint">+৳${money(Math.max(0,Number(x.saleNet||0)-Number(x.initialPaid||0)))}</span>`
+                  : x.type==='return'
+                    ? `<span class="field-hint">−৳${money(x.dueAdjust||0)}</span>`
+                    : '—';
+              const note = x.type==='sale'
+                ? `${x.label||''}${Number(x.initialPaid||0)>0?' · '+(currentLang==='bn'?'প্রথম পেমেন্ট ':'Initial Paid ')+'৳'+money(x.initialPaid):''}`
+                : (x.note||x.label||'—');
+              return `<tr style="${x.type!=='installment'?'background:rgba(176,141,46,.045);':''}">
+                <td>${escapeHtml(x.ref||'—')}</td>
+                <td>${formatDateDMY(x.date)}</td>
+                <td>${typeLabel}</td>
+                <td>৳${money(x.previousDue)}</td>
+                <td>${amountCell}</td>
+                <td>${isInst && Number(x.discount)>0?'৳'+money(x.discount):'—'}</td>
+                <td><strong>৳${money(x.newDue)}</strong></td>
+                <td>${escapeHtml(note)}</td>
+                <td class="actions-cell no-print">${isInst ? `<button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${x.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${x.id}')">🗑️</button>` : ''}</td>
+              </tr>`;
+            }).reverse().join('')}</tbody>
+            <tfoot>
+              <tr style="font-weight:700;"><td colspan="4">${t('totals_label')} (${t('nav_installments')})</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>৳${money(statement.closing)}</td><td colspan="2"></td></tr>
+            </tfoot>
           </table>
-          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')} (${t('inst_col_new_due')}): ৳${money(cust?calculateCustomerDueFromLedger(cid):0)}</div>` : ''}
+          <div class="field-hint" style="margin-top:8px;font-weight:700;">
+            ${currentLang==='bn'?'Closing Due / সর্বশেষ New Due':'Closing Due / Latest New Due'}: ৳${money(statement.closing)}
+          </div>
         </div>
       `;
     }
@@ -2605,69 +2792,45 @@ function renderReportsOverview(body){
 function printCustLedger(cid){
   const cust = cid ? db.customers[cid] : null;
   if(!cust) return;
-  const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
-  const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
-  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
-  const totalPaid = totalInitialPaid + totalInstPaid;
-  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
+  const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth));
+  const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth));
+  const totalProfit = sales.reduce((sum,x)=>sum+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
+  const d = buildCustomerBankLedger(cid,custReportYear,custReportMonth);
 
-  const ledgerRaw = [
-    ...sales.map(s=>({
-      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
-      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total)+Number(s.discount||0), discount: Number(s.discount||0),
-      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
-      profit: saleNetProfit(s)
-    })),
-    ...payments.map(p=>({
-      ts: p.ts, date: p.date, type: 'installment', qty: null,
-      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
-      total: 0, discount: Number(p.discount||0),
-      paid: Number(p.amount),
-      profit: null
-    }))
-  ].sort((a,b)=>{
-    if(a.date!==b.date) return a.date<b.date?-1:1;
-    if(a.type!==b.type) return a.type==='booking'?-1:1;
-    return a.ts-b.ts;
-  });
-
-  let runningDue = 0;
-  const ledger = ledgerRaw.map(tx=>{
-    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
-    else runningDue -= (tx.paid + tx.discount);
-    return { ...tx, runningDue: Math.round(runningDue) };
-  });
+  const rows = d.rows.map(tx=>`<tr>
+    <td>${formatDateDMY(tx.date)}</td>
+    <td>${escapeHtml(tx.ref||'—')}</td>
+    <td>${escapeHtml(tx.description||'')}</td>
+    <td>${tx.qty!==null && tx.qty!==undefined?tx.qty:'—'}</td>
+    <td>${tx.debit>0?'৳'+money(tx.debit):'—'}</td>
+    <td>${tx.cash>0?'৳'+money(tx.cash):'—'}</td>
+    <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+    <td>৳${money(tx.balance)}</td>
+    <td>${tx.profit!==null && tx.profit!==undefined?'৳'+money(tx.profit):'—'}</td>
+  </tr>`).join('');
 
   const body = `
-    <div style="margin-bottom:10px;"><strong>${escapeHtml(cust.name)}</strong><br>${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div>
+    <div style="margin-bottom:10px;">
+      <strong>${escapeHtml(cust.name)}${cust.displayId?' · ID #'+escapeHtml(String(cust.displayId)):''}</strong><br>
+      ${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}
+    </div>
+    <div style="margin:8px 0 12px;font-size:12px;">
+      Opening: ৳${money(d.opening)} · Cash Received: ৳${money(d.cashPaid)} · Discount: ৳${money(d.discount)} · Closing: ৳${money(d.closing)} · ${t('col_profit')}: ৳${money(totalProfit)}
+    </div>
     <table>
-      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
-      <tbody>${ledger.map(tx=>`<tr>
-        <td>${formatDateDMY(tx.date)}</td>
-        <td>${tx.label}</td>
-        <td>${tx.qty!==null?tx.qty:'—'}</td>
-        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
-        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-        <td>৳${money(tx.paid)}</td>
-        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
-        <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
-      </tr>`).join('')}</tbody>
+      <thead><tr>
+        <th>${t('col_date')}</th><th>Ref</th><th>Description</th><th>${t('col_qty')}</th>
+        <th>Debit / Sale</th><th>Cash Received</th><th>${t('col_discount')}</th><th>Balance</th><th>${t('col_profit')}</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
       <tfoot><tr>
-        <td colspan="3">${t('totals_label')}</td>
-        <td>৳${money(totalBought)}</td>
-        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
-        <td>৳${money(totalPaid)}</td>
-        <td>${cust.due>0?'৳'+money(cust.due):'৳0'}</td>
-        <td>৳${money(totalProfit)}</td>
+        <td colspan="4">${t('totals_label')}</td>
+        <td>৳${money(d.debit)}</td><td>৳${money(d.cashPaid)}</td><td>৳${money(d.discount)}</td>
+        <td>৳${money(d.closing)}</td><td>৳${money(totalProfit)}</td>
       </tr></tfoot>
-    </table>
-  `;
-  printIsolated(cust.name, body);
+    </table>`;
+  printIsolated(cust.name+' — Customer Statement', body);
 }
-
 function printCustReportList(){
   const q = reportsCustQuery.trim().toLowerCase();
   const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)));
@@ -2787,78 +2950,36 @@ function renderCustomerReport(body){
   function buildCustDetailHtml(custId){
     const cust = db.customers[custId];
     if(!cust) return '';
-    const sales = db.sales
-      .filter(s=>s.customerId===custId && matchesYearMonth(s.date, custReportYear, custReportMonth))
-      .sort((a,b)=>b.ts-a.ts);
-    const payments = db.installments
-      .filter(p=>p.customerId===custId && matchesYearMonth(p.date, custReportYear, custReportMonth))
-      .sort((a,b)=>b.ts-a.ts);
-    const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
-    const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
+    const sales = db.sales.filter(s=>s.customerId===custId && matchesYearMonth(s.date, custReportYear, custReportMonth));
+    const payments = db.installments.filter(p=>p.customerId===custId && matchesYearMonth(p.date, custReportYear, custReportMonth));
+    const totalBought = sales.reduce((sum,x)=>sum+Number(x.total||0)+Number(x.discount||0),0);
+    const totalInitialPaid = sales.reduce((sum,x)=>sum+Number(x.initialPaid!==undefined?x.initialPaid:x.paid||0),0);
+    const totalInstPaid = payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
     const totalPaid = totalInitialPaid + totalInstPaid;
-    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
-
-    const ledgerRaw = [
-      ...sales.map(s=>({
-        ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
-        label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-        total: Number(s.total)+Number(s.discount||0), discount: Number(s.discount||0),
-        paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
-        profit: saleNetProfit(s)
-      })),
-      ...payments.map(p=>({
-        ts: p.ts, date: p.date, type: 'installment', qty: null,
-        label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
-        total: 0, discount: Number(p.discount||0),
-        paid: Number(p.amount),
-        profit: null
-      }))
-    ].sort((a,b)=>{
-      if(a.date!==b.date) return a.date<b.date?-1:1;
-      if(a.type!==b.type) return a.type==='booking'?-1:1;
-      return a.ts-b.ts;
-    });
-
-    let runningDue = 0;
-    const ledger = ledgerRaw.map(tx=>{
-      if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
-      else runningDue -= (tx.paid + tx.discount);
-      return { ...tx, runningDue: Math.round(runningDue) };
-    });
+    const totalProfit = sales.reduce((sum,x)=>sum+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
+    const ledgerData = buildCustomerBankLedger(custId,custReportYear,custReportMonth);
 
     return `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
-          <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3>
-          <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
+          <div>
+            <h3 style="margin:0;">${escapeHtml(cust.name)}${cust.displayId?' <span class="field-hint">#'+escapeHtml(String(cust.displayId))+'</span>':''}</h3>
+            <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div>
+          </div>
           <button class="btn ghost no-print" onclick="printCustLedger('${custId}')">${t('print_report')}</button>
         </div>
-        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, calculateCustomerDueFromLedger(custId))} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
 
-        <h3 style="margin:14px 0 8px;">🧾 লেনদেনের হিসাব</h3>
-        ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
-        <table class="data">
-          <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
-          <tbody>${ledger.map(tx=>`<tr>
-            <td>${formatDateDMY(tx.date)}</td>
-            <td>${tx.label}</td>
-            <td>${tx.qty!==null?tx.qty:'—'}</td>
-            <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
-            <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-            <td>৳${money(tx.paid)}</td>
-            <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
-            <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
-          </tr>`).join('')}</tbody>
-          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
-            <td colspan="3">${t('totals_label')}</td>
-            <td>৳${money(totalBought)}</td>
-            <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
-            <td>৳${money(totalPaid)}</td>
-            <td>${calculateCustomerDueFromLedger(custId)>0?'<span style="color:var(--red);">৳'+money(calculateCustomerDueFromLedger(custId))+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
-            <td>৳${money(totalProfit)}</td>
-          </tr></tfoot>
-        </table>`}
+        <div class="ledger-meta">
+          <span><strong>${currentLang==='bn'?'Opening Balance':'Opening Balance'}:</strong> ৳${money(ledgerData.opening)}</span>
+          <span><strong>${currentLang==='bn'?'এই সময়ের বিক্রি':'Period Sales'}:</strong> ৳${money(totalBought)}</span>
+          <span><strong>${currentLang==='bn'?'ক্যাশ প্রাপ্তি':'Cash Received'}:</strong> ৳${money(totalPaid)}</span>
+          <span><strong>${currentLang==='bn'?'ছাড়':'Discount'}:</strong> ৳${money(ledgerData.discount)}</span>
+          <span><strong>${currentLang==='bn'?'Closing Balance':'Closing Balance'}:</strong> ৳${money(ledgerData.closing)}</span>
+          <span><strong>${t('col_profit')}:</strong> ৳${money(totalProfit)}</span>
+        </div>
+
+        <h3 style="margin:14px 0 8px;">${currentLang==='bn'?'🏦 কাস্টমার স্টেটমেন্ট / লেজার':'🏦 Customer Statement / Ledger'}</h3>
+        ${customerLedgerTableHtml(custId,custReportYear,custReportMonth,true)}
       </div>
     `;
   }
@@ -3773,70 +3894,177 @@ document.getElementById('productHistoryCloseBtn').addEventListener('click', () =
 document.getElementById('productHistoryPrintBtn').addEventListener('click', () => window.print());
 setupOverlayBackdropClose('productHistoryOverlay');
 
+
+function customerLedgerDateInPeriod(dateStr, year='all', month='all'){
+  return matchesYearMonth(dateStr, year, month);
+}
+
+function buildCustomerBankLedger(custId, year='all', month='all'){
+  const cust = db.customers[custId];
+  if(!cust) return {rows:[], opening:0, closing:0, debit:0, credit:0, cashPaid:0, discount:0};
+
+  const allSales = db.sales.filter(x=>x.customerId===custId);
+  const allPayments = db.installments.filter(x=>x.customerId===custId);
+  const allReturns = db.returns.filter(x=>!x.cancelled && x.customerId===custId);
+
+  // One sale row = receivable created. Booking discount is shown separately,
+  // therefore Debit is the gross amount and Credit includes booking discount + initial cash.
+  const txs = [
+    ...allSales.map(x=>({
+      ts:Number(x.ts||0), date:x.date||'', type:'sale',
+      ref:x.invoiceNo ? '#'+x.invoiceNo : (x.voucherNo||'—'),
+      description:(x.invoiceNo?'Invoice #'+x.invoiceNo+' — ':'')+(x.productName||t('history_type_sale')),
+      qty:Number(x.qty||0),
+      debit:Number(x.total||0)+Number(x.discount||0),
+      cash:Number(x.initialPaid!==undefined?x.initialPaid:x.paid||0),
+      discount:Number(x.discount||0),
+      otherCredit:0,
+      profit:saleNetProfit(x)
+    })),
+    ...allPayments.map(x=>({
+      ts:Number(x.ts||0), date:x.date||'', type:'payment',
+      ref:x.receiptNo ? '#'+x.receiptNo : '—',
+      description:x.note && x.note!=='—' ? x.note : t('installment_receipt_title'),
+      qty:null, debit:0, cash:Number(x.amount||0), discount:Number(x.discount||0),
+      otherCredit:0,
+      // A later discount is a waiver and reduces realized profit.
+      profit:Number(x.discount||0)>0 ? -Number(x.discount||0) : null
+    })),
+    ...allReturns.map(x=>({
+      ts:Number(x.ts||0), date:x.date||'', type:'return',
+      ref:x.returnNo ? '#'+x.returnNo : '—',
+      description:(currentLang==='bn'?'রিটার্ন':'Return')+(x.productName?' — '+x.productName:''),
+      qty:Number(x.qty||0), debit:0, cash:0, discount:0,
+      otherCredit:Number(x.dueAdjust||0),
+      profit:null
+    }))
+  ].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    const order={sale:1,payment:2,return:3};
+    if(a.type!==b.type) return (order[a.type]||9)-(order[b.type]||9);
+    return a.ts-b.ts;
+  });
+
+  const isAll = String(year)==='all' && String(month)==='all';
+  let periodStart = '';
+  if(!isAll && String(year)!=='all'){
+    const mm = String(month)==='all' ? '01' : String(month).padStart(2,'0');
+    periodStart = `${year}-${mm}-01`;
+  }
+
+  // Opening balance = all customer receivable movements before the selected period.
+  let opening = 0;
+  if(periodStart){
+    txs.filter(x=>x.date && x.date<periodStart).forEach(x=>{
+      opening += x.debit - x.cash - x.discount - x.otherCredit;
+    });
+  }
+
+  const periodTxs = txs.filter(x=>customerLedgerDateInPeriod(x.date, year, month));
+  let running = Math.max(0, Math.round(opening));
+  let debit=0, credit=0, cashPaid=0, discount=0;
+  const rows = [];
+
+  if(periodStart && running!==0){
+    rows.push({
+      type:'opening', date:periodStart, ref:'—',
+      description:currentLang==='bn'?'Opening Balance / পূর্বের জের':'Opening Balance',
+      qty:null, debit:0, cash:0, discount:0, otherCredit:0,
+      credit:0, balance:running, profit:null
+    });
+  }
+
+  periodTxs.forEach(x=>{
+    const txCredit = x.cash + x.discount + x.otherCredit;
+    running += x.debit - txCredit;
+    running = Math.max(0, Math.round(running));
+    debit += x.debit;
+    credit += txCredit;
+    cashPaid += x.cash;
+    discount += x.discount;
+    rows.push({...x, credit:txCredit, balance:running});
+  });
+
+  return {
+    rows, opening:Math.max(0,Math.round(opening)), closing:running,
+    debit, credit, cashPaid, discount
+  };
+}
+
+function customerLedgerTableHtml(custId, year='all', month='all', showProfit=false){
+  const data = buildCustomerBankLedger(custId, year, month);
+  const profitHead = showProfit ? `<th>${t('col_profit')}</th>` : '';
+  const profitCells = showProfit ? (tx=>`<td>${tx.profit!==null && tx.profit!==undefined ? '৳'+money(tx.profit) : '—'}</td>`) : (()=>'');
+  const colspan = showProfit ? 9 : 8;
+
+  if(data.rows.length===0){
+    return `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>`;
+  }
+
+  return `
+    <div class="customer-ledger-wrap">
+      <table class="customer-ledger">
+        <thead><tr>
+          <th>${t('col_date')}</th>
+          <th>${currentLang==='bn'?'রেফারেন্স':'Reference'}</th>
+          <th>${currentLang==='bn'?'বিবরণ':'Description'}</th>
+          <th>${t('col_qty')}</th>
+          <th>${currentLang==='bn'?'ডেবিট / বিক্রি':'Debit / Sale'}</th>
+          <th>${currentLang==='bn'?'ক্যাশ প্রাপ্তি':'Cash Received'}</th>
+          <th>${t('col_discount')}</th>
+          <th>${currentLang==='bn'?'চলতি বাকি':'Running Balance'}</th>
+          ${profitHead}
+        </tr></thead>
+        <tbody>${data.rows.map(tx=>`
+          <tr class="ledger-${tx.type}">
+            <td>${formatDateDMY(tx.date)}</td>
+            <td>${escapeHtml(tx.ref||'—')}</td>
+            <td class="ledger-desc">${escapeHtml(tx.description||'')}</td>
+            <td>${tx.qty!==null && tx.qty!==undefined ? tx.qty : '—'}</td>
+            <td class="${tx.debit>0?'ledger-debit':''}">${tx.debit>0?'৳'+money(tx.debit):'—'}</td>
+            <td class="${tx.cash>0?'ledger-credit':''}">${tx.cash>0?'৳'+money(tx.cash):'—'}</td>
+            <td class="${tx.discount>0?'ledger-credit':''}">${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+            <td class="ledger-balance">৳${money(tx.balance)}</td>
+            ${profitCells(tx)}
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr>
+          <td colspan="4">${t('totals_label')}</td>
+          <td>৳${money(data.debit)}</td>
+          <td>৳${money(data.cashPaid)}</td>
+          <td>৳${money(data.discount)}</td>
+          <td>৳${money(data.closing)}</td>
+          ${showProfit?`<td>—</td>`:''}
+        </tr></tfoot>
+      </table>
+    </div>`;
+}
+
 function openCustomerHistory(custId){
   const cust = db.customers[custId];
   if(!cust) return;
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
-  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
+  const totalBought = sales.reduce((sum,x)=>sum+Number(x.total||0)+Number(x.discount||0),0);
+  const totalInitialPaid = sales.reduce((sum,x)=>sum+Number(x.initialPaid!==undefined?x.initialPaid:x.paid||0),0);
+  const totalInstPaid = payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
   const totalPaid = totalInitialPaid + totalInstPaid;
-
-  const ledgerRaw = [
-    ...sales.map(s=>({
-      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
-      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total)+Number(s.discount||0), discount: Number(s.discount||0),
-      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid)
-    })),
-    ...payments.map(p=>({
-      ts: p.ts, date: p.date, type: 'installment', qty: null,
-      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
-      total: 0, discount: Number(p.discount||0),
-      paid: Number(p.amount)
-    }))
-  ].sort((a,b)=>{
-    if(a.date!==b.date) return a.date<b.date?-1:1;
-    if(a.type!==b.type) return a.type==='booking'?-1:1;
-    return a.ts-b.ts;
-  });
-
-  let runningDue = 0;
-  const ledger = ledgerRaw.map(tx=>{
-    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
-    else runningDue -= (tx.paid + tx.discount);
-    return { ...tx, runningDue: Math.round(runningDue) };
-  });
+  const ledgerData = buildCustomerBankLedger(custId,'all','all');
 
   document.getElementById('historyTitle').textContent = cust.name + ' — ' + t('history_title');
   document.getElementById('historyBody').innerHTML = `
     <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
-      ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
+      ${escapeHtml(cust.name)}${cust.displayId?' · ID: #'+escapeHtml(String(cust.displayId)):''}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
-    <div class="field-hint" style="margin-bottom:10px;">
-      ${t('history_summary')(totalBought, totalPaid, calculateCustomerDueFromLedger(custId))}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
+    <div class="ledger-meta">
+      <span><strong>${currentLang==='bn'?'মোট বিক্রি':'Total Sales'}:</strong> ৳${money(totalBought)}</span>
+      <span><strong>${currentLang==='bn'?'মোট ক্যাশ প্রাপ্তি':'Total Cash Received'}:</strong> ৳${money(totalPaid)}</span>
+      <span><strong>${currentLang==='bn'?'মোট ছাড়':'Total Discount'}:</strong> ৳${money(ledgerData.discount)}</span>
+      <span><strong>${currentLang==='bn'?'বর্তমান বাকি':'Current Due'}:</strong> ৳${money(calculateCustomerDueFromLedger(custId))}</span>
+      ${Number(cust.refundOwed)>0 ? `<span><strong>${t('return_excess_refund')}:</strong> ৳${money(cust.refundOwed)}</span>` : ''}
     </div>
-    ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
-    <table class="data">
-      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
-      <tbody>${ledger.map(tx=>`<tr>
-        <td>${formatDateDMY(tx.date)}</td>
-        <td>${tx.label}</td>
-        <td>${tx.qty!==null?tx.qty:'—'}</td>
-        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
-        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-        <td>৳${money(tx.paid)}</td>
-        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
-      </tr>`).join('')}</tbody>
-      <tfoot><tr style="font-weight:700;background:var(--paper-card);">
-        <td colspan="3">${t('totals_label')}</td>
-        <td>৳${money(totalBought)}</td>
-        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
-        <td>৳${money(totalPaid)}</td>
-        <td>${calculateCustomerDueFromLedger(custId)>0?'<span style="color:var(--red);">৳'+money(calculateCustomerDueFromLedger(custId))+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
-      </tr></tfoot>
-    </table>`}
+    <h3 style="margin:14px 0 8px;">${currentLang==='bn'?'🧾 কাস্টমার লেজার':'🧾 Customer Ledger'}</h3>
+    ${customerLedgerTableHtml(custId,'all','all',false)}
   `;
   document.getElementById('historyCloseBtn').textContent = t('close');
   document.getElementById('historyPrintBtn').textContent = t('print_report');
@@ -4093,7 +4321,7 @@ function openEditInstallmentPayment(id){
   editInstPayCtx = id;
   const cust = rec.customerId ? db.customers[rec.customerId] : null;
   document.getElementById('dueTitle').textContent = t('edit_title') + (rec.receiptNo ? ' #'+rec.receiptNo : '');
-  document.getElementById('dueCurrentInfo').textContent = cust ? t('pay_due_current')(cust.name, cust.due) : (rec.customerName||'');
+  document.getElementById('dueCurrentInfo').textContent = cust ? t('pay_due_current')(cust.name, calculateCustomerDueFromLedger(rec.customerId)) : (rec.customerName||'');
   document.getElementById('dueAmountLabel').textContent = t('pay_amount');
   document.getElementById('dueDiscountLabel').textContent = t('pay_discount');
   document.getElementById('dueDateLabel').textContent = t('f_date');
@@ -4300,7 +4528,7 @@ document.getElementById('returnConfirmBtn').addEventListener('click', async () =
 
   if(sale.customerId && db.customers[sale.customerId]){
     const cust = db.customers[sale.customerId];
-    cust.due = Math.max(0, Number(cust.due) - dueAdjust);
+    // Record is added just below; refund is updated now and due is reconciled after the record exists.
     cust.refundOwed = Number(cust.refundOwed||0) + excessRefund;
     await safePut('customers', sale.customerId, cust);
   }
@@ -4314,6 +4542,10 @@ document.getElementById('returnConfirmBtn').addEventListener('click', async () =
   };
   db.returns.push(record);
   await safePut('returns', record.id, record);
+  if(record.customerId && db.customers[record.customerId]){
+    db.customers[record.customerId].due = calculateCustomerDueFromLedger(record.customerId);
+    await safePut('customers', record.customerId, db.customers[record.customerId]);
+  }
 
   document.getElementById('returnOverlay').classList.remove('open');
   returnCtx = null;
@@ -4342,6 +4574,7 @@ async function cancelReturn(returnId){
     const cust = db.customers[sale.customerId];
     cust.due = Number(cust.due) + Number(rec.dueAdjust);
     cust.refundOwed = Math.max(0, Number(cust.refundOwed||0) - Number(rec.excessRefund));
+    cust.due = calculateCustomerDueFromLedger(sale.customerId);
     await safePut('customers', sale.customerId, cust);
   }
   renderNav();
@@ -4375,6 +4608,10 @@ async function deleteReturn(returnId){
 
   db.returns = db.returns.filter(r=>r.id!==returnId);
   await safeRemove('returns', returnId);
+  if(rec.customerId && db.customers[rec.customerId]){
+    db.customers[rec.customerId].due = calculateCustomerDueFromLedger(rec.customerId);
+    await safePut('customers', rec.customerId, db.customers[rec.customerId]);
+  }
   renderNav();
   renderPage();
   if(document.getElementById('saleViewOverlay').classList.contains('open')){
@@ -4619,7 +4856,7 @@ function onMsCustomerSearch(){
     ? entries.filter(([cid,c]) => c.name.toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || String(c.displayId||'').includes(q)).slice(0,10)
     : entries.slice(0,10);
   if(matches.length===0){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; return; }
-  resultsEl.innerHTML = matches.map(([cid,c]) => `<div class="ms-product-result-item" onclick="selectMsCustomer('${cid}')">${escapeHtml(c.name)} <span style="color:var(--ink-soft);font-size:11px;">${c.phone?escapeHtml(c.phone):''}${Number(c.due)>0?' · ৳'+money(c.due):''}</span></div>`).join('');
+  resultsEl.innerHTML = matches.map(([cid,c]) => `<div class="ms-product-result-item" onclick="selectMsCustomer('${cid}')">${escapeHtml(c.name)} <span style="color:var(--ink-soft);font-size:11px;">${c.phone?escapeHtml(c.phone):''}${calculateCustomerDueFromLedger(cid)>0?' · ৳'+money(calculateCustomerDueFromLedger(cid)):''}</span></div>`).join('');
   resultsEl.classList.add('open');
 }
 function selectMsCustomer(cid){
@@ -4929,6 +5166,9 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
 
 function openInstallmentReceipt(rec){
   const custRecord = rec.customerId ? db.customers[rec.customerId] : null;
+  const derived = rec.customerId ? getDerivedInstallmentSnapshot(rec.customerId, rec.id) : null;
+  const receiptPreviousDue = derived ? derived.previousDue : Number(rec.previousDue||0);
+  const receiptNewDue = derived ? derived.newDue : Number(rec.newDue||0);
   document.getElementById('instReceiptTitle').textContent = t('installment_receipt_title') + (rec.receiptNo ? ' #'+rec.receiptNo : '');
   document.getElementById('instReceiptCloseBtn').textContent = t('close');
   document.getElementById('instReceiptPrintBtn').textContent = t('print_report');
@@ -4939,10 +5179,10 @@ function openInstallmentReceipt(rec){
         <tr><td>${t('col_customer')}</td><td>${escapeHtml(rec.customerName)}</td></tr>
         ${custRecord && custRecord.phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml(custRecord.phone)}</td></tr>` : ''}
         <tr><td>${t('inst_col_date')}</td><td>${formatDateDMY(rec.date)}</td></tr>
-        <tr><td>${t('inst_col_previous_due')}</td><td>৳${money(rec.previousDue)}</td></tr>
+        <tr><td>${t('inst_col_previous_due')}</td><td>৳${money(receiptPreviousDue)}</td></tr>
         <tr><td>${t('inst_col_amount')}</td><td>৳${money(rec.amount)}</td></tr>
         ${Number(rec.discount)>0 ? `<tr><td>${t('inst_col_discount')}</td><td>৳${money(rec.discount)}</td></tr>` : ''}
-        <tr><td>${t('inst_col_new_due')}</td><td>৳${money(rec.newDue)}</td></tr>
+        <tr><td>${t('inst_col_new_due')}</td><td>৳${money(receiptNewDue)}</td></tr>
         ${rec.note ? `<tr><td>${t('f_note')}</td><td>${escapeHtml(rec.note)}</td></tr>` : ''}
       </tbody>
     </table>
@@ -4958,9 +5198,17 @@ setupOverlayBackdropClose('instReceiptOverlay');
 function openInstallmentHistory(custId){
   const cust = db.customers[custId];
   if(!cust) return;
-  const list = db.installments.filter(x=>x.customerId===custId).sort((a,b)=>b.ts-a.ts);
-  const totalPaid = list.reduce((s,x)=>s+Number(x.amount||0),0);
+  const rawList = db.installments.filter(x=>x.customerId===custId);
+  const totalPaid = rawList.reduce((sum,x)=>sum+Number(x.amount||0),0);
   const plans = db.installmentPlans.filter(p=>p.customerId===custId).sort((a,b)=>b.ts-a.ts);
+
+  // Rebuild from source transactions instead of trusting old saved previousDue/newDue snapshots.
+  const statement = buildCustomerReceivableStatement(custId);
+  const list = statement.rows.filter(x=>x.type==='installment').sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?1:-1;
+    return b.ts-a.ts;
+  });
+
   document.getElementById('instHistoryTitle').textContent = cust.name + ' — ' + t('installment_history_title');
   document.getElementById('instHistoryCloseBtn').textContent = t('close');
   document.getElementById('instHistoryPrintBtn').textContent = t('print_report');
@@ -4968,7 +5216,7 @@ function openInstallmentHistory(custId){
     <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
       ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
-    <div class="field-hint" style="margin-bottom:10px;">${t('inst_total_paid')}: ৳${money(totalPaid)} · ${t('col_due')}: ৳${money(calculateCustomerDueFromLedger(custId))}</div>
+    <div class="field-hint" style="margin-bottom:10px;">${t('inst_total_paid')}: ৳${money(totalPaid)} · ${t('col_due')}: ৳${money(statement.closing)}</div>
     ${plans.length>0 ? plans.map(p=>`
       <div class="panel">
         <div style="font-weight:700;margin-bottom:6px;">${escapeHtml(p.productName||'')} — ${t('inst_plan_summary')(p.count, p.perAmount)}</div>
@@ -4977,7 +5225,15 @@ function openInstallmentHistory(custId){
     ${list.length===0 ? `<div class="empty"><div class="big">${t('inst_no_history')}</div></div>` : `
     <table class="data">
       <thead><tr><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
-      <tbody>${list.map(r=>`<tr><td>${formatDateDMY(r.date)}</td><td>৳${money(r.previousDue)}</td><td>৳${money(r.amount)}</td><td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td><td>৳${money(r.newDue)}</td><td>${escapeHtml(r.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${r.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${r.id}')">🗑️</button></td></tr>`).join('')}</tbody>
+      <tbody>${list.map(r=>`<tr>
+        <td>${formatDateDMY(r.date)}</td>
+        <td>৳${money(r.previousDue)}</td>
+        <td>৳${money(r.amount)}</td>
+        <td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td>
+        <td>৳${money(r.newDue)}</td>
+        <td>${escapeHtml(r.note||'—')}</td>
+        <td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${r.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${r.id}')">🗑️</button></td>
+      </tr>`).join('')}</tbody>
     </table>`}
   `;
   document.getElementById('instHistoryOverlay').classList.add('open');
