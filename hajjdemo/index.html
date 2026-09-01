@@ -113,8 +113,53 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 .stat-card.hajj-dark{background:var(--hajj-green-dark);}
 .stat-card.hajj-blue{background:#2E6B8A;}
 
+/* Groups/Agent statement: large currency values must stay inside their cards. */
+.agent-statement-panel{overflow-x:hidden;max-width:100%;min-width:0;}
+.agent-statement-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;
+  margin-bottom:18px;width:100%;max-width:100%;
+}
+.agent-statement-grid .stat-card{min-width:0;overflow:hidden;padding:15px 14px;}
+.agent-statement-grid .stat-card .val{
+  display:block;max-width:100%;font-size:clamp(17px,1.45vw,23px);
+  letter-spacing:-0.045em;white-space:nowrap;overflow:hidden;text-overflow:clip;
+}
+.agent-statement-grid .stat-card .lbl{line-height:1.25;overflow-wrap:anywhere;}
+.agent-statement-table-wrap{display:block;width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;}
+.agent-statement-table-wrap table.data{min-width:820px;}
+.agent-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;}
+.agent-tab-btn{background:#fff;color:var(--ink);border:1px solid var(--line);}
+.agent-tab-btn.active{background:var(--hajj-green);color:#fff;border-color:var(--hajj-green);}
+.agent-quick-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.agent-balance-due{color:var(--red);font-weight:800;}
+.agent-balance-advance{color:var(--green);font-weight:800;}
+.agent-head-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:7px;margin-top:7px;background:var(--paper);}
+
+@media (max-width:1100px){
+  .agent-statement-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+@media (max-width:760px){
+  .agent-statement-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .agent-statement-grid .stat-card .val{font-size:18px !important;}
+}
+@media (max-width:420px){
+  .agent-statement-grid{grid-template-columns:1fr;}
+  .agent-statement-grid .stat-card .val{font-size:20px !important;}
+}
+
 .panel{background:var(--paper-card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:18px;overflow-x:auto;}
 .panel h3{font-family:'Roboto Slab',serif;margin:0 0 14px;font-size:16px;}
+.erp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start;}
+.erp-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0;}
+.erp-card h3{font-size:18px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;}
+.account-item{border:1px solid var(--line);border-radius:9px;padding:12px;margin-top:10px;background:var(--paper);}
+.account-item-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.account-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;}
+.account-metrics div{background:var(--paper-card);border-radius:6px;padding:7px;min-width:0;overflow:hidden;}
+.account-metrics small{display:block;color:var(--ink-soft);font-size:10px;}.account-metrics strong{font-size:12px;overflow-wrap:anywhere;}
+.ledger-type-receivable{color:var(--green);font-weight:700}.ledger-type-payable{color:var(--red);font-weight:700}
+@media (max-width:850px){.erp-grid{grid-template-columns:1fr;}.account-metrics{grid-template-columns:1fr 1fr 1fr;}}
+@media (max-width:440px){.account-metrics{grid-template-columns:1fr;}}
 
 /* Toolbar */
 .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
@@ -400,6 +445,12 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 .login-box .btn{width:100%;margin-top:6px;padding:11px 0;}
 .login-error{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:16px;}
 .logout-row{padding:12px 18px;border-top:1px solid rgba(250,246,236,0.12);}
+.user-role-card{margin:8px 18px 10px;padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.09);color:#fff;font-size:11px;line-height:1.45;overflow-wrap:anywhere;}
+.user-role-card strong{display:block;font-size:12px;color:#fff}.user-role-card span{color:rgba(255,255,255,.7)}
+.role-badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.role-badge.super{background:var(--gold-bg);color:#765600}.role-badge.moderator{background:var(--blue-bg);color:var(--blue)}.role-badge.staff{background:var(--green-bg);color:var(--green)}.role-badge.inactive{background:var(--red-bg);color:var(--red)}
+.role-matrix{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}.role-matrix>div{border:1px solid var(--line);border-radius:9px;padding:12px;background:#fff;min-width:0}.role-matrix ul{padding-left:18px;margin:8px 0 0;font-size:12px;color:var(--ink-soft);line-height:1.6}
+@media(max-width:760px){.role-matrix{grid-template-columns:1fr}}
 .logout-row button{
   width:100%;background:none;border:1px solid rgba(250,246,236,0.25);color:rgba(250,246,236,0.8);
   padding:8px 0;border-radius:6px;font-size:13px;cursor:pointer;font-family:'Inter';font-weight:600;
@@ -464,6 +515,7 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
     </div>
     <button class="newsale-btn" id="quickSaleBtn">+ নতুন বুকিং</button>
     <nav class="nav" id="navList"></nav>
+    <div class="user-role-card" id="currentUserRoleCard" style="display:none;"></div>
     <div class="backup-row" id="backupRow" style="display:none;">
       <button id="backupBtn">☁️ Backup</button>
       <button id="restoreBtn">♻️ Restore</button>
@@ -545,6 +597,7 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
       <datalist id="dl-return-note"></datalist>
     </div>
     <div class="field-hint" id="returnCalcInfo" style="margin:10px 0;"></div>
+    <div id="returnRefundPayFields" style="display:none;"><div class="field"><label>Refund Method</label><select id="returnPaymentSystem" onchange="refreshPaymentAccountSelect('returnPaymentSystem','returnPaymentAccount')"><option value="cash">Cash</option><option value="bank">Bank</option><option value="mobile_banking">Mobile Banking</option></select></div><div class="field" id="returnPaymentAccountField"><label>Refund Account</label><select id="returnPaymentAccount"></select></div></div>
     <div class="modal-actions">
       <button class="btn ghost" id="returnCancelBtn">Cancel</button>
       <button class="btn amber" id="returnConfirmBtn">Confirm Return</button>
@@ -572,12 +625,13 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
     <div class="field"><label id="dueAmountLabel">Amount Paid</label><input type="number" id="duePaidInput" value="0"></div>
     <div class="field"><label id="dueDiscountLabel">Discount</label><input type="number" id="dueDiscountInput" value="0"></div>
     <div class="field"><label id="duePaymentLabel">Payment Method</label>
-      <select id="duePaymentSystem">
+      <select id="duePaymentSystem" onchange="refreshPaymentAccountSelect('duePaymentSystem','duePaymentAccount')">
         <option value="cash">Cash</option>
         <option value="bank">Bank</option>
         <option value="mobile_banking">Mobile Banking</option>
       </select>
     </div>
+    <div class="field" id="duePaymentAccountField"><label>Payment Account</label><select id="duePaymentAccount"></select></div>
     <div class="field"><label id="dueDateLabel">Date</label><input type="date" id="dueDateInput"></div>
     <div class="field"><label id="dueNoteLabel">Note</label>
       <input type="text" id="dueNoteInput" list="dl-due-note" autocomplete="off">
@@ -674,13 +728,14 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
       </div>
       <div class="field">
         <label id="msPaymentSystemLabel">Payment System</label>
-        <select id="msPaymentSystem">
+        <select id="msPaymentSystem" onchange="refreshPaymentAccountSelect('msPaymentSystem','msPaymentAccount')">
           <option value="cash">Cash</option>
           <option value="bank">Bank</option>
           <option value="mobile_banking">Mobile Banking</option>
         </select>
       </div>
     </div>
+    <div class="field" id="msPaymentAccountField"><label>Payment Account</label><select id="msPaymentAccount"></select></div>
     <input type="hidden" id="msIsOldEntry" value="false">
     <div class="modal-actions">
       <button class="btn ghost" id="msCancelBtn">Cancel</button>
@@ -710,11 +765,35 @@ const K = {
   purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo',
   groupMembers:'pos-group-members', groups:'pos-groups',
   vendorPayments:'pos-vendor-payments',
+  bankAccounts:'pos-bank-accounts', mobileAccounts:'pos-mobile-accounts',
+  paymentHeads:'pos-payment-heads', paymentLedger:'pos-payment-ledger',
+  agentLedgerHeads:'pos-agent-ledger-heads', agentLedger:'pos-agent-ledger',
+  appUsers:'pos-app-users',
   settings:'pos-settings'
 };
-let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], groupMembers:{}, groups:{}, vendorPayments:[] };
+let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], groupMembers:{}, groups:{}, vendorPayments:[], bankAccounts:{}, mobileAccounts:{}, paymentHeads:{}, paymentLedger:[], agentLedgerHeads:{}, agentLedger:[], appUsers:{} };
 let currentTab = 'dashboard';
 let logoData = null;
+let activeGroupAgentTab = 'overview';
+let activeGroupAgentYear = 'all';
+
+const DEFAULT_AGENT_LEDGER_HEADS = {
+  sys_air_ticket:{id:'sys_air_ticket',name:'Air Ticket',type:'debit',cashDirection:'none',system:true},
+  sys_visa:{id:'sys_visa',name:'Visa Processing',type:'debit',cashDirection:'none',system:true},
+  sys_hotel:{id:'sys_hotel',name:'Hotel',type:'debit',cashDirection:'none',system:true},
+  sys_transport:{id:'sys_transport',name:'Transport',type:'debit',cashDirection:'none',system:true},
+  sys_food:{id:'sys_food',name:'Food',type:'debit',cashDirection:'none',system:true},
+  sys_loan_given:{id:'sys_loan_given',name:'Loan Given',type:'debit',cashDirection:'out',system:true},
+  sys_document:{id:'sys_document',name:'Passport / Document',type:'debit',cashDirection:'none',system:true},
+  sys_other_charge:{id:'sys_other_charge',name:'Other Charge',type:'debit',cashDirection:'none',system:true},
+  sys_payment_received:{id:'sys_payment_received',name:'Payment Received',type:'credit',cashDirection:'in',system:true},
+  sys_loan_repayment:{id:'sys_loan_repayment',name:'Loan Repayment',type:'credit',cashDirection:'in',system:true},
+  sys_agent_commission:{id:'sys_agent_commission',name:'Agent Commission',type:'credit',cashDirection:'none',system:true},
+  sys_discount:{id:'sys_discount',name:'Discount',type:'credit',cashDirection:'none',system:true},
+  sys_booking_adjustment:{id:'sys_booking_adjustment',name:'Booking Refund / Adjustment',type:'credit',cashDirection:'none',system:true},
+  sys_advance_received:{id:'sys_advance_received',name:'Advance Received',type:'credit',cashDirection:'in',system:true},
+  sys_other_credit:{id:'sys_other_credit',name:'Other Credit',type:'credit',cashDirection:'none',system:true}
+};
 
 /* ---------- Language ---------- */
 let currentLang = localStorage.getItem('pos-lang') || 'bn';
@@ -724,7 +803,7 @@ const I18N = {
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'কাস্টমার', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর',
     title_categories:'প্যাকেজের ধরন', add_categories:'+ নতুন ধরন', f_category_name:'ধরনের নাম',
-    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_group_members:'গ্রুপস/এজেন্ট', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপস/এজেন্ট',
+    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_payment_ledger:'পেমেন্ট লেজার', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_user_management:'ইউজার ম্যানেজমেন্ট', nav_group_members:'গ্রুপস/এজেন্ট', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপস/এজেন্ট',
     reports_sales_returns_tab:'বুকিং ও বাতিল', sr_sales_count:'বুকিং সংখ্যা', sr_returns_count:'বাতিল সংখ্যা', sr_net_label:'নিট',
     return_title:'বুকিং বাতিল', return_new:'নতুন বাতিল', return_no:'বাতিল নং',
     return_original_qty:'মোট বুকড পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
@@ -857,7 +936,7 @@ const I18N = {
     summary_s:'ব্যালেন্স (S)', summary_final:'মোট ব্যালেন্স',
     stock_value_label:'মোট প্যাকেজ মূল্য (খরচে)', stock_sale_value_label:'সম্ভাব্য বিক্রয় মূল্য',
     low_stock_label:'কম আসন', stock_statement_title:'প্যাকেজ স্টেটমেন্ট',
-    f_payment_system:'পেমেন্ট সিস্টেম', col_payment_system:'পেমেন্ট',
+    f_payment_system:'পেমেন্ট সিস্টেম', f_payment_account:'পেমেন্ট অ্যাকাউন্ট', col_payment_system:'পেমেন্ট',
     payment_cash:'ক্যাশ', payment_bank:'ব্যাংক', payment_mobile_banking:'মোবাইল ব্যাংকিং',
     pay_due_current:(name,due)=>`"${name}" এর বর্তমান বাকি: ৳${money(due)}`,
     pay_due_amount:'প্রদানকৃত টাকা (৳)', pay_due_discount:'ছাড় (৳, ঐচ্ছিক)', pay_due_nothing:'কমপক্ষে একটা মান দিন',
@@ -872,7 +951,7 @@ const I18N = {
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Customers', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors',
     title_categories:'Package Types', add_categories:'+ New Type', f_category_name:'Type Name',
-    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports', nav_settings:'Settings', nav_group_members:'Groups/Agent', nav_groups:'Groups / Lots', rep_group_tab:'Groups/Agent',
+    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_payment_ledger:'Payment Ledger', nav_reports:'Reports', nav_settings:'Settings', nav_user_management:'User Management', nav_group_members:'Groups/Agent', nav_groups:'Groups / Lots', rep_group_tab:'Groups/Agent',
     reports_sales_returns_tab:'Bookings & Cancellations', sr_sales_count:'Bookings Count', sr_returns_count:'Cancellations Count', sr_net_label:'Net',
     return_title:'Cancellations', return_new:'New Cancellation', return_no:'Cancellation No.',
     return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
@@ -1005,7 +1084,7 @@ const I18N = {
     summary_s:'Balance (S)', summary_final:'Total Balance',
     stock_value_label:'Total Package Value (at cost)', stock_sale_value_label:'Potential Sale Value',
     low_stock_label:'Low Seats', stock_statement_title:'Package Statement',
-    f_payment_system:'Payment System', col_payment_system:'Payment',
+    f_payment_system:'Payment System', f_payment_account:'Payment Account', col_payment_system:'Payment',
     payment_cash:'Cash', payment_bank:'Bank', payment_mobile_banking:'Mobile Banking',
     pay_due_current:(name,due)=>`"${name}"'s current due: ৳${money(due)}`,
     pay_due_amount:'Amount Paid (৳)', pay_due_discount:'Discount (৳, optional)', pay_due_nothing:'Enter at least one amount',
@@ -1029,13 +1108,74 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) ?? I18N.bn
    ব্রাউজার ট্যাব টাইটেল, প্রিন্ট হেডার, ব্যাকআপ ফাইলের নাম) নিজে থেকেই বদলে যাবে।
    নতুন কোনো দোকানের জন্য এই ফাইলের কপি বানালে শুধু এই একটা লাইন আর নিচের
    firebaseConfig টা বদলালেই যথেষ্ট। */
-const SHOP_NAME = "Picone IT";
-const SHOP_ADDRESS = "Piconet IT, Noapara Bazar, Abhaynagar, Jashore-7460";
-const SHOP_EMAIL = "shoppingzonebd@gmail.com";
-const SHOP_CONTACT = "01303631066";
-/* Only these logged-in emails will see the "Reports" menu — everyone else's
-   staff login will not see Reports at all. Add/remove emails as needed. */
-const ADMIN_EMAILS = ["mushfiq35@gmail.com"];
+const SHOP_NAME = "Bashar Air International";
+const SHOP_ADDRESS = "Fynas Tower(Lift-15F);37/2,Cilvert Road;Purana Polton,Dhaka-1000";
+const SHOP_EMAIL = "abasharbd13@gmail.com";
+const SHOP_CONTACT = "01771044444";
+/* Primary Super User can never be downgraded, disabled or removed from the app. */
+const PRIMARY_SUPER_EMAIL = "mushfiq35@gmail.com";
+const ADMIN_EMAILS = [PRIMARY_SUPER_EMAIL]; // legacy compatibility
+const ROLE_PERMISSIONS = {
+  super:['*'],
+  moderator:['daily_ops','view_ledger','view_reports','manage_accounts'],
+  staff:['daily_ops','manage_accounts']
+};
+function normalizeEmail(email){ return String(email||'').trim().toLowerCase(); }
+/* Email is used as the role document id so Firestore Rules can verify the
+   signed-in user's role without a query. Firebase Auth emails cannot contain '/'. */
+function userDocId(email){ return normalizeEmail(email); }
+function findAppUser(email){ const e=normalizeEmail(email); return Object.values(db.appUsers||{}).find(u=>normalizeEmail(u.email)===e)||null; }
+function currentUserEmail(){ const u=currentAuthUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser); return normalizeEmail(u&&u.email); }
+function currentRole(){
+  const email=currentUserEmail();
+  if(email===PRIMARY_SUPER_EMAIL) return 'super';
+  const rec=findAppUser(email);
+  if(rec&&rec.active===false) return 'inactive';
+  return rec&&['super','moderator','staff'].includes(rec.role)?rec.role:'staff';
+}
+function hasPermission(permission){ const role=currentRole(); return role==='super'||(ROLE_PERMISSIONS[role]||[]).includes(permission); }
+function isSuperUser(){ return currentRole()==='super'; }
+function canAccessTab(tab){
+  if(tab==='user_management') return isSuperUser();
+  if(tab==='reports') return hasPermission('view_reports');
+  if(tab==='payment_ledger') return hasPermission('view_ledger');
+  return currentRole()!=='inactive';
+}
+function requirePermission(permission,message){
+  if(hasPermission(permission)) return true;
+  alert(message||(currentLang==='bn'?'⛔ এই কাজের অনুমতি আপনার role-এ নেই।':'⛔ Your role does not have permission for this action.'));
+  return false;
+}
+async function ensurePrimarySuperUser(){
+  const id=userDocId(PRIMARY_SUPER_EMAIL), existing=db.appUsers[id]||findAppUser(PRIMARY_SUPER_EMAIL)||{};
+  const needsSave=!db.appUsers[id]||existing.role!=='super'||existing.active===false||existing.isPrimary!==true;
+  const rec={...existing,id,email:PRIMARY_SUPER_EMAIL,name:existing.name||'Mushfiq Rahman',role:'super',active:true,isPrimary:true,updatedAt:needsSave?Date.now():(existing.updatedAt||Date.now())};
+  db.appUsers[id]=rec;
+  if(needsSave) await safePut('appUsers',id,rec);
+}
+function roleLabel(role){ return role==='super'?'Super User':role==='moderator'?'Moderator':role==='staff'?'Staff':'Inactive'; }
+function renderCurrentUserRoleCard(){
+  const el=document.getElementById('currentUserRoleCard'); if(!el)return;
+  const email=currentUserEmail(); if(!email){el.style.display='none';return;}
+  const role=currentRole(),rec=findAppUser(email);
+  el.style.display='block';
+  el.innerHTML='<strong>'+escapeHtml((rec&&rec.name)||email)+'</strong><span>'+escapeHtml(email)+'</span><br><span class="role-badge '+role+'" style="margin-top:6px">'+roleLabel(role)+'</span>';
+}
+function applyRoleUi(){
+  if(isSuperUser()) return;
+  document.querySelectorAll('[data-action="edit"],[data-action="del"],[data-vpdel],[data-gmedit],[data-gmdel],[data-grpedit],[data-grpdel],[data-grphajji],[data-ghremove],.inst-edit-btn,.inst-del-btn,button[onclick*="deletePayment"],button[onclick*="deleteReturn"],button[onclick*="deleteItem"],button[onclick*="openMultiSale"],button[onclick*="openForm("]').forEach(el=>el.style.display='none');
+}
+function renderRolePermissionMatrix(){
+  const yes='<span style="color:var(--green);font-weight:800">✓</span>',no='<span style="color:var(--red);font-weight:800">✕</span>';
+  const rows=[
+    ['View daily ERP menus',yes,yes,yes],['Create customers, bookings & agent ledger entries',yes,yes,yes],
+    ['Edit existing records',yes,no,no],['Delete existing records',yes,no,no],
+    ['View Reports',yes,yes,no],['View Payment Ledger',yes,yes,no],
+    ['View/add bank & mobile accounts',yes,yes,yes],['Backup / Restore / Reset',yes,no,no],
+    ['User Management & role change',yes,no,no]
+  ];
+  return '<div style="overflow-x:auto"><table class="data"><thead><tr><th>Feature Permission</th><th><span class="role-badge super">Super User</span></th><th><span class="role-badge moderator">Moderator</span></th><th><span class="role-badge staff">Staff</span></th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>').join('')+'</tbody></table></div>';
+}
 /* Reports > Summary tab ignores everything before this date — old/messy
    historical accounts before this point are excluded from the running total. */
 const SUMMARY_START_DATE = "2026-07-31";
@@ -1048,7 +1188,6 @@ const firebaseConfig = {
   messagingSenderId: "30277024982",
   appId: "1:30277024982:web:3afa0715cf5450e5d0dd77"
 };
-
 
 
 let useFirebase = false;
@@ -1102,11 +1241,7 @@ function requestDriveToken(onReady){
 async function backupToDrive(){
   requestDriveToken(async () => {
     try{
-      const payload = JSON.stringify({
-        exportedAt: new Date().toISOString(),
-        customers: db.customers, suppliers: db.suppliers, products: db.products,
-        purchases: db.purchases, sales: db.sales, expenses: db.expenses
-      }, null, 2);
+      const payload = JSON.stringify({...db, exportedAt: new Date().toISOString()}, null, 2);
       const fileName = `${SHOP_NAME}-backup-${todayStr()}-${Date.now()}.json`;
       const metadata = { name: fileName, mimeType: 'application/json' };
       const boundary = 'maxbackupboundary';
@@ -1151,12 +1286,8 @@ async function restoreFromDrive(){
       });
       const backupData = await fileRes.json();
       if(!confirm(t('confirm_restore'))) return;
-      for(const [rid, rec] of Object.entries(backupData.customers||{})){ db.customers[rid]=rec; await safePut('customers', rid, rec); }
-      for(const [rid, rec] of Object.entries(backupData.suppliers||{})){ db.suppliers[rid]=rec; await safePut('suppliers', rid, rec); }
-      for(const [rid, rec] of Object.entries(backupData.products||{})){ db.products[rid]=rec; await safePut('products', rid, rec); }
-      for(const rec of (backupData.purchases||[])) await safePut('purchases', rec.id, rec);
-      for(const rec of (backupData.sales||[])) await safePut('sales', rec.id, rec);
-      for(const rec of (backupData.expenses||[])) await safePut('expenses', rec.id, rec);
+      for(const key of ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads']) for(const [rid,rec] of Object.entries(backupData[key]||{})){db[key][rid]=rec;await safePut(key,rid,rec);}
+      for(const key of ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','paymentLedger','agentLedger']) for(const rec of (backupData[key]||[])) await safePut(key,rec.id,rec);
       await loadAll();
       showToast(t('restore_success'));
     }catch(e){
@@ -1366,8 +1497,10 @@ const NAV = [
   {id:'installments', ic:'📆', key:'nav_installments'},
   {id:'expenses', ic:'💸', key:'nav_expenses'},
   {id:'returns', ic:'↩️', key:'nav_returns'},
+  {id:'payment_ledger', ic:'🏦', key:'nav_payment_ledger'},
   {id:'reports', ic:'📈', key:'nav_reports'},
-  {id:'settings', ic:'⚙️', key:'nav_settings', adminOnly:true},
+  {id:'settings', ic:'⚙️', key:'nav_settings'},
+  {id:'user_management', ic:'🛡️', key:'nav_user_management'},
 ];
 
 function setupOverlayBackdropClose(overlayId, onClose){
@@ -1436,12 +1569,78 @@ function paymentSystemKey(v){
   if(v==='mobile_banking') return 'payment_mobile_banking';
   return 'payment_cash';
 }
+function paymentMethodLabel(v){ const k=paymentSystemKey(v); return k?t(k):'—'; }
+function getPaymentAccount(id){ return (id&&db.bankAccounts[id]) || (id&&db.mobileAccounts[id]) || null; }
+function paymentAccountLabel(id){
+  const a=getPaymentAccount(id); if(!a) return '—';
+  const prefix=a.kind==='mobile'?(a.service||'Mobile'):(a.bankName||'Bank');
+  return [prefix,a.accountName,a.accountNumber].filter(Boolean).join(' — ');
+}
+function paymentAccountsFor(method){
+  if(method==='bank') return Object.entries(db.bankAccounts);
+  if(method==='mobile_banking') return Object.entries(db.mobileAccounts);
+  return [];
+}
+function paymentAccountOptions(method,selected){
+  const rows=paymentAccountsFor(method);
+  if(method==='cash') return '<option value="">Cash Counter</option>';
+  return '<option value="">— Select account —</option>'+rows.map(([id])=>'<option value="'+id+'" '+(id===selected?'selected':'')+'>'+escapeHtml(paymentAccountLabel(id))+'</option>').join('');
+}
+function refreshPaymentAccountSelect(methodId,accountId,selected){
+  const methodEl=document.getElementById(methodId), accountEl=document.getElementById(accountId);
+  if(!methodEl||!accountEl) return;
+  const old=selected!==undefined?selected:accountEl.value;
+  accountEl.innerHTML=paymentAccountOptions(methodEl.value,old);
+  accountEl.disabled=methodEl.value==='cash';
+  const field=document.getElementById(accountId+'Field');
+  if(field) field.style.display=methodEl.value==='cash'?'none':'block';
+}
+function validatePaymentAccount(method,accountId){
+  if(method==='cash') return true;
+  if(accountId&&getPaymentAccount(accountId)) return true;
+  alert(method==='bank'?'Please select a bank account.':'Please select a mobile banking account.');
+  return false;
+}
+function accountTransactionRows(accountId){
+  const rows=[];
+  const invoiceSeen={};
+  db.sales.forEach(s=>{
+    if(s.paymentAccountId!==accountId) return;
+    const key=s.invoiceId||s.id;
+    if(!invoiceSeen[key]) invoiceSeen[key]={date:s.date,ts:s.ts,ref:'INV-'+(s.invoiceNo||''),desc:'Booking payment — '+(s.customerName||s.groupMemberName||'Walk-in'),amount:0};
+    invoiceSeen[key].amount+=Number(s.initialPaid!==undefined?s.initialPaid:s.paid||0);
+  });
+  Object.values(invoiceSeen).forEach(x=>{if(x.amount) rows.push({...x,flow:'in'});});
+  db.installments.forEach(x=>{if(x.paymentAccountId===accountId&&Number(x.amount)>0) rows.push({date:x.date,ts:x.ts,ref:'REC-'+(x.receiptNo||''),desc:'Due / installment — '+(x.customerName||x.groupMemberName||''),amount:Number(x.amount),flow:'in'});});
+  db.vendorPayments.forEach(x=>{if(x.paymentAccountId!==accountId) return; const incoming=x.type==='purchase_return'; rows.push({date:x.date,ts:x.ts,ref:x.type==='purchase_payment'?'PUR-'+(x.purchaseId||''):'VND-'+(x.id||''),desc:(incoming?'Purchase return — ':'Vendor payment — ')+(x.supplierName||''),amount:Number(x.amount||0),flow:incoming?'in':'out'});});
+  db.expenses.forEach(x=>{if(x.paymentAccountId===accountId) rows.push({date:x.date,ts:x.ts,ref:'EXP-'+String(x.id||'').slice(-5),desc:'Expense — '+(x.category||''),amount:Number(x.amount||0),flow:'out'});});
+  db.paymentLedger.forEach(x=>{if(x.paymentAccountId===accountId) rows.push({date:x.date,ts:x.ts,ref:x.entryNo||'LED',desc:x.headName+(x.note?' — '+x.note:''),amount:Number(x.amount||0),flow:x.type==='receivable'?'in':'out'});});
+  db.agentLedger.forEach(x=>{if(x.paymentAccountId===accountId&&x.cashDirection!=='none'&&Number(x.amount)>0) rows.push({date:x.date,ts:x.ts,ref:x.entryNo||'AGT',desc:'Agent — '+(x.memberName||'')+' — '+(x.headName||''),amount:Number(x.amount||0),flow:x.cashDirection==='in'?'in':'out'});});
+  db.returns.forEach(x=>{if(!x.cancelled&&x.paymentAccountId===accountId&&Number(x.excessRefund)>0) rows.push({date:x.date,ts:x.ts,ref:'RET-'+(x.returnNo||''),desc:'Customer booking refund — '+(x.customerName||''),amount:Number(x.excessRefund),flow:'out'});});
+  return rows.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.ts||0)-Number(b.ts||0));
+}
+function accountTotals(accountId){
+  const a=getPaymentAccount(accountId); const opening=Number(a&&a.openingBalance||0);
+  const rows=accountTransactionRows(accountId); let incoming=0,outgoing=0;
+  rows.forEach(r=>r.flow==='in'?incoming+=r.amount:outgoing+=r.amount);
+  return {opening,incoming,outgoing,balance:opening+incoming-outgoing,rows};
+}
+function paymentAccountIsUsed(id){ return accountTransactionRows(id).length>0; }
 
 /* ---------- Load / Save ---------- */
 async function loadAll(){
-  const objTabs = ['customers','suppliers','products','categories','groupMembers','groups'];
-  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments'];
   let hadError = false;
+  try{db.appUsers=await fetchCollection('appUsers');}catch(e){console.error('failed to load appUsers',e);db.appUsers={};hadError=true;}
+  await ensurePrimarySuperUser();
+  if(currentRole()==='inactive'){
+    alert(currentLang==='bn'?'আপনার ERP access বন্ধ করা হয়েছে। Super User-এর সাথে যোগাযোগ করুন।':'Your ERP access has been disabled. Contact a Super User.');
+    if(useFirebase) await firebase.auth().signOut();
+    return;
+  }
+  const objTabs = ['customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','agentLedgerHeads'];
+  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','agentLedger'];
+  if(hasPermission('view_ledger')){objTabs.push('paymentHeads');arrTabs.push('paymentLedger');}
+  else{db.paymentHeads={};db.paymentLedger=[];}
   for(const key of [...objTabs, ...arrTabs]){
     try{
       const obj = await fetchCollection(key);
@@ -1457,6 +1656,7 @@ async function loadAll(){
   renderLangSwitch();
   renderLogo();
   renderBrandTexts();
+  renderCurrentUserRoleCard();
   renderNav();
   renderPage();
 }
@@ -1464,7 +1664,7 @@ async function loadAll(){
 /* ---------- Nav ---------- */
 function renderNav(){
   const lowCount = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold)).length;
-  document.getElementById('navList').innerHTML = NAV.map(n => `
+  document.getElementById('navList').innerHTML = NAV.filter(n=>canAccessTab(n.id)).map(n => `
     <div class="nav-item ${currentTab===n.id?'active':''}" data-tab="${n.id}">
       <span class="ic">${n.ic}</span><span>${t(n.key)}</span>
       ${n.id==='products' && lowCount>0 ? `<span class="badge">${lowCount}</span>` : ''}
@@ -1473,6 +1673,13 @@ function renderNav(){
     el.addEventListener('click', () => { currentTab = el.dataset.tab; closeSidebar(); renderNav(); renderPage(); });
   });
   document.getElementById('quickSaleBtn').textContent = t('new_sale');
+  const superUser=isSuperUser();
+  const backupRow=document.getElementById('backupRow'),pcRow=document.getElementById('pcBackupRow'),clearRow=document.getElementById('clearAllRow');
+  if(backupRow) backupRow.style.display=superUser&&gisTokenClient?'flex':'none';
+  if(pcRow) pcRow.style.display=superUser?'flex':'none';
+  if(clearRow) clearRow.style.display=superUser?'flex':'none';
+  const logoBtn=document.getElementById('logoUploadBtn');if(logoBtn)logoBtn.style.display=superUser?'block':'none';
+  renderCurrentUserRoleCard();
 }
 document.getElementById('hamburgerBtn').addEventListener('click', () => {
   document.getElementById('sidebar').classList.add('open');
@@ -1572,6 +1779,7 @@ function refreshCurrentView(){
   });
 }
 function renderPage(){
+  if(!canAccessTab(currentTab)) currentTab='dashboard';
   setTitle(currentTab);
   const c = document.getElementById('content');
   if(currentTab==='dashboard') c.innerHTML = pageDashboard();
@@ -1586,9 +1794,12 @@ function renderPage(){
   else if(currentTab==='returns') renderReturnsPage();
   else if(currentTab==='group_members') renderGroupMembersPage();
   else if(currentTab==='groups') renderGroupsPage();
+  else if(currentTab==='payment_ledger') renderPaymentLedgerPage();
   else if(currentTab==='reports') renderReportsPage();
   else if(currentTab==='settings') renderSettingsPage();
+  else if(currentTab==='user_management') renderUserManagementPage();
   attachPageEvents();
+  applyRoleUi();
 }
 
 /* ---------- Dashboard ---------- */
@@ -1894,6 +2105,7 @@ function openVendorStatement(supplierId){
   c.querySelector('.panel').onclick = async function(e){
     const delBtn = e.target.closest('[data-vpdel]');
     if(!delBtn) return;
+    if(!requirePermission('delete_records'))return;
     if(!confirm(t('vnd_del_payment'))) return;
     const vpId = delBtn.dataset.vpdel;
     const vp = db.vendorPayments.find(x=>x.id===vpId);
@@ -1918,6 +2130,7 @@ function openVendorStatement(supplierId){
     showToast(t('deleted_toast'));
     openVendorStatement(supplierId);
   };
+  applyRoleUi();
 }
 
 function openVendorPayForm(supplierId){
@@ -1932,6 +2145,8 @@ function openVendorPayForm(supplierId){
     +(due<=0?'<div style="background:var(--green-bg);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:13px;">'+t('vnd_advance')+': <strong>৳'+money(Math.abs(due))+'</strong></div>':'')
     +'<div class="field"><label>'+t('vnd_pay_amount')+' <span style="color:var(--red)">*</span></label>'
     +'<input type="number" id="vndPayAmt" value="'+Math.max(0,due)+'" min="0" step="any"></div>'
+    +'<div class="field"><label>'+t('f_payment_system')+'</label><select id="vndPayMethod"><option value="cash">'+t('payment_cash')+'</option><option value="bank">'+t('payment_bank')+'</option><option value="mobile_banking">'+t('payment_mobile_banking')+'</option></select></div>'
+    +'<div class="field" id="vndPayAccountField"><label>'+t('f_payment_account')+'</label><select id="vndPayAccount"></select></div>'
     +'<div class="field"><label>'+t('col_date')+'</label>'
     +'<input type="date" id="vndPayDate" value="'+todayStr()+'"></div>'
     +'<div class="field"><label>'+t('vnd_pay_note')+'</label>'
@@ -1941,18 +2156,23 @@ function openVendorPayForm(supplierId){
     +'<button class="btn amber" id="vndPaySave">'+t('save')+'</button>'
     +'</div></div></div>';
   document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('vndPayMethod').onchange=()=>refreshPaymentAccountSelect('vndPayMethod','vndPayAccount');
+  refreshPaymentAccountSelect('vndPayMethod','vndPayAccount');
   document.getElementById('vndPayCancel').onclick = ()=>document.getElementById('vndPayOverlay').remove();
   document.getElementById('vndPaySave').onclick = async function(){
     const amt = Number(document.getElementById('vndPayAmt').value);
     const date = document.getElementById('vndPayDate').value;
     const note = document.getElementById('vndPayNote').value.trim();
     if(!amt||amt<=0){ alert(t('qa_name_required')); return; }
+    const paymentSystem=document.getElementById('vndPayMethod').value;
+    const paymentAccountId=document.getElementById('vndPayAccount').value||null;
+    if(!validatePaymentAccount(paymentSystem,paymentAccountId)) return;
     // Supplier due কমাও
     supplier.due = Number(supplier.due||0) - amt;
     await safePut('suppliers', supplierId, supplier);
     // Payment record
     const vp = { id:uid(), supplierId, supplierName:supplier.name, type:'payment',
-      amount:amt, note:note||'Payment', date, ts:Date.now() };
+      amount:amt, note:note||'Payment', paymentSystem,paymentAccountId,paymentAccountName:paymentAccountLabel(paymentAccountId),date, ts:Date.now() };
     db.vendorPayments.push(vp);
     await safePut('vendorPayments', vp.id, vp);
     document.getElementById('vndPayOverlay').remove();
@@ -2006,10 +2226,11 @@ function openPurchaseReturnForm(purchaseId, supplierId){
     +'<div class="field"><label>'+t('vnd_return_unit')+'</label>'
     +'<input type="number" id="vrUnit" value="'+purchase.unitCost+'" oninput="vrCalc()"></div>'
     +'<div class="field"><label>'+t('vnd_return_type')+' <span style="color:var(--red)">*</span></label>'
-    +'<select id="vrType">'
+    +'<select id="vrType" onchange="document.getElementById(\'vrPayFields\').style.display=this.value===\'cash\'?\'block\':\'none\'">'
     +'<option value="cash">'+t('vnd_return_cash')+'</option>'
     +'<option value="adjust">'+t('vnd_return_adjust')+'</option>'
     +'</select></div>'
+    +'<div id="vrPayFields"><div class="field"><label>'+t('f_payment_system')+'</label><select id="vrPayMethod"><option value="cash">'+t('payment_cash')+'</option><option value="bank">'+t('payment_bank')+'</option><option value="mobile_banking">'+t('payment_mobile_banking')+'</option></select></div><div class="field" id="vrPayAccountField"><label>'+t('f_payment_account')+'</label><select id="vrPayAccount"></select></div></div>'
     +'<div style="background:var(--gold-bg);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:13px;" id="vrTotal">'+t('lbl_return_total')+' ৳'+money(purchase.unitCost)+'</div>'
     +'<div class="field"><label>'+t('col_date')+'</label>'
     +'<input type="date" id="vrDate" value="'+todayStr()+'"></div>'
@@ -2019,6 +2240,8 @@ function openPurchaseReturnForm(purchaseId, supplierId){
     +'<button class="btn amber" id="vrSave">'+t('save')+'</button>'
     +'</div></div></div>';
   document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('vrPayMethod').onchange=()=>refreshPaymentAccountSelect('vrPayMethod','vrPayAccount');
+  refreshPaymentAccountSelect('vrPayMethod','vrPayAccount');
 
   window.vrCalc = function(){
     const q = Number(document.getElementById('vrQty').value)||0;
@@ -2034,6 +2257,9 @@ function openPurchaseReturnForm(purchaseId, supplierId){
     const date = document.getElementById('vrDate').value;
     const note = document.getElementById('vrNote').value.trim();
     if(!qty||qty<=0||qty>remainingQty){ alert(t('f_pur_qty')+': 1-'+remainingQty); return; }
+    const paymentSystem=returnType==='cash'?document.getElementById('vrPayMethod').value:null;
+    const paymentAccountId=returnType==='cash'?(document.getElementById('vrPayAccount').value||null):null;
+    if(returnType==='cash'&&!validatePaymentAccount(paymentSystem,paymentAccountId)) return;
     if(!confirm(t('vnd_return_confirm'))) return;
 
     const amount = qty * unit;
@@ -2060,7 +2286,7 @@ function openPurchaseReturnForm(purchaseId, supplierId){
     const vp = { id:uid(), supplierId, supplierName:supplier.name,
       type:'purchase_return', returnType, purchaseId,
       productId:purchase.productId, productName:purchase.productName,
-      qty, unitCost:unit, amount, note:note||'Purchase Return', date, ts:Date.now() };
+      qty, unitCost:unit, amount, note:note||'Purchase Return', paymentSystem,paymentAccountId,paymentAccountName:paymentAccountLabel(paymentAccountId),date, ts:Date.now() };
     db.vendorPayments.push(vp);
     await safePut('vendorPayments', vp.id, vp);
 
@@ -2120,6 +2346,7 @@ function renderGroupMembersPage(){
       else if(editBtn) openGroupMemberForm(editBtn.dataset.gmedit);
       else if(delBtn) deleteGroupMember(delBtn.dataset.gmdel);
     };
+    applyRoleUi();
   }
   renderGMList();
   document.getElementById('gmSearch').addEventListener('input', renderGMList);
@@ -2127,6 +2354,7 @@ function renderGroupMembersPage(){
 }
 
 function openGroupMemberForm(id){
+  if(id&&!isSuperUser()){requirePermission('edit_records');return;}
   const existing = id ? db.groupMembers[id] : {};
   const title = id ? t('grp_edit_member') : t('grp_new_member');
   const html = '<div class="overlay open" id="gmFormOverlay" style="z-index:120;">'
@@ -2187,9 +2415,10 @@ function showDeleteConfirm(title, message, onConfirm){
 }
 
 async function deleteGroupMember(id){
+  if(!requirePermission('delete_records'))return;
   const m = db.groupMembers[id];
   if(!m) return;
-  if(db.sales.some(s=>s.groupMemberId===id) || db.installments.some(i=>i.groupMemberId===id) || db.installmentPlans.some(p=>p.groupMemberId===id)){
+  if(db.sales.some(s=>s.groupMemberId===id) || db.installments.some(i=>i.groupMemberId===id) || db.installmentPlans.some(p=>p.groupMemberId===id) || db.agentLedger.some(x=>x.memberId===id)){
     alert(t('group_agent_has_bookings'));
     return;
   }
@@ -2221,7 +2450,21 @@ function normalizeHajjiIds(raw){
   return list.filter(hid => db.customers[hid]);
 }
 
-function buildGroupAgentLedger(memberId){
+function agentLedgerHeadMap(){ return {...DEFAULT_AGENT_LEDGER_HEADS,...db.agentLedgerHeads}; }
+function agentLedgerHeadOptions(type,selected){
+  return '<option value="">— Select service / head —</option>'+Object.values(agentLedgerHeadMap()).filter(h=>h.type===type).sort((a,b)=>a.name.localeCompare(b.name)).map(h=>'<option value="'+h.id+'" '+(h.id===selected?'selected':'')+'>'+escapeHtml(h.name)+'</option>').join('');
+}
+function yearFromDate(date){ return String(date||'').slice(0,4)||String(new Date().getFullYear()); }
+function agentLedgerYears(memberId){
+  const years=new Set([String(new Date().getFullYear())]);
+  db.agentLedger.filter(x=>x.memberId===memberId).forEach(x=>years.add(String(x.accountingYear||yearFromDate(x.date))));
+  db.sales.filter(x=>x.groupMemberId===memberId).forEach(x=>years.add(yearFromDate(x.date)));
+  db.installments.filter(x=>x.groupMemberId===memberId).forEach(x=>years.add(yearFromDate(x.date)));
+  Object.values(db.groups).filter(g=>g.memberId===memberId&&g.year).forEach(g=>years.add(String(g.year)));
+  return [...years].filter(Boolean).sort((a,b)=>b.localeCompare(a));
+}
+
+function buildGroupAgentLedger(memberId,year){
   const member = db.groupMembers[memberId];
   if(!member) return {rows:[], summary:{}};
   const sales = db.sales.filter(s=>s.groupMemberId===memberId);
@@ -2241,34 +2484,50 @@ function buildGroupAgentLedger(memberId){
     const qty = items.reduce((n,s)=>n+Number(s.qty||0),0);
     const products = [...new Set(items.map(s=>s.productName).filter(Boolean))].join(', ');
     const ref = first.invoiceNo ? 'INV-'+first.invoiceNo : 'INV';
-    rows.push({date:first.date,ts:Number(first.ts||0),order:0,ref,desc:t('grp_booking_desc')+' — '+products+' × '+qty,debit,credit:0,method:'—'});
+    const lot=db.groups[first.groupId]||{};
+    rows.push({date:first.date,year:yearFromDate(first.date),ts:Number(first.ts||0),order:0,ref,desc:t('grp_booking_desc')+' — '+products+' × '+qty,debit,credit:0,method:'—',context:lot.name||first.customerName||'—',source:'booking',qty});
     if(initialPaid>0){
       const pk = paymentSystemKey(first.paymentSystem);
-      rows.push({date:first.date,ts:Number(first.ts||0),order:1,ref,desc:t('grp_initial_payment'),debit:0,credit:initialPaid,method:pk?t(pk):'—'});
+      rows.push({date:first.date,year:yearFromDate(first.date),ts:Number(first.ts||0),order:1,ref,desc:t('grp_initial_payment'),debit:0,credit:initialPaid,method:(pk?t(pk):'—')+(first.paymentAccountId?' — '+paymentAccountLabel(first.paymentAccountId):''),context:lot.name||first.customerName||'—',source:'initial',cashDirection:'in'});
     }
   });
   payments.forEach(p=>{
     const ref = p.receiptNo ? 'REC-'+p.receiptNo : 'REC';
     const pk = paymentSystemKey(p.paymentSystem);
-    if(Number(p.amount||0)>0) rows.push({date:p.date,ts:Number(p.ts||0),order:2,ref,desc:t('grp_due_payment')+(p.note?' — '+p.note:''),debit:0,credit:Number(p.amount||0),method:pk?t(pk):'—'});
-    if(Number(p.discount||0)>0) rows.push({date:p.date,ts:Number(p.ts||0),order:3,ref,desc:t('grp_discount_desc')+(p.note?' — '+p.note:''),debit:0,credit:Number(p.discount||0),method:'—'});
+    if(Number(p.amount||0)>0) rows.push({date:p.date,year:yearFromDate(p.date),ts:Number(p.ts||0),order:2,ref,desc:t('grp_due_payment')+(p.note?' — '+p.note:''),debit:0,credit:Number(p.amount||0),method:(pk?t(pk):'—')+(p.paymentAccountId?' — '+paymentAccountLabel(p.paymentAccountId):''),context:'Booking',source:'installment',cashDirection:'in'});
+    if(Number(p.discount||0)>0) rows.push({date:p.date,year:yearFromDate(p.date),ts:Number(p.ts||0),order:3,ref,desc:t('grp_discount_desc')+(p.note?' — '+p.note:''),debit:0,credit:Number(p.discount||0),method:'—',context:'Booking',source:'discount'});
   });
   returns.forEach(r=>{
-    if(Number(r.dueAdjust||0)>0) rows.push({date:r.date,ts:Number(r.ts||0),order:4,ref:r.returnNo?'RET-'+r.returnNo:'RET',desc:t('grp_return_desc')+' — '+(r.productName||''),debit:0,credit:Number(r.dueAdjust||0),method:'—'});
+    if(Number(r.dueAdjust||0)>0) rows.push({date:r.date,year:yearFromDate(r.date),ts:Number(r.ts||0),order:4,ref:r.returnNo?'RET-'+r.returnNo:'RET',desc:t('grp_return_desc')+' — '+(r.productName||''),debit:0,credit:Number(r.dueAdjust||0),method:'—',context:(db.groups[r.groupId]||{}).name||'Booking',source:'return'});
+  });
+  db.agentLedger.filter(x=>x.memberId===memberId).forEach(x=>{
+    const method=x.cashDirection==='none'||!x.cashDirection?'—':paymentMethodLabel(x.paymentSystem||'cash')+(x.paymentAccountId?' — '+paymentAccountLabel(x.paymentAccountId):'');
+    const context=[x.groupName||x.season,x.customerName].filter(Boolean).join(' / ')||'—';
+    rows.push({date:x.date,year:String(x.accountingYear||yearFromDate(x.date)),ts:Number(x.ts||0),order:5,ref:x.entryNo||'AGT',desc:(x.headName||'Agent Entry')+(x.note?' — '+x.note:''),debit:x.type==='debit'?Number(x.amount||0):0,credit:x.type==='credit'?Number(x.amount||0):0,method,context,source:'agent_manual',recordId:x.id,cashDirection:x.cashDirection||'none'});
   });
   rows.sort((a,b)=>(String(a.date||'').localeCompare(String(b.date||''))) || (a.order-b.order) || (a.ts-b.ts));
   let balance = 0;
-  rows.forEach(r=>{ balance += Number(r.debit||0)-Number(r.credit||0); r.balance=Math.max(0,balance); });
+  rows.forEach(r=>{ balance += Number(r.debit||0)-Number(r.credit||0); r.balance=balance; });
+  const isYearFilter=year&&year!=='all';
+  const filtered=isYearFilter?rows.filter(r=>String(r.year)===String(year)):rows;
+  const openingBalance=isYearFilter?rows.filter(r=>String(r.year)<String(year)).reduce((n,r)=>n+Number(r.debit||0)-Number(r.credit||0),0):0;
+  let filteredBalance=openingBalance;filtered.forEach(r=>{filteredBalance+=Number(r.debit||0)-Number(r.credit||0);r.filteredBalance=filteredBalance;});
   const summary = {
-    qty:sales.reduce((n,s)=>n+Number(s.qty||0),0),
-    booking:sales.reduce((n,s)=>n+Number(s.total||0),0),
-    initialPaid:sales.reduce((n,s)=>n+Number(s.initialPaid!==undefined?s.initialPaid:s.paid||0),0),
-    laterPaid:payments.reduce((n,p)=>n+Number(p.amount||0),0),
-    discount:payments.reduce((n,p)=>n+Number(p.discount||0),0),
-    returns:returns.reduce((n,r)=>n+Number(r.dueAdjust||0),0),
-    due:calculateGroupMemberDueFromLedger(memberId)
+    qty:filtered.filter(r=>r.source==='booking').reduce((n,r)=>n+Number(r.qty||0),0),
+    booking:filtered.filter(r=>r.source==='booking').reduce((n,r)=>n+Number(r.debit||0),0),
+    initialPaid:filtered.filter(r=>r.source==='initial').reduce((n,r)=>n+Number(r.credit||0),0),
+    laterPaid:filtered.filter(r=>r.source==='installment').reduce((n,r)=>n+Number(r.credit||0),0),
+    discount:filtered.filter(r=>r.source==='discount').reduce((n,r)=>n+Number(r.credit||0),0),
+    returns:filtered.filter(r=>r.source==='return').reduce((n,r)=>n+Number(r.credit||0),0),
+    otherDebit:filtered.filter(r=>r.source==='agent_manual').reduce((n,r)=>n+Number(r.debit||0),0),
+    otherCredit:filtered.filter(r=>r.source==='agent_manual').reduce((n,r)=>n+Number(r.credit||0),0),
+    cashIn:filtered.filter(r=>r.cashDirection==='in').reduce((n,r)=>n+Number(r.debit||r.credit||0),0),
+    cashOut:filtered.filter(r=>r.cashDirection==='out').reduce((n,r)=>n+Number(r.debit||r.credit||0),0),
+    openingBalance,balance:filteredBalance,
+    due:Math.max(0,filteredBalance),advance:Math.max(0,-filteredBalance)
   };
-  return {rows,summary};
+  const displayRows=isYearFilter&&openingBalance!==0?[{date:String(year)+'-01-01',year:String(year),ts:0,order:-1,ref:'OPEN',desc:'Opening Balance',debit:0,credit:0,method:'—',context:'Previous years',source:'opening',filteredBalance:openingBalance},...filtered]:filtered;
+  return {rows:displayRows,summary};
 }
 
 function buildGroupLotsInfo(memberId){
@@ -2298,29 +2557,44 @@ function buildGroupLotsInfo(memberId){
   return '<div style="margin-top:16px;"><h3>'+t('grp_lots_info')+'</h3>'+lotPanels+'</div>';
 }
 
-function buildGroupAgentStatementHtml(memberId){
-  const {rows,summary} = buildGroupAgentLedger(memberId);
-  const cards = '<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(135px,1fr));margin-bottom:16px;">'
+function agentBalanceHtml(amount){ return Number(amount)>=0?'<span class="agent-balance-due">Due ৳'+money(amount)+'</span>':'<span class="agent-balance-advance">Advance ৳'+money(Math.abs(amount))+'</span>'; }
+function buildGroupAgentStatementHtml(memberId,year,limit){
+  const {rows,summary} = buildGroupAgentLedger(memberId,year);
+  const cards = '<div class="agent-statement-grid">'
     +'<div class="stat-card c1"><div class="val">'+summary.qty+'</div><div class="lbl">'+t('grp_total_qty')+'</div></div>'
-    +'<div class="stat-card c4"><div class="val">৳'+money(summary.booking)+'</div><div class="lbl">'+t('grp_direct_booking')+'</div></div>'
-    +'<div class="stat-card c5"><div class="val">৳'+money(summary.initialPaid)+'</div><div class="lbl">'+t('grp_initial_paid')+'</div></div>'
-    +'<div class="stat-card c5"><div class="val">৳'+money(summary.laterPaid)+'</div><div class="lbl">'+t('grp_later_paid')+'</div></div>'
-    +'<div class="stat-card c6"><div class="val">৳'+money(summary.discount)+'</div><div class="lbl">'+t('grp_total_discount')+'</div></div>'
-    +'<div class="stat-card c6"><div class="val">৳'+money(summary.returns)+'</div><div class="lbl">'+t('grp_return_adjust')+'</div></div>'
-    +'<div class="stat-card c7"><div class="val">৳'+money(summary.due)+'</div><div class="lbl">'+t('grp_current_due')+'</div></div></div>';
+    +'<div class="stat-card c4"><div class="val">৳'+money(summary.booking)+'</div><div class="lbl">Hajj / Umrah Booking</div></div>'
+    +'<div class="stat-card c2"><div class="val">৳'+money(summary.otherDebit)+'</div><div class="lbl">Ticket / Visa / Loan / Other</div></div>'
+    +'<div class="stat-card c5"><div class="val">৳'+money(summary.initialPaid+summary.laterPaid+summary.otherCredit)+'</div><div class="lbl">Payment / Credit</div></div>'
+    +'<div class="stat-card c8"><div class="val">৳'+money(summary.cashIn)+'</div><div class="lbl">Cash IN</div></div>'
+    +'<div class="stat-card c6"><div class="val">৳'+money(summary.cashOut)+'</div><div class="lbl">Cash OUT</div></div>'
+    +'<div class="stat-card '+(summary.balance>0?'c7':'c1')+'"><div class="val">৳'+money(Math.abs(summary.balance))+'</div><div class="lbl">'+(summary.balance>0?'Current Due':summary.balance<0?'Agent Advance':'Balance Clear')+'</div></div></div>';
   if(rows.length===0) return cards+'<div class="empty"><div class="big">'+t('grp_no_transactions')+'</div></div>';
-  const body = rows.map(r=>'<tr><td>'+formatDateDMY(r.date)+'</td><td>'+escapeHtml(r.ref)+'</td><td>'+escapeHtml(r.desc)+'</td><td>'+escapeHtml(r.method)+'</td><td>'+(r.debit?'৳'+money(r.debit):'—')+'</td><td>'+(r.credit?'৳'+money(r.credit):'—')+'</td><td><strong>৳'+money(r.balance)+'</strong></td></tr>').join('');
-  return cards+'<div style="overflow-x:auto;"><table class="data"><thead><tr><th>'+t('col_date')+'</th><th>'+t('grp_reference')+'</th><th>'+t('grp_description')+'</th><th>'+t('grp_method')+'</th><th>'+t('col_debit')+'</th><th>'+t('col_credit')+'</th><th>'+t('grp_balance')+'</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+  const viewRows=limit?rows.slice(-limit):rows;
+  const body = viewRows.map(r=>'<tr><td>'+formatDateDMY(r.date)+'</td><td>'+escapeHtml(r.ref)+'</td><td><strong>'+escapeHtml(r.desc)+'</strong><br><small>'+escapeHtml(r.context||'—')+'</small></td><td>'+escapeHtml(r.method)+'</td><td>'+(r.debit?'৳'+money(r.debit):'—')+'</td><td>'+(r.credit?'৳'+money(r.credit):'—')+'</td><td>'+agentBalanceHtml(r.filteredBalance)+'</td><td>'+(r.source==='agent_manual'&&isSuperUser()?'<button class="icon-btn" onclick="deleteAgentLedgerEntry(\''+r.recordId+'\',\''+memberId+'\')" title="Delete">🗑️</button>':'')+'</td></tr>').join('');
+  return cards+'<div class="agent-statement-table-wrap"><table class="data"><thead><tr><th>'+t('col_date')+'</th><th>'+t('grp_reference')+'</th><th>'+t('grp_description')+' / Lot</th><th>'+t('grp_method')+' / Account</th><th>Debit / Charge</th><th>Credit / Payment</th><th>'+t('grp_balance')+'</th><th></th></tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 
 function printGroupMemberReport(memberId){
   const member = db.groupMembers[memberId];
   if(!member) return;
   const header = '<div style="margin-bottom:12px;"><strong>'+escapeHtml(member.name)+'</strong><br>'+t('grp_member_no_label')+': #'+member.memberNo+(member.phone?'<br>📞 '+escapeHtml(member.phone):'')+'</div>';
-  printIsolated(member.name+' — '+t('grp_statement'), header+buildGroupAgentStatementHtml(memberId)+buildGroupLotsInfo(memberId));
+  printIsolated(member.name+' — '+t('grp_statement'), header+buildGroupAgentStatementHtml(memberId,activeGroupAgentYear)+buildGroupLotsInfo(memberId));
 }
 
-function openGroupMemberReport(memberId){
+function showGroupAgentTab(memberId,tab){
+  activeGroupAgentTab=tab||'overview';
+  document.querySelectorAll('.agent-tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.agentTab===activeGroupAgentTab));
+  const host=document.getElementById('groupAgentTabContent');if(!host)return;
+  if(activeGroupAgentTab==='lots'){host.innerHTML=buildGroupLotsInfo(memberId)||'<div class="panel"><div class="empty">No lots or referred customers yet.</div></div>';return;}
+  if(activeGroupAgentTab==='ledger'){
+    const opts='<option value="all">All Years</option>'+agentLedgerYears(memberId).map(y=>'<option value="'+escapeHtml(y)+'" '+(String(activeGroupAgentYear)===String(y)?'selected':'')+'>'+escapeHtml(y)+'</option>').join('');
+    host.innerHTML='<div class="panel agent-statement-panel"><div class="toolbar no-print"><label><strong>Accounting Year</strong></label><select id="agentYearFilter">'+opts+'</select><button class="btn ghost" style="margin-left:auto" onclick="printGroupMemberReport(\''+memberId+'\')">🖨 Print Statement</button></div>'+buildGroupAgentStatementHtml(memberId,activeGroupAgentYear)+'</div>';
+    document.getElementById('agentYearFilter').onchange=e=>{activeGroupAgentYear=e.target.value;showGroupAgentTab(memberId,'ledger');};return;
+  }
+  host.innerHTML='<div class="panel" style="border-left:4px solid var(--hajj-green)"><h3>Agent Overview</h3><p class="field-hint">Booking, service charge, loan, payment and adjustment—সব হিসাব একই statement-এ।</p>'+buildGroupAgentStatementHtml(memberId,'all',8)+'</div>';
+}
+
+function openGroupMemberReport(memberId,tab){
   currentTab = 'group_members';
   const member = db.groupMembers[memberId];
   if(!member) return;
@@ -2328,20 +2602,70 @@ function openGroupMemberReport(memberId){
   const c = document.getElementById('content');
   c.innerHTML = '<div class="no-print" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">'
     +'<button class="btn" onclick="renderGroupMembersPage()">'+t('grp_back_members')+'</button>'
-    +'<button class="btn amber" onclick="openGroupAgentPayment(\''+memberId+'\')">'+t('grp_receive_payment')+'</button>'
+    +'<button class="btn amber" onclick="openAgentLedgerEntry(\''+memberId+'\',\'debit\')">+ Add Charge / Service</button>'
+    +'<button class="btn" style="background:var(--hajj-green)" onclick="openAgentLedgerEntry(\''+memberId+'\',\'credit\')">+ Payment / Adjustment</button>'
+    +'<button class="btn ghost" onclick="openGroupAgentPayment(\''+memberId+'\')">Receive Booking Due</button>'
     +'<button class="btn ghost" style="margin-left:auto;" onclick="printGroupMemberReport(\''+memberId+'\')">'+t('print_report')+'</button></div>'
     +'<div class="panel" style="background:linear-gradient(135deg,#0f3d20,#1B6B3A);color:#fff;margin-bottom:16px;">'
     +'<div style="font-size:20px;font-weight:700;">👤 '+escapeHtml(member.name)+'</div>'
     +'<div style="opacity:0.8;margin-top:4px;">'+t('grp_member_no_label')+': #'+member.memberNo+' &nbsp;|&nbsp; '+t('grp_total_lots')+': '+lots.length+'</div>'
     +(member.phone?'<div style="opacity:0.75;font-size:13px;margin-top:2px;">📞 '+escapeHtml(member.phone)+'</div>':'')+'</div>'
-    +'<div class="panel" style="border-left:4px solid var(--hajj-green);"><h3>'+t('grp_statement')+'</h3>'+buildGroupAgentStatementHtml(memberId)+'</div>'
-    +buildGroupLotsInfo(memberId);
+    +'<div class="agent-tabs no-print"><button class="btn agent-tab-btn" data-agent-tab="overview" onclick="showGroupAgentTab(\''+memberId+'\',\'overview\')">Overview</button><button class="btn agent-tab-btn" data-agent-tab="lots" onclick="showGroupAgentTab(\''+memberId+'\',\'lots\')">Lots & Customers</button><button class="btn agent-tab-btn" data-agent-tab="ledger" onclick="showGroupAgentTab(\''+memberId+'\',\'ledger\')">Agent Ledger</button></div><div id="groupAgentTabContent"></div>';
+  activeGroupAgentYear='all';showGroupAgentTab(memberId,tab||'overview');
+}
+
+function nextAgentLedgerNo(){ return 'AGT-'+String(db.agentLedger.reduce((m,x)=>Math.max(m,Number(String(x.entryNo||'').replace(/\D/g,''))||0),0)+1).padStart(5,'0'); }
+function agentCustomerOptions(memberId){
+  const lotIds=Object.entries(db.groups).filter(([,g])=>g.memberId===memberId).map(([id])=>id);
+  const ids=new Set();lotIds.forEach(id=>normalizeHajjiIds((db.groups[id]||{}).hajjiIds).forEach(cid=>ids.add(cid)));
+  db.sales.filter(s=>s.groupMemberId===memberId||lotIds.includes(s.groupId)).forEach(s=>{if(s.customerId)ids.add(s.customerId);});
+  return '<option value="">— No specific customer —</option>'+[...ids].map(id=>db.customers[id]).filter(Boolean).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).map(c=>'<option value="'+c.id+'">'+escapeHtml(c.name||'—')+(c.phone?' — '+escapeHtml(c.phone):'')+'</option>').join('');
+}
+function openAgentLedgerEntry(memberId,defaultType){
+  const member=db.groupMembers[memberId];if(!member)return;
+  const lots=Object.entries(db.groups).filter(([,g])=>g.memberId===memberId).sort((a,b)=>String(b[1].year||'').localeCompare(String(a[1].year||'')));
+  const lotOptions='<option value="">— No specific lot —</option>'+lots.map(([id,g])=>'<option value="'+id+'">'+escapeHtml(g.name||'—')+(g.year?' — '+escapeHtml(g.year):'')+'</option>').join('');
+  const type=defaultType==='credit'?'credit':'debit';
+  const html='<div class="overlay open" id="agentLedgerEntryOverlay" style="z-index:195"><div class="modal" style="max-width:650px;width:96%"><h2>Agent Ledger Entry — '+escapeHtml(member.name)+'</h2>'
+    +'<p class="field-hint">Charge দিলে agent-এর due বাড়বে। Payment/adjustment দিলে due কমবে। Cash movement হলে Bank/Mobile statement-এও যাবে।</p>'
+    +'<div class="field"><label>What do you want to add?</label><select id="agType"><option value="debit" '+(type==='debit'?'selected':'')+'>Charge / Service / Loan (Due increases)</option><option value="credit" '+(type==='credit'?'selected':'')+'>Payment / Discount / Adjustment (Due decreases)</option></select></div>'
+    +'<div class="field"><label>Service / Ledger Head</label><select id="agHead"></select></div>'
+    +'<div class="field-row"><div class="field"><label>Quantity</label><input type="number" id="agQty" value="1" min="0" step="any"></div><div class="field"><label>Rate</label><input type="number" id="agRate" value="0" min="0" step="any"></div><div class="field"><label>Total Amount</label><input type="number" id="agAmount" value="0" min="0" step="any"></div></div>'
+    +'<div class="field-row"><div class="field"><label>Date</label><input type="date" id="agDate" value="'+todayStr()+'"></div><div class="field"><label>Accounting Year</label><input type="number" id="agYear" value="'+new Date().getFullYear()+'" min="2000" max="2100"></div><div class="field"><label>Season</label><select id="agSeason"><option>Umrah</option><option>Hajj</option><option>General</option></select></div></div>'
+    +'<div class="field-row"><div class="field"><label>Lot (optional)</label><select id="agLot">'+lotOptions+'</select></div><div class="field"><label>Customer (optional)</label><select id="agCustomer">'+agentCustomerOptions(memberId)+'</select></div></div>'
+    +'<div class="field"><label>Cash Movement</label><select id="agCashDirection"><option value="none">No cash movement — ledger only</option><option value="in">Money IN — agency received</option><option value="out">Money OUT — agency paid</option></select></div>'
+    +'<div id="agPaymentFields"><div class="field-row"><div class="field"><label>Payment Method</label><select id="agMethod"><option value="cash">Cash</option><option value="bank">Bank</option><option value="mobile_banking">Mobile Banking</option></select></div><div class="field" id="agAccountField"><label>Payment Account</label><select id="agAccount"></select></div></div></div>'
+    +'<div class="field-row"><div class="field"><label>Reference</label><input id="agReference" placeholder="Ticket no., visa ref., voucher..."></div><div class="field"><label>Note</label><input id="agNote" placeholder="Short details"></div></div>'
+    +'<div class="modal-actions"><button class="btn ghost" id="agCancel">Cancel</button><button class="btn amber" id="agSave">Save Agent Entry</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);const overlay=document.getElementById('agentLedgerEntryOverlay');
+  const refreshHeads=()=>{document.getElementById('agHead').innerHTML=agentLedgerHeadOptions(document.getElementById('agType').value,'');document.getElementById('agHead').dispatchEvent(new Event('change'));};
+  const refreshCash=()=>{const dir=document.getElementById('agCashDirection').value;document.getElementById('agPaymentFields').style.display=dir==='none'?'none':'block';if(dir!=='none')refreshPaymentAccountSelect('agMethod','agAccount');};
+  document.getElementById('agType').onchange=refreshHeads;
+  document.getElementById('agHead').onchange=()=>{const h=agentLedgerHeadMap()[document.getElementById('agHead').value];if(h)document.getElementById('agCashDirection').value=h.cashDirection||'none';refreshCash();};
+  document.getElementById('agCashDirection').onchange=refreshCash;document.getElementById('agMethod').onchange=()=>refreshPaymentAccountSelect('agMethod','agAccount');
+  const calc=()=>{document.getElementById('agAmount').value=((Number(document.getElementById('agQty').value)||0)*(Number(document.getElementById('agRate').value)||0)).toFixed(2);};
+  document.getElementById('agQty').oninput=calc;document.getElementById('agRate').oninput=calc;
+  document.getElementById('agDate').onchange=e=>{if(e.target.value)document.getElementById('agYear').value=yearFromDate(e.target.value);};
+  document.getElementById('agCancel').onclick=()=>overlay.remove();overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});refreshHeads();refreshCash();
+  document.getElementById('agSave').onclick=async()=>{
+    const head=agentLedgerHeadMap()[document.getElementById('agHead').value],amount=Number(document.getElementById('agAmount').value),cashDirection=document.getElementById('agCashDirection').value;
+    if(!head||amount<=0){alert(t('required_fields'));return;}
+    const paymentSystem=cashDirection==='none'?null:document.getElementById('agMethod').value,paymentAccountId=cashDirection==='none'?null:(document.getElementById('agAccount').value||null);
+    if(cashDirection!=='none'&&!validatePaymentAccount(paymentSystem,paymentAccountId))return;
+    const lotId=document.getElementById('agLot').value,customerId=document.getElementById('agCustomer').value,lot=db.groups[lotId],customer=db.customers[customerId],date=document.getElementById('agDate').value||todayStr();
+    const rec={id:uid(),entryNo:nextAgentLedgerNo(),memberId,memberName:member.name,type:document.getElementById('agType').value,headId:head.id,headName:head.name,qty:Number(document.getElementById('agQty').value)||0,rate:Number(document.getElementById('agRate').value)||0,amount,date,accountingYear:String(document.getElementById('agYear').value||yearFromDate(date)),season:document.getElementById('agSeason').value,groupId:lotId||null,groupName:lot?lot.name:'',customerId:customerId||null,customerName:customer?customer.name:'',cashDirection,paymentSystem,paymentAccountId,paymentAccountName:paymentAccountLabel(paymentAccountId),reference:document.getElementById('agReference').value.trim(),note:document.getElementById('agNote').value.trim(),createdBy:currentUserEmail(),ts:Date.now()};
+    db.agentLedger.push(rec);await safePut('agentLedger',rec.id,rec);member.due=calculateGroupMemberDueFromLedger(memberId);await safePut('groupMembers',memberId,member);overlay.remove();showToast('Agent ledger entry saved');openGroupMemberReport(memberId,'ledger');
+  };
+}
+async function deleteAgentLedgerEntry(id,memberId){
+  if(!requirePermission('delete_records'))return;if(!confirm(t('confirm_delete')))return;
+  db.agentLedger=db.agentLedger.filter(x=>x.id!==id);await safeRemove('agentLedger',id);const m=db.groupMembers[memberId];if(m){m.due=calculateGroupMemberDueFromLedger(memberId);await safePut('groupMembers',memberId,m);}openGroupMemberReport(memberId,'ledger');
 }
 
 function openGroupAgentPayment(memberId){
   const member = db.groupMembers[memberId];
   if(!member) return;
-  const due = calculateGroupMemberDueFromLedger(memberId);
+  const due = calculateGroupMemberBookingDueFromLedger(memberId);
   if(due<=0){ showToast(t('vnd_clear')); return; }
   const old = document.getElementById('groupAgentPaymentOverlay');
   if(old) old.remove();
@@ -2352,6 +2676,7 @@ function openGroupAgentPayment(memberId){
     +'<div class="field"><label>'+t('grp_payment_amount')+'</label><input type="number" id="gapAmount" value="'+due+'" min="0"></div>'
     +'<div class="field"><label>'+t('pay_discount')+'</label><input type="number" id="gapDiscount" value="0" min="0"></div>'
     +'<div class="field"><label>'+t('grp_method')+'</label><select id="gapMethod"><option value="cash">'+t('payment_cash')+'</option><option value="bank">'+t('payment_bank')+'</option><option value="mobile_banking">'+t('payment_mobile_banking')+'</option></select></div>'
+    +'<div class="field" id="gapAccountField"><label>'+t('f_payment_account')+'</label><select id="gapAccount"></select></div>'
     +'<div class="field"><label>'+t('f_date')+'</label><input type="date" id="gapDate" value="'+todayStr()+'"></div>'
     +'<div class="field"><label>'+t('f_note')+'</label><input type="text" id="gapNote" placeholder="'+escapeHtml(t('grp_due_payment'))+'"></div>'
     +'<div class="field-hint" id="gapResult"></div>'
@@ -2359,6 +2684,8 @@ function openGroupAgentPayment(memberId){
     +'</div></div>';
   document.body.insertAdjacentHTML('beforeend',html);
   const overlay = document.getElementById('groupAgentPaymentOverlay');
+  document.getElementById('gapMethod').onchange=()=>refreshPaymentAccountSelect('gapMethod','gapAccount');
+  refreshPaymentAccountSelect('gapMethod','gapAccount');
   const update = ()=>{
     const paid = Number(document.getElementById('gapAmount').value)||0;
     const discount = Number(document.getElementById('gapDiscount').value)||0;
@@ -2376,6 +2703,8 @@ function openGroupAgentPayment(memberId){
     if(paid+discount>due){ alert(t('grp_payment_too_high')); return; }
     const payDate = document.getElementById('gapDate').value||todayStr();
     const paymentSystem = document.getElementById('gapMethod').value||'cash';
+    const paymentAccountId = document.getElementById('gapAccount').value||null;
+    if(paid>0&&!validatePaymentAccount(paymentSystem,paymentAccountId)) return;
     const note = document.getElementById('gapNote').value.trim();
     let toApply = paid+discount;
     const openSales = db.sales.filter(s=>s.groupMemberId===memberId&&Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
@@ -2391,7 +2720,7 @@ function openGroupAgentPayment(memberId){
       id:uid(),receiptNo:nextReceiptNo(),customerId:null,customerName:member.name,
       buyerType:'group_agent',groupMemberId:memberId,groupMemberName:member.name,
       amount:paid,discount,previousDue:due,newDue:Math.max(0,due-paid-discount),note,
-      paymentSystem,date:payDate,ts:new Date(payDate).getTime()||Date.now()
+      paymentSystem,paymentAccountId,paymentAccountName:paymentAccountLabel(paymentAccountId),date:payDate,ts:new Date(payDate).getTime()||Date.now()
     };
     db.installments.push(rec);
     await safePut('installments',rec.id,rec);
@@ -2469,6 +2798,7 @@ function openGroupHajjiDetail(hajjiId, groupId){
 /* ---------- Groups / Lots ---------- */
 
 function openGroupHajjiManager(groupId){
+  if(!isSuperUser()){requirePermission('edit_records');return;}
   const grp = db.groups[groupId];
   if(!grp) return;
 
@@ -2624,18 +2954,77 @@ function printGroupList(gid){
   window.print();
 }
 
+function renderAccountItems(kind){
+  const source=kind==='bank'?db.bankAccounts:db.mobileAccounts;
+  const entries=Object.entries(source).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
+  if(!entries.length) return '<div class="field-hint" style="padding:14px 0;">No account added yet.</div>';
+  return entries.map(([id,a])=>{const s=accountTotals(id);return '<div class="account-item">'
+    +'<div class="account-item-head"><div><strong>'+escapeHtml(paymentAccountLabel(id))+'</strong>'+(a.accountType?'<div class="field-hint">'+escapeHtml(a.accountType)+'</div>':'')+'</div>'
+    +'<div style="display:flex;gap:5px;"><button class="icon-btn" onclick="openAccountStatement(\''+id+'\')" title="Statement">📋</button><button class="icon-btn" onclick="deletePaymentAccount(\''+kind+'\',\''+id+'\')" title="Delete">🗑️</button></div></div>'
+    +'<div class="account-metrics"><div><small>IN</small><strong style="color:var(--green)">৳'+money(s.incoming)+'</strong></div><div><small>OUT</small><strong style="color:var(--red)">৳'+money(s.outgoing)+'</strong></div><div><small>CURRENT</small><strong>৳'+money(s.balance)+'</strong></div></div></div>';}).join('');
+}
+async function addBankAccount(){
+  const bankName=document.getElementById('setBankName').value.trim(), accountName=document.getElementById('setBankAccountName').value.trim(), accountNumber=document.getElementById('setBankAccountNumber').value.trim();
+  if(!bankName||!accountName||!accountNumber){alert(t('required_fields'));return;}
+  const id=uid(), rec={id,kind:'bank',bankName,accountName,accountNumber,openingBalance:Number(document.getElementById('setBankOpening').value)||0,ts:Date.now()};
+  db.bankAccounts[id]=rec; await safePut('bankAccounts',id,rec); showToast('Bank account added'); renderSettingsPage();
+}
+async function addMobileAccount(){
+  const service=document.getElementById('setMobileService').value, accountName=document.getElementById('setMobileAccountName').value.trim(), accountNumber=document.getElementById('setMobileAccountNumber').value.trim();
+  if(!service||!accountName||!accountNumber){alert(t('required_fields'));return;}
+  const id=uid(), rec={id,kind:'mobile',service,accountName,accountNumber,accountType:document.getElementById('setMobileType').value,openingBalance:Number(document.getElementById('setMobileOpening').value)||0,ts:Date.now()};
+  db.mobileAccounts[id]=rec; await safePut('mobileAccounts',id,rec); showToast('Mobile account added'); renderSettingsPage();
+}
+async function deletePaymentAccount(kind,id){
+  if(!requirePermission('delete_records'))return;
+  if(paymentAccountIsUsed(id)){alert('This account has transactions. Delete the transactions first so the ERP statement remains valid.');return;}
+  if(!confirm(t('confirm_delete'))) return;
+  const collection=kind==='bank'?'bankAccounts':'mobileAccounts'; delete db[collection][id]; await safeRemove(collection,id); renderSettingsPage();
+}
+function openAccountStatement(id){
+  const a=getPaymentAccount(id); if(!a)return; const s=accountTotals(id); let running=s.opening;
+  const rows='<tr><td>—</td><td>OPEN</td><td>Opening Balance</td><td>৳'+money(s.opening)+'</td><td>—</td><td><strong>৳'+money(running)+'</strong></td></tr>'+s.rows.map(r=>{running+=r.flow==='in'?r.amount:-r.amount;return '<tr><td>'+formatDateDMY(r.date)+'</td><td>'+escapeHtml(r.ref)+'</td><td>'+escapeHtml(r.desc)+'</td><td>'+(r.flow==='in'?'৳'+money(r.amount):'—')+'</td><td>'+(r.flow==='out'?'৳'+money(r.amount):'—')+'</td><td><strong>৳'+money(running)+'</strong></td></tr>';}).join('');
+  const html='<div class="overlay open" id="accountStatementOverlay" style="z-index:190"><div class="modal" style="max-width:900px;width:96%"><h2>'+escapeHtml(paymentAccountLabel(id))+'</h2><div class="account-metrics" style="margin-bottom:15px"><div><small>IN</small><strong>৳'+money(s.incoming)+'</strong></div><div><small>OUT</small><strong>৳'+money(s.outgoing)+'</strong></div><div><small>CURRENT BALANCE</small><strong>৳'+money(s.balance)+'</strong></div></div><div style="overflow-x:auto"><table class="data"><thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>IN</th><th>OUT</th><th>Balance</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="modal-actions no-print"><button class="btn ghost" onclick="document.getElementById(\'accountStatementOverlay\').remove()">Close</button><button class="btn amber" onclick="safePrintPage()">🖨 Print</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function renderAgentLedgerHeadSettings(){
+  const superUser=isSuperUser(),all=Object.values(agentLedgerHeadMap());
+  const list=type=>all.filter(h=>h.type===type).sort((a,b)=>Number(b.system)-Number(a.system)||hName(a).localeCompare(hName(b))).map(h=>'<div class="agent-head-row"><span>'+escapeHtml(h.name)+' <small class="field-hint">'+(h.cashDirection==='in'?'Money IN':h.cashDirection==='out'?'Money OUT':'Ledger only')+(h.system?' · Default':' · Custom')+'</small></span>'+(!h.system&&superUser?'<button class="icon-btn" onclick="deleteAgentLedgerHead(\''+h.id+'\')" title="Delete">🗑️</button>':'')+'</div>').join('');
+  return '<div class="panel"><h3>🧾 Agent Ledger Heads</h3><p class="field-hint">Default heads are ready to use. Super User can add agency-specific heads; used heads cannot be deleted.</p>'+(superUser?'<div class="field-row"><div class="field"><label>Entry Side</label><select id="agentHeadType"><option value="debit">Debit / Charge</option><option value="credit">Credit / Payment</option></select></div><div class="field"><label>Head Name</label><input id="agentHeadName" placeholder="e.g. Saudi Transport"></div><div class="field"><label>Default Cash Movement</label><select id="agentHeadCash"><option value="none">No cash movement</option><option value="in">Money IN</option><option value="out">Money OUT</option></select></div><div class="field" style="align-self:end"><button class="btn amber" style="width:100%" onclick="addAgentLedgerHead()">+ Add Head</button></div></div>':'')+'<div class="erp-grid"><div><strong class="ledger-type-payable">Debit / Charge Heads</strong>'+list('debit')+'</div><div><strong class="ledger-type-receivable">Credit / Payment Heads</strong>'+list('credit')+'</div></div></div>';
+}
+function hName(h){return String(h.name||'');}
+async function addAgentLedgerHead(){
+  if(!isSuperUser())return;const type=document.getElementById('agentHeadType').value,name=document.getElementById('agentHeadName').value.trim(),cashDirection=document.getElementById('agentHeadCash').value;
+  if(!name){alert(t('required_fields'));return;}if(Object.values(agentLedgerHeadMap()).some(h=>h.type===type&&hName(h).toLowerCase()===name.toLowerCase())){alert('This head already exists.');return;}
+  const id=uid(),rec={id,name,type,cashDirection,system:false,ts:Date.now()};db.agentLedgerHeads[id]=rec;await safePut('agentLedgerHeads',id,rec);showToast('Agent ledger head added');renderSettingsPage();
+}
+async function deleteAgentLedgerHead(id){
+  if(!requirePermission('delete_records'))return;if(db.agentLedger.some(x=>x.headId===id)){alert('This head is already used in an Agent Ledger entry.');return;}if(!confirm(t('confirm_delete')))return;delete db.agentLedgerHeads[id];await safeRemove('agentLedgerHeads',id);renderSettingsPage();
+}
 function renderSettingsPage(){
-  const user=firebase.auth().currentUser;
-  if(!user||!ADMIN_EMAILS.includes(user.email)){
-    document.getElementById('content').innerHTML='<div class="empty"><div class="big">⛔</div>Admin only</div>'; return;
-  }
+  const superUser=isSuperUser();
   const c=document.getElementById('content');
-  c.innerHTML=`<div class="panel">
-    <h3>⚙️ Settings</h3>
+  c.innerHTML=`<div class="erp-grid" style="margin-bottom:18px;">
+    <div class="erp-card"><h3>🏦 Bank Account Management</h3><p class="field-hint">Each account tracks its own live balance automatically.</p>
+      <div class="field"><label>Bank Name</label><input id="setBankName" placeholder="e.g. Dutch-Bangla Bank"></div>
+      <div class="field"><label>Account Name</label><input id="setBankAccountName" placeholder="e.g. Agency Main Account"></div>
+      <div class="field"><label>Account Number</label><input id="setBankAccountNumber" placeholder="1234-XXXXX"></div>
+      <div class="field"><label>Opening Balance (BDT)</label><input type="number" id="setBankOpening" value="0" step="any"></div>
+      <button class="btn amber" style="width:100%" onclick="addBankAccount()">+ Add Bank Account</button><div id="bankAccountList">${renderAccountItems('bank')}</div>
+    </div>
+    <div class="erp-card"><h3>📱 Mobile Banking Accounts</h3><p class="field-hint">bKash, Nagad and other accounts keep separate IN, OUT and current balances.</p>
+      <div class="field"><label>Service</label><select id="setMobileService"><option>bKash</option><option>Nagad</option><option>Rocket</option><option>Upay</option><option>Tap</option><option>Other</option></select></div>
+      <div class="field"><label>Account Name</label><input id="setMobileAccountName" placeholder="e.g. Main bKash"></div>
+      <div class="field"><label>Account Number</label><input id="setMobileAccountNumber" placeholder="01XXXXXXXXX"></div>
+      <div class="field"><label>Account Type</label><select id="setMobileType"><option>Personal</option><option>Agent</option><option>Merchant</option></select></div>
+      <div class="field"><label>Opening Balance (BDT)</label><input type="number" id="setMobileOpening" value="0" step="any"></div>
+      <button class="btn amber" style="width:100%" onclick="addMobileAccount()">+ Add Mobile Account</button><div id="mobileAccountList">${renderAccountItems('mobile')}</div>
+    </div>
+  </div>${renderAgentLedgerHeadSettings()}<div class="panel"><h3>🔐 Role & Feature Permissions</h3><p class="field-hint">আপনার role অনুযায়ী কোন feature দেখা ও ব্যবহার করা যাবে—এখানে এক নজরে দেখুন।</p>${renderRolePermissionMatrix()}</div><div class="panel" style="${superUser?'':'display:none;'}">
+    <h3>⚙️ System Settings</h3>
     <div style="margin-bottom:20px;">
-      <h4 style="margin:0 0 10px;">Admin Emails</h4>
-      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 8px;">One email per line — these accounts will see Settings, PC Backup/Restore, and Clear All Data.</p>
-      <textarea id="settingsAdminEmails" rows="4" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;font-size:13px;resize:vertical;">${ADMIN_EMAILS.join('\n')}</textarea>
+      <h4 style="margin:0 0 10px;">Role & Access Control</h4>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 8px;">User access is now controlled from User Management. Primary Super User: <strong>${PRIMARY_SUPER_EMAIL}</strong></p>
     </div>
     <div style="margin-bottom:20px;">
       <h4 style="margin:0 0 10px;">PC Backup / Restore</h4>
@@ -2648,24 +3037,21 @@ function renderSettingsPage(){
       <h4 style="margin:0 0 8px;color:var(--red);">⚠️ Danger Zone</h4>
       <button class="btn" style="background:var(--red);color:#fff;border:none;" id="settingsClearAll">🗑️ Clear All Data</button>
     </div>
-    <button class="btn amber" id="settingsSave">Save Settings</button>
+    <button class="btn amber" id="settingsSave">🛡️ Open User Management</button>
     <span id="settingsSaveMsg" style="font-size:13px;margin-left:12px;color:var(--green);"></span>
   </div>`;
   document.getElementById('settingsSave').addEventListener('click',async()=>{
-    const emails=document.getElementById('settingsAdminEmails').value.split('\n').map(e=>e.trim()).filter(Boolean);
-    if(!emails.length){alert('At least one admin email required.');return;}
-    await safePut('settings','adminEmails',{emails});
-    ADMIN_EMAILS.length=0;emails.forEach(e=>ADMIN_EMAILS.push(e));
-    document.getElementById('settingsSaveMsg').textContent='✓ Saved!';
-    setTimeout(()=>document.getElementById('settingsSaveMsg').textContent='',2000);
+    if(!isSuperUser())return;currentTab='user_management';renderNav();renderPage();
   });
   document.getElementById('settingsPcBackup').addEventListener('click',()=>{
+    if(!requirePermission('*'))return;
     const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);const a=document.createElement('a');
     a.href=url;a.download=SHOP_NAME+'-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
     URL.revokeObjectURL(url);showToast(t('backup_success'));
   });
   document.getElementById('settingsPcRestore').addEventListener('click',()=>{
+    if(!requirePermission('*'))return;
     if(!confirm(t('confirm_restore')))return;
     const input=document.createElement('input');input.type='file';input.accept='.json';
     input.onchange=async(e)=>{
@@ -2674,14 +3060,145 @@ function renderSettingsPage(){
       reader.onload=async(ev)=>{
         try{
           const data=JSON.parse(ev.target.result);const puts=[];
-          ['customers','suppliers','products','categories','groupMembers','groups'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>puts.push(safePut(k,id,v)));});
-          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
+          ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>puts.push(safePut(k,id,v)));});
+          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','paymentLedger','agentLedger'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
           await Promise.all(puts);showToast(t('restore_success'));setTimeout(()=>location.reload(),1500);
         }catch(err){alert(t('restore_failed')+': '+err.message);}
       };reader.readAsText(file);
     };input.click();
   });
   document.getElementById('settingsClearAll').addEventListener('click',clearAllData);
+}
+let editingAppUserId=null;
+async function createFirebaseLogin(email,password){
+  if(!password||!useFirebase) return 'role_only';
+  let secondary=firebase.apps.find(a=>a.name==='ERPUserCreator');
+  if(!secondary) secondary=firebase.initializeApp(firebaseConfig,'ERPUserCreator');
+  const auth=secondary.auth();
+  try{
+    try{await auth.setPersistence(firebase.auth.Auth.Persistence.NONE);}catch(_){ }
+    await auth.createUserWithEmailAndPassword(email,password);
+    await auth.signOut();
+    return 'created';
+  }catch(err){
+    try{await auth.signOut();}catch(_){ }
+    if(err&&err.code==='auth/email-already-in-use') return 'existing';
+    throw err;
+  }
+}
+function resetUserForm(){
+  editingAppUserId=null;
+  ['umName','umEmail','umPassword'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const role=document.getElementById('umRole');if(role)role.value='staff';
+  const active=document.getElementById('umActive');if(active)active.checked=true;
+  const save=document.getElementById('umSave');if(save)save.textContent='+ Create / Save User';
+  const cancel=document.getElementById('umCancelEdit');if(cancel)cancel.style.display='none';
+}
+function editAppUser(id){
+  if(!isSuperUser())return;const u=db.appUsers[id];if(!u)return;editingAppUserId=id;
+  document.getElementById('umName').value=u.name||'';document.getElementById('umEmail').value=u.email||'';document.getElementById('umEmail').disabled=true;
+  document.getElementById('umPassword').value='';document.getElementById('umRole').value=u.role||'staff';document.getElementById('umRole').disabled=u.isPrimary===true;
+  document.getElementById('umActive').checked=u.active!==false;document.getElementById('umActive').disabled=u.isPrimary===true;
+  document.getElementById('umSave').textContent='✓ Update User';document.getElementById('umCancelEdit').style.display='inline-block';window.scrollTo({top:0,behavior:'smooth'});
+}
+function cancelUserEdit(){
+  ['umEmail','umRole','umActive'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=false;});resetUserForm();
+}
+async function saveAppUser(){
+  if(!isSuperUser())return;
+  const name=document.getElementById('umName').value.trim(),email=normalizeEmail(document.getElementById('umEmail').value),password=document.getElementById('umPassword').value,role=document.getElementById('umRole').value,active=document.getElementById('umActive').checked;
+  if(!name||!email||!email.includes('@')){alert(t('required_fields'));return;}
+  if(password&&password.length<6){alert('Password must be at least 6 characters.');return;}
+  const existingByEmail=findAppUser(email);
+  if(existingByEmail&&existingByEmail.id!==editingAppUserId){alert('This email is already in User Management.');return;}
+  if(email===PRIMARY_SUPER_EMAIL&&(role!=='super'||!active)){alert('Primary Super User cannot be downgraded or disabled.');return;}
+  if(email===currentUserEmail()&&(role!=='super'||!active)){alert('You cannot downgrade or disable your own active Super User account.');return;}
+  let authResult='role_only';
+  try{authResult=await createFirebaseLogin(email,password);}catch(err){alert('Firebase user creation failed: '+(err.message||err));return;}
+  const id=editingAppUserId||userDocId(email),old=db.appUsers[id]||{};
+  const rec={...old,id,name,email,role,active,isPrimary:email===PRIMARY_SUPER_EMAIL,createdAt:old.createdAt||Date.now(),updatedAt:Date.now(),createdBy:old.createdBy||currentUserEmail()};
+  db.appUsers[id]=rec;await safePut('appUsers',id,rec);editingAppUserId=null;
+  showToast(authResult==='created'?'Login account and role created':authResult==='existing'?'Existing login role updated':'Role saved — create/login account in Firebase if needed');
+  renderUserManagementPage();renderNav();
+}
+async function toggleAppUser(id){
+  if(!isSuperUser())return;const u=db.appUsers[id];if(!u)return;
+  if(u.isPrimary||normalizeEmail(u.email)===PRIMARY_SUPER_EMAIL){alert('Primary Super User cannot be disabled.');return;}
+  if(normalizeEmail(u.email)===currentUserEmail()){alert('You cannot disable your own account.');return;}
+  u.active=u.active===false;u.updatedAt=Date.now();await safePut('appUsers',id,u);renderUserManagementPage();
+}
+async function sendUserPasswordReset(id){
+  if(!isSuperUser())return;const u=db.appUsers[id];if(!u||!useFirebase)return;
+  try{await firebase.auth().sendPasswordResetEmail(u.email);showToast('Password reset email sent to '+u.email);}catch(err){alert(err.message||err);}
+}
+function renderUserManagementPage(){
+  if(!isSuperUser()){currentTab='dashboard';renderNav();renderPage();return;}
+  ensurePrimarySuperUser();
+  const users=Object.values(db.appUsers).sort((a,b)=>(a.isPrimary?-1:b.isPrimary?1:String(a.name||'').localeCompare(String(b.name||''))));
+  const rows=users.map(u=>'<tr><td><strong>'+escapeHtml(u.name||'—')+'</strong>'+(u.isPrimary?'<br><small style="color:var(--gold)">Primary Super User</small>':'')+'</td><td>'+escapeHtml(u.email)+'</td><td><span class="role-badge '+escapeHtml(u.role)+'">'+roleLabel(u.role)+'</span></td><td><span class="role-badge '+(u.active===false?'inactive':'staff')+'">'+(u.active===false?'Disabled':'Active')+'</span></td><td>'+formatDateDMY(new Date(u.updatedAt||u.createdAt||Date.now()).toISOString().slice(0,10))+'</td><td class="actions-cell"><button class="icon-btn" onclick="editAppUser(\''+u.id+'\')" title="Edit">✏️</button>'+(u.isPrimary?'':'<button class="icon-btn" onclick="sendUserPasswordReset(\''+u.id+'\')" title="Send password reset">🔑</button><button class="icon-btn" onclick="toggleAppUser(\''+u.id+'\')" title="'+(u.active===false?'Enable':'Disable')+'">'+(u.active===false?'✅':'🚫')+'</button>')+'</td></tr>').join('');
+  document.getElementById('content').innerHTML='<div class="panel"><h3>🛡️ ERP Role Model</h3><p class="field-hint">Primary Super User is permanently protected: <strong>'+PRIMARY_SUPER_EMAIL+'</strong></p><div class="role-matrix"><div><span class="role-badge super">Super User</span><ul><li>Full ERP access</li><li>User and role management</li><li>Can edit and delete records</li><li>Backup, restore and reset</li></ul></div><div><span class="role-badge moderator">Moderator</span><ul><li>Daily ERP create operations</li><li>Reports and payment ledger</li><li>Bank/mobile account access</li><li>No edit or delete permission</li></ul></div><div><span class="role-badge staff">Staff</span><ul><li>Daily create operations</li><li>Payments and installments</li><li>Bank/mobile account access</li><li>No edit, delete, reports or ledger</li></ul></div></div>'+renderRolePermissionMatrix()+'</div>'
+    +'<div class="panel"><h3>'+((editingAppUserId?'Edit':'Add')+' User')+'</h3><div class="field-row"><div class="field"><label>Name</label><input id="umName" placeholder="User full name"></div><div class="field"><label>Email</label><input type="email" id="umEmail" placeholder="user@example.com"></div></div><div class="field-row"><div class="field"><label>Password (new login only)</label><input type="password" id="umPassword" placeholder="Minimum 6 characters"></div><div class="field"><label>Role</label><select id="umRole"><option value="staff">Staff</option><option value="moderator">Moderator</option><option value="super">Super User</option></select></div></div><div class="field" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="umActive" checked style="width:auto"><label for="umActive" style="margin:0;text-transform:none">Active access</label></div><p class="field-hint">For an existing Firebase login, leave Password blank. For a new user, enter a password and the login account will be created without logging you out.</p><div style="display:flex;gap:8px"><button class="btn amber" id="umSave" onclick="saveAppUser()">+ Create / Save User</button><button class="btn ghost" id="umCancelEdit" onclick="cancelUserEdit()" style="display:none">Cancel Edit</button></div></div>'
+    +'<div class="panel"><h3>Users ('+users.length+')</h3><div style="overflow-x:auto">'+(rows?'<table class="data"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Updated</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>':'<div class="empty">No users added yet.</div>')+'</div></div>';
+  if(editingAppUserId){const id=editingAppUserId;editingAppUserId=null;editAppUser(id);}
+}
+function nextLedgerNo(){ return 'PL-'+String(db.paymentLedger.reduce((m,x)=>Math.max(m,Number(String(x.entryNo||'').replace(/\D/g,''))||0),0)+1).padStart(4,'0'); }
+function paymentHeadOptions(type,selected){
+  return '<option value="">— Select head —</option>'+Object.entries(db.paymentHeads).filter(([,h])=>h.type===type).sort((a,b)=>a[1].name.localeCompare(b[1].name)).map(([id,h])=>'<option value="'+id+'" '+(id===selected?'selected':'')+'>'+escapeHtml(h.name)+'</option>').join('');
+}
+async function addPaymentHead(){
+  if(!hasPermission('view_ledger'))return;
+  const type=document.getElementById('headType').value,name=document.getElementById('headName').value.trim();
+  if(!name){alert(t('required_fields'));return;}
+  if(Object.values(db.paymentHeads).some(h=>h.type===type&&String(h.name).toLowerCase()===name.toLowerCase())){alert('This head already exists.');return;}
+  const id=uid(),rec={id,type,name,ts:Date.now()};db.paymentHeads[id]=rec;await safePut('paymentHeads',id,rec);renderPaymentLedgerPage();
+}
+async function deletePaymentHead(id){
+  if(!requirePermission('delete_records'))return;
+  if(db.paymentLedger.some(x=>x.headId===id)){alert('This head is used in ledger entries and cannot be deleted.');return;}
+  if(!confirm(t('confirm_delete')))return;delete db.paymentHeads[id];await safeRemove('paymentHeads',id);renderPaymentLedgerPage();
+}
+function renderPaymentHeads(){
+  const one=type=>Object.entries(db.paymentHeads).filter(([,h])=>h.type===type).map(([id,h])=>'<span class="pill '+(type==='receivable'?'green':'red')+'" style="margin:3px">'+escapeHtml(h.name)+' <button onclick="deletePaymentHead(\''+id+'\')" style="border:0;background:none;cursor:pointer;color:inherit">×</button></span>').join('')||'<span class="field-hint">No heads yet</span>';
+  return '<div class="erp-grid"><div><strong class="ledger-type-receivable">Receivable Heads</strong><div style="margin-top:8px">'+one('receivable')+'</div></div><div><strong class="ledger-type-payable">Payable Heads</strong><div style="margin-top:8px">'+one('payable')+'</div></div></div>';
+}
+function openPaymentLedgerEntry(){
+  if(!hasPermission('view_ledger'))return;
+  const html='<div class="overlay open" id="ledgerEntryOverlay" style="z-index:180"><div class="modal" style="max-width:460px"><h2>New Payment Entry</h2>'
+    +'<div class="field"><label>Entry Type</label><select id="leType"><option value="receivable">Receivable (Money IN)</option><option value="payable">Payable (Money OUT)</option></select></div>'
+    +'<div class="field"><label>Ledger Head</label><select id="leHead"></select></div><div class="field"><label>Amount</label><input type="number" id="leAmount" min="0" step="any"></div>'
+    +'<div class="field"><label>Payment Method</label><select id="leMethod"><option value="cash">Cash</option><option value="bank">Bank</option><option value="mobile_banking">Mobile Banking</option></select></div>'
+    +'<div class="field" id="leAccountField"><label>Payment Account</label><select id="leAccount"></select></div><div class="field-row"><div class="field"><label>Date</label><input type="date" id="leDate" value="'+todayStr()+'"></div><div class="field"><label>Reference</label><input id="leReference" placeholder="Optional"></div></div>'
+    +'<div class="field"><label>Note</label><input id="leNote" placeholder="Transaction details"></div><div class="modal-actions"><button class="btn ghost" id="leCancel">Cancel</button><button class="btn amber" id="leSave">Save Entry</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);const overlay=document.getElementById('ledgerEntryOverlay');
+  const heads=()=>document.getElementById('leHead').innerHTML=paymentHeadOptions(document.getElementById('leType').value,'');
+  document.getElementById('leType').onchange=heads;heads();
+  document.getElementById('leMethod').onchange=()=>refreshPaymentAccountSelect('leMethod','leAccount');refreshPaymentAccountSelect('leMethod','leAccount');
+  document.getElementById('leCancel').onclick=()=>overlay.remove();
+  document.getElementById('leSave').onclick=async()=>{const type=document.getElementById('leType').value,headId=document.getElementById('leHead').value,amount=Number(document.getElementById('leAmount').value),paymentSystem=document.getElementById('leMethod').value,paymentAccountId=document.getElementById('leAccount').value;
+    if(!headId||amount<=0){alert(t('required_fields'));return;}if(!validatePaymentAccount(paymentSystem,paymentAccountId))return;const head=db.paymentHeads[headId];
+    const rec={id:uid(),entryNo:nextLedgerNo(),type,headId,headName:head.name,amount,paymentSystem,paymentAccountId:paymentAccountId||null,paymentAccountName:paymentAccountLabel(paymentAccountId),date:document.getElementById('leDate').value||todayStr(),reference:document.getElementById('leReference').value.trim(),note:document.getElementById('leNote').value.trim(),createdBy:(firebase.auth().currentUser||{}).email||'',ts:Date.now()};
+    db.paymentLedger.push(rec);await safePut('paymentLedger',rec.id,rec);overlay.remove();showToast(t('saved_toast'));renderPaymentLedgerPage();};
+}
+async function deletePaymentLedgerEntry(id){if(!requirePermission('delete_records'))return;if(!confirm(t('confirm_delete')))return;db.paymentLedger=db.paymentLedger.filter(x=>x.id!==id);await safeRemove('paymentLedger',id);renderPaymentLedgerPage();}
+function allPaymentLedgerRows(){
+  const out=[],sales={};
+  db.sales.forEach(s=>{const amount=Number(s.initialPaid!==undefined?s.initialPaid:s.paid||0);if(amount<=0)return;const key=s.invoiceId||s.id;if(!sales[key])sales[key]={id:key,date:s.date,ts:s.ts,entryNo:'INV-'+(s.invoiceNo||''),type:'receivable',headName:s.groupMemberId?'Agent Booking Receipt':'Customer Booking Receipt',amount:0,paymentSystem:s.paymentSystem||'cash',paymentAccountId:s.paymentAccountId||null,reference:s.customerName||s.groupMemberName||'Walk-in',source:'booking'};sales[key].amount+=amount;});Object.values(sales).forEach(x=>out.push(x));
+  db.installments.forEach(x=>{if(Number(x.amount)>0)out.push({id:x.id,date:x.date,ts:x.ts,entryNo:'REC-'+(x.receiptNo||''),type:'receivable',headName:x.groupMemberId?'Agent Due Receipt':'Customer Due / Installment',amount:Number(x.amount),paymentSystem:x.paymentSystem||'cash',paymentAccountId:x.paymentAccountId||null,reference:x.customerName||x.groupMemberName||'',source:'installment'});});
+  db.vendorPayments.forEach(x=>{if(Number(x.amount)<=0||x.type==='purchase_return'&&x.returnType!=='cash')return;const incoming=x.type==='purchase_return';out.push({id:x.id,date:x.date,ts:x.ts,entryNo:incoming?'PRET-'+String(x.id).slice(-5):'VP-'+String(x.id).slice(-5),type:incoming?'receivable':'payable',headName:incoming?'Vendor Cash Return':'Vendor Payment',amount:Number(x.amount),paymentSystem:x.paymentSystem||'cash',paymentAccountId:x.paymentAccountId||null,reference:x.supplierName||'',source:'vendor'});});
+  db.expenses.forEach(x=>out.push({id:x.id,date:x.date,ts:x.ts,entryNo:'EXP-'+String(x.id).slice(-5),type:'payable',headName:'Expense — '+(x.category||''),amount:Number(x.amount||0),paymentSystem:x.paymentSystem||'cash',paymentAccountId:x.paymentAccountId||null,reference:x.note||'',source:'expense'}));
+  db.returns.forEach(x=>{if(!x.cancelled&&Number(x.excessRefund)>0)out.push({id:x.id,date:x.date,ts:x.ts,entryNo:'RET-'+(x.returnNo||''),type:'payable',headName:'Customer Booking Refund',amount:Number(x.excessRefund),paymentSystem:x.paymentSystem||'cash',paymentAccountId:x.paymentAccountId||null,reference:x.customerName||'',source:'return'});});
+  db.agentLedger.forEach(x=>{if(x.cashDirection!=='in'&&x.cashDirection!=='out')return;out.push({id:x.id,date:x.date,ts:x.ts,entryNo:x.entryNo||'AGT',type:x.cashDirection==='in'?'receivable':'payable',headName:'Agent — '+(x.headName||'Ledger Entry'),amount:Number(x.amount||0),paymentSystem:x.paymentSystem||'cash',paymentAccountId:x.paymentAccountId||null,reference:(x.memberName||'')+(x.reference?' — '+x.reference:''),source:'agent_ledger'});});
+  db.paymentLedger.forEach(x=>out.push({...x,source:'manual'}));
+  return out.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.ts||0)-Number(b.ts||0));
+}
+function renderPaymentLedgerPage(){
+  if(!hasPermission('view_ledger')){currentTab='dashboard';renderNav();renderPage();return;}
+  const sorted=allPaymentLedgerRows(),incoming=sorted.filter(x=>x.type==='receivable').reduce((s,x)=>s+Number(x.amount||0),0),outgoing=sorted.filter(x=>x.type==='payable').reduce((s,x)=>s+Number(x.amount||0),0);let running=0;
+  const rows=sorted.map(x=>{running+=x.type==='receivable'?Number(x.amount):-Number(x.amount);return '<tr><td>'+formatDateDMY(x.date)+'</td><td>'+escapeHtml(x.entryNo)+'</td><td><span class="ledger-type-'+x.type+'">'+(x.type==='receivable'?'RECEIVABLE':'PAYABLE')+'</span></td><td>'+escapeHtml(x.headName)+'</td><td>'+escapeHtml(paymentMethodLabel(x.paymentSystem))+(x.paymentAccountId?'<br><small>'+escapeHtml(paymentAccountLabel(x.paymentAccountId))+'</small>':'')+'</td><td>'+escapeHtml(x.reference||x.note||'—')+'</td><td>'+(x.type==='receivable'?'৳'+money(x.amount):'—')+'</td><td>'+(x.type==='payable'?'৳'+money(x.amount):'—')+'</td><td><strong>৳'+money(running)+'</strong></td><td>'+(x.source==='manual'?'<button class="icon-btn" onclick="deletePaymentLedgerEntry(\''+x.id+'\')">🗑️</button>':'<span class="field-hint">Auto</span>')+'</td></tr>';}).join('');
+  document.getElementById('content').innerHTML='<div class="toolbar"><button class="btn amber" onclick="openPaymentLedgerEntry()">+ New Payment Entry</button><button class="btn ghost" style="margin-left:auto" onclick="safePrintPage()">🖨 Print</button></div>'
+    +'<div class="stat-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="stat-card c1"><div class="val">৳'+money(incoming)+'</div><div class="lbl">Total Receivable / IN</div></div><div class="stat-card c7"><div class="val">৳'+money(outgoing)+'</div><div class="lbl">Total Payable / OUT</div></div><div class="stat-card c2"><div class="val">৳'+money(incoming-outgoing)+'</div><div class="lbl">Net Cash Flow</div></div></div>'
+    +'<div class="panel no-print"><h3>Payable & Receivable Heads</h3><div class="field-row"><div class="field"><label>Type</label><select id="headType"><option value="receivable">Receivable</option><option value="payable">Payable</option></select></div><div class="field"><label>New Head Name</label><input id="headName" placeholder="e.g. Agent Commission"></div><div class="field" style="align-self:end"><button class="btn amber" style="width:100%" onclick="addPaymentHead()">+ Add Head</button></div></div>'+renderPaymentHeads()+'</div>'
+    +'<div class="panel"><h3>Payment Ledger Statement</h3>'+(rows?'<div style="overflow-x:auto"><table class="data"><thead><tr><th>Date</th><th>Entry</th><th>Type</th><th>Head</th><th>Method / Account</th><th>Details</th><th>IN</th><th>OUT</th><th>Running Balance</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty">Add payable or receivable heads, then create your first payment entry.</div>')+'</div>';
 }
 function renderGroupsPage(){
   const c = document.getElementById('content');
@@ -2776,6 +3293,7 @@ function renderGroupsPage(){
         }
       }
     };
+    applyRoleUi();
   }
 
   renderGrpList();
@@ -2784,6 +3302,7 @@ function renderGroupsPage(){
 }
 
 function openGroupForm(id){
+  if(id&&!isSuperUser()){requirePermission('edit_records');return;}
   const existing = id ? db.groups[id] : {};
   const title = id ? t('grp_edit_form') : t('grp_new_form');
   const memberOpts = Object.entries(db.groupMembers)
@@ -2824,6 +3343,7 @@ function openGroupForm(id){
 }
 
 async function deleteGroup(id){
+  if(!requirePermission('delete_records'))return;
   const g = db.groups[id];
   if(!g) return;
   showDeleteConfirm(
@@ -3247,6 +3767,7 @@ function renderInstallmentsPage(){
 }
 
 function renderReportsPage(){
+  if(!hasPermission('view_reports')){currentTab='dashboard';renderNav();renderPage();return;}
   const c = document.getElementById('content');
   c.innerHTML = `
     <div class="tabs-sub no-print">
@@ -4434,6 +4955,8 @@ const CONFIG = {
       {key:'qty', labelKey:'f_pur_qty', type:'number', required:true},
       {key:'unitCost', labelKey:'f_unit_cost', type:'number', required:true},
       {key:'paid', labelKey:'f_paid', type:'number'},
+      {key:'paymentSystem', labelKey:'f_payment_system', type:'paymentMethod', default:'cash'},
+      {key:'paymentAccountId', labelKey:'f_payment_account', type:'paymentAccount'},
       {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
       {key:'note', labelKey:'f_note', type:'text', suggest:true},
     ],
@@ -4454,6 +4977,8 @@ const CONFIG = {
       {key:'unitPrice', labelKey:'f_unit_price', type:'number', required:true},
       {key:'discount', labelKey:'f_discount', type:'number'},
       {key:'paid', labelKey:'f_paid', type:'number'},
+      {key:'paymentSystem', labelKey:'f_payment_system', type:'paymentMethod', default:'cash'},
+      {key:'paymentAccountId', labelKey:'f_payment_account', type:'paymentAccount'},
       {key:'installmentCount', labelKey:'f_installment_count', type:'number'},
       {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
     ],
@@ -4466,6 +4991,8 @@ const CONFIG = {
     fields:[
       {key:'category', labelKey:'f_expense_cat', type:'text', required:true, suggest:true},
       {key:'amount', labelKey:'f_amount', type:'number', required:true},
+      {key:'paymentSystem', labelKey:'f_payment_system', type:'paymentMethod', default:'cash'},
+      {key:'paymentAccountId', labelKey:'f_payment_account', type:'paymentAccount'},
       {key:'note', labelKey:'f_note', type:'text', suggest:true},
       {key:'date', labelKey:'f_date', type:'date', default: todayStr()},
       {key:'isOldEntry', labelKey:'f_is_old_entry', type:'checkbox', hidden:true},
@@ -4646,6 +5173,7 @@ function renderTable(tab, items, search){
       if(isGroup) deleteInvoiceGroup(id2); else deleteItem(t2, id2);
     }
   };
+  applyRoleUi();
 }
 
 function pgGo(tab, page){
@@ -4664,6 +5192,7 @@ function pgGo(tab, page){
 /* ---------- Generic Form Modal ---------- */
 let formCtx = null; // {tab, id}
 function openForm(tab, id){
+  if(id&&!isSuperUser()){requirePermission('edit_records');return;}
   const cfg = CONFIG[tab];
   formCtx = {tab, id};
   const item = id ? (cfg.isObj ? db[tab][id] : db[tab].find(x=>x.id===id)) : {};
@@ -4672,6 +5201,8 @@ function openForm(tab, id){
   document.getElementById('formSaveBtn').textContent = t('save');
   document.getElementById('formFields').innerHTML = cfg.fields.map(f => {
     const val = item[f.key] !== undefined ? item[f.key] : (f.default !== undefined ? f.default : '');
+    if(f.type==='paymentMethod') return `<div class="field"><label>${t(f.labelKey)}</label><select data-key="${f.key}"><option value="cash" ${val==='cash'?'selected':''}>${t('payment_cash')}</option><option value="bank" ${val==='bank'?'selected':''}>${t('payment_bank')}</option><option value="mobile_banking" ${val==='mobile_banking'?'selected':''}>${t('payment_mobile_banking')}</option></select></div>`;
+    if(f.type==='paymentAccount') return `<div class="field" data-payment-account-field><label>${t(f.labelKey)}</label><select data-key="${f.key}"></select></div>`;
     if(f.type==='select'){
       const srcObj = db[f.optionsFrom];
       const opts = Object.entries(srcObj).map(([oid,o]) => `<option value="${oid}" ${String(val)===oid?'selected':''}>${escapeHtml(o.name)}</option>`).join('');
@@ -4711,6 +5242,9 @@ function openForm(tab, id){
     }
     return `<div class="field"><label>${t(f.labelKey)}</label><input type="${f.type}" data-key="${f.key}" value="${escapeHtml(val)}"></div>`;
   }).join('');
+  const methodEl=document.querySelector('#formFields [data-key="paymentSystem"]');
+  const accountEl=document.querySelector('#formFields [data-key="paymentAccountId"]');
+  if(methodEl&&accountEl){const fill=()=>{accountEl.innerHTML=paymentAccountOptions(methodEl.value,item.paymentAccountId||'');accountEl.disabled=methodEl.value==='cash';const wrap=accountEl.closest('[data-payment-account-field]');if(wrap)wrap.style.display=methodEl.value==='cash'?'none':'block';};methodEl.onchange=fill;fill();}
   document.getElementById('formOverlay').classList.add('open');
 }
 document.getElementById('formCancelBtn').addEventListener('click', () => {
@@ -4726,6 +5260,7 @@ document.getElementById('formSaveBtn').addEventListener('click', async () => {
   let missingRequired = false;
   cfg.fields.forEach(f => {
     const el = document.querySelector(`#formFields [data-key="${f.key}"]`);
+    if(!el){ values[f.key]=f.type==='checkbox'?false:(f.default!==undefined?f.default:''); return; }
     let v = f.type==='checkbox' ? el.checked : el.value;
     if(f.type==='number') v = Number(v)||0;
     if(f.required && (v===''||v===0&&f.type==='number'&&f.key!=='paid')) { /* soft check below */ }
@@ -4733,6 +5268,7 @@ document.getElementById('formSaveBtn').addEventListener('click', async () => {
     values[f.key] = v;
   });
   if(missingRequired){ alert(t('required_fields')); return; }
+  if(values.paymentSystem && !validatePaymentAccount(values.paymentSystem,values.paymentAccountId)) return;
 
   await handleSave(tab, id, values);
   document.getElementById('formOverlay').classList.remove('open');
@@ -4741,6 +5277,7 @@ document.getElementById('formSaveBtn').addEventListener('click', async () => {
 });
 
 async function handleSave(tab, id, values){
+  if(id&&!isSuperUser()){requirePermission('edit_records');return;}
   if(tab==='customers' || tab==='suppliers' || tab==='categories'){
     const key = id || uid();
     const existing = db[tab][key] || {};
@@ -4782,14 +5319,14 @@ async function handleSave(tab, id, values){
       const updatedRecord = { ...(existing||{}), supplierId:values.supplierId,
         supplierName:supplier?supplier.name:'—', sector:values.sector||'—',
         note:values.note||'', qty:Number(values.qty), unitCost:Number(values.unitCost),
-        total, paid:paidNow, due:dueAmt, date:values.date };
+        total, paid:paidNow, due:dueAmt, paymentSystem:values.paymentSystem||'cash', paymentAccountId:values.paymentAccountId||null, paymentAccountName:paymentAccountLabel(values.paymentAccountId), date:values.date };
       const eidx = db.purchases.findIndex(x=>x.id===id);
       if(eidx>=0) db.purchases[eidx] = updatedRecord;
       await safePut('purchases', id, updatedRecord);
       if(supplier){ supplier.due = Number(supplier.due||0) + dueAmt; await safePut('suppliers', values.supplierId, supplier); }
       if(paidNow>0){
         const vp = { id:uid(), supplierId:values.supplierId, supplierName:supplier?supplier.name:'—',
-          type:'purchase_payment', amount:paidNow, purchaseId:id, note:'Payment', date:values.date, ts:Date.now() };
+          type:'purchase_payment', amount:paidNow, purchaseId:id, note:'Payment', paymentSystem:values.paymentSystem||'cash', paymentAccountId:values.paymentAccountId||null, paymentAccountName:paymentAccountLabel(values.paymentAccountId), date:values.date, ts:Date.now() };
         db.vendorPayments.push(vp); await safePut('vendorPayments', vp.id, vp);
       }
     } else {
@@ -4799,14 +5336,14 @@ async function handleSave(tab, id, values){
         id: uid(), supplierId: values.supplierId, supplierName: supplier?supplier.name:'—',
         sector: values.sector||'—', note: values.note||'',
         qty: Number(values.qty), unitCost: Number(values.unitCost),
-        total, paid: paidNow, due: dueAmt, date: values.date, ts: Date.now()
+        total, paid: paidNow, due: dueAmt, paymentSystem:values.paymentSystem||'cash', paymentAccountId:values.paymentAccountId||null, paymentAccountName:paymentAccountLabel(values.paymentAccountId), date: values.date, ts: Date.now()
       };
       db.purchases.push(record);
       await safePut('purchases', record.id, record);
       if(paidNow > 0){
         const vp = { id:uid(), supplierId:values.supplierId, supplierName:supplier?supplier.name:'—',
           type:'purchase_payment', amount:paidNow, purchaseId:record.id,
-          note:'Initial payment for purchase', date:values.date, ts:Date.now() };
+          note:'Initial payment for purchase', paymentSystem:values.paymentSystem||'cash', paymentAccountId:values.paymentAccountId||null, paymentAccountName:paymentAccountLabel(values.paymentAccountId), date:values.date, ts:Date.now() };
         db.vendorPayments.push(vp); await safePut('vendorPayments', vp.id, vp);
       }
     }
@@ -4848,7 +5385,7 @@ async function handleSave(tab, id, values){
       id: id || uid(), invoiceId: existing ? existing.invoiceId : null,
       invoiceNo: existing ? (existing.invoiceNo || nextInvoiceNo()) : nextInvoiceNo(),
       voucherNo: existing ? existing.voucherNo : '', voucherTag: existing ? existing.voucherTag : '',
-      paymentSystem: existing ? existing.paymentSystem : 'cash', isOldEntry: existing ? existing.isOldEntry : false,
+      paymentSystem: values.paymentSystem||'cash', paymentAccountId:values.paymentAccountId||null, paymentAccountName:paymentAccountLabel(values.paymentAccountId), isOldEntry: existing ? existing.isOldEntry : false,
       customerId: values.customerId||null, customerName,
       productId: values.productId, productName: product.name,
       qty: Number(values.qty), unitPrice: Number(values.unitPrice), unitCost: Number(product.cost||0), discount,
@@ -4902,13 +5439,14 @@ async function handleSave(tab, id, values){
     }
   }
   else if(tab==='expenses'){
-    const record = { id: uid(), category: values.category, amount: Number(values.amount), note: values.note, date: values.date, isOldEntry: !!values.isOldEntry, ts: Date.now() };
+    const record = { id: uid(), category: values.category, amount: Number(values.amount), paymentSystem:values.paymentSystem||'cash', paymentAccountId:values.paymentAccountId||null, paymentAccountName:paymentAccountLabel(values.paymentAccountId), note: values.note, date: values.date, isOldEntry: !!values.isOldEntry, ts: Date.now() };
     db.expenses.push(record);
     await safePut('expenses', record.id, record);
   }
 }
 
 async function deleteInvoiceGroup(repId){
+  if(!requirePermission('delete_records'))return;
   const rep = db.sales.find(s=>s.id===repId);
   if(!rep) return;
   await new Promise(resolve=>{
@@ -4938,6 +5476,7 @@ async function deleteInvoiceGroup(repId){
 
 
 async function deleteHajji(custId){
+  if(!requirePermission('delete_records'))return;
   const cust = db.customers[custId];
   if(!cust) return;
   const custSalesCount = db.sales.filter(s=>s.customerId===custId).length;
@@ -4999,6 +5538,7 @@ async function deleteHajji(custId){
 }
 
 async function deleteItem(tab, id){
+  if(!requirePermission('delete_records'))return;
   if(tab==='customers'){ await deleteHajji(id); return; }
   const cfg = CONFIG[tab];
   const itemObj = cfg.isObj ? db[tab][id] : (db[tab]||[]).find(x=>x.id===id);
@@ -5039,7 +5579,7 @@ function calculateCustomerDueFromLedger(custId){
   const returnAdjust=db.returns.filter(r=>!r.cancelled&&r.customerId===custId).reduce((n,r)=>n+Number(r.dueAdjust||0),0);
   return Math.max(0,Math.round(bookedNet-initialPaid-laterSettled-returnAdjust));
 }
-function calculateGroupMemberDueFromLedger(memberId){
+function calculateGroupMemberBookingDueFromLedger(memberId){
   const sales = db.sales.filter(s=>s.groupMemberId===memberId);
   const installments = db.installments.filter(i=>i.groupMemberId===memberId);
   const bookedNet = sales.reduce((n,s)=>n+Number(s.total||0),0);
@@ -5047,6 +5587,14 @@ function calculateGroupMemberDueFromLedger(memberId){
   const laterSettled = installments.reduce((n,i)=>n+Number(i.amount||0)+Number(i.discount||0),0);
   const returnAdjust = db.returns.filter(r=>!r.cancelled&&r.groupMemberId===memberId).reduce((n,r)=>n+Number(r.dueAdjust||0),0);
   return Math.max(0,Math.round(bookedNet-initialPaid-laterSettled-returnAdjust));
+}
+function calculateGroupMemberBalanceFromLedger(memberId){
+  const bookingDue=calculateGroupMemberBookingDueFromLedger(memberId);
+  const manualNet=db.agentLedger.filter(x=>x.memberId===memberId).reduce((n,x)=>n+(x.type==='debit'?Number(x.amount||0):-Number(x.amount||0)),0);
+  return Math.round(bookingDue+manualNet);
+}
+function calculateGroupMemberDueFromLedger(memberId){
+  return Math.max(0,calculateGroupMemberBalanceFromLedger(memberId));
 }
 function openCustomerHistory(custId){
   const cust = db.customers[custId];
@@ -5283,11 +5831,18 @@ function renderInstallmentPlanHtml(plan){
   `;
 }
 
-async function markInstallmentPaid(planId, idx){
+async function markInstallmentPaid(planId, idx, selectedMethod, selectedAccount){
   const plan = db.installmentPlans.find(p=>p.id===planId);
   if(!plan) return;
   const item = plan.items.find(it=>it.idx===idx);
   if(!item || item.status==='paid') return;
+  if(!selectedMethod){
+    const old=document.getElementById('installmentPayMethodOverlay');if(old)old.remove();
+    const html='<div class="overlay open" id="installmentPayMethodOverlay" style="z-index:190"><div class="modal" style="max-width:410px"><h2>'+t('inst_pay_btn')+' — ৳'+money(item.amount)+'</h2><div class="field"><label>'+t('f_payment_system')+'</label><select id="ipmMethod"><option value="cash">'+t('payment_cash')+'</option><option value="bank">'+t('payment_bank')+'</option><option value="mobile_banking">'+t('payment_mobile_banking')+'</option></select></div><div class="field" id="ipmAccountField"><label>'+t('f_payment_account')+'</label><select id="ipmAccount"></select></div><div class="modal-actions"><button class="btn ghost" id="ipmCancel">'+t('cancel')+'</button><button class="btn amber" id="ipmSave">'+t('confirm')+'</button></div></div></div>';
+    document.body.insertAdjacentHTML('beforeend',html);const ov=document.getElementById('installmentPayMethodOverlay');
+    document.getElementById('ipmMethod').onchange=()=>refreshPaymentAccountSelect('ipmMethod','ipmAccount');refreshPaymentAccountSelect('ipmMethod','ipmAccount');
+    document.getElementById('ipmCancel').onclick=()=>ov.remove();document.getElementById('ipmSave').onclick=()=>{const method=document.getElementById('ipmMethod').value,account=document.getElementById('ipmAccount').value||null;if(!validatePaymentAccount(method,account))return;ov.remove();markInstallmentPaid(planId,idx,method,account);};return;
+  }
   item.status = 'paid';
   item.paidDate = todayStr();
   await safePut('installmentPlans', plan.id, plan);
@@ -5319,7 +5874,7 @@ async function markInstallmentPaid(planId, idx){
       buyerType: plan.buyerType||'customer', groupMemberId: plan.groupMemberId||null,
       groupMemberName: plan.groupMemberName||'',
       amount: Number(item.amount), discount: 0, previousDue, newDue: Math.max(0, previousDue-Number(item.amount)),
-      paymentSystem:'cash', note:t('grp_due_payment'),
+      paymentSystem:selectedMethod, paymentAccountId:selectedAccount||null, paymentAccountName:paymentAccountLabel(selectedAccount), note:t('grp_due_payment'),
       date: todayStr(), ts: Date.now(), planId: plan.id, installmentNo: idx
     };
     db.installments.push(instRecord);
@@ -5391,6 +5946,8 @@ function openReturnForm(saleId){
   qtyInput.value = 1;
   document.getElementById('returnDateInput').value = todayStr();
   document.getElementById('returnNoteInput').value = '';
+  document.getElementById('returnPaymentSystem').value='cash';
+  refreshPaymentAccountSelect('returnPaymentSystem','returnPaymentAccount');
   const noteSugg = [...new Set(db.returns.map(r=>r.note).filter(Boolean))];
   document.getElementById('dl-return-note').innerHTML = noteSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('');
   updateReturnCalcInfo();
@@ -5414,6 +5971,7 @@ function updateReturnCalcInfo(){
     ${t('return_due_adjust')}: ৳${money(dueAdjust)}<br>
     ${t('return_excess_refund')}: ৳${money(excessRefund)}
   `;
+  document.getElementById('returnRefundPayFields').style.display=excessRefund>0?'block':'none';
 }
 document.getElementById('returnQtyInput').addEventListener('input', updateReturnCalcInfo);
 document.getElementById('returnCancelBtn').addEventListener('click', () => {
@@ -5439,6 +5997,9 @@ document.getElementById('returnConfirmBtn').addEventListener('click', async () =
   const invoiceDue = groupSales.reduce((s,x)=>s+Number(x.due),0);
   const dueAdjust = Math.min(returnValue, invoiceDue);
   const excessRefund = Math.max(0, returnValue - dueAdjust);
+  const paymentSystem=excessRefund>0?document.getElementById('returnPaymentSystem').value:null;
+  const paymentAccountId=excessRefund>0?(document.getElementById('returnPaymentAccount').value||null):null;
+  if(excessRefund>0&&!validatePaymentAccount(paymentSystem,paymentAccountId)) return;
 
   const product = db.products[sale.productId];
   if(product){ product.qty = Number(product.qty) + qty; await safePut('products', sale.productId, product); }
@@ -5475,6 +6036,7 @@ document.getElementById('returnConfirmBtn').addEventListener('click', async () =
     buyerType: sale.buyerType||'customer', groupMemberId: sale.groupMemberId||null,
     groupMemberName: sale.groupMemberName||'',
     qty, unitValue: perUnitValue, value: returnValue, dueAdjust, excessRefund, adjustments,
+    paymentSystem,paymentAccountId,paymentAccountName:paymentAccountLabel(paymentAccountId),
     date, note, cancelled:false, ts: Date.now()
   };
   db.returns.push(record);
@@ -5525,6 +6087,7 @@ async function cancelReturn(returnId){
 }
 
 async function deleteReturn(returnId){
+  if(!requirePermission('delete_records'))return;
   const rec = db.returns.find(r=>r.id===returnId);
   if(!rec) return;
   await new Promise(resolve=>{
@@ -5638,6 +6201,7 @@ function openSaleView(id){
         ${sale.voucherTag ? `<tr><td>${t('col_voucher_tag')}</td><td>${escapeHtml(sale.voucherTag)}</td></tr>` : ''}
         ${sale.voucherNo ? `<tr><td>${t('col_voucher')}</td><td>${escapeHtml(sale.voucherNo)}</td></tr>` : ''}
         ${paymentSystemKey(sale.paymentSystem) ? `<tr><td>${t('col_payment_system')}</td><td>${t(paymentSystemKey(sale.paymentSystem))}</td></tr>` : ''}
+        ${sale.paymentAccountId ? `<tr><td>${t('f_payment_account')}</td><td>${escapeHtml(paymentAccountLabel(sale.paymentAccountId))}</td></tr>` : ''}
       </tbody>
     </table>
     <div style="overflow-x:auto;margin-top:10px;"><table class="data">
@@ -5675,6 +6239,7 @@ let msEditInvoiceId = null;
 let msEditInvoiceNo = null;
 
 function openMultiSale(editInvoiceId){
+  if(editInvoiceId&&!isSuperUser()){requirePermission('edit_records');return;}
   msRows = [];
   msRowSeq = 0;
   msEditInvoiceId = editInvoiceId || null;
@@ -5697,6 +6262,7 @@ function openMultiSale(editInvoiceId){
   document.getElementById('msVoucherLabel').textContent = t('f_voucher');
   document.getElementById('msVoucherTagLabel').textContent = t('f_voucher_tag');
   document.getElementById('msPaymentSystemLabel').textContent = t('f_payment_system');
+  document.querySelector('#msPaymentAccountField label').textContent = t('f_payment_account');
   // msIsOldEntryLabel removed (field hidden)
   const paySel = document.getElementById('msPaymentSystem');
   const prevPayVal = paySel.value || 'cash';
@@ -5754,6 +6320,7 @@ function openMultiSale(editInvoiceId){
         document.getElementById('msVoucher').value = first.voucherNo || '';
         document.getElementById('msVoucherTag').value = first.voucherTag || '';
         document.getElementById('msPaymentSystem').value = first.paymentSystem || 'cash';
+        refreshPaymentAccountSelect('msPaymentSystem','msPaymentAccount',first.paymentAccountId||'');
         // msIsOldEntry always false (old entry hidden)
         document.getElementById('msPaid').value = groupSales.reduce((s,x)=>s+Number(x.paid),0);
         document.getElementById('msInstCount').value = plan ? plan.count : '';
@@ -5770,6 +6337,7 @@ function openMultiSale(editInvoiceId){
   document.getElementById('msVoucher').value = '';
   document.getElementById('msVoucherTag').value = '';
   document.getElementById('msPaymentSystem').value = 'cash';
+  refreshPaymentAccountSelect('msPaymentSystem','msPaymentAccount');
   // msIsOldEntry always false
   addMultiSaleRow();
   document.getElementById('multiSaleOverlay').classList.add('open');
@@ -5897,6 +6465,7 @@ document.getElementById('msCancelBtn').addEventListener('click', () => {
 setupOverlayBackdropClose('multiSaleOverlay', () => { msEditInvoiceId = null; msEditInvoiceNo = null; });
 
 document.getElementById('msSaveBtn').addEventListener('click', async () => {
+  if(msEditInvoiceId&&!isSuperUser()){requirePermission('edit_records');return;}
   const buyerType = document.getElementById('msBuyerType').value === 'group_agent' ? 'group_agent' : 'customer';
   const groupMemberId = buyerType==='group_agent' ? (document.getElementById('msGroupMemberSelect').value || null) : null;
   const groupMember = groupMemberId ? db.groupMembers[groupMemberId] : null;
@@ -5912,6 +6481,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   const voucherNo = document.getElementById('msVoucher').value.trim();
   const voucherTag = document.getElementById('msVoucherTag').value.trim();
   const paymentSystem = document.getElementById('msPaymentSystem').value;
+  const paymentAccountId = document.getElementById('msPaymentAccount').value||null;
   const isOldEntry = false; // Old entry always false — field hidden
   const instCount = Number(document.getElementById('msInstCount').value)||0;
 
@@ -5959,6 +6529,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   const grandTotal = rowsData.reduce((s,r)=>s+r.rowTotal,0);
   const paidInput = document.getElementById('msPaid').value;
   const overallPaid = paidInput===''? grandTotal : Math.min(grandTotal, Number(paidInput)||0);
+  if(overallPaid>0&&!validatePaymentAccount(paymentSystem,paymentAccountId)) return;
   const overallDue = Math.max(0, grandTotal - overallPaid);
 
   // Every booking created by this builder gets an invoiceId, including a
@@ -5981,7 +6552,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     const msGroupId = selectedLotId || '';
     const msGroupObj = selectedLot;
     const record = {
-      id: saleId, invoiceId, invoiceNo, voucherNo, voucherTag, paymentSystem, isOldEntry, customerId, customerName,
+      id: saleId, invoiceId, invoiceNo, voucherNo, voucherTag, paymentSystem, paymentAccountId, paymentAccountName:paymentAccountLabel(paymentAccountId), isOldEntry, customerId, customerName,
       buyerType, groupMemberId, groupMemberName: groupMember ? groupMember.name : '',
       referrerMemberId: buyerType==='customer'&&msGroupObj ? (msGroupObj.memberId||null) : null,
       referrerMemberName: buyerType==='customer'&&referrerMember ? referrerMember.name : '',
@@ -6055,7 +6626,9 @@ function openPayDue(custId){
   document.getElementById('dueDateLabel').textContent = t('f_date');
   document.getElementById('dueNoteLabel').textContent = t('f_note');
   document.getElementById('duePaymentLabel').textContent = t('col_payment_system');
+  document.querySelector('#duePaymentAccountField label').textContent = t('f_payment_account');
   document.getElementById('duePaymentSystem').value = 'cash';
+  refreshPaymentAccountSelect('duePaymentSystem','duePaymentAccount');
   document.getElementById('dueNoteInput').value = '';
   // dueIsOldEntry always false
   document.getElementById('dueIsOldEntryLabel').textContent = t('f_is_old_entry');
@@ -6092,7 +6665,9 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const note = document.getElementById('dueNoteInput').value.trim();
   const isOldEntry = false; // Old entry always false
   const instPaymentSystem = document.getElementById('duePaymentSystem').value || 'cash';
+  const paymentAccountId = document.getElementById('duePaymentAccount').value||null;
   if(paid<=0 && discount<=0) return;
+  if(paid>0&&!validatePaymentAccount(instPaymentSystem,paymentAccountId)) return;
   const previousDue = Number(cust.due);
   if(paid + discount > previousDue){
     alert(currentLang==='bn' ? 'পরিশোধ + ছাড় বর্তমান বকেয়ার চেয়ে বেশি হতে পারবে না।' : 'Payment + discount cannot exceed the current due.');
@@ -6120,7 +6695,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const instRecord = {
     id: uid(), receiptNo: nextReceiptNo(), customerId: dueCtx, customerName: cust.name,
     amount: paid, discount, previousDue, newDue, note, isOldEntry,
-    paymentSystem: instPaymentSystem,
+    paymentSystem: instPaymentSystem, paymentAccountId, paymentAccountName:paymentAccountLabel(paymentAccountId),
     date: payDate, ts: new Date(payDate).getTime() || Date.now()
   };
   db.installments.push(instRecord);
@@ -6147,6 +6722,7 @@ function openInstallmentReceipt(rec){
         ${(custRecord||memberRecord) && (custRecord||memberRecord).phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml((custRecord||memberRecord).phone)}</td></tr>` : ''}
         <tr><td>${t('inst_col_date')}</td><td>${formatDateDMY(rec.date)}</td></tr>
         ${paymentSystemKey(rec.paymentSystem) ? `<tr><td>${t('grp_method')}</td><td>${t(paymentSystemKey(rec.paymentSystem))}</td></tr>` : ''}
+        ${rec.paymentAccountId ? `<tr><td>${t('f_payment_account')}</td><td>${escapeHtml(paymentAccountLabel(rec.paymentAccountId))}</td></tr>` : ''}
         <tr><td>${t('inst_col_previous_due')}</td><td>৳${money(rec.previousDue)}</td></tr>
         <tr><td>${t('inst_col_amount')}</td><td>৳${money(rec.amount)}</td></tr>
         ${Number(rec.discount)>0 ? `<tr><td>${t('inst_col_discount')}</td><td>৳${money(rec.discount)}</td></tr>` : ''}
@@ -6165,6 +6741,7 @@ setupOverlayBackdropClose('instReceiptOverlay');
 
 
 function openInstallmentEdit(instId, custId){
+  if(!isSuperUser()){requirePermission('edit_records');return;}
   const rec = db.installments.find(x=>x.id===instId);
   if(!rec) return;
   const html = '<div class="overlay open" id="instEditOverlay" style="z-index:200;">'
@@ -6275,6 +6852,7 @@ function openInstallmentHistory(custId){
   });
   document.getElementById('instHistoryBody').querySelectorAll('.inst-del-btn').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
+      if(!requirePermission('delete_records'))return;
       if(!confirm(t('delete_confirm'))) return;
       const rec = db.installments.find(x=>x.id===btn.dataset.id);
       if(!rec) return;
@@ -6298,6 +6876,7 @@ function openInstallmentHistory(custId){
       openInstallmentHistory(custId);
     });
   });
+  applyRoleUi();
 }
 document.getElementById('instHistoryCloseBtn').addEventListener('click', () => {
   document.getElementById('instHistoryOverlay').classList.remove('open');
@@ -6310,6 +6889,20 @@ function attachPageEvents(){ /* per-page listeners are wired inside each render 
 document.getElementById('quickSaleBtn').addEventListener('click', () => openMultiSale());
 
 /* ---------- Auth Gate ---------- */
+let roleMonitorTimer=null;
+function startRoleMonitor(){
+  if(roleMonitorTimer)clearInterval(roleMonitorTimer);
+  if(!useFirebase)return;
+  roleMonitorTimer=setInterval(async()=>{
+    if(!currentAuthUser)return;
+    try{
+      db.appUsers=await fetchCollection('appUsers');
+      if(currentRole()==='inactive'){alert('Your ERP access has been disabled by a Super User.');await firebase.auth().signOut();return;}
+      renderNav();
+      if(!canAccessTab(currentTab)){currentTab='dashboard';renderPage();}
+    }catch(err){console.warn('Role refresh failed',err);}
+  },45000);
+}
 function showLoginScreen(){
   document.getElementById('loginScreen').classList.add('open');
   document.getElementById('appRoot').style.display = 'none';
@@ -6377,22 +6970,22 @@ document.getElementById('backupBtn').addEventListener('click', backupToDrive);
 document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
 
 async function clearAllData(){
-  const user = firebase.auth().currentUser;
-  if(!user || !ADMIN_EMAILS.includes(user.email)){ alert('⛔ শুধুমাত্র admin এই কাজ করতে পারবেন।'); return; }
+  if(!isSuperUser()){ alert('⛔ শুধুমাত্র Super User এই কাজ করতে পারবেন।'); return; }
   const step1 = confirm(t('clear_all_confirm1'));
   if(!step1) return;
   const typed = prompt(t('clear_all_confirm2'));
   if(typed !== t('clear_all_confirm_word')) { alert(t('clear_all_aborted')); return; }
 
-  const collections = ['customers','suppliers','products','purchases','sales','expenses','installments','installmentPlans','returns'];
+  const collections = ['customers','suppliers','products','categories','groupMembers','groups','purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','bankAccounts','mobileAccounts','paymentHeads','paymentLedger','agentLedgerHeads','agentLedger'];
   for(const name of collections){
     const items = db[name];
     const ids = Array.isArray(items) ? items.map(x=>x.id) : Object.keys(items);
     for(const id of ids){ await safeRemove(name, id); }
   }
-  db.customers = {}; db.suppliers = {}; db.products = {};
+  db.customers = {}; db.suppliers = {}; db.products = {}; db.categories={}; db.groupMembers={}; db.groups={};
+  db.bankAccounts={}; db.mobileAccounts={}; db.paymentHeads={}; db.agentLedgerHeads={};
   db.purchases = []; db.sales = []; db.expenses = [];
-  db.installments = []; db.installmentPlans = []; db.returns = [];
+  db.installments = []; db.installmentPlans = []; db.returns = []; db.vendorPayments=[]; db.paymentLedger=[]; db.agentLedger=[];
   try{ await storageSet(K.logo, null); }catch(e){}
   logoData = null;
 
@@ -6438,8 +7031,8 @@ function bootstrapApp(){
       firebase.auth().onAuthStateChanged(user => {
         currentAuthUser = user;
         try{
-          if(user){ showApp(); loadAll(); }
-          else { showLoginScreen(); }
+          if(user){ showApp(); startRoleMonitor(); loadAll(); }
+          else { if(roleMonitorTimer){clearInterval(roleMonitorTimer);roleMonitorTimer=null;} showLoginScreen(); }
         }catch(innerErr){
           console.error('post-auth render failed', innerErr);
           safeShowAppOrLogin();
