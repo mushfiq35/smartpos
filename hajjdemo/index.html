@@ -623,15 +623,22 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
 <div class="overlay" id="multiSaleOverlay">
   <div class="modal" style="max-width:640px;">
     <h2 id="multiSaleTitle">New Sale</h2>
+    <div class="field">
+      <label id="msBuyerTypeLabel">Booking For</label>
+      <select id="msBuyerType" onchange="onMsBuyerTypeChange()">
+        <option value="customer">Customers</option>
+        <option value="group_agent">Groups/Agent</option>
+      </select>
+    </div>
     <div class="field" id="msGroupField">
-      <label>${t('f_select_group')} <span style="font-size:11px;color:var(--ink-soft);">(ঐচ্ছিক)</span></label>
+      <label id="msGroupLabel">Group / Lot <span style="font-size:11px;color:var(--ink-soft);">(optional)</span></label>
       <div class="select-row">
         <select id="msGroupSelect" onchange="onMsGroupChange()" style="flex:1;">
           <option value="">— কোনো গ্রুপ নেই —</option>
         </select>
       </div>
     </div>
-    <div class="field">
+    <div class="field" id="msCustomerField">
       <label id="msCustomerLabel">Customer</label>
       <div class="select-row" style="position:relative;">
         <input type="text" id="msCustomer" autocomplete="off" placeholder="Walk-in Customer" oninput="onMsCustomerSearch()" onfocus="onMsCustomerSearch()">
@@ -639,6 +646,12 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
         <button type="button" class="qa-btn" onclick="openQuickAdd('customers','msCustomerId')">+</button>
         <div class="ms-product-results" id="msCustomerResults"></div>
       </div>
+    </div>
+    <div class="field" id="msGroupAgentField" style="display:none;">
+      <label id="msGroupAgentLabel">Groups/Agent</label>
+      <select id="msGroupMemberSelect">
+        <option value="">— Select Groups/Agent —</option>
+      </select>
     </div>
     <div id="msRows"></div>
     <button type="button" class="ms-add-row" id="msAddRowBtn">+ আরেকটা পণ্য যোগ করুন</button>
@@ -709,9 +722,9 @@ const I18N = {
   bn: {
     brand_sub:'হজ্জ এজেন্সি ম্যানেজমেন্ট', logo_change:'লোগো পরিবর্তন / Change logo', new_sale:'+ নতুন বুকিং',
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
-    nav_dashboard:'ড্যাশবোর্ড', nav_customers:'হাজী', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর',
+    nav_dashboard:'ড্যাশবোর্ড', nav_customers:'কাস্টমার', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর',
     title_categories:'প্যাকেজের ধরন', add_categories:'+ নতুন ধরন', f_category_name:'ধরনের নাম',
-    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_group_members:'গ্রুপ মেম্বার', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপ',
+    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_group_members:'গ্রুপস/এজেন্ট', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপস/এজেন্ট',
     reports_sales_returns_tab:'বুকিং ও বাতিল', sr_sales_count:'বুকিং সংখ্যা', sr_returns_count:'বাতিল সংখ্যা', sr_net_label:'নিট',
     return_title:'বুকিং বাতিল', return_new:'নতুন বাতিল', return_no:'বাতিল নং',
     return_original_qty:'মোট বুকড পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
@@ -734,30 +747,30 @@ const I18N = {
     filter_year:'বছর', filter_month:'মাস', all_years:'সব বছর', all_months:'সব মাস',
     totals_label:'মোট',
     rep_col_sales:'বুকিং', rep_col_purchase:'ক্রয়', rep_col_expense:'খরচ', rep_col_net:'নিট',
-    stat_customer:'মোট হাজী', stat_product:'মোট প্যাকেজ', stat_supplier:'মোট ভেন্ডর',
+    stat_customer:'মোট কাস্টমার', stat_product:'মোট প্যাকেজ', stat_supplier:'মোট ভেন্ডর',
     stat_sales:'মোট বুকিং', stat_today_sales:'আজকের বুকিং', stat_today_purchase:'আজকের ক্রয়',
     stat_today_expense:'আজকের খরচ', stat_today_income:'আজকের আয় (লাভ)', stat_total_qty:'মোট আসন সংখ্যা',
     col_name:'নাম', col_phone:'ফোন', col_passport:'পাসপোর্ট', col_tracking:'ট্র্যাকিং নং', col_address:'ঠিকানা', col_due_amt:'বাকি (৳)',
     col_cat:'প্যাকেজের ধরন', col_stock:'আসন সংখ্যা', col_cost:'খরচ মূল্য', col_price:'বিক্রয়মূল্য', col_supplier:'ভেন্ডর',
-    col_date:'তারিখ', col_customer:'হাজী', col_product:'প্যাকেজ', col_qty:'পরিমাণ', col_unit_cost:'একক মূল্য',
+    col_date:'তারিখ', col_customer:'কাস্টমার / গ্রুপস-এজেন্ট', col_product:'প্যাকেজ', col_qty:'পরিমাণ', col_unit_cost:'একক মূল্য',
     col_total:'মোট', col_paid:'প্রদানকৃত', col_due:'বাকি', col_profit:'লাভ', col_note:'নোট', col_amount:'টাকা',
-    add_customers:'+ নতুন হাজী', add_suppliers:'+ নতুন ভেন্ডর', add_products:'+ নতুন প্যাকেজ',
+    add_customers:'+ নতুন কাস্টমার', add_suppliers:'+ নতুন ভেন্ডর', add_products:'+ নতুন প্যাকেজ',
     add_purchases:'+ নতুন ক্রয়', add_sales:'+ নতুন বুকিং', add_expenses:'+ নতুন খরচ',
-    title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
+    title_customers:'Customers', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_tracking:'ট্র্যাকিং নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল', f_member_no:'মেম্বার নম্বর', f_group_name:'গ্রুপ / লট নাম', f_group_member:'গ্রুপ মেম্বার (মোয়াল্লেম)', f_group_package:'প্যাকেজ', f_group_year:'বছর', f_group_hajjis:'হাজী সংখ্যা', col_member_no:'নম্বর', col_group:'গ্রুপ', f_select_group:'গ্রুপ নির্বাচন করুন',
-    grp_no_group:'— কোনো গ্রুপ নেই —', grp_add_btn:'+ নতুন গ্রুপ / লট', grp_add_member_btn:'+ নতুন গ্রুপ মেম্বার',
+    f_name:'নাম', f_phone:'ফোন নম্বর', f_passport:'পাসপোর্ট নম্বর', f_tracking:'ট্র্যাকিং নম্বর', f_address:'ঠিকানা', f_email:'ইমেইল', col_email:'ইমেইল', f_member_no:'এজেন্ট নম্বর', f_group_name:'গ্রুপ / লট নাম', f_group_member:'গ্রুপস/এজেন্ট (মোয়াল্লেম)', f_group_package:'প্যাকেজ', f_group_year:'বছর', f_group_hajjis:'কাস্টমার সংখ্যা', col_member_no:'নম্বর', col_group:'গ্রুপ', f_select_group:'গ্রুপ নির্বাচন করুন',
+    grp_no_group:'— কোনো গ্রুপ নেই —', grp_add_btn:'+ নতুন গ্রুপ / লট', grp_add_member_btn:'+ নতুন গ্রুপস/এজেন্ট',
     grp_edit_form:'গ্রুপ / লট সম্পাদনা', grp_new_form:'নতুন গ্রুপ / লট',
-    grp_edit_member:'গ্রুপ মেম্বার সম্পাদনা', grp_new_member:'নতুন গ্রুপ মেম্বার',
-    grp_del_member_confirm:'এই গ্রুপ মেম্বার মুছে ফেলবেন?', grp_del_confirm:'এই গ্রুপ মুছে ফেলবেন?', del_cancel:'বাতিল করুন', del_confirm_btn:'হ্যাঁ, মুছুন', del_irreversible:'⚠️ এই কাজ পূর্বাবস্থায় ফেরানো যাবে না!', del_title_hajji:'হাজী সম্পূর্ণ মুছুন', del_title_booking:'বুকিং মুছুন', del_title_return:'বাতিল রেকর্ড মুছুন', del_title_generic:'মুছে ফেলুন', del_title_group:'গ্রুপ / লট মুছুন', del_title_member:'গ্রুপ মেম্বার মুছুন', del_msg_hajji_data:' এবং তার সকল ডেটা মুছে যাবে', del_msg_sales:' টি বুকিং', del_msg_inst:' টি কিস্তি', del_msg_no_sales:'কোনো বুকিং নেই', del_msg_confirm:' মুছে ফেলবেন?',
+    grp_edit_member:'গ্রুপস/এজেন্ট সম্পাদনা', grp_new_member:'নতুন গ্রুপস/এজেন্ট',
+    grp_del_member_confirm:'এই গ্রুপস/এজেন্ট মুছে ফেলবেন?', grp_del_confirm:'এই গ্রুপ মুছে ফেলবেন?', del_cancel:'বাতিল করুন', del_confirm_btn:'হ্যাঁ, মুছুন', del_irreversible:'⚠️ এই কাজ পূর্বাবস্থায় ফেরানো যাবে না!', del_title_hajji:'কাস্টমার সম্পূর্ণ মুছুন', del_title_booking:'বুকিং মুছুন', del_title_return:'বাতিল রেকর্ড মুছুন', del_title_generic:'মুছে ফেলুন', del_title_group:'গ্রুপ / লট মুছুন', del_title_member:'গ্রুপস/এজেন্ট মুছুন', del_msg_hajji_data:' এবং তার সকল ডেটা মুছে যাবে', del_msg_sales:' টি বুকিং', del_msg_inst:' টি কিস্তি', del_msg_no_sales:'কোনো বুকিং নেই', del_msg_confirm:' মুছে ফেলবেন?',
     grp_name_required:'গ্রুপ নাম ও মোয়াল্লেম আবশ্যক', grp_member_required:'নম্বর ও নাম আবশ্যক',
-    grp_no_members:'কোনো গ্রুপ মেম্বার নেই', grp_no_groups:'কোনো গ্রুপ নেই',
-    grp_no_lots:'এই মেম্বারের কোনো লট নেই', grp_no_bookings:'কোনো বুকিং নেই', grp_no_inst:'কোনো কিস্তি নেই',
-    grp_col_name:'গ্রুপ নাম', grp_col_moallem:'মোয়াল্লেম', grp_col_year:'বছর', grp_col_hajji:'হাজী', grp_col_total:'মোট বুকিং', grp_col_lot:'লট',
+    grp_no_members:'কোনো গ্রুপস/এজেন্ট নেই', grp_no_groups:'কোনো গ্রুপ নেই',
+    grp_no_lots:'এই গ্রুপস/এজেন্টের কোনো লট বা সরাসরি বুকিং নেই', grp_no_bookings:'কোনো বুকিং নেই', grp_no_inst:'কোনো কিস্তি নেই',
+    grp_col_name:'গ্রুপ নাম', grp_col_moallem:'মোয়াল্লেম', grp_col_year:'বছর', grp_col_hajji:'কাস্টমার', grp_col_total:'মোট বুকিং', grp_col_lot:'লট',
     grp_col_lot_name:'লট নাম', grp_col_due:'বাকি',
-    grp_member_no_label:'মেম্বার নম্বর', grp_total_lots:'মোট লট', grp_inst_history:'কিস্তি ইতিহাস',
-    grp_back:'← গ্রুপে ফিরুন', grp_back_members:'← গ্রুপ মেম্বার', grp_paid:'পরিশোধিত',
-    grp_lot_label:'টি লট', grp_member_label:'মেম্বার নম্বর:', grp_lot_count:'টি লট',
+    grp_member_no_label:'এজেন্ট নম্বর', grp_total_lots:'মোট লট', grp_inst_history:'কিস্তি ইতিহাস',
+    grp_back:'← গ্রুপে ফিরুন', grp_back_members:'← গ্রুপস/এজেন্ট', grp_paid:'পরিশোধিত',
+    grp_lot_label:'টি লট', grp_member_label:'এজেন্ট নম্বর:', grp_lot_count:'টি লট',
     grp_rpt_search:'গ্রুপ / মোয়াল্লেম খুঁজুন...', grp_name_placeholder:'যেমন: রফিক — হজ্জ ২০২৬ — লট ১',
     grp_select_member:'— নির্বাচন করুন —', grp_moallem_label:'মোয়াল্লেম',
     vnd_statement:'ভেন্ডর স্টেটমেন্ট', vnd_pay_btn:'+ পেমেন্ট দিন', vnd_return_btn:'+ রিটার্ন করুন',
@@ -772,8 +785,8 @@ const I18N = {
     vnd_type_purchase:'ক্রয়', vnd_type_payment:'পেমেন্ট', vnd_type_return:'রিটার্ন',
     vnd_no_history:'কোনো লেনদেন নেই', vnd_del_payment:'এই পেমেন্ট মুছবেন?', col_debit:'ডেবিট', col_credit:'ক্রেডিট',
     hdr_type:'ধরন', hdr_desc:'বিবরণ', hdr_balance:'ব্যালেন্স',
-    lbl_hajji_add:'🤲 হাজী যোগ —', lbl_sel_purchase:'ক্রয় নির্বাচন করুন',
-    lbl_hajji_col:'হাজী', lbl_passport_col:'পাসপোর্ট', lbl_total_booking:'মোট বুকিং',
+    lbl_hajji_add:'👥 কাস্টমার যোগ —', lbl_sel_purchase:'ক্রয় নির্বাচন করুন',
+    lbl_hajji_col:'কাস্টমার', lbl_passport_col:'পাসপোর্ট', lbl_total_booking:'মোট বুকিং',
     lbl_paid_col:'পরিশোধ', lbl_due_col:'বাকি',
     lbl_no_return:'এই ভেন্ডরের কোনো রিটার্নযোগ্য ক্রয় নেই',
     lbl_return_total:'মোট ফেরত:', lbl_remaining:'অবশিষ্ট:',
@@ -781,12 +794,12 @@ const I18N = {
     lbl_vendor_due_label:'আমাদের দিতে হবে (ভেন্ডর)',
     lbl_today_booking:'আজকের বুকিং', lbl_today_expense:'আজকের খরচ',
     lbl_recent_trend:'গত ১৪ দিন', lbl_two_col_recent:'সাম্প্রতিক বুকিং',
-    lbl_booking_col_header:'হাজী / বুকিং', lbl_lot_col_header:'লট',
+    lbl_booking_col_header:'কাস্টমার / বুকিং', lbl_lot_col_header:'লট',
     lbl_pending:'বাকি আছে', lbl_todays_booking_count:'আজকের বুকিং',
     login_subtitle:'চালিয়ে যেতে লগ ইন করুন', login_email:'ইমেইল', login_password:'পাসওয়ার্ড',
     login_btn:'লগ ইন করুন', login_error:'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে', logout:'লগ আউট',
     backup_btn:'☁️ ব্যাকআপ', restore_btn:'♻️ রিস্টোর',
-    clear_all_confirm1:'⚠️ এটি সব হাজী, প্যাকেজ, বুকিং, ক্রয়, খরচ, কিস্তি ও বাতিল — সম্পূর্ণ ডেটা স্থায়ীভাবে মুছে ফেলবে! এটা আর ফিরিয়ে আনা যাবে না। আগে ব্যাকআপ নিয়ে নিয়েছেন তো?',
+    clear_all_confirm1:'⚠️ এটি সব কাস্টমার, প্যাকেজ, বুকিং, ক্রয়, খরচ, কিস্তি ও বাতিল — সম্পূর্ণ ডেটা স্থায়ীভাবে মুছে ফেলবে! এটা আর ফিরিয়ে আনা যাবে না। আগে ব্যাকআপ নিয়ে নিয়েছেন তো?',
     clear_all_confirm2:'নিশ্চিত করতে নিচে ঠিক এই শব্দটা লিখুন: DELETE',
     clear_all_confirm_word:'DELETE',
     clear_all_aborted:'বাতিল করা হয়েছে — কোনো ডেটা মোছা হয়নি।',
@@ -800,10 +813,22 @@ const I18N = {
     f_product_name:'প্যাকেজের নাম', f_cat:'প্যাকেজের ধরন', f_current_stock:'মোট আসন সংখ্যা', f_threshold:'সর্বনিম্ন আসন সীমা',
     f_cost:'খরচ মূল্য (প্রতি প্যাকেজ)', f_price:'বিক্রয়মূল্য (প্রতি প্যাকেজ)', f_supplier:'ভেন্ডর',
     f_supplier_select:'ভেন্ডর', f_sector:'সেক্টর / বিষয়', f_pur_qty:'পরিমাণ (QTY)', f_product_select:'প্যাকেজ', f_qty:'যাত্রী সংখ্যা', f_unit_cost:'একক খরচ মূল্য (৳)', f_date:'তারিখ',
-    f_customer_opt:'হাজী (ঐচ্ছিক)', f_unit_price:'একক বিক্রয়মূল্য (৳)', f_paid:'প্রদানকৃত টাকা (৳)', f_discount:'ছাড় (৳)', col_discount:'ছাড়',
+    f_customer_opt:'কাস্টমার (ঐচ্ছিক)', f_unit_price:'একক বিক্রয়মূল্য (৳)', f_paid:'প্রদানকৃত টাকা (৳)', f_discount:'ছাড় (৳)', col_discount:'ছাড়',
     f_expense_cat:'ক্যাটাগরি', f_amount:'টাকা (৳)', f_note:'নোট',
     f_is_old_entry:'এটি পুরনো এন্ট্রি (Summary-তে গণনা হবে না)',
-    walk_in:'সরাসরি যাত্রী',
+    walk_in:'সরাসরি কাস্টমার',
+    booking_for:'বুকিং কার জন্য', booking_for_customer:'Customers', booking_for_group_agent:'Groups/Agent',
+    select_group_agent:'গ্রুপস/এজেন্ট নির্বাচন করুন', group_agent_required:'একজন গ্রুপস/এজেন্ট নির্বাচন করুন', group_agent_has_bookings:'এই গ্রুপস/এজেন্টের বুকিং বা কিস্তি আছে। আগে সংশ্লিষ্ট লেনদেন মুছুন।',
+    grp_statement:'এজেন্ট স্টেটমেন্ট', grp_receive_payment:'+ পেমেন্ট গ্রহণ', grp_total_qty:'মোট বুকিং পরিমাণ',
+    grp_direct_booking:'মোট এজেন্ট বুকিং', grp_initial_paid:'প্রাথমিক পরিশোধ', grp_later_paid:'পরবর্তী পরিশোধ',
+    grp_total_discount:'মোট ছাড়', grp_return_adjust:'বাতিল সমন্বয়', grp_current_due:'বর্তমান বাকি',
+    grp_reference:'রেফারেন্স', grp_description:'বিবরণ', grp_balance:'চলতি ব্যালেন্স', grp_method:'মাধ্যম',
+    grp_booking_desc:'প্যাকেজ বুকিং', grp_initial_payment:'প্রাথমিক পেমেন্ট', grp_due_payment:'বাকি/কিস্তি পেমেন্ট',
+    grp_discount_desc:'ছাড়', grp_return_desc:'বুকিং বাতিল সমন্বয়', grp_lots_info:'Lots / Customer Information',
+    grp_referred_statement:'Lot অনুযায়ী Customer Statement', grp_no_lot_booking:'এই Lot-এ এখনো কোনো Customer booking নেই',
+    grp_linked_agent:'রেফারেন্স এজেন্ট', grp_linked_lot:'রেফারেন্স Lot',
+    grp_no_transactions:'এখনো কোনো এজেন্ট লেনদেন নেই', grp_payment_amount:'গৃহীত টাকা (৳)',
+    grp_payment_saved:'✓ এজেন্ট পেমেন্ট সংরক্ষিত হয়েছে', grp_payment_too_high:'পেমেন্ট ও ছাড় বর্তমান বাকির চেয়ে বেশি হতে পারবে না',
     low_stock_more:'বুকিংয়ের পরিমাণ আসনের চেয়ে বেশি। তবুও এগিয়ে যেতে চান?', product_not_found:'প্যাকেজ পাওয়া যায়নি',
     storage_ok:'✓ ডেটা শেয়ার্ড ক্লাউড স্টোরেজে (Firebase) সংরক্ষিত হচ্ছে।',
     storage_warn:'⚠️ Firebase কনফিগার করা নেই — ডেটা শুধু এই ব্রাউজারে থাকছে, অন্য ডিভাইসে শেয়ার হবে না। কোড-এর উপরের দিকে <code>firebaseConfig</code>-এ নিজের Firebase প্রজেক্টের তথ্য বসান।',
@@ -838,16 +863,16 @@ const I18N = {
     pay_due_amount:'প্রদানকৃত টাকা (৳)', pay_due_discount:'ছাড় (৳, ঐচ্ছিক)', pay_due_nothing:'কমপক্ষে একটা মান দিন',
     payment_history:'বাকি পরিশোধের ইতিহাস', col_payment_date:'তারিখ', col_payment_amount:'পরিশোধ', col_payment_discount:'ছাড়',
     close:'বন্ধ করুন', logo_alt:'Logo',
-    quick_add_customer:'+ নতুন হাজী', quick_add_product:'+ নতুন প্যাকেজ',
+    quick_add_customer:'+ নতুন কাস্টমার', quick_add_product:'+ নতুন প্যাকেজ',
     qa_name_required:'নাম দিন', qa_name:'নাম', qa_phone:'ফোন (ঐচ্ছিক)',
     qa_price:'প্যাকেজ মূল্য (৳)', qa_cost:'খরচ মূল্য (৳)', view_title:'বুকিংয়ের বিবরণ'
   },
   en: {
     brand_sub:'Hajj Agency Management', logo_change:'Change logo', new_sale:'+ New Booking',
     loading:'Loading...', crumb_prefix:'Dashboard',
-    nav_dashboard:'Dashboard', nav_customers:'Hajji', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors',
+    nav_dashboard:'Dashboard', nav_customers:'Customers', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors',
     title_categories:'Package Types', add_categories:'+ New Type', f_category_name:'Type Name',
-    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports', nav_settings:'Settings', nav_group_members:'Group Members', nav_groups:'Groups / Lots', rep_group_tab:'Group',
+    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports', nav_settings:'Settings', nav_group_members:'Groups/Agent', nav_groups:'Groups / Lots', rep_group_tab:'Groups/Agent',
     reports_sales_returns_tab:'Bookings & Cancellations', sr_sales_count:'Bookings Count', sr_returns_count:'Cancellations Count', sr_net_label:'Net',
     return_title:'Cancellations', return_new:'New Cancellation', return_no:'Cancellation No.',
     return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
@@ -870,30 +895,30 @@ const I18N = {
     filter_year:'Year', filter_month:'Month', all_years:'All Years', all_months:'All Months',
     totals_label:'Total',
     rep_col_sales:'Bookings', rep_col_purchase:'Purchase', rep_col_expense:'Expense', rep_col_net:'Net',
-    stat_customer:'Total Hajji', stat_product:'Total Packages', stat_supplier:'Total Vendors',
+    stat_customer:'Total Customers', stat_product:'Total Packages', stat_supplier:'Total Vendors',
     stat_sales:'Total Bookings', stat_today_sales:'Today Bookings', stat_today_purchase:'Today Purchase',
     stat_today_expense:'Today Expense', stat_today_income:'Today Income (Profit)', stat_total_qty:'Total Seats',
     col_name:'Name', col_phone:'Phone', col_passport:'Passport', col_tracking:'Tracking No', col_address:'Address', col_due_amt:'Due (৳)',
     col_cat:'Package Type', col_stock:'Seats', col_cost:'Cost Price', col_price:'Sell Price', col_supplier:'Vendor',
-    col_date:'Date', col_customer:'Hajji', col_product:'Package', col_qty:'Qty', col_unit_cost:'Unit Cost',
+    col_date:'Date', col_customer:'Customer / Groups-Agent', col_product:'Package', col_qty:'Qty', col_unit_cost:'Unit Cost',
     col_total:'Total', col_paid:'Paid', col_due:'Due', col_profit:'Profit', col_note:'Note', col_amount:'Amount',
-    add_customers:'+ New Hajji', add_suppliers:'+ New Vendor', add_products:'+ New Package',
+    add_customers:'+ New Customer', add_suppliers:'+ New Vendor', add_products:'+ New Package',
     add_purchases:'+ New Purchase', add_sales:'+ New Booking', add_expenses:'+ New Expense',
-    title_customers:'Hajji', title_suppliers:'Vendors', title_products:'Packages',
+    title_customers:'Customers', title_suppliers:'Vendors', title_products:'Packages',
     title_purchases:'Purchases', title_sales:'Bookings', title_expenses:'Expense',
-    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_tracking:'Tracking Number', f_address:'Address', f_email:'Email', col_email:'Email', f_member_no:'Member No', f_group_name:'Group / Lot Name', f_group_member:'Group Member (Moallem)', f_group_package:'Package', f_group_year:'Year', f_group_hajjis:'No. of Hajjis', col_member_no:'No.', col_group:'Group', f_select_group:'Select Group',
-    grp_no_group:'— No Group —', grp_add_btn:'+ New Group / Lot', grp_add_member_btn:'+ New Group Member',
+    f_name:'Name', f_phone:'Phone Number', f_passport:'Passport Number', f_tracking:'Tracking Number', f_address:'Address', f_email:'Email', col_email:'Email', f_member_no:'Agent No', f_group_name:'Group / Lot Name', f_group_member:'Groups/Agent (Moallem)', f_group_package:'Package', f_group_year:'Year', f_group_hajjis:'No. of Customers', col_member_no:'No.', col_group:'Group', f_select_group:'Select Group',
+    grp_no_group:'— No Group —', grp_add_btn:'+ New Group / Lot', grp_add_member_btn:'+ New Groups/Agent',
     grp_edit_form:'Edit Group / Lot', grp_new_form:'New Group / Lot',
-    grp_edit_member:'Edit Group Member', grp_new_member:'New Group Member',
-    grp_del_member_confirm:'Delete this group member?', grp_del_confirm:'Delete this group?', del_cancel:'Cancel', del_confirm_btn:'Yes, Delete', del_irreversible:'⚠️ This action cannot be undone!', del_title_hajji:'Delete Hajji Completely', del_title_booking:'Delete Booking', del_title_return:'Delete Cancellation Record', del_title_generic:'Delete', del_title_group:'Delete Group / Lot', del_title_member:'Delete Group Member', del_msg_hajji_data:' and all their data will be deleted', del_msg_sales:' booking(s)', del_msg_inst:' installment(s)', del_msg_no_sales:'no bookings', del_msg_confirm:' — delete?',
+    grp_edit_member:'Edit Groups/Agent', grp_new_member:'New Groups/Agent',
+    grp_del_member_confirm:'Delete this Groups/Agent?', grp_del_confirm:'Delete this group?', del_cancel:'Cancel', del_confirm_btn:'Yes, Delete', del_irreversible:'⚠️ This action cannot be undone!', del_title_hajji:'Delete Customer Completely', del_title_booking:'Delete Booking', del_title_return:'Delete Cancellation Record', del_title_generic:'Delete', del_title_group:'Delete Group / Lot', del_title_member:'Delete Groups/Agent', del_msg_hajji_data:' and all their data will be deleted', del_msg_sales:' booking(s)', del_msg_inst:' installment(s)', del_msg_no_sales:'no bookings', del_msg_confirm:' — delete?',
     grp_name_required:'Group name and Moallem are required', grp_member_required:'Number and name are required',
-    grp_no_members:'No group members yet', grp_no_groups:'No groups yet',
-    grp_no_lots:'No lots for this member', grp_no_bookings:'No bookings', grp_no_inst:'No installments',
-    grp_col_name:'Group Name', grp_col_moallem:'Moallem', grp_col_year:'Year', grp_col_hajji:'Hajjis', grp_col_total:'Total Booking', grp_col_lot:'Lots',
+    grp_no_members:'No Groups/Agent yet', grp_no_groups:'No groups yet',
+    grp_no_lots:'No lots or direct bookings for this Groups/Agent', grp_no_bookings:'No bookings', grp_no_inst:'No installments',
+    grp_col_name:'Group Name', grp_col_moallem:'Moallem', grp_col_year:'Year', grp_col_hajji:'Customers', grp_col_total:'Total Booking', grp_col_lot:'Lots',
     grp_col_lot_name:'Lot Name', grp_col_due:'Due',
-    grp_member_no_label:'Member No', grp_total_lots:'Total Lots', grp_inst_history:'Installment History',
-    grp_back:'← Back to Group', grp_back_members:'← Group Members', grp_paid:'Paid',
-    grp_lot_label:'Lots', grp_member_label:'Member No:', grp_lot_count:'Lots',
+    grp_member_no_label:'Agent No', grp_total_lots:'Total Lots', grp_inst_history:'Installment History',
+    grp_back:'← Back to Group', grp_back_members:'← Groups/Agent', grp_paid:'Paid',
+    grp_lot_label:'Lots', grp_member_label:'Agent No:', grp_lot_count:'Lots',
     grp_rpt_search:'Search group / moallem...', grp_name_placeholder:'e.g. Rafiq — Hajj 2026 — Lot 1',
     grp_select_member:'— Select —', grp_moallem_label:'Moallem',
     vnd_statement:'Vendor Statement', vnd_pay_btn:'+ Pay Vendor', vnd_return_btn:'+ Purchase Return',
@@ -908,8 +933,8 @@ const I18N = {
     vnd_type_purchase:'Purchase', vnd_type_payment:'Payment', vnd_type_return:'Return',
     vnd_no_history:'No transactions yet', vnd_del_payment:'Delete this payment?', col_debit:'Debit', col_credit:'Credit',
     hdr_type:'Type', hdr_desc:'Description', hdr_balance:'Balance',
-    lbl_hajji_add:'🤲 Add Hajji —', lbl_sel_purchase:'Select Purchase',
-    lbl_hajji_col:'Hajji', lbl_passport_col:'Passport', lbl_total_booking:'Total Booking',
+    lbl_hajji_add:'👥 Add Customer —', lbl_sel_purchase:'Select Purchase',
+    lbl_hajji_col:'Customer', lbl_passport_col:'Passport', lbl_total_booking:'Total Booking',
     lbl_paid_col:'Paid', lbl_due_col:'Due',
     lbl_no_return:'No returnable purchases for this vendor',
     lbl_return_total:'Total Return:', lbl_remaining:'Remaining:',
@@ -917,12 +942,12 @@ const I18N = {
     lbl_vendor_due_label:'We Owe (Vendor)',
     lbl_today_booking:'Today Bookings', lbl_today_expense:'Today Expense',
     lbl_recent_trend:'Last 14 Days', lbl_two_col_recent:'Recent Bookings',
-    lbl_booking_col_header:'Hajji / Booking', lbl_lot_col_header:'Lot',
+    lbl_booking_col_header:'Customer / Booking', lbl_lot_col_header:'Lot',
     lbl_pending:'Pending Due', lbl_todays_booking_count:'Today Bookings',
     login_subtitle:'Please log in to continue', login_email:'Email', login_password:'Password',
     login_btn:'Login', login_error:'Incorrect email or password', logout:'Logout',
     backup_btn:'☁️ Backup', restore_btn:'♻️ Restore',
-    clear_all_confirm1:'⚠️ This will permanently delete ALL data — pilgrims, packages, bookings, purchases, expenses, installments, and cancellations! This cannot be undone. Have you already made a backup?',
+    clear_all_confirm1:'⚠️ This will permanently delete ALL data — customers, Groups/Agent, packages, bookings, purchases, expenses, installments, and cancellations! This cannot be undone. Have you already made a backup?',
     clear_all_confirm2:'Type exactly this word below to confirm: DELETE',
     clear_all_confirm_word:'DELETE',
     clear_all_aborted:'Cancelled — no data was deleted.',
@@ -935,11 +960,23 @@ const I18N = {
     load_error_toast:'⚠️ Some data failed to load, check your internet and try again',
     f_product_name:'Package Name', f_cat:'Package Type', f_current_stock:'Total Seats', f_threshold:'Min Seats Threshold',
     f_cost:'Cost Price (per package)', f_price:'Sell Price (per package)', f_supplier:'Vendor',
-    f_supplier_select:'Vendor', f_sector:'Sector / Item', f_pur_qty:'Quantity (QTY)', f_product_select:'Package', f_qty:'No. of Hajji', f_unit_cost:'Unit Cost Price (৳)', f_date:'Date',
-    f_customer_opt:'Hajji (optional)', f_unit_price:'Unit Sell Price (৳)', f_paid:'Amount Paid (৳)', f_discount:'Discount (৳)', col_discount:'Discount',
+    f_supplier_select:'Vendor', f_sector:'Sector / Item', f_pur_qty:'Quantity (QTY)', f_product_select:'Package', f_qty:'Booking Quantity', f_unit_cost:'Unit Cost Price (৳)', f_date:'Date',
+    f_customer_opt:'Customer (optional)', f_unit_price:'Unit Sell Price (৳)', f_paid:'Amount Paid (৳)', f_discount:'Discount (৳)', col_discount:'Discount',
     f_expense_cat:'Category', f_amount:'Amount (৳)', f_note:'Note',
     f_is_old_entry:"Old entry (won't count in Summary)",
-    walk_in:'Walk-in Hajji',
+    walk_in:'Walk-in Customer',
+    booking_for:'Booking For', booking_for_customer:'Customers', booking_for_group_agent:'Groups/Agent',
+    select_group_agent:'Select Groups/Agent', group_agent_required:'Please select a Groups/Agent', group_agent_has_bookings:'This Groups/Agent has bookings or installments. Remove the related transactions first.',
+    grp_statement:'Agent Statement', grp_receive_payment:'+ Receive Payment', grp_total_qty:'Total Booking Qty',
+    grp_direct_booking:'Total Agent Booking', grp_initial_paid:'Initial Paid', grp_later_paid:'Later Paid',
+    grp_total_discount:'Total Discount', grp_return_adjust:'Cancellation Adjustment', grp_current_due:'Current Due',
+    grp_reference:'Reference', grp_description:'Description', grp_balance:'Running Balance', grp_method:'Method',
+    grp_booking_desc:'Package Booking', grp_initial_payment:'Initial Payment', grp_due_payment:'Due/Installment Payment',
+    grp_discount_desc:'Discount', grp_return_desc:'Booking Cancellation Adjustment', grp_lots_info:'Lots / Customer Information',
+    grp_referred_statement:'Customer Statement by Lot', grp_no_lot_booking:'No customer bookings in this Lot yet',
+    grp_linked_agent:'Referring Agent', grp_linked_lot:'Referring Lot',
+    grp_no_transactions:'No agent transactions yet', grp_payment_amount:'Amount Received (৳)',
+    grp_payment_saved:'✓ Agent payment saved', grp_payment_too_high:'Payment and discount cannot exceed the current due',
     low_stock_more:'Booking quantity exceeds available seats. Continue anyway?', product_not_found:'Package not found',
     storage_ok:'✓ Data is being saved to shared cloud storage (Firebase).',
     storage_warn:'⚠️ Firebase is not configured — data is only stored in this browser and won\'t be shared across devices. Add your Firebase project details to <code>firebaseConfig</code> near the top of the code.',
@@ -974,7 +1011,7 @@ const I18N = {
     pay_due_amount:'Amount Paid (৳)', pay_due_discount:'Discount (৳, optional)', pay_due_nothing:'Enter at least one amount',
     payment_history:'Due Payment History', col_payment_date:'Date', col_payment_amount:'Paid', col_payment_discount:'Discount',
     close:'Close', logo_alt:'Logo',
-    quick_add_customer:'+ New Hajji', quick_add_product:'+ New Package',
+    quick_add_customer:'+ New Customer', quick_add_product:'+ New Package',
     qa_name_required:'Please enter a name', qa_name:'Name', qa_phone:'Phone (optional)',
     qa_price:'Package Price (৳)', qa_cost:'Cost Price (৳)', view_title:'Booking Details'
   }
@@ -1011,6 +1048,7 @@ const firebaseConfig = {
   messagingSenderId: "30277024982",
   appId: "1:30277024982:web:3afa0715cf5450e5d0dd77"
 };
+
 
 
 let useFirebase = false;
@@ -1523,6 +1561,16 @@ document.getElementById('logoFileInput').addEventListener('change', async (e) =>
   reader.readAsDataURL(file);
 });
 
+function refreshCurrentView(){
+  renderNav();
+  renderPage();
+  // Re-render once after the current click/save stack completes. This makes every
+  // successful create/edit visible immediately even on pages with local list closures.
+  requestAnimationFrame(()=>{
+    renderNav();
+    renderPage();
+  });
+}
 function renderPage(){
   setTitle(currentTab);
   const c = document.getElementById('content');
@@ -1550,7 +1598,7 @@ function computeTotalBalance(){
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
   db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry && (!s.customerId||db.customers[s.customerId])) dp += Number(s.paid||0); });
-  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])) dp += Number(i.amount)+Number(i.discount||0); });
+  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])) dp += Number(i.amount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
   // Vendor payments: cash out (আমরা vendor কে দিলাম)
@@ -1572,16 +1620,16 @@ function pageDashboard(){
   const todayReturnsValue = db.returns.filter(r=>!r.cancelled && r.date===today).reduce((s,r)=>s+Number(r.value),0);
   const todaySales = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.total),0) - todayReturnsValue;
   const todayExpense = db.expenses.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.amount),0);
-  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0);
+  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0) - db.installments.filter(i=>i.date===today && !i.isOldEntry).reduce((s,i)=>s+Number(i.discount||0),0);
   const todayIncome = todayProfit - todayExpense;
   const lowStock = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold));
   const totalProductQty = Object.values(db.products).reduce((s,p)=>s+Number(p.qty),0);
   const totalBalance = computeTotalBalance();
-  const totalDue = Object.values(db.customers).reduce((s,c)=>s+Number(c.due||0),0);
+  const totalDue = Object.keys(db.customers).reduce((sum,id)=>sum+calculateCustomerDueFromLedger(id),0);
   const totalPaid = totalSales - totalDue;
   const todayBookings = db.sales.filter(x=>x.date===today).length;
   const vendorDue = Object.values(db.suppliers).reduce((s,sup)=>s+Number(sup.due||0),0);
-  const pendingInstallments = Object.values(db.customers).filter(c=>Number(c.due||0)>0).length;
+  const pendingInstallments = Object.keys(db.customers).filter(id=>calculateCustomerDueFromLedger(id)>0).length;
 
   // গত ১৪ দিনের trend data
   const trendDays = [...Array(14)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(13-i)); return toISODate(d); });
@@ -2111,7 +2159,7 @@ function openGroupMemberForm(id){
     await safePut('groupMembers', key, record);
     document.getElementById('gmFormOverlay').remove();
     showToast(t('saved_toast'));
-    renderGroupMembersPage();
+    if(currentTab==='group_members') renderGroupMembersPage(); else refreshCurrentView();
   };
 }
 
@@ -2141,6 +2189,10 @@ function showDeleteConfirm(title, message, onConfirm){
 async function deleteGroupMember(id){
   const m = db.groupMembers[id];
   if(!m) return;
+  if(db.sales.some(s=>s.groupMemberId===id) || db.installments.some(i=>i.groupMemberId===id) || db.installmentPlans.some(p=>p.groupMemberId===id)){
+    alert(t('group_agent_has_bookings'));
+    return;
+  }
   showDeleteConfirm(
     t('del_title_member'),
     '"'+escapeHtml(m.name)+'"'+t('del_msg_confirm'),
@@ -2169,43 +2221,103 @@ function normalizeHajjiIds(raw){
   return list.filter(hid => db.customers[hid]);
 }
 
+function buildGroupAgentLedger(memberId){
+  const member = db.groupMembers[memberId];
+  if(!member) return {rows:[], summary:{}};
+  const sales = db.sales.filter(s=>s.groupMemberId===memberId);
+  const payments = db.installments.filter(i=>i.groupMemberId===memberId);
+  const returns = db.returns.filter(r=>r.groupMemberId===memberId && !r.cancelled);
+  const invoiceMap = new Map();
+  sales.forEach(s=>{
+    const key = s.invoiceId || s.id;
+    if(!invoiceMap.has(key)) invoiceMap.set(key, []);
+    invoiceMap.get(key).push(s);
+  });
+  const rows = [];
+  invoiceMap.forEach(items=>{
+    const first = items[0];
+    const debit = items.reduce((n,s)=>n+Number(s.total||0),0);
+    const initialPaid = items.reduce((n,s)=>n+Number(s.initialPaid!==undefined?s.initialPaid:s.paid||0),0);
+    const qty = items.reduce((n,s)=>n+Number(s.qty||0),0);
+    const products = [...new Set(items.map(s=>s.productName).filter(Boolean))].join(', ');
+    const ref = first.invoiceNo ? 'INV-'+first.invoiceNo : 'INV';
+    rows.push({date:first.date,ts:Number(first.ts||0),order:0,ref,desc:t('grp_booking_desc')+' — '+products+' × '+qty,debit,credit:0,method:'—'});
+    if(initialPaid>0){
+      const pk = paymentSystemKey(first.paymentSystem);
+      rows.push({date:first.date,ts:Number(first.ts||0),order:1,ref,desc:t('grp_initial_payment'),debit:0,credit:initialPaid,method:pk?t(pk):'—'});
+    }
+  });
+  payments.forEach(p=>{
+    const ref = p.receiptNo ? 'REC-'+p.receiptNo : 'REC';
+    const pk = paymentSystemKey(p.paymentSystem);
+    if(Number(p.amount||0)>0) rows.push({date:p.date,ts:Number(p.ts||0),order:2,ref,desc:t('grp_due_payment')+(p.note?' — '+p.note:''),debit:0,credit:Number(p.amount||0),method:pk?t(pk):'—'});
+    if(Number(p.discount||0)>0) rows.push({date:p.date,ts:Number(p.ts||0),order:3,ref,desc:t('grp_discount_desc')+(p.note?' — '+p.note:''),debit:0,credit:Number(p.discount||0),method:'—'});
+  });
+  returns.forEach(r=>{
+    if(Number(r.dueAdjust||0)>0) rows.push({date:r.date,ts:Number(r.ts||0),order:4,ref:r.returnNo?'RET-'+r.returnNo:'RET',desc:t('grp_return_desc')+' — '+(r.productName||''),debit:0,credit:Number(r.dueAdjust||0),method:'—'});
+  });
+  rows.sort((a,b)=>(String(a.date||'').localeCompare(String(b.date||''))) || (a.order-b.order) || (a.ts-b.ts));
+  let balance = 0;
+  rows.forEach(r=>{ balance += Number(r.debit||0)-Number(r.credit||0); r.balance=Math.max(0,balance); });
+  const summary = {
+    qty:sales.reduce((n,s)=>n+Number(s.qty||0),0),
+    booking:sales.reduce((n,s)=>n+Number(s.total||0),0),
+    initialPaid:sales.reduce((n,s)=>n+Number(s.initialPaid!==undefined?s.initialPaid:s.paid||0),0),
+    laterPaid:payments.reduce((n,p)=>n+Number(p.amount||0),0),
+    discount:payments.reduce((n,p)=>n+Number(p.discount||0),0),
+    returns:returns.reduce((n,r)=>n+Number(r.dueAdjust||0),0),
+    due:calculateGroupMemberDueFromLedger(memberId)
+  };
+  return {rows,summary};
+}
+
+function buildGroupLotsInfo(memberId){
+  const lots = Object.entries(db.groups).filter(([,g])=>g.memberId===memberId);
+  if(lots.length===0) return '';
+  const lotPanels = lots.map(([gid,g])=>{
+    const lotSales = db.sales.filter(s=>s.groupId===gid&&s.customerId);
+    const ids = [...new Set([...normalizeHajjiIds(g.hajjiIds),...lotSales.map(s=>s.customerId).filter(Boolean)])];
+    const customerRows = ids.map(cid=>{
+      const cust=db.customers[cid]; if(!cust) return '';
+      const cs=lotSales.filter(s=>s.customerId===cid);
+      const total=cs.reduce((n,s)=>n+Number(s.total||0),0);
+      const paid=cs.reduce((n,s)=>n+Number(s.paid||0),0);
+      const due=cs.reduce((n,s)=>n+Number(s.due||0),0);
+      return '<tr><td>'+escapeHtml(cust.name||'—')+'</td><td>'+escapeHtml(cust.phone||'—')+'</td><td>'+escapeHtml(cust.passport||'—')+'</td><td>৳'+money(total)+'</td><td>৳'+money(paid)+'</td><td>'+(due>0?'৳'+money(due):'—')+'</td></tr>';
+    }).join('');
+    const txRows = lotSales.sort((a,b)=>b.ts-a.ts).map(s=>'<tr><td>'+formatDateDMY(s.date)+'</td><td>'+(s.invoiceNo?'#'+s.invoiceNo:'—')+'</td><td>'+escapeHtml(s.customerName||'—')+'</td><td>'+escapeHtml(s.productName||'—')+'</td><td>'+Number(s.qty||0)+'</td><td>৳'+money(s.total)+'</td><td>৳'+money(s.paid)+'</td><td>'+(Number(s.due)>0?'৳'+money(s.due):'—')+'</td></tr>').join('');
+    const totalBooking=lotSales.reduce((n,s)=>n+Number(s.total||0),0);
+    const totalPaid=lotSales.reduce((n,s)=>n+Number(s.paid||0),0);
+    const totalDue=lotSales.reduce((n,s)=>n+Number(s.due||0),0);
+    return '<div class="panel" style="margin-top:12px;border-left:4px solid var(--hajj-gold);">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;"><strong>🏘️ '+escapeHtml(g.name||'—')+(g.year?' — '+escapeHtml(g.year):'')+'</strong><span class="pill green">'+ids.length+' '+t('nav_customers')+'</span></div>'
+      +(customerRows?'<div style="overflow-x:auto;"><table class="data"><thead><tr><th>'+t('col_name')+'</th><th>'+t('col_phone')+'</th><th>'+t('col_passport')+'</th><th>'+t('lbl_total_booking')+'</th><th>'+t('col_paid')+'</th><th>'+t('col_due')+'</th></tr></thead><tbody>'+customerRows+'</tbody></table></div>':'')
+      +(txRows?'<h4 style="margin:14px 0 8px;">'+t('grp_referred_statement')+'</h4><div style="overflow-x:auto;"><table class="data"><thead><tr><th>'+t('col_date')+'</th><th>'+t('col_invoice_no')+'</th><th>'+t('col_customer')+'</th><th>'+t('col_product')+'</th><th>'+t('col_qty')+'</th><th>'+t('col_total')+'</th><th>'+t('col_paid')+'</th><th>'+t('col_due')+'</th></tr></thead><tbody>'+txRows+'</tbody><tfoot><tr style="font-weight:700;"><td colspan="5">'+t('totals_label')+'</td><td>৳'+money(totalBooking)+'</td><td>৳'+money(totalPaid)+'</td><td>৳'+money(totalDue)+'</td></tr></tfoot></table></div>':'<div class="empty" style="padding:12px;">'+t('grp_no_lot_booking')+'</div>')
+      +'</div>';
+  }).join('');
+  return '<div style="margin-top:16px;"><h3>'+t('grp_lots_info')+'</h3>'+lotPanels+'</div>';
+}
+
+function buildGroupAgentStatementHtml(memberId){
+  const {rows,summary} = buildGroupAgentLedger(memberId);
+  const cards = '<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(135px,1fr));margin-bottom:16px;">'
+    +'<div class="stat-card c1"><div class="val">'+summary.qty+'</div><div class="lbl">'+t('grp_total_qty')+'</div></div>'
+    +'<div class="stat-card c4"><div class="val">৳'+money(summary.booking)+'</div><div class="lbl">'+t('grp_direct_booking')+'</div></div>'
+    +'<div class="stat-card c5"><div class="val">৳'+money(summary.initialPaid)+'</div><div class="lbl">'+t('grp_initial_paid')+'</div></div>'
+    +'<div class="stat-card c5"><div class="val">৳'+money(summary.laterPaid)+'</div><div class="lbl">'+t('grp_later_paid')+'</div></div>'
+    +'<div class="stat-card c6"><div class="val">৳'+money(summary.discount)+'</div><div class="lbl">'+t('grp_total_discount')+'</div></div>'
+    +'<div class="stat-card c6"><div class="val">৳'+money(summary.returns)+'</div><div class="lbl">'+t('grp_return_adjust')+'</div></div>'
+    +'<div class="stat-card c7"><div class="val">৳'+money(summary.due)+'</div><div class="lbl">'+t('grp_current_due')+'</div></div></div>';
+  if(rows.length===0) return cards+'<div class="empty"><div class="big">'+t('grp_no_transactions')+'</div></div>';
+  const body = rows.map(r=>'<tr><td>'+formatDateDMY(r.date)+'</td><td>'+escapeHtml(r.ref)+'</td><td>'+escapeHtml(r.desc)+'</td><td>'+escapeHtml(r.method)+'</td><td>'+(r.debit?'৳'+money(r.debit):'—')+'</td><td>'+(r.credit?'৳'+money(r.credit):'—')+'</td><td><strong>৳'+money(r.balance)+'</strong></td></tr>').join('');
+  return cards+'<div style="overflow-x:auto;"><table class="data"><thead><tr><th>'+t('col_date')+'</th><th>'+t('grp_reference')+'</th><th>'+t('grp_description')+'</th><th>'+t('grp_method')+'</th><th>'+t('col_debit')+'</th><th>'+t('col_credit')+'</th><th>'+t('grp_balance')+'</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+}
+
 function printGroupMemberReport(memberId){
   const member = db.groupMembers[memberId];
   if(!member) return;
-  const lots = Object.entries(db.groups).filter(([,g])=>g.memberId===memberId);
-  let body = '<div style="margin-bottom:10px;"><strong>'+escapeHtml(member.name)+'</strong><br>'
-    +t('grp_member_no_label')+': #'+member.memberNo+' &nbsp;|&nbsp; '+t('grp_total_lots')+': '+lots.length
-    +(member.phone?'<br>📞 '+escapeHtml(member.phone):'')+'</div>';
-
-  if(lots.length===0){
-    body += '<div>'+t('grp_no_lots')+'</div>';
-  } else {
-    lots.forEach(([gid, grp])=>{
-      try{
-        const grpSales = db.sales.filter(s=>s.groupId===gid);
-        const salesHajjiIds = [...new Set(grpSales.map(s=>s.customerId).filter(Boolean))];
-        const assignedHajjiIds = normalizeHajjiIds(grp.hajjiIds);
-        const hajjiIds = [...new Set([...assignedHajjiIds, ...salesHajjiIds])];
-        body += '<h3 style="margin:16px 0 8px;">🏘️ '+escapeHtml(grp.name)+(grp.year?' ('+grp.year+')':'')+'</h3>';
-        if(hajjiIds.length>0){
-          body += '<table><thead><tr><th>'+t('lbl_hajji_col')+'</th><th>'+t('lbl_passport_col')+'</th><th>'+t('lbl_total_booking')+'</th><th>'+t('lbl_paid_col')+'</th><th>'+t('lbl_due_col')+'</th></tr></thead><tbody>';
-          hajjiIds.forEach(hid=>{
-            const hajji = db.customers[hid];
-            if(!hajji) return;
-            const hSales = grpSales.filter(s=>s.customerId===hid);
-            const hTotal = hSales.reduce((s,x)=>s+Number(x.total),0);
-            const hDue = Number(hajji.due||0);
-            const hPaid = hTotal - hDue;
-            body += '<tr><td>'+escapeHtml(hajji.name)+'</td><td>'+(hajji.passport||'—')+'</td><td>৳'+money(hTotal)+'</td><td>৳'+money(hPaid)+'</td><td>৳'+money(hDue)+'</td></tr>';
-          });
-          body += '</tbody></table>';
-        }
-      }catch(lotErr){
-        body += '<div style="color:red;">⚠️ এই লট দেখাতে সমস্যা হয়েছে: '+escapeHtml(lotErr.message)+'</div>';
-      }
-    });
-  }
-  printIsolated(member.name, body);
+  const header = '<div style="margin-bottom:12px;"><strong>'+escapeHtml(member.name)+'</strong><br>'+t('grp_member_no_label')+': #'+member.memberNo+(member.phone?'<br>📞 '+escapeHtml(member.phone):'')+'</div>';
+  printIsolated(member.name+' — '+t('grp_statement'), header+buildGroupAgentStatementHtml(memberId)+buildGroupLotsInfo(memberId));
 }
 
 function openGroupMemberReport(memberId){
@@ -2214,68 +2326,84 @@ function openGroupMemberReport(memberId){
   if(!member) return;
   const lots = Object.entries(db.groups).filter(([,g])=>g.memberId===memberId);
   const c = document.getElementById('content');
-  let html = '<div class="no-print" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">'
+  c.innerHTML = '<div class="no-print" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">'
     +'<button class="btn" onclick="renderGroupMembersPage()">'+t('grp_back_members')+'</button>'
-    +'<button class="btn ghost" style="margin-left:auto;" onclick="printGroupMemberReport(\''+memberId+'\')">'+t('print_report')+'</button>'
-    +'</div>'
+    +'<button class="btn amber" onclick="openGroupAgentPayment(\''+memberId+'\')">'+t('grp_receive_payment')+'</button>'
+    +'<button class="btn ghost" style="margin-left:auto;" onclick="printGroupMemberReport(\''+memberId+'\')">'+t('print_report')+'</button></div>'
     +'<div class="panel" style="background:linear-gradient(135deg,#0f3d20,#1B6B3A);color:#fff;margin-bottom:16px;">'
     +'<div style="font-size:20px;font-weight:700;">👤 '+escapeHtml(member.name)+'</div>'
-    +'<div style="opacity:0.8;margin-top:4px;">'+t('grp_member_no_label')+': #'+member.memberNo+'  |  '+t('grp_total_lots')+': '+lots.length+'</div>'
-    +(member.phone?'<div style="opacity:0.7;font-size:13px;margin-top:2px;">📞 '+escapeHtml(member.phone)+'</div>':'')
-    +'</div>';
+    +'<div style="opacity:0.8;margin-top:4px;">'+t('grp_member_no_label')+': #'+member.memberNo+' &nbsp;|&nbsp; '+t('grp_total_lots')+': '+lots.length+'</div>'
+    +(member.phone?'<div style="opacity:0.75;font-size:13px;margin-top:2px;">📞 '+escapeHtml(member.phone)+'</div>':'')+'</div>'
+    +'<div class="panel" style="border-left:4px solid var(--hajj-green);"><h3>'+t('grp_statement')+'</h3>'+buildGroupAgentStatementHtml(memberId)+'</div>'
+    +buildGroupLotsInfo(memberId);
+}
 
-  if(lots.length===0){
-    html += '<div class="empty"><div class="big">🏘️</div>'+t('grp_no_lots')+'</div>';
-  } else {
-    lots.forEach(([gid, grp])=>{
-     try{
-      const grpSales = db.sales.filter(s=>s.groupId===gid);
-      const salesHajjiIds = [...new Set(grpSales.map(s=>s.customerId).filter(Boolean))];
-      const assignedHajjiIds = normalizeHajjiIds(grp.hajjiIds);
-      const hajjiIds = [...new Set([...assignedHajjiIds, ...salesHajjiIds])];
-      const totalBooking = grpSales.reduce((s,x)=>s+Number(x.total),0);
-      const totalDue = hajjiIds.reduce((s,hid)=>s+Number((db.customers[hid]||{}).due||0),0);
-      html += '<div class="panel" style="margin-bottom:14px;border-left:4px solid var(--hajj-gold);">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'
-        +'<div><strong>🏘️ '+escapeHtml(grp.name)+'</strong>'
-        +(grp.year?' <span style="font-size:12px;color:var(--ink-soft);">'+grp.year+'</span>':'')+'</div>'
-        +'<div style="display:flex;gap:8px;">'
-        +'<span class="pill green">'+hajjiIds.length+' '+t('nav_customers')+'</span>'
-        +'<span class="pill">৳'+money(totalBooking)+'</span>'
-        +(totalDue>0?'<span class="pill red">বাকি ৳'+money(totalDue)+'</span>':'')
-        +'</div></div>';
-
-      // হাজীদের list
-      if(hajjiIds.length>0){
-        html += '<div style="margin-top:12px;overflow-x:auto;"><table class="data"><thead><tr>'
-          +'<th>'+t('lbl_hajji_col')+'</th><th>'+t('lbl_passport_col')+'</th><th>'+t('lbl_total_booking')+'</th><th>'+t('lbl_paid_col')+'</th><th>'+t('lbl_due_col')+'</th><th></th>'
-          +'</tr></thead><tbody>';
-        hajjiIds.forEach(hid=>{
-          const hajji = db.customers[hid];
-          if(!hajji) return;
-          const hSales = grpSales.filter(s=>s.customerId===hid);
-          const hTotal = hSales.reduce((s,x)=>s+Number(x.total),0);
-          const hDue = Number(hajji.due||0);
-          const hPaid = hTotal - hDue;
-          html += '<tr>'
-            +'<td>'+escapeHtml(hajji.name)+'</td>'
-            +'<td>'+(hajji.passport||'—')+'</td>'
-            +'<td>৳'+money(hTotal)+'</td>'
-            +'<td>৳'+money(hPaid)+'</td>'
-            +'<td>'+(hDue>0?'<span class="pill red">৳'+money(hDue)+'</span>':'<span class="pill green">পরিশোধ</span>')+'</td>'
-            +'<td><button class="icon-btn" onclick="openGroupHajjiDetail(\''+hid+'\',\''+gid+'\')">📋</button></td>'
-            +'</tr>';
-        });
-        html += '</tbody></table></div>';
-      }
-      html += '</div>';
-     }catch(lotErr){
-      console.error('Error rendering lot', gid, lotErr);
-      html += '<div class="panel" style="border-left:4px solid var(--red);color:var(--red);">⚠️ এই লট (id: '+gid+') দেখাতে সমস্যা হয়েছে: '+escapeHtml(lotErr.message)+'</div>';
-     }
-    });
-  }
-  c.innerHTML = html;
+function openGroupAgentPayment(memberId){
+  const member = db.groupMembers[memberId];
+  if(!member) return;
+  const due = calculateGroupMemberDueFromLedger(memberId);
+  if(due<=0){ showToast(t('vnd_clear')); return; }
+  const old = document.getElementById('groupAgentPaymentOverlay');
+  if(old) old.remove();
+  const html = '<div class="overlay open" id="groupAgentPaymentOverlay" style="z-index:180;">'
+    +'<div class="modal" style="max-width:430px;">'
+    +'<h2>'+t('grp_receive_payment')+' — '+escapeHtml(member.name)+'</h2>'
+    +'<div class="field-hint" id="gapDueInfo" style="margin-bottom:12px;font-weight:700;">'+t('grp_current_due')+': ৳'+money(due)+'</div>'
+    +'<div class="field"><label>'+t('grp_payment_amount')+'</label><input type="number" id="gapAmount" value="'+due+'" min="0"></div>'
+    +'<div class="field"><label>'+t('pay_discount')+'</label><input type="number" id="gapDiscount" value="0" min="0"></div>'
+    +'<div class="field"><label>'+t('grp_method')+'</label><select id="gapMethod"><option value="cash">'+t('payment_cash')+'</option><option value="bank">'+t('payment_bank')+'</option><option value="mobile_banking">'+t('payment_mobile_banking')+'</option></select></div>'
+    +'<div class="field"><label>'+t('f_date')+'</label><input type="date" id="gapDate" value="'+todayStr()+'"></div>'
+    +'<div class="field"><label>'+t('f_note')+'</label><input type="text" id="gapNote" placeholder="'+escapeHtml(t('grp_due_payment'))+'"></div>'
+    +'<div class="field-hint" id="gapResult"></div>'
+    +'<div class="modal-actions"><button class="btn ghost" id="gapCancel">'+t('cancel')+'</button><button class="btn amber" id="gapSave">'+t('save')+'</button></div>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+  const overlay = document.getElementById('groupAgentPaymentOverlay');
+  const update = ()=>{
+    const paid = Number(document.getElementById('gapAmount').value)||0;
+    const discount = Number(document.getElementById('gapDiscount').value)||0;
+    document.getElementById('gapResult').textContent = t('pay_due_remaining')(Math.max(0,due-paid-discount));
+  };
+  document.getElementById('gapAmount').oninput=update;
+  document.getElementById('gapDiscount').oninput=update;
+  update();
+  document.getElementById('gapCancel').onclick=()=>overlay.remove();
+  overlay.addEventListener('click',e=>{if(e.target===overlay) overlay.remove();});
+  document.getElementById('gapSave').onclick=async()=>{
+    const paid = Number(document.getElementById('gapAmount').value)||0;
+    const discount = Number(document.getElementById('gapDiscount').value)||0;
+    if(paid<=0 && discount<=0) return;
+    if(paid+discount>due){ alert(t('grp_payment_too_high')); return; }
+    const payDate = document.getElementById('gapDate').value||todayStr();
+    const paymentSystem = document.getElementById('gapMethod').value||'cash';
+    const note = document.getElementById('gapNote').value.trim();
+    let toApply = paid+discount;
+    const openSales = db.sales.filter(s=>s.groupMemberId===memberId&&Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
+    for(const sale of openSales){
+      if(toApply<=0) break;
+      const applyAmt = Math.min(Number(sale.due||0),toApply);
+      sale.paid=Number(sale.paid||0)+applyAmt;
+      sale.due=Math.max(0,Number(sale.due||0)-applyAmt);
+      toApply-=applyAmt;
+      await safePut('sales',sale.id,sale);
+    }
+    const rec={
+      id:uid(),receiptNo:nextReceiptNo(),customerId:null,customerName:member.name,
+      buyerType:'group_agent',groupMemberId:memberId,groupMemberName:member.name,
+      amount:paid,discount,previousDue:due,newDue:Math.max(0,due-paid-discount),note,
+      paymentSystem,date:payDate,ts:new Date(payDate).getTime()||Date.now()
+    };
+    db.installments.push(rec);
+    await safePut('installments',rec.id,rec);
+    member.due=calculateGroupMemberDueFromLedger(memberId);
+    rec.newDue=member.due;
+    await safePut('groupMembers',memberId,member);
+    await safePut('installments',rec.id,rec);
+    overlay.remove();
+    showToast(t('grp_payment_saved'));
+    openGroupMemberReport(memberId);
+    openInstallmentReceipt(rec);
+  };
 }
 
 function openGroupHajjiDetail(hajjiId, groupId){
@@ -2352,7 +2480,7 @@ function openGroupHajjiManager(groupId){
     +'<h2>'+t('lbl_hajji_add')+escapeHtml(grp.name)+'</h2>'
 
     // search box
-    +'<div class="field"><label>হাজী খুঁজুন (নাম / পাসপোর্ট / ট্র্যাকিং / ফোন)</label>'
+    +'<div class="field"><label>কাস্টমার খুঁজুন (নাম / পাসপোর্ট / ট্র্যাকিং / ফোন)</label>'
     +'<input type="text" id="ghSearch" placeholder="টাইপ করুন..." autocomplete="off">'
     +'</div>'
 
@@ -2410,7 +2538,7 @@ function openGroupHajjiManager(groupId){
       );
     }).slice(0,10);
     if(matches.length===0){
-      el.innerHTML = '<div style="padding:10px 12px;color:var(--ink-soft);font-size:13px;">কোনো হাজী পাওয়া যায়নি</div>'; return;
+      el.innerHTML = '<div style="padding:10px 12px;color:var(--ink-soft);font-size:13px;">কোনো কাস্টমার পাওয়া যায়নি</div>'; return;
     }
     el.innerHTML = matches.map(function([hid,h]){
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;" data-ghpick="'+hid+'">'
@@ -2438,7 +2566,7 @@ function openGroupHajjiManager(groupId){
     await safePut('groups', groupId, grp);
     document.getElementById('grpHajjiOverlay').remove();
     showToast(t('saved_toast'));
-    renderGroupsPage();
+    if(currentTab==='groups') renderGroupsPage(); else refreshCurrentView();
   };
 }
 
@@ -2484,7 +2612,7 @@ function printGroupList(gid){
     +'<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#1B6B3A;">'+escapeHtml(g.name)+'</h2>'
     +'<p style="margin:0 0 18px;color:#555;font-size:13px;border-bottom:2px solid #1B6B3A;padding-bottom:12px;">'
     +(g.memberNo?'<strong>Moallem #'+g.memberNo+':</strong> ':'')+escapeHtml(g.memberName||'')
-    +(g.year?' &nbsp;·&nbsp; <strong>Year:</strong> '+g.year:'')+' &nbsp;·&nbsp; <strong>Total:</strong> '+hajjiIds.length+' Hajji</p>'
+    +(g.year?' &nbsp;·&nbsp; <strong>Year:</strong> '+g.year:'')+' &nbsp;·&nbsp; <strong>Total:</strong> '+hajjiIds.length+' Customers</p>'
     +'<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#1B6B3A;">'
     +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;text-transform:uppercase;color:#000 !important;">#</th>'
     +'<th style="padding:9px 12px;text-align:left;font-size:12px;font-weight:800;text-transform:uppercase;color:#000 !important;">Name</th>'
@@ -2557,7 +2685,6 @@ function renderSettingsPage(){
 }
 function renderGroupsPage(){
   const c = document.getElementById('content');
-  const groups = Object.entries(db.groups).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
 
   c.innerHTML = '<div class="toolbar">'
     +'<input type="text" id="grpSearch" placeholder="'+t('search_placeholder')+'">'
@@ -2565,9 +2692,11 @@ function renderGroupsPage(){
     +'</div><div id="grpBody"></div>';
 
   function renderGrpList(){
+    // Always rebuild from the live db object so newly-created/edited lots appear immediately.
+    const groups = Object.entries(db.groups).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
     const q2 = document.getElementById('grpSearch').value.trim().toLowerCase();
     const filtered = groups.filter(([,g])=>
-      !q2 || g.name.toLowerCase().includes(q2)
+      !q2 || (g.name||'').toLowerCase().includes(q2)
       || (g.memberName&&g.memberName.toLowerCase().includes(q2))
       || String(g.memberNo||'').includes(q2)
       || (g.year&&String(g.year).includes(q2))
@@ -2576,55 +2705,57 @@ function renderGroupsPage(){
     if(filtered.length===0){
       body.innerHTML = '<div class="empty"><div class="big">🏘️</div>'+t('grp_no_groups')+'</div>'; return;
     }
+
     const rows = filtered.map(function([gid,g]){
       const sales = db.sales.filter(s=>s.groupId===gid);
       const assignedHajjiIds = normalizeHajjiIds(g.hajjiIds);
       const salesHajjiIds = [...new Set(sales.map(s=>s.customerId).filter(Boolean))];
       const hajjiIds = [...new Set([...assignedHajjiIds, ...salesHajjiIds])];
-      const total = sales.reduce((s,x)=>s+Number(x.total),0);
-      return '<tr style="cursor:pointer;" data-grptoggle="'+gid+'">'
+      const total = sales.reduce((sum,x)=>sum+Number(x.total),0);
+
+      const hr = hajjiIds.map((hid,i)=>{
+        const cust=db.customers[hid]; if(!cust) return '';
+        return '<tr style="background:'+(i%2===0?'#fff':'#f5faf7')+';">'
+          +'<td style="padding:7px 10px;">'+(cust.displayId?'#'+cust.displayId:'—')+'</td>'
+          +'<td style="padding:7px 10px;font-weight:600;">'+escapeHtml(cust.name||'—')+'</td>'
+          +'<td style="padding:7px 10px;">'+escapeHtml(cust.phone||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(cust.passport||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(cust.tracking||'—')+'</td>'
+          +'</tr>';
+      }).join('');
+
+      const mainRow = '<tr style="cursor:pointer;" data-grptoggle="'+gid+'">'
         +'<td><strong>'+escapeHtml(g.name)+'</strong></td>'
         +'<td>'+(g.memberNo?'#'+g.memberNo+' ':'')+escapeHtml(g.memberName||'—')+'</td>'
         +'<td>'+(g.year||'—')+'</td>'
         +'<td>'+hajjiIds.length+'</td>'
         +'<td>৳'+money(total)+'</td>'
         +'<td class="actions-cell">'
-        +'<button class="icon-btn" title="হাজী যোগ করুন" data-grphajji="'+gid+'">🤲</button>'
+        +'<button class="icon-btn" title="কাস্টমার যোগ করুন" data-grphajji="'+gid+'">👥</button>'
         +'<button class="icon-btn" data-grpview="'+gid+'">📋</button>'
         +'<button class="icon-btn" data-grpedit="'+gid+'">✏️</button>'
         +'<button class="icon-btn" data-grpdel="'+gid+'">🗑️</button>'
         +'</td></tr>';
+
+      // IMPORTANT: this detail <tr> is returned immediately after its own main row.
+      const detailRow = '<tr id="grpexp-'+gid+'" style="display:none;">'
+        +'<td colspan="6" style="padding:0 0 8px;border-bottom:none;background:transparent;">'
+        +'<div class="panel" style="margin:0;border-top:3px solid var(--hajj-green);border-radius:0 0 10px 10px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" class="no-print">'
+        +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — Customer List</strong>'
+        +'<button class="btn ghost no-print" data-grpprint="'+gid+'" style="font-size:12px;">🖨 Print</button>'
+        +'</div>'
+        +(hr?'<div style="overflow-x:auto;"><table class="grp-hajji-table"><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Passport</th><th>Tracking No.</th></tr></thead><tbody>'+hr+'</tbody></table></div>':'<div style="color:var(--ink-soft);font-size:13px;">No customers yet</div>')
+        +'</div></td></tr>';
+
+      return mainRow + detailRow;
     }).join('');
+
     body.innerHTML = '<div style="overflow-x:auto;"><table class="data"><thead><tr>'
       +'<th>'+t('grp_col_name')+'</th><th>'+t('grp_col_moallem')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th class="no-print"></th>'
       +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 
-    filtered.forEach(function([gid,g]){
-      const s2=db.sales.filter(s=>s.groupId===gid);
-      const assignedH2 = normalizeHajjiIds(g.hajjiIds);
-      const salesH2 = s2.map(s=>s.customerId).filter(Boolean);
-      const h2=[...new Set([...assignedH2, ...salesH2])];
-      const hr=h2.map((hid,i)=>{
-        const c=db.customers[hid]; if(!c) return '';
-        return '<tr style="background:'+(i%2===0?'#fff':'#f5faf7')+';">'
-          +'<td style="padding:7px 10px;">'+(c.displayId?'#'+c.displayId:'—')+'</td>'
-          +'<td style="padding:7px 10px;font-weight:600;">'+escapeHtml(c.name||'—')+'</td>'
-          +'<td style="padding:7px 10px;">'+escapeHtml(c.phone||'—')+'</td>'
-          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(c.passport||'—')+'</td>'
-          +'<td style="padding:7px 10px;font-family:monospace;">'+escapeHtml(c.tracking||'—')+'</td>'
-          +'</tr>';
-      }).join('');
-      const panel=document.createElement('div');
-      panel.id='grpexp-'+gid; panel.style.display='none'; panel.className='panel';
-      panel.style.cssText+=';margin:0 0 8px;border-top:3px solid var(--hajj-green);';
-      panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" class="no-print">'
-        +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — Hajji List</strong>'
-        +'<button class="btn ghost no-print" data-grpprint="'+gid+'" style="font-size:12px;">🖨 Print</button>'
-        +'</div>'+(hr?'<div style="overflow-x:auto;"><table class="grp-hajji-table"><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Passport</th><th>Tracking No.</th></tr></thead><tbody>'+hr+'</tbody></table></div>':'<div style="color:var(--ink-soft);font-size:13px;">No hajjis yet</div>');
-      body.appendChild(panel);
-    });
-
-    body.addEventListener('click', function(e){
+    body.onclick = function(e){
       const hb=e.target.closest('[data-grphajji]');
       const vb=e.target.closest('[data-grpview]');
       const eb=e.target.closest('[data-grpedit]');
@@ -2638,10 +2769,15 @@ function renderGroupsPage(){
       const tb=e.target.closest('[data-grptoggle]');
       if(tb && !e.target.closest('.actions-cell')){
         const expRow=document.getElementById('grpexp-'+tb.dataset.grptoggle);
-        if(expRow){const isOpen=expRow.style.display!=='none';expRow.style.display=isOpen?'none':'';tb.style.background=isOpen?'':'rgba(27,107,58,0.08)';}
+        if(expRow){
+          const isOpen=expRow.style.display!=='none';
+          expRow.style.display=isOpen?'none':'table-row';
+          tb.style.background=isOpen?'':'rgba(27,107,58,0.08)';
+        }
       }
-    }, true);
+    };
   }
+
   renderGrpList();
   document.getElementById('grpSearch').addEventListener('input', renderGrpList);
   document.getElementById('grpAddBtn').addEventListener('click', ()=>openGroupForm(null));
@@ -2706,6 +2842,27 @@ function onMsGroupChange(){
   // Group select করলে কিছু auto-fill করা যায় ভবিষ্যতে
 }
 
+function onMsBuyerTypeChange(){
+  const typeEl = document.getElementById('msBuyerType');
+  const isAgent = typeEl && typeEl.value === 'group_agent';
+  const customerField = document.getElementById('msCustomerField');
+  const agentField = document.getElementById('msGroupAgentField');
+  const lotField = document.getElementById('msGroupField');
+  if(customerField) customerField.style.display = isAgent ? 'none' : '';
+  if(agentField) agentField.style.display = isAgent ? '' : 'none';
+  // A direct Groups/Agent booking belongs to that agent account, not to an
+  // individual customer's optional group/lot assignment.
+  if(lotField) lotField.style.display = isAgent ? 'none' : '';
+  if(isAgent){
+    selectMsCustomer('');
+    const groupSelect = document.getElementById('msGroupSelect');
+    if(groupSelect) groupSelect.value = '';
+  } else {
+    const resultsEl = document.getElementById('msCustomerResults');
+    if(resultsEl){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; }
+  }
+}
+
 
 function renderGroupReport(body){
   body.innerHTML = '<div class="toolbar no-print">'
@@ -2725,12 +2882,11 @@ function renderGroupReport(body){
     let html = '';
     members.forEach(function([mid,member]){
       const lots = Object.entries(db.groups).filter(([,g])=>g.memberId===mid);
-      const allSales = db.sales.filter(s=>lots.some(([gid])=>s.groupId===gid));
+      const allSales = db.sales.filter(s=>s.groupMemberId===mid);
       const totalBooking = allSales.reduce((s,x)=>s+Number(x.total),0);
       const assignedAllIds = lots.flatMap(([,g])=>normalizeHajjiIds(g.hajjiIds));
-      const salesAllIds = allSales.map(s=>s.customerId).filter(Boolean);
-      const hajjiIds = [...new Set([...assignedAllIds, ...salesAllIds])];
-      const totalDue = hajjiIds.reduce((s,hid)=>s+Number((db.customers[hid]||{}).due||0),0);
+      const hajjiIds = [...new Set(assignedAllIds)];
+      const totalDue = calculateGroupMemberDueFromLedger(mid);
 
       html += '<div class="panel" style="margin-bottom:16px;border-left:4px solid var(--hajj-green);">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;" onclick="openGroupMemberReportFromReports(\''+mid+'\')">'
@@ -2745,21 +2901,17 @@ function renderGroupReport(body){
         +'<span style="font-size:18px;">›</span>'
         +'</div></div>';
 
-      // Lots summary
+      // Lots are informational only. Their customers' financial transactions
+      // remain in the individual Customer account and never affect this Agent.
       if(lots.length>0){
         html += '<div style="margin-top:10px;overflow-x:auto;"><table class="data" style="font-size:12px;"><thead><tr>'
-          +'<th>'+t('grp_col_lot_name')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th>'+t('grp_col_due')+'</th>'
+          +'<th>'+t('grp_col_lot_name')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th>'
           +'</tr></thead><tbody>';
         lots.forEach(function([gid,g]){
-          const ls = db.sales.filter(s=>s.groupId===gid);
           const assignedIds = normalizeHajjiIds(g.hajjiIds);
-          const salesIds = ls.map(s=>s.customerId).filter(Boolean);
-          const lh = [...new Set([...assignedIds, ...salesIds])];
-          const lt = ls.reduce((s,x)=>s+Number(x.total),0);
-          const ld = lh.reduce((s,hid)=>s+Number((db.customers[hid]||{}).due||0),0);
+          const lh = [...new Set(assignedIds)];
           html += '<tr><td>'+escapeHtml(g.name)+'</td><td>'+(g.year||'—')+'</td>'
-            +'<td>'+lh.length+'</td><td>৳'+money(lt)+'</td>'
-            +'<td>'+(ld>0?'<span class="pill red">৳'+money(ld)+'</span>':'<span class="pill green">✓</span>')+'</td></tr>';
+            +'<td>'+lh.length+'</td></tr>';
         });
         html += '</tbody></table></div>';
       }
@@ -2827,6 +2979,100 @@ function resolveRange(rangeKey, customFrom, customTo){
   return { fromStr: toISODate(from), toStr: toISODate(to) };
 }
 
+
+/* ---------- Reporting-safe installment settlement recognition ----------
+   Business rule:
+   - Booking discount is already inside sale.total (net booking value).
+   - Installment amount = real cash received.
+   - Installment discount = later receivable waiver, NOT cash.
+   - A legacy/corrupt installment must never settle more than the customer's
+     real outstanding receivable at that point in time.
+   This helper DOES NOT edit saved data; it only protects accounting reports.
+*/
+function buildRecognizedInstallmentMap(){
+  const result = {};
+  const customerIds = new Set([
+    ...db.sales.map(s=>s.customerId).filter(Boolean),
+    ...db.installments.map(i=>i.customerId).filter(Boolean),
+    ...db.returns.map(r=>r.customerId).filter(Boolean)
+  ]);
+
+  customerIds.forEach(cid=>{
+    const events = [];
+
+    db.sales.filter(s=>s.customerId===cid).forEach(s=>{
+      events.push({
+        type:'booking', date:s.date||'', ts:Number(s.ts||0),
+        amount: Math.max(0, Number(s.total||0) - Number(s.initialPaid!==undefined ? s.initialPaid : s.paid||0))
+      });
+    });
+
+    db.installments.filter(i=>i.customerId===cid).forEach(i=>{
+      events.push({
+        type:'installment', date:i.date||'', ts:Number(i.ts||0), rec:i
+      });
+    });
+
+    db.returns.filter(r=>r.customerId===cid && !r.cancelled).forEach(r=>{
+      events.push({
+        type:'return', date:r.date||'', ts:Number(r.ts||0),
+        amount:Math.max(0,Number(r.dueAdjust||0))
+      });
+    });
+
+    events.sort((a,b)=>{
+      if(a.date!==b.date) return a.date<b.date ? -1 : 1;
+      // Same date: booking must establish the receivable first.
+      if(a.type==='booking' && b.type!=='booking') return -1;
+      if(b.type==='booking' && a.type!=='booking') return 1;
+      return Number(a.ts||0)-Number(b.ts||0);
+    });
+
+    let outstanding = 0;
+    events.forEach(ev=>{
+      if(ev.type==='booking'){
+        outstanding += ev.amount;
+        return;
+      }
+      if(ev.type==='return'){
+        outstanding = Math.max(0, outstanding - ev.amount);
+        return;
+      }
+
+      const rec = ev.rec;
+      const rawCash = Math.max(0, Number(rec.amount||0));
+      const rawDiscount = Math.max(0, Number(rec.discount||0));
+
+      const cash = Math.min(rawCash, outstanding);
+      const afterCash = Math.max(0, outstanding - cash);
+      const discount = Math.min(rawDiscount, afterCash);
+
+      outstanding = Math.max(0, outstanding - cash - discount);
+      result[rec.id] = {
+        cash,
+        discount,
+        rawCash,
+        rawDiscount,
+        ignoredCash: Math.max(0, rawCash-cash),
+        ignoredDiscount: Math.max(0, rawDiscount-discount)
+      };
+    });
+  });
+
+  // Records without a customer cannot be reconciled against a receivable.
+  db.installments.filter(i=>!i.customerId).forEach(i=>{
+    result[i.id] = {
+      cash:Math.max(0,Number(i.amount||0)),
+      discount:Math.max(0,Number(i.discount||0)),
+      rawCash:Math.max(0,Number(i.amount||0)),
+      rawDiscount:Math.max(0,Number(i.discount||0)),
+      ignoredCash:0, ignoredDiscount:0
+    };
+  });
+
+  return result;
+}
+
 function aggregatePeriod(fromStr, toStr){
   const from = new Date(fromStr), to = new Date(toStr);
   const spanDays = Math.max(1, Math.round((to-from)/(24*3600*1000))+1);
@@ -2834,34 +3080,83 @@ function aggregatePeriod(fromStr, toStr){
   const buckets = {};
   if(!groupByMonth){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)){
-      buckets[toISODate(d)] = {s:0,p:0,e:0};
+      buckets[toISODate(d)] = {s:0,d:0,p:0,e:0};
     }
   } else {
     let d = new Date(from.getFullYear(), from.getMonth(), 1);
     const last = new Date(to.getFullYear(), to.getMonth(), 1);
     while(d<=last){
-      buckets[`${d.getFullYear()}-${pad2(d.getMonth()+1)}`] = {s:0,p:0,e:0};
+      buckets[`${d.getFullYear()}-${pad2(d.getMonth()+1)}`] = {s:0,d:0,p:0,e:0};
       d.setMonth(d.getMonth()+1);
     }
   }
+
   const bucketKey = (dateStr) => groupByMonth ? dateStr.slice(0,7) : dateStr;
-  const inRange = (dateStr) => dateStr >= fromStr && dateStr <= toStr;
-  db.sales.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].s += Number(x.total); } });
-  // Purchase: মোট ক্রয় মূল্য (committed amount)
-  db.purchases.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].p += Number(x.total); } });
-  db.expenses.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].e += Number(x.amount); } });
-  // Vendor payments: actual cash paid out → purchase expense
+  const inRange = (dateStr) => !!dateStr && dateStr >= fromStr && dateStr <= toStr;
+  const recognized = buildRecognizedInstallmentMap();
+
+  // Booking Total = actual booked revenue after booking-time discount.
+  // Do NOT subtract later installment discounts from this figure.
+  db.sales.forEach(x => {
+    if(inRange(x.date)){
+      const k=bucketKey(x.date);
+      if(buckets[k]) buckets[k].s += Number(x.total||0);
+    }
+  });
+
+  // Later installment discount is a separate revenue/receivable waiver.
+  // Only the portion that could genuinely settle outstanding due is recognized.
+  let ignoredLegacyAdjustment = 0;
+  db.installments.forEach(i => {
+    if(!inRange(i.date) || i.isOldEntry) return;
+    const k=bucketKey(i.date);
+    if(!buckets[k]) return;
+    const rec = recognized[i.id] || {discount:0,ignoredDiscount:0,ignoredCash:0};
+    buckets[k].d += Number(rec.discount||0);
+    ignoredLegacyAdjustment += Number(rec.ignoredDiscount||0) + Number(rec.ignoredCash||0);
+  });
+
+  // Purchase: committed purchase value.
+  db.purchases.forEach(x => {
+    if(inRange(x.date)){
+      const k=bucketKey(x.date);
+      if(buckets[k]) buckets[k].p += Number(x.total||0);
+    }
+  });
+
+  db.expenses.forEach(x => {
+    if(inRange(x.date)){
+      const k=bucketKey(x.date);
+      if(buckets[k]) buckets[k].e += Number(x.amount||0);
+    }
+  });
+
+  // Cash purchase return reduces effective purchase cost.
   db.vendorPayments.forEach(vp => {
     if(!inRange(vp.date)) return;
-    const k = bucketKey(vp.date);
+    const k=bucketKey(vp.date);
     if(!buckets[k]) return;
-    // payment এবং purchase_payment → cash out (already counted in p as committed, skip double count)
-    // purchase return cash → cash in (reduce purchase cost)
-    if(vp.type==='purchase_return' && vp.returnType==='cash') buckets[k].p -= Number(vp.amount||0);
+    if(vp.type==='purchase_return' && vp.returnType==='cash'){
+      buckets[k].p -= Number(vp.amount||0);
+    }
   });
-  const rows = Object.entries(buckets).map(([k,v]) => ({ d:k, s:v.s, p:v.p, e:v.e, net:v.s-v.p-v.e })).sort((a,b)=>b.d.localeCompare(a.d));
-  const totals = rows.reduce((a,r)=>({s:a.s+r.s,p:a.p+r.p,e:a.e+r.e,net:a.net+r.net}), {s:0,p:0,e:0,net:0});
-  return { rows, totals, groupByMonth };
+
+  const rows = Object.entries(buckets)
+    .map(([k,v]) => ({
+      d:k, s:v.s, disc:v.d, p:v.p, e:v.e,
+      net:v.s-v.d-v.p-v.e
+    }))
+    .sort((a,b)=>b.d.localeCompare(a.d));
+
+  const totals = rows.reduce(
+    (a,r)=>({
+      s:a.s+r.s, disc:a.disc+r.disc, p:a.p+r.p,
+      e:a.e+r.e, net:a.net+r.net
+    }),
+    {s:0,disc:0,p:0,e:0,net:0}
+  );
+
+  return { rows, totals, groupByMonth, ignoredLegacyAdjustment };
 }
 
 function getAvailableYears(){
@@ -2906,7 +3201,7 @@ function renderInstallmentsPage(){
       return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
     }
     const entries = Object.entries(db.customers).filter(([id,cust]) => {
-      if(!(Number(cust.due)>0 || historyIds.has(id) || planIds.has(id))) return false;
+      if(!(calculateCustomerDueFromLedger(id)>0 || historyIds.has(id) || planIds.has(id))) return false;
       if(!q) return true;
       if(cust.name.toLowerCase().includes(q)) return true;
       if(String(cust.displayId||'').includes(q)) return true;
@@ -2927,7 +3222,7 @@ function renderInstallmentsPage(){
         <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_voucher')}</th><th>${t('inst_remaining')}</th><th></th></tr></thead>
         <tbody>
           ${entries.map(([id,cust]) => {
-            const due = Number(cust.due);
+            const due = calculateCustomerDueFromLedger(id);
             const accNos = accountNumbersFor(id);
             return `<tr>
               <td>${cust.displayId?('#'+cust.displayId):'—'}</td>
@@ -3023,7 +3318,7 @@ function renderSummaryReport(body){
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
     db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry && (!s.customerId||db.customers[s.customerId])){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.paid||0); } });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount)+Number(i.discount||0); } });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry && (!i.customerId||db.customers[i.customerId])){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
     // Vendor payments: cash out → de, cash return → dp
@@ -3346,7 +3641,7 @@ function renderInstallmentOnlyReport(body){
     const historyIds = new Set(db.installments.map(i=>i.customerId).filter(Boolean));
     const planIds = new Set((db.installmentPlans||[]).map(p=>p.customerId).filter(Boolean));
     Object.entries(db.customers).forEach(([cid,cust]) => {
-      if(Number(cust.due)>0 || historyIds.has(cid) || planIds.has(cid)){
+      if(calculateCustomerDueFromLedger(cid)>0 || historyIds.has(cid) || planIds.has(cid)){
         if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0 };
       }
     });
@@ -3354,7 +3649,7 @@ function renderInstallmentOnlyReport(body){
       return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
     }
     Object.values(byCust).forEach(c => {
-      c.due = c.customerId && db.customers[c.customerId] ? Number(db.customers[c.customerId].due||0) : 0;
+      c.due = c.customerId && db.customers[c.customerId] ? calculateCustomerDueFromLedger(c.customerId) : 0;
       c.accountNos = c.customerId ? accountNumbersFor(c.customerId) : [];
     });
 
@@ -3383,7 +3678,7 @@ function renderInstallmentOnlyReport(body){
             <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td><td class="actions-cell no-print">${typeof openEditInstallmentPayment==='function'?`<button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${i.id}')">✏️</button>`:''}${typeof deleteInstallmentPayment==='function'?`<button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${i.id}')">🗑️</button>`:''}</td></tr>`).join('')}</tbody>
             <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>—</td><td colspan="2"></td></tr></tfoot>
           </table>
-          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')} (${t('inst_col_new_due')}): ৳${money(cust?cust.due:0)}</div>` : ''}
+          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')} (${t('inst_col_new_due')}): ৳${money(cust?calculateCustomerDueFromLedger(cid):0)}</div>` : ''}
         </div>
       `;
     }
@@ -3396,10 +3691,10 @@ function renderInstallmentOnlyReport(body){
       <div class="panel">
         <h3>${t('nav_installments')}</h3>
         <table class="data no-print">
-          <thead><tr><th>${t('col_voucher')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th><th></th></tr></thead>
+          <thead><tr><th>${t('col_id')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th><th></th></tr></thead>
           <tbody>${custRows.map(c => `
             <tr style="${instRptSelectedCustId===c.customerId?'background:rgba(193,119,46,0.12);':''}">
-              <td>${c.accountNos && c.accountNos.length ? escapeHtml(c.accountNos.join(', ')) : '—'}</td>
+              <td>${c.customerId && db.customers[c.customerId] && db.customers[c.customerId].displayId ? '#'+db.customers[c.customerId].displayId : '—'}</td>
               <td>${escapeHtml(c.customerName)}</td>
               <td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td>
               <td>৳${money(c.paid)}</td>
@@ -3415,8 +3710,8 @@ function renderInstallmentOnlyReport(body){
     `;
     lastPrintTableHtml = `
       <table>
-        <thead><tr><th>${t('col_voucher')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th></tr></thead>
-        <tbody>${custRows.map(c => `<tr><td>${c.accountNos && c.accountNos.length ? escapeHtml(c.accountNos.join(', ')) : '—'}</td><td>${escapeHtml(c.customerName)}</td><td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td><td>৳${money(c.paid)}</td><td>${Number(c.discount)>0?'৳'+money(c.discount):'—'}</td><td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>${t('col_id')}</th><th>${t('col_customer')}</th><th>${t('col_phone')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('col_due')}</th></tr></thead>
+        <tbody>${custRows.map(c => `<tr><td>${c.customerId && db.customers[c.customerId] && db.customers[c.customerId].displayId ? '#'+db.customers[c.customerId].displayId : '—'}</td><td>${escapeHtml(c.customerName)}</td><td>${c.customerId && db.customers[c.customerId] ? escapeHtml(db.customers[c.customerId].phone||'—') : '—'}</td><td>৳${money(c.paid)}</td><td>${Number(c.discount)>0?'৳'+money(c.discount):'—'}</td><td>${Number(c.due)>0?'৳'+money(c.due):'—'}</td></tr>`).join('')}</tbody>
         <tfoot><tr><td colspan="3">${t('totals_label')}</td><td>৳${money(totalPaid)}</td><td>৳${money(totalDiscount)}</td><td>৳${money(totalDueAll)}</td></tr></tfoot>
       </table>
     `;
@@ -3620,23 +3915,29 @@ function renderReportsOverview(body){
 
   function refresh(){
     const { fromStr, toStr } = resolveRange(overviewRange, overviewFrom || fromInput.value, overviewTo || toInput.value);
-    const { rows, totals, groupByMonth } = aggregatePeriod(fromStr, toStr);
-    const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.s,r.p,r.e)));
+    const { rows, totals, groupByMonth, ignoredLegacyAdjustment } = aggregatePeriod(fromStr, toStr);
+    const maxVal = Math.max(1, ...rows.map(r=>Math.max(0,r.s,r.p,r.e,r.disc)));
     const periodColLabel = groupByMonth ? t('filter_month') : t('col_date');
     document.getElementById('ovBody').innerHTML = `
-      <div class="stat-grid rpt-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+      <div class="stat-grid rpt-stat-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px;">
         <div class="stat-card c4"><div class="val">৳${money(totals.s)}</div><div class="lbl">${t('rep_col_sales')} (${t('totals_label')})</div></div>
+        <div class="stat-card c5"><div class="val">৳${money(totals.disc)}</div><div class="lbl">${currentLang==='bn'?'কিস্তির ছাড়':'Installment Discount'}</div></div>
         <div class="stat-card c6"><div class="val">৳${money(totals.p)}</div><div class="lbl">${t('rep_col_purchase')} (${t('totals_label')})</div></div>
         <div class="stat-card c7"><div class="val">৳${money(totals.e)}</div><div class="lbl">${t('rep_col_expense')} (${t('totals_label')})</div></div>
         <div class="stat-card c8"><div class="val">৳${money(totals.net)}</div><div class="lbl">${t('rep_col_net')} (${t('totals_label')})</div></div>
       </div>
+      ${ignoredLegacyAdjustment>0 ? `<div class="storage-banner warn no-print" style="margin:-6px 0 16px;border:1px solid var(--line);border-radius:8px;">
+        ⚠️ ${currentLang==='bn'
+          ? 'পুরোনো/অসম্ভব কিস্তি ডেটার ৳'+money(ignoredLegacyAdjustment)+' রিপোর্টের হিসাব থেকে বাদ দেওয়া হয়েছে, কারণ তা আসল বকেয়ার চেয়ে বেশি ছিল।'
+          : '৳'+money(ignoredLegacyAdjustment)+' of legacy/impossible installment settlement was excluded from report calculations because it exceeded the real outstanding due.'}
+      </div>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="ov-two-col">
         <div class="panel" style="margin-bottom:0;min-width:0;overflow-x:auto;">
           <h3>${t('reports_summary')}</h3>
           <table class="data">
-            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
+            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${currentLang==='bn'?'কিস্তির ছাড়':'Inst. Discount'}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
             <tbody>
-              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
+              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.disc)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
             </tbody>
           </table>
         </div>
@@ -3675,17 +3976,18 @@ function printCustLedger(cid){
   if(!cust) return;
   const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
   const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
   const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
   const totalPaid = totalInitialPaid + totalInstPaid;
-  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+  const installmentDiscount = payments.reduce((s,p)=>s+Number(p.discount||0),0);
+  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - installmentDiscount;
 
   const ledgerRaw = [
     ...sales.map(s=>({
       ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
       label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total), discount: Number(s.discount||0),
+      total: Number(s.total) + Number(s.discount||0), discount: Number(s.discount||0),
       paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
       profit: saleNetProfit(s)
     })),
@@ -3728,7 +4030,7 @@ function printCustLedger(cid){
         <td>৳${money(totalBought)}</td>
         <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
         <td>৳${money(totalPaid)}</td>
-        <td>${cust.due>0?'৳'+money(cust.due):'৳0'}</td>
+        <td>${calculateCustomerDueFromLedger(custId)>0?'৳'+money(calculateCustomerDueFromLedger(custId)):'৳0'}</td>
         <td>৳${money(totalProfit)}</td>
       </tr></tfoot>
     </table>
@@ -3795,22 +4097,23 @@ function renderCustomerReport(body){
     const entries = allEntries.slice((custRptPage-1)*CUST_RPT_PAGE_SIZE, custRptPage*CUST_RPT_PAGE_SIZE);
 
     // Totals
-    const grandTotalBooked = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total),0),0);
-    const grandTotalDue = allEntries.reduce((s,[,c])=>s+Number(c.due||0),0);
-    const grandTotalPaid = grandTotalBooked - grandTotalDue;
-    const grandTotalProfit = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0),0);
+    const grandTotalBooked = allEntries.reduce((s,[id])=>s+db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total)+Number(x.discount||0),0),0);
+    const grandTotalDue = allEntries.reduce((sum,[id])=>sum+calculateCustomerDueFromLedger(id),0);
+    const grandTotalPaid = allEntries.reduce((sum,[id]) => sum + db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0) + db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.amount||0),0), 0);
+    const grandTotalProfit = allEntries.reduce((s,[id])=>s + db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0) - db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.discount||0),0),0);
 
     const rows = entries.map(([id,c])=>{
-      const booked = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total),0);
-      const paid = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0) + db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.amount)+Number(i.discount||0),0);
-      const profit = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0);
+      const booked = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.total)+Number(x.discount||0),0);
+      const paid = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0) + db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.amount||0),0);
+      const profit = db.sales.filter(x=>x.customerId===id).reduce((t,x)=>t+saleNetProfit(x),0) - db.installments.filter(i=>i.customerId===id).reduce((t,i)=>t+Number(i.discount||0),0);
+      const due = calculateCustomerDueFromLedger(id);
       return '<tr style="'+(reportsSelectedCustId===id?'background:rgba(193,119,46,0.12);':'')+'">'
         +'<td>'+(c.displayId?('#'+c.displayId):'—')+'</td>'
         +'<td>'+escapeHtml(c.name)+'</td>'
         +'<td>'+escapeHtml(c.phone||'—')+'</td>'
         +'<td>৳'+money(booked)+'</td>'
         +'<td>৳'+money(paid)+'</td>'
-        +'<td>'+(c.due>0?'<span class="pill red">৳'+money(c.due)+'</span>':'<span class="pill green">'+t('lbl_clear')+'</span>')+'</td>'
+        +'<td>'+(due>0?'<span class="pill red">৳'+money(due)+'</span>':'<span class="pill green">'+t('lbl_clear')+'</span>')+'</td>'
         +'<td>৳'+money(profit)+'</td>'
         +'<td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="'+id+'" title="'+t('view_title')+'">👁</button></td>'
         +'</tr>'
@@ -3859,11 +4162,13 @@ function renderCustomerReport(body){
     const payments = db.installments
       .filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth))
       .sort((a,b)=>b.ts-a.ts);
-    const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+    const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
     const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
     const totalPaid = totalInitialPaid + totalInstPaid;
-    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+    const installmentDiscount = payments.reduce((s,p)=>s+Number(p.discount||0),0);
+    const canonicalDue = calculateCustomerDueFromLedger(cid);
+    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - installmentDiscount;
 
     // একটাই ব্যাংক-স্টেটমেন্ট স্টাইল লেজার — বুকিং ও কিস্তি, তারিখ অনুযায়ী,
     // চলমান ব্যালেন্স নিজে হিসাব করে বসানো হচ্ছে (কোনো আগের সেভ করা "due" এর উপর নির্ভর করছি না)
@@ -3871,7 +4176,7 @@ function renderCustomerReport(body){
       ...sales.map(s=>({
         ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
         label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-        total: Number(s.total), discount: Number(s.discount||0),
+        total: Number(s.total) + Number(s.discount||0), discount: Number(s.discount||0),
         paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
         profit: saleNetProfit(s)
       })),
@@ -3902,7 +4207,7 @@ function renderCustomerReport(body){
           <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
           <button class="btn ghost no-print" onclick="printCustLedger('${cid}')">${t('print_report')}</button>
         </div>
-        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
+        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, calculateCustomerDueFromLedger(cid))} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
 
         <h3 style="margin:14px 0 8px;">🧾 লেনদেনের হিসাব</h3>
         ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
@@ -3923,7 +4228,7 @@ function renderCustomerReport(body){
             <td>৳${money(totalBought)}</td>
             <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
             <td>৳${money(totalPaid)}</td>
-            <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+            <td>${canonicalDue>0?'<span style="color:var(--red);">৳'+money(canonicalDue)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
             <td>৳${money(totalProfit)}</td>
           </tr></tfoot>
         </table>`}
@@ -3938,8 +4243,8 @@ function renderCustomerReport(body){
             <div style="font-size:18px;font-weight:700;color:var(--green);">৳${money(totalPaid)}</div>
             <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">${t('lbl_paid_col')}</div>
           </div>
-          <div style="background:${cust.due>0?'var(--red-bg)':'var(--green-bg)'};border-radius:8px;padding:12px;text-align:center;">
-            <div style="font-size:18px;font-weight:700;color:${cust.due>0?'var(--red)':'var(--green)'};">৳${money(cust.due)}</div>
+          <div style="background:${canonicalDue>0?'var(--red-bg)':'var(--green-bg)'};border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:${canonicalDue>0?'var(--red)':'var(--green)'};">৳${money(canonicalDue)}</div>
             <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">${t('lbl_due_col')}</div>
           </div>
         </div>
@@ -4065,7 +4370,7 @@ const CONFIG = {
     extraRowActions:(id,item)=> `
       <button class="icon-btn" title="${t('history_title')}" onclick="openCustomerHistory('${id}')">🧾</button>
       <button class="icon-btn" title="${t('installment_history_title')}" onclick="openInstallmentHistory('${id}')">📋</button>
-      ${item.due>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
+      ${calculateCustomerDueFromLedger(id)>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
     `,
     customDelete: (id) => deleteHajji(id),
     isObj:true
@@ -4186,7 +4491,7 @@ function groupSalesForDisplay(rawItems){
     const merged = {
       ...item,
       productName: names,
-      qty: t('items_count')(group.length),
+      qty: group.length===1 ? group[0][1].qty : t('items_count')(group.length),
       total: group.reduce((s,[,x])=>s+Number(x.total),0),
       discount: group.reduce((s,[,x])=>s+Number(x.discount||0),0),
       paid: group.reduce((s,[,x])=>s+Number(x.paid),0),
@@ -4277,6 +4582,10 @@ function renderTable(tab, items, search){
     const isLow = cfg.isLow && cfg.isLow(item);
     const isGroup = !!item._groupIds;
     const cells = cfg.columns.map(function(c){
+      if(tab==='customers' && c.k==='due'){
+        const canonicalDue = calculateCustomerDueFromLedger(id);
+        return '<td>৳'+money(canonicalDue)+'</td>';
+      }
       return '<td>'+(c.fmt ? c.fmt(item[c.k], item) : escapeHtml(item[c.k]==null?'—':item[c.k]))+'</td>';
     }).join('');
     const editBtn = !cfg.noEdit
@@ -4428,8 +4737,7 @@ document.getElementById('formSaveBtn').addEventListener('click', async () => {
   await handleSave(tab, id, values);
   document.getElementById('formOverlay').classList.remove('open');
   formCtx = null;
-  renderNav();
-  renderPage();
+  refreshCurrentView();
 });
 
 async function handleSave(tab, id, values){
@@ -4620,6 +4928,11 @@ async function deleteInvoiceGroup(repId){
     db.installmentPlans = db.installmentPlans.filter(p=>p.id!==plan.id);
     await safeRemove('installmentPlans', plan.id);
   }
+  if(rep.groupMemberId && db.groupMembers[rep.groupMemberId]){
+    const member = db.groupMembers[rep.groupMemberId];
+    member.due = calculateGroupMemberDueFromLedger(rep.groupMemberId);
+    await safePut('groupMembers', rep.groupMemberId, member);
+  }
   renderNav(); renderPage();
 }
 
@@ -4717,21 +5030,39 @@ async function deleteItem(tab, id){
   renderNav(); renderPage();
 }
 
+function calculateCustomerDueFromLedger(custId){
+  const sales=db.sales.filter(s=>s.customerId===custId);
+  const installments=db.installments.filter(i=>i.customerId===custId);
+  const bookedNet=sales.reduce((n,s)=>n+Number(s.total||0),0);
+  const initialPaid=sales.reduce((n,s)=>n+Number(s.initialPaid!==undefined?s.initialPaid:s.paid||0),0);
+  const laterSettled=installments.reduce((n,i)=>n+Number(i.amount||0)+Number(i.discount||0),0);
+  const returnAdjust=db.returns.filter(r=>!r.cancelled&&r.customerId===custId).reduce((n,r)=>n+Number(r.dueAdjust||0),0);
+  return Math.max(0,Math.round(bookedNet-initialPaid-laterSettled-returnAdjust));
+}
+function calculateGroupMemberDueFromLedger(memberId){
+  const sales = db.sales.filter(s=>s.groupMemberId===memberId);
+  const installments = db.installments.filter(i=>i.groupMemberId===memberId);
+  const bookedNet = sales.reduce((n,s)=>n+Number(s.total||0),0);
+  const initialPaid = sales.reduce((n,s)=>n+Number(s.initialPaid!==undefined?s.initialPaid:s.paid||0),0);
+  const laterSettled = installments.reduce((n,i)=>n+Number(i.amount||0)+Number(i.discount||0),0);
+  const returnAdjust = db.returns.filter(r=>!r.cancelled&&r.groupMemberId===memberId).reduce((n,r)=>n+Number(r.dueAdjust||0),0);
+  return Math.max(0,Math.round(bookedNet-initialPaid-laterSettled-returnAdjust));
+}
 function openCustomerHistory(custId){
   const cust = db.customers[custId];
   if(!cust) return;
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
+  const totalBought = sales.reduce((s,x)=>s+Number(x.total)+Number(x.discount||0),0);
   const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
   const totalPaid = totalInitialPaid + totalInstPaid;
 
   const ledgerRaw = [
     ...sales.map(s=>({
       ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
       label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total), discount: Number(s.discount||0),
+      total: Number(s.total) + Number(s.discount||0), discount: Number(s.discount||0),
       paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid)
     })),
     ...payments.map(p=>({
@@ -4759,7 +5090,7 @@ function openCustomerHistory(custId){
       ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
     <div class="field-hint" style="margin-bottom:10px;">
-      ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
+      ${t('history_summary')(totalBought, totalPaid, calculateCustomerDueFromLedger(custId))}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
     </div>
     ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
     <table class="data">
@@ -4778,7 +5109,7 @@ function openCustomerHistory(custId){
         <td>৳${money(totalBought)}</td>
         <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
         <td>৳${money(totalPaid)}</td>
-        <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+        <td>${calculateCustomerDueFromLedger(custId)>0?'<span style="color:var(--red);">৳'+money(calculateCustomerDueFromLedger(custId))+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
       </tr></tfoot>
     </table>`}
   `;
@@ -4979,17 +5310,29 @@ async function markInstallmentPaid(planId, idx){
   });
   for(const sale of groupSales) await safePut('sales', sale.id, sale);
 
-  if(plan.customerId && db.customers[plan.customerId]){
-    const cust = db.customers[plan.customerId];
-    const previousDue = Number(cust.due);
-    cust.due = Math.max(0, previousDue - Number(item.amount));
-    await safePut('customers', plan.customerId, cust);
+  if((plan.customerId && db.customers[plan.customerId]) || (plan.groupMemberId && db.groupMembers[plan.groupMemberId])){
+    const cust = plan.customerId ? db.customers[plan.customerId] : null;
+    const member = plan.groupMemberId ? db.groupMembers[plan.groupMemberId] : null;
+    const previousDue = cust ? calculateCustomerDueFromLedger(plan.customerId) : calculateGroupMemberDueFromLedger(plan.groupMemberId);
     const instRecord = {
       id: uid(), receiptNo: nextReceiptNo(), customerId: plan.customerId, customerName: plan.customerName,
-      amount: Number(item.amount), discount: 0, previousDue, newDue: cust.due,
+      buyerType: plan.buyerType||'customer', groupMemberId: plan.groupMemberId||null,
+      groupMemberName: plan.groupMemberName||'',
+      amount: Number(item.amount), discount: 0, previousDue, newDue: Math.max(0, previousDue-Number(item.amount)),
+      paymentSystem:'cash', note:t('grp_due_payment'),
       date: todayStr(), ts: Date.now(), planId: plan.id, installmentNo: idx
     };
     db.installments.push(instRecord);
+    await safePut('installments', instRecord.id, instRecord);
+    if(cust){
+      cust.due = calculateCustomerDueFromLedger(plan.customerId);
+      instRecord.newDue = cust.due;
+      await safePut('customers', plan.customerId, cust);
+    } else if(member){
+      member.due = calculateGroupMemberDueFromLedger(plan.groupMemberId);
+      instRecord.newDue = member.due;
+      await safePut('groupMembers', plan.groupMemberId, member);
+    }
     await safePut('installments', instRecord.id, instRecord);
     openInstallmentReceipt(instRecord);
   }
@@ -5129,11 +5472,18 @@ document.getElementById('returnConfirmBtn').addEventListener('click', async () =
     id: uid(), returnNo: nextReturnNo(), saleId: sale.id, invoiceId: sale.invoiceId||null,
     productId: sale.productId, productName: sale.productName,
     customerId: sale.customerId||null, customerName: sale.customerName||'',
+    buyerType: sale.buyerType||'customer', groupMemberId: sale.groupMemberId||null,
+    groupMemberName: sale.groupMemberName||'',
     qty, unitValue: perUnitValue, value: returnValue, dueAdjust, excessRefund, adjustments,
     date, note, cancelled:false, ts: Date.now()
   };
   db.returns.push(record);
   await safePut('returns', record.id, record);
+  if(sale.groupMemberId && db.groupMembers[sale.groupMemberId]){
+    const member = db.groupMembers[sale.groupMemberId];
+    member.due = calculateGroupMemberDueFromLedger(sale.groupMemberId);
+    await safePut('groupMembers', sale.groupMemberId, member);
+  }
 
   document.getElementById('returnOverlay').classList.remove('open');
   returnCtx = null;
@@ -5163,6 +5513,11 @@ async function cancelReturn(returnId){
     cust.due = Number(cust.due) + Number(rec.dueAdjust);
     cust.refundOwed = Math.max(0, Number(cust.refundOwed||0) - Number(rec.excessRefund));
     await safePut('customers', sale.customerId, cust);
+  }
+  if(sale && sale.groupMemberId && db.groupMembers[sale.groupMemberId]){
+    const member = db.groupMembers[sale.groupMemberId];
+    member.due = calculateGroupMemberDueFromLedger(sale.groupMemberId);
+    await safePut('groupMembers', sale.groupMemberId, member);
   }
   renderNav();
   renderPage();
@@ -5260,6 +5615,7 @@ function openSaleView(id){
   const sale = db.sales.find(s=>s.id===id);
   if(!sale) return;
   const custRecord = sale.customerId ? db.customers[sale.customerId] : null;
+  const memberRecord = sale.groupMemberId ? db.groupMembers[sale.groupMemberId] : null;
   const groupItems = sale.invoiceId ? db.sales.filter(s=>s.invoiceId===sale.invoiceId) : [sale];
   const plan = sale.invoiceId
     ? db.installmentPlans.find(p=>p.invoiceId===sale.invoiceId)
@@ -5275,8 +5631,10 @@ function openSaleView(id){
       <tbody>
         ${sale.invoiceNo ? `<tr><td>${t('col_invoice_no')}</td><td>#${sale.invoiceNo}</td></tr>` : ''}
         <tr><td>${t('col_date')}</td><td>${sale.date}</td></tr>
-        <tr><td>${t('col_customer')}</td><td>${escapeHtml(sale.customerName||t('walk_in'))}</td></tr>
-        ${custRecord && custRecord.phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml(custRecord.phone)}</td></tr>` : ''}
+        <tr><td>${sale.buyerType==='group_agent'||sale.groupMemberId?t('booking_for_group_agent'):t('booking_for_customer')}</td><td>${escapeHtml(sale.customerName||t('walk_in'))}</td></tr>
+        ${(custRecord||memberRecord) && (custRecord||memberRecord).phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml((custRecord||memberRecord).phone)}</td></tr>` : ''}
+        ${sale.referrerMemberName ? `<tr><td>${t('grp_linked_agent')}</td><td>${escapeHtml(sale.referrerMemberName)}</td></tr>` : ''}
+        ${sale.groupName && sale.customerId ? `<tr><td>${t('grp_linked_lot')}</td><td>${escapeHtml(sale.groupName)}</td></tr>` : ''}
         ${sale.voucherTag ? `<tr><td>${t('col_voucher_tag')}</td><td>${escapeHtml(sale.voucherTag)}</td></tr>` : ''}
         ${sale.voucherNo ? `<tr><td>${t('col_voucher')}</td><td>${escapeHtml(sale.voucherNo)}</td></tr>` : ''}
         ${paymentSystemKey(sale.paymentSystem) ? `<tr><td>${t('col_payment_system')}</td><td>${t(paymentSystemKey(sale.paymentSystem))}</td></tr>` : ''}
@@ -5321,8 +5679,13 @@ function openMultiSale(editInvoiceId){
   msRowSeq = 0;
   msEditInvoiceId = editInvoiceId || null;
   document.getElementById('multiSaleTitle').textContent = msEditInvoiceId ? t('edit_title') + ' — ' + t('invoice_label') : t('new_sale_invoice_title');
+  document.getElementById('msBuyerTypeLabel').textContent = t('booking_for');
+  const buyerTypeEl = document.getElementById('msBuyerType');
+  buyerTypeEl.innerHTML = `<option value="customer">${t('booking_for_customer')}</option><option value="group_agent">${t('booking_for_group_agent')}</option>`;
+  buyerTypeEl.value = 'customer';
   document.getElementById('msCustomerLabel').textContent = t('f_customer_opt');
   document.getElementById('msCustomer').placeholder = t('walk_in');
+  document.getElementById('msGroupAgentLabel').textContent = t('booking_for_group_agent');
   const voucherTagSugg = [...new Set(db.sales.map(s=>s.voucherTag).filter(Boolean))];
   const voucherNoSugg = [...new Set(db.sales.map(s=>s.voucherNo).filter(Boolean))];
   document.getElementById('dl-ms-vouchertag').innerHTML = voucherTagSugg.map(s=>`<option value="${escapeHtml(s)}">`).join('');
@@ -5358,6 +5721,15 @@ function openMultiSale(editInvoiceId){
     gsEl.innerHTML = '<option value="">'+t('grp_no_group')+'</option>'+grpOpts;
     gsEl.value = '';
   }
+  const gmEl = document.getElementById('msGroupMemberSelect');
+  if(gmEl){
+    const memberOpts = Object.entries(db.groupMembers)
+      .sort((a,b)=>Number(a[1].memberNo||0)-Number(b[1].memberNo||0))
+      .map(([mid,m])=>`<option value="${mid}">${m.memberNo?'#'+escapeHtml(String(m.memberNo))+' — ':''}${escapeHtml(m.name||'')}</option>`).join('');
+    gmEl.innerHTML = `<option value="">— ${t('select_group_agent')} —</option>${memberOpts}`;
+    gmEl.value = '';
+  }
+  onMsBuyerTypeChange();
 
   document.getElementById('msRows').innerHTML = '';
 
@@ -5373,7 +5745,11 @@ function openMultiSale(editInvoiceId){
       } else {
         const first = groupSales[0];
         msEditInvoiceNo = first.invoiceNo || null;
+        buyerTypeEl.value = (first.buyerType==='group_agent' || first.groupMemberId) ? 'group_agent' : 'customer';
         selectMsCustomer(first.customerId || '');
+        if(gmEl) gmEl.value = first.groupMemberId || '';
+        if(gsEl) gsEl.value = first.groupId || '';
+        onMsBuyerTypeChange();
         document.getElementById('msDate').value = first.date;
         document.getElementById('msVoucher').value = first.voucherNo || '';
         document.getElementById('msVoucherTag').value = first.voucherTag || '';
@@ -5440,15 +5816,14 @@ function onMsCustomerSearch(){
   const resultsEl = document.getElementById('msCustomerResults');
   if(!input || !resultsEl) return;
   const q = input.value.trim().toLowerCase();
-  const selectedGroupId = document.getElementById('msGroupSelect') ? document.getElementById('msGroupSelect').value : '';
-  const grpHajjiIds = selectedGroupId && db.groups[selectedGroupId] ? new Set(normalizeHajjiIds(db.groups[selectedGroupId].hajjiIds)) : null;
   let entries = Object.entries(db.customers);
-  if(grpHajjiIds && grpHajjiIds.size>0) entries = entries.filter(([cid])=>grpHajjiIds.has(cid));
+  // A customer may be new to the selected Lot. Keep the full customer list
+  // available; saving the booking will attach the customer to that Lot.
   const matches = q
     ? entries.filter(([cid,c]) => c.name.toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.passport&&c.passport.toLowerCase().includes(q))).slice(0,10)
     : entries.slice(0,10);
   if(matches.length===0){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; return; }
-  resultsEl.innerHTML = matches.map(([cid,c]) => `<div class="ms-product-result-item" onclick="selectMsCustomer('${cid}')">${escapeHtml(c.name)} <span style="color:var(--ink-soft);font-size:11px;">${c.phone?escapeHtml(c.phone):''}${Number(c.due)>0?' · ৳'+money(c.due):''}</span></div>`).join('');
+  resultsEl.innerHTML = matches.map(([cid,c]) => `<div class="ms-product-result-item" onclick="selectMsCustomer('${cid}')">${escapeHtml(c.name)} <span style="color:var(--ink-soft);font-size:11px;">${c.phone?escapeHtml(c.phone):''}${calculateCustomerDueFromLedger(cid)>0?' · ৳'+money(calculateCustomerDueFromLedger(cid)):''}</span></div>`).join('');
   resultsEl.classList.add('open');
 }
 function selectMsCustomer(cid){
@@ -5522,9 +5897,17 @@ document.getElementById('msCancelBtn').addEventListener('click', () => {
 setupOverlayBackdropClose('multiSaleOverlay', () => { msEditInvoiceId = null; msEditInvoiceNo = null; });
 
 document.getElementById('msSaveBtn').addEventListener('click', async () => {
-  const customerId = document.getElementById('msCustomerId').value || null;
+  const buyerType = document.getElementById('msBuyerType').value === 'group_agent' ? 'group_agent' : 'customer';
+  const groupMemberId = buyerType==='group_agent' ? (document.getElementById('msGroupMemberSelect').value || null) : null;
+  const groupMember = groupMemberId ? db.groupMembers[groupMemberId] : null;
+  if(buyerType==='group_agent' && !groupMember){ alert(t('group_agent_required')); return; }
+  const customerId = buyerType==='customer' ? (document.getElementById('msCustomerId').value || null) : null;
   const cust = customerId ? db.customers[customerId] : null;
-  const customerName = cust ? cust.name : '';
+  const selectedLotId = buyerType==='customer' && document.getElementById('msGroupSelect') ? (document.getElementById('msGroupSelect').value||null) : null;
+  const selectedLot = selectedLotId ? db.groups[selectedLotId] : null;
+  const referrerMember = selectedLot && selectedLot.memberId ? db.groupMembers[selectedLot.memberId] : null;
+  if(selectedLotId && !cust){ alert(t('required_fields')); return; }
+  const customerName = buyerType==='group_agent' ? groupMember.name : (cust ? cust.name : '');
   const date = document.getElementById('msDate').value || todayStr();
   const voucherNo = document.getElementById('msVoucher').value.trim();
   const voucherTag = document.getElementById('msVoucherTag').value.trim();
@@ -5550,8 +5933,10 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   if(rowsData.length===0){ alert(t('product_not_found')); return; }
 
   // if editing, first reverse the old invoice's stock/due effects
+  let previousGroupMemberId = null;
   if(msEditInvoiceId){
     const oldSales = db.sales.filter(s=>s.invoiceId===msEditInvoiceId);
+    previousGroupMemberId = oldSales[0] ? (oldSales[0].groupMemberId||null) : null;
     const oldDueTotal = oldSales.reduce((s,x)=>s+Number(x.due||0),0);
     for(const old of oldSales){
       const p = db.products[old.productId];
@@ -5576,7 +5961,10 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   const overallPaid = paidInput===''? grandTotal : Math.min(grandTotal, Number(paidInput)||0);
   const overallDue = Math.max(0, grandTotal - overallPaid);
 
-  const invoiceId = rowsData.length>1 ? (msEditInvoiceId || uid()) : null;
+  // Every booking created by this builder gets an invoiceId, including a
+  // single-package booking. This keeps Customers and Groups/Agent bookings on
+  // the same edit/view/delete path without losing the selected buyer type.
+  const invoiceId = msEditInvoiceId || uid();
   const invoiceNo = msEditInvoiceNo || nextInvoiceNo();
   const saleRecords = [];
   let remainingPaid = overallPaid;
@@ -5590,10 +5978,13 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     remainingPaid -= rowPaid;
     remainingDue -= rowDue;
     const saleId = uid();
-    const msGroupId = document.getElementById('msGroupSelect') ? document.getElementById('msGroupSelect').value : '';
-    const msGroupObj = msGroupId ? db.groups[msGroupId] : null;
+    const msGroupId = selectedLotId || '';
+    const msGroupObj = selectedLot;
     const record = {
       id: saleId, invoiceId, invoiceNo, voucherNo, voucherTag, paymentSystem, isOldEntry, customerId, customerName,
+      buyerType, groupMemberId, groupMemberName: groupMember ? groupMember.name : '',
+      referrerMemberId: buyerType==='customer'&&msGroupObj ? (msGroupObj.memberId||null) : null,
+      referrerMemberName: buyerType==='customer'&&referrerMember ? referrerMember.name : '',
       productId: r.pid, productName: r.product.name,
       qty: r.qty, unitPrice: r.price, unitCost: Number(r.product.cost||0), discount: r.disc,
       total: r.rowTotal, paid: rowPaid, due: rowDue, initialPaid: rowPaid, date, ts: Date.now(),
@@ -5607,8 +5998,17 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   saleRecords.forEach(rec => db.sales.push(rec));
   await Promise.all(saleRecords.map(rec => safePut('sales', rec.id, rec)));
   if(customerId && cust){
-    cust.due = Number(cust.due||0) + overallDue;
+    cust.due = calculateCustomerDueFromLedger(customerId);
     await safePut('customers', customerId, cust);
+  }
+  if(customerId && selectedLot){
+    selectedLot.hajjiIds = [...new Set([...normalizeHajjiIds(selectedLot.hajjiIds), customerId])];
+    await safePut('groups', selectedLotId, selectedLot);
+  }
+  const memberIdsToRefresh = [...new Set([previousGroupMemberId, groupMemberId].filter(Boolean))];
+  for(const mid of memberIdsToRefresh){
+    const member = db.groupMembers[mid];
+    if(member){ member.due = calculateGroupMemberDueFromLedger(mid); await safePut('groupMembers', mid, member); }
   }
 
   if(overallDue>0 && instCount>=2){
@@ -5621,6 +6021,10 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     const productNames = rowsData.map(r=>r.product.name).join(', ');
     const plan = {
       id: uid(), saleId: saleRecords[0].id, invoiceId, customerId, customerName,
+      buyerType, groupMemberId, groupMemberName: groupMember ? groupMember.name : '',
+      groupId:selectedLotId||null, groupName:selectedLot?selectedLot.name:'',
+      referrerMemberId:selectedLot?(selectedLot.memberId||null):null,
+      referrerMemberName:referrerMember?referrerMember.name:'',
       productName: productNames, totalDue: overallDue, count: instCount, perAmount,
       items, createdDate: date, ts: Date.now()
     };
@@ -5640,6 +6044,7 @@ let dueCtx = null;
 function openPayDue(custId){
   const cust = db.customers[custId];
   if(!cust) return;
+  cust.due = calculateCustomerDueFromLedger(custId);
   dueCtx = custId;
   document.getElementById('dueTitle').textContent = t('pay_due_title');
   document.getElementById('dueCurrentInfo').textContent = t('pay_due_current')(cust.name, cust.due);
@@ -5689,13 +6094,17 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const instPaymentSystem = document.getElementById('duePaymentSystem').value || 'cash';
   if(paid<=0 && discount<=0) return;
   const previousDue = Number(cust.due);
+  if(paid + discount > previousDue){
+    alert(currentLang==='bn' ? 'পরিশোধ + ছাড় বর্তমান বকেয়ার চেয়ে বেশি হতে পারবে না।' : 'Payment + discount cannot exceed the current due.');
+    return;
+  }
   const newDue = Math.max(0, previousDue - (paid+discount));
   cust.due = newDue;
   await safePut('customers', dueCtx, cust);
 
   // distribute this payment across the customer's outstanding sales (oldest first)
   // so each sale's own paid/due fields stay accurate too
-  let toApply = paid + discount;
+  let toApply = paid + discount; // both cash and waiver settle receivable; cash reports count only `paid`
   const openSales = db.sales.filter(s=>s.customerId===dueCtx && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
   const salesToUpdate = [];
   for(const sale of openSales){
@@ -5716,6 +6125,8 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   };
   db.installments.push(instRecord);
   await safePut('installments', instRecord.id, instRecord);
+  cust.due = calculateCustomerDueFromLedger(dueCtx);
+  await safePut('customers', dueCtx, cust);
   document.getElementById('dueOverlay').classList.remove('open');
   dueCtx = null;
   renderPage();
@@ -5724,6 +6135,7 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
 
 function openInstallmentReceipt(rec){
   const custRecord = rec.customerId ? db.customers[rec.customerId] : null;
+  const memberRecord = rec.groupMemberId ? db.groupMembers[rec.groupMemberId] : null;
   document.getElementById('instReceiptTitle').textContent = t('installment_receipt_title') + (rec.receiptNo ? ' #'+rec.receiptNo : '');
   document.getElementById('instReceiptCloseBtn').textContent = t('close');
   document.getElementById('instReceiptPrintBtn').textContent = t('print_report');
@@ -5731,9 +6143,10 @@ function openInstallmentReceipt(rec){
     <table class="data">
       <tbody>
         ${rec.receiptNo ? `<tr><td>${t('col_receipt_no')}</td><td>#${rec.receiptNo}</td></tr>` : ''}
-        <tr><td>${t('col_customer')}</td><td>${escapeHtml(rec.customerName)}</td></tr>
-        ${custRecord && custRecord.phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml(custRecord.phone)}</td></tr>` : ''}
+        <tr><td>${rec.groupMemberId?t('booking_for_group_agent'):t('booking_for_customer')}</td><td>${escapeHtml(rec.customerName)}</td></tr>
+        ${(custRecord||memberRecord) && (custRecord||memberRecord).phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml((custRecord||memberRecord).phone)}</td></tr>` : ''}
         <tr><td>${t('inst_col_date')}</td><td>${formatDateDMY(rec.date)}</td></tr>
+        ${paymentSystemKey(rec.paymentSystem) ? `<tr><td>${t('grp_method')}</td><td>${t(paymentSystemKey(rec.paymentSystem))}</td></tr>` : ''}
         <tr><td>${t('inst_col_previous_due')}</td><td>৳${money(rec.previousDue)}</td></tr>
         <tr><td>${t('inst_col_amount')}</td><td>৳${money(rec.amount)}</td></tr>
         ${Number(rec.discount)>0 ? `<tr><td>${t('inst_col_discount')}</td><td>৳${money(rec.discount)}</td></tr>` : ''}
@@ -5779,6 +6192,12 @@ function openInstallmentEdit(instId, custId){
     if(newAmt < 0){ alert(t('inst_col_amount')); return; }
     const oldTotal = Number(rec.amount) + Number(rec.discount||0);
     const newTotal = newAmt + newDisc;
+    const custForLimit = db.customers[rec.customerId];
+    const maxSettlement = oldTotal + Number(custForLimit ? custForLimit.due||0 : 0);
+    if(newTotal > maxSettlement){
+      alert(currentLang==='bn' ? 'পরিশোধ + ছাড় বর্তমান বকেয়ার চেয়ে বেশি হতে পারবে না।' : 'Payment + discount cannot exceed the available due.');
+      return;
+    }
     const diff = newTotal - oldTotal;
     // customer.due
     const cust2 = db.customers[rec.customerId];
@@ -5821,8 +6240,9 @@ function openInstallmentEdit(instId, custId){
 function openInstallmentHistory(custId){
   const cust = db.customers[custId];
   if(!cust) return;
+  cust.due = calculateCustomerDueFromLedger(custId);
   const list = db.installments.filter(x=>x.customerId===custId).sort((a,b)=>b.ts-a.ts);
-  const totalPaid = list.reduce((s,x)=>s+Number(x.amount)+Number(x.discount||0),0);
+  const totalPaid = list.reduce((s,x)=>s+Number(x.amount||0),0);
   const plans = db.installmentPlans.filter(p=>p.customerId===custId).sort((a,b)=>b.ts-a.ts);
   document.getElementById('instHistoryTitle').textContent = cust.name + ' — ' + t('installment_history_title');
   document.getElementById('instHistoryCloseBtn').textContent = t('close');
@@ -5831,7 +6251,7 @@ function openInstallmentHistory(custId){
     <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
       ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
-    <div class="field-hint" style="margin-bottom:10px;">${t('inst_total_paid')}: ৳${money(totalPaid)} · ${t('col_due')}: ৳${money(cust.due)}</div>
+    <div class="field-hint" style="margin-bottom:10px;">${t('inst_total_paid')}: ৳${money(totalPaid)} · ${t('col_due')}: ৳${money(calculateCustomerDueFromLedger(custId))}</div>
     ${plans.length>0 ? plans.map(p=>`
       <div class="panel">
         <div style="font-weight:700;margin-bottom:6px;">${escapeHtml(p.productName||'')} — ${t('inst_plan_summary')(p.count, p.perAmount)}</div>
