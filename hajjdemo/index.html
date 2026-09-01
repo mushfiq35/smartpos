@@ -134,6 +134,13 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 .agent-balance-due{color:var(--red);font-weight:800;}
 .agent-balance-advance{color:var(--green);font-weight:800;}
 .agent-head-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:7px;margin-top:7px;background:var(--paper);}
+.opening-side-receivable{color:var(--red);font-weight:700;}
+.opening-side-advance{color:var(--green);font-weight:700;}
+.asset-card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px;}
+.asset-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0;overflow:hidden;}
+.asset-card small{display:block;color:var(--ink-soft);margin-bottom:5px;}.asset-card strong{font-family:'IBM Plex Mono',monospace;font-size:19px;overflow-wrap:anywhere;}
+@media(max-width:900px){.asset-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:480px){.asset-card-grid{grid-template-columns:1fr;}}
 
 @media (max-width:1100px){
   .agent-statement-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
@@ -768,10 +775,11 @@ const K = {
   bankAccounts:'pos-bank-accounts', mobileAccounts:'pos-mobile-accounts',
   paymentHeads:'pos-payment-heads', paymentLedger:'pos-payment-ledger',
   agentLedgerHeads:'pos-agent-ledger-heads', agentLedger:'pos-agent-ledger',
+  openingBalances:'pos-opening-balances', assets:'pos-assets', assetEvents:'pos-asset-events',
   appUsers:'pos-app-users',
   settings:'pos-settings'
 };
-let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], groupMembers:{}, groups:{}, vendorPayments:[], bankAccounts:{}, mobileAccounts:{}, paymentHeads:{}, paymentLedger:[], agentLedgerHeads:{}, agentLedger:[], appUsers:{} };
+let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], groupMembers:{}, groups:{}, vendorPayments:[], bankAccounts:{}, mobileAccounts:{}, paymentHeads:{}, paymentLedger:[], agentLedgerHeads:{}, agentLedger:[], openingBalances:[], assets:{}, assetEvents:[], appUsers:{} };
 let currentTab = 'dashboard';
 let logoData = null;
 let activeGroupAgentTab = 'overview';
@@ -803,7 +811,7 @@ const I18N = {
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'কাস্টমার', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর',
     title_categories:'প্যাকেজের ধরন', add_categories:'+ নতুন ধরন', f_category_name:'ধরনের নাম',
-    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_payment_ledger:'পেমেন্ট লেজার', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_user_management:'ইউজার ম্যানেজমেন্ট', nav_group_members:'গ্রুপস/এজেন্ট', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপস/এজেন্ট',
+    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_payment_ledger:'পেমেন্ট লেজার', nav_opening_balances:'ওপেনিং ব্যালেন্স', nav_assets:'অ্যাসেট রেজিস্টার', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_user_management:'ইউজার ম্যানেজমেন্ট', nav_group_members:'গ্রুপস/এজেন্ট', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপস/এজেন্ট',
     reports_sales_returns_tab:'বুকিং ও বাতিল', sr_sales_count:'বুকিং সংখ্যা', sr_returns_count:'বাতিল সংখ্যা', sr_net_label:'নিট',
     return_title:'বুকিং বাতিল', return_new:'নতুন বাতিল', return_no:'বাতিল নং',
     return_original_qty:'মোট বুকড পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
@@ -951,7 +959,7 @@ const I18N = {
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Customers', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors',
     title_categories:'Package Types', add_categories:'+ New Type', f_category_name:'Type Name',
-    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_payment_ledger:'Payment Ledger', nav_reports:'Reports', nav_settings:'Settings', nav_user_management:'User Management', nav_group_members:'Groups/Agent', nav_groups:'Groups / Lots', rep_group_tab:'Groups/Agent',
+    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_payment_ledger:'Payment Ledger', nav_opening_balances:'Opening Balances', nav_assets:'Asset Register', nav_reports:'Reports', nav_settings:'Settings', nav_user_management:'User Management', nav_group_members:'Groups/Agent', nav_groups:'Groups / Lots', rep_group_tab:'Groups/Agent',
     reports_sales_returns_tab:'Bookings & Cancellations', sr_sales_count:'Bookings Count', sr_returns_count:'Cancellations Count', sr_net_label:'Net',
     return_title:'Cancellations', return_new:'New Cancellation', return_no:'Cancellation No.',
     return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
@@ -1117,7 +1125,7 @@ const PRIMARY_SUPER_EMAIL = "mushfiq35@gmail.com";
 const ADMIN_EMAILS = [PRIMARY_SUPER_EMAIL]; // legacy compatibility
 const ROLE_PERMISSIONS = {
   super:['*'],
-  moderator:['daily_ops','view_ledger','view_reports','manage_accounts'],
+  moderator:['daily_ops','view_ledger','view_reports','manage_accounts','financial_setup'],
   staff:['daily_ops','manage_accounts']
 };
 function normalizeEmail(email){ return String(email||'').trim().toLowerCase(); }
@@ -1139,6 +1147,7 @@ function canAccessTab(tab){
   if(tab==='user_management') return isSuperUser();
   if(tab==='reports') return hasPermission('view_reports');
   if(tab==='payment_ledger') return hasPermission('view_ledger');
+  if(tab==='opening_balances'||tab==='assets') return hasPermission('financial_setup');
   return currentRole()!=='inactive';
 }
 function requirePermission(permission,message){
@@ -1171,7 +1180,7 @@ function renderRolePermissionMatrix(){
     ['View daily ERP menus',yes,yes,yes],['Create customers, bookings & agent ledger entries',yes,yes,yes],
     ['Edit existing records',yes,no,no],['Delete existing records',yes,no,no],
     ['View Reports',yes,yes,no],['View Payment Ledger',yes,yes,no],
-    ['View/add bank & mobile accounts',yes,yes,yes],['Backup / Restore / Reset',yes,no,no],
+    ['View/add bank & mobile accounts',yes,yes,yes],['Opening balances & asset register',yes,yes,no],['Backup / Restore / Reset',yes,no,no],
     ['User Management & role change',yes,no,no]
   ];
   return '<div style="overflow-x:auto"><table class="data"><thead><tr><th>Feature Permission</th><th><span class="role-badge super">Super User</span></th><th><span class="role-badge moderator">Moderator</span></th><th><span class="role-badge staff">Staff</span></th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>').join('')+'</tbody></table></div>';
@@ -1286,8 +1295,8 @@ async function restoreFromDrive(){
       });
       const backupData = await fileRes.json();
       if(!confirm(t('confirm_restore'))) return;
-      for(const key of ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads']) for(const [rid,rec] of Object.entries(backupData[key]||{})){db[key][rid]=rec;await safePut(key,rid,rec);}
-      for(const key of ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','paymentLedger','agentLedger']) for(const rec of (backupData[key]||[])) await safePut(key,rec.id,rec);
+      for(const key of ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads','assets']) for(const [rid,rec] of Object.entries(backupData[key]||{})){db[key][rid]=rec;await safePut(key,rid,rec);}
+      for(const key of ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','paymentLedger','agentLedger','openingBalances','assetEvents']) for(const rec of (backupData[key]||[])) await safePut(key,rec.id,rec);
       await loadAll();
       showToast(t('restore_success'));
     }catch(e){
@@ -1497,6 +1506,8 @@ const NAV = [
   {id:'installments', ic:'📆', key:'nav_installments'},
   {id:'expenses', ic:'💸', key:'nav_expenses'},
   {id:'returns', ic:'↩️', key:'nav_returns'},
+  {id:'opening_balances', ic:'⚖️', key:'nav_opening_balances'},
+  {id:'assets', ic:'🏛️', key:'nav_assets'},
   {id:'payment_ledger', ic:'🏦', key:'nav_payment_ledger'},
   {id:'reports', ic:'📈', key:'nav_reports'},
   {id:'settings', ic:'⚙️', key:'nav_settings'},
@@ -1627,6 +1638,93 @@ function accountTotals(accountId){
 }
 function paymentAccountIsUsed(id){ return accountTransactionRows(id).length>0; }
 
+/* ---------- ERP Opening Balances ---------- */
+let editingOpeningBalanceId=null;
+function openingBalanceRecord(entityType,entityId){ return db.openingBalances.find(x=>x.entityType===entityType&&x.entityId===entityId)||null; }
+function openingBalanceNet(entityType,entityId){ const x=openingBalanceRecord(entityType,entityId);return x?(x.side==='advance'?-Number(x.amount||0):Number(x.amount||0)):0; }
+function openingEntityName(type,id){ const src=type==='customer'?db.customers:type==='supplier'?db.suppliers:db.groupMembers;return (src[id]||{}).name||'—'; }
+function openingTypeLabel(type){return type==='customer'?'Customer':type==='supplier'?'Vendor':'Groups/Agent';}
+function openingSideLabel(x){
+  if(x.side==='advance')return x.entityType==='supplier'?'Advance to Vendor':'Customer/Agent Advance';
+  return x.entityType==='supplier'?'Opening Payable':'Opening Receivable';
+}
+async function syncOpeningEntityDue(type,id){
+  if(type==='customer'&&db.customers[id]){db.customers[id].due=calculateCustomerDueFromLedger(id);await safePut('customers',id,db.customers[id]);}
+  if(type==='supplier'&&db.suppliers[id]){db.suppliers[id].due=calculateSupplierBalanceFromLedger(id);await safePut('suppliers',id,db.suppliers[id]);}
+  if(type==='agent'&&db.groupMembers[id]){db.groupMembers[id].due=calculateGroupMemberDueFromLedger(id);await safePut('groupMembers',id,db.groupMembers[id]);}
+}
+function openingControlSummary(){
+  const bankCash=[...Object.values(db.bankAccounts),...Object.values(db.mobileAccounts)].reduce((n,a)=>n+Number(a.openingBalance||0),0);
+  const openingAssets=Object.values(db.assets).filter(a=>a.acquisitionMode==='opening').reduce((n,a)=>n+Number(a.bookValue||a.acquisitionCost||0),0);
+  let receivable=0,payable=0,advAsset=0,advLiability=0;
+  db.openingBalances.forEach(x=>{const amt=Number(x.amount||0);if(x.entityType==='supplier'){x.side==='advance'?advAsset+=amt:payable+=amt;}else{x.side==='advance'?advLiability+=amt:receivable+=amt;}});
+  const assets=bankCash+openingAssets+receivable+advAsset,liabilities=payable+advLiability;
+  return {bankCash,openingAssets,receivable,payable,advAsset,advLiability,assets,liabilities,equity:assets-liabilities};
+}
+function renderOpeningBalancesPage(){
+  if(!hasPermission('financial_setup')){currentTab='dashboard';renderNav();renderPage();return;}
+  const s=openingControlSummary();
+  const rows=[...db.openingBalances].sort((a,b)=>String(a.entityType).localeCompare(String(b.entityType))||String(a.entityName).localeCompare(String(b.entityName))).map(x=>'<tr><td>'+formatDateDMY(x.date)+'</td><td>'+openingTypeLabel(x.entityType)+'</td><td><strong>'+escapeHtml(x.entityName||openingEntityName(x.entityType,x.entityId))+'</strong></td><td><span class="'+(x.side==='advance'?'opening-side-advance':'opening-side-receivable')+'">'+openingSideLabel(x)+'</span></td><td>৳'+money(x.amount)+'</td><td>'+escapeHtml(x.reference||x.note||'—')+'</td><td>'+(isSuperUser()?'<button class="icon-btn" onclick="editOpeningBalance(\''+x.id+'\')">✏️</button><button class="icon-btn" onclick="deleteOpeningBalance(\''+x.id+'\')">🗑️</button>':'<span class="field-hint">Locked</span>')+'</td></tr>').join('');
+  document.getElementById('content').innerHTML='<div class="panel"><h3>⚖️ Opening Balance Control</h3><p class="field-hint">System শুরুর আগের balance একবার এখানে দিন। এটি cash transaction নয়; সংশ্লিষ্ট statement-এর প্রথম লাইনে OPEN হিসেবে যাবে।</p><div class="asset-card-grid"><div class="asset-card"><small>Opening Cash / Bank</small><strong>৳'+money(s.bankCash)+'</strong></div><div class="asset-card"><small>Opening Receivable & Advances</small><strong>৳'+money(s.receivable+s.advAsset)+'</strong></div><div class="asset-card"><small>Opening Assets</small><strong>৳'+money(s.openingAssets)+'</strong></div><div class="asset-card"><small>Opening Liabilities</small><strong>৳'+money(s.liabilities)+'</strong></div></div><div style="padding:12px;border-radius:8px;background:var(--gold-bg)"><strong>Auto Opening Equity / Capital: ৳'+money(s.equity)+'</strong><div class="field-hint">Opening Assets ৳'+money(s.assets)+' − Opening Liabilities ৳'+money(s.liabilities)+'</div></div></div>'
+    +'<div class="panel"><h3>'+(editingOpeningBalanceId?'Edit':'Add')+' Opening Balance</h3><div class="field-row"><div class="field"><label>Entity Type</label><select id="obType"><option value="customer">Customer</option><option value="supplier">Vendor</option><option value="agent">Groups/Agent</option></select></div><div class="field"><label>Select Account</label><select id="obEntity"></select></div><div class="field"><label>Balance Side</label><select id="obSide"></select></div></div><div class="field-row"><div class="field"><label>Amount (BDT)</label><input type="number" id="obAmount" min="0" step="any"></div><div class="field"><label>Opening Date</label><input type="date" id="obDate" value="'+todayStr()+'"></div><div class="field"><label>Reference</label><input id="obReference" placeholder="Previous ledger / audited balance"></div></div><div class="field"><label>Note</label><input id="obNote" placeholder="Optional explanation"></div><div style="display:flex;gap:8px"><button class="btn amber" onclick="saveOpeningBalance()">'+(editingOpeningBalanceId?'✓ Update Opening Balance':'+ Save Opening Balance')+'</button>'+(editingOpeningBalanceId?'<button class="btn ghost" onclick="cancelOpeningBalanceEdit()">Cancel Edit</button>':'')+'</div></div>'
+    +'<div class="panel"><h3>Opening Balance Register</h3>'+(rows?'<div style="overflow-x:auto"><table class="data"><thead><tr><th>Date</th><th>Type</th><th>Account</th><th>Side</th><th>Amount</th><th>Reference</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty">No opening balances added yet.</div>')+'</div>';
+  document.getElementById('obType').onchange=refreshOpeningBalanceFields;refreshOpeningBalanceFields();
+  if(editingOpeningBalanceId){const x=db.openingBalances.find(v=>v.id===editingOpeningBalanceId);if(x){document.getElementById('obType').value=x.entityType;refreshOpeningBalanceFields();document.getElementById('obEntity').value=x.entityId;document.getElementById('obSide').value=x.side;document.getElementById('obAmount').value=x.amount;document.getElementById('obDate').value=x.date||todayStr();document.getElementById('obReference').value=x.reference||'';document.getElementById('obNote').value=x.note||'';}}
+}
+function refreshOpeningBalanceFields(){
+  const type=document.getElementById('obType').value,src=type==='customer'?db.customers:type==='supplier'?db.suppliers:db.groupMembers;
+  document.getElementById('obEntity').innerHTML='<option value="">— Select —</option>'+Object.entries(src).sort((a,b)=>String(a[1].name||'').localeCompare(String(b[1].name||''))).map(([id,x])=>'<option value="'+id+'">'+escapeHtml(x.name||'—')+'</option>').join('');
+  document.getElementById('obSide').innerHTML=type==='supplier'?'<option value="due">We owe Vendor (Payable)</option><option value="advance">Advance paid to Vendor</option>':'<option value="due">They owe Agency (Receivable)</option><option value="advance">Advance received (Agency owes)</option>';
+}
+function editOpeningBalance(id){if(!isSuperUser())return;editingOpeningBalanceId=id;renderOpeningBalancesPage();window.scrollTo({top:0,behavior:'smooth'});}
+function cancelOpeningBalanceEdit(){editingOpeningBalanceId=null;renderOpeningBalancesPage();}
+async function saveOpeningBalance(){
+  if(!hasPermission('financial_setup'))return;const type=document.getElementById('obType').value,entityId=document.getElementById('obEntity').value,side=document.getElementById('obSide').value,amount=Number(document.getElementById('obAmount').value);
+  if(!entityId||amount<=0){alert(t('required_fields'));return;}const existing=openingBalanceRecord(type,entityId);
+  if(existing&&existing.id!==editingOpeningBalanceId){alert('This account already has an opening balance. Super User can edit the existing entry.');return;}if(editingOpeningBalanceId&&!isSuperUser())return;
+  const id=editingOpeningBalanceId||uid(),old=db.openingBalances.find(x=>x.id===id)||{},rec={...old,id,entityType:type,entityId,entityName:openingEntityName(type,entityId),side,amount,date:document.getElementById('obDate').value||todayStr(),reference:document.getElementById('obReference').value.trim(),note:document.getElementById('obNote').value.trim(),createdBy:old.createdBy||currentUserEmail(),updatedBy:currentUserEmail(),ts:old.ts||Date.now(),updatedAt:Date.now()};
+  if(editingOpeningBalanceId)db.openingBalances=db.openingBalances.map(x=>x.id===id?rec:x);else db.openingBalances.push(rec);await safePut('openingBalances',id,rec);await syncOpeningEntityDue(type,entityId);editingOpeningBalanceId=null;showToast('Opening balance saved');renderOpeningBalancesPage();
+}
+async function deleteOpeningBalance(id){
+  if(!requirePermission('delete_records'))return;const x=db.openingBalances.find(v=>v.id===id);if(!x||!confirm(t('confirm_delete')))return;db.openingBalances=db.openingBalances.filter(v=>v.id!==id);await safeRemove('openingBalances',id);await syncOpeningEntityDue(x.entityType,x.entityId);showToast(t('deleted_toast'));renderOpeningBalancesPage();
+}
+
+/* ---------- Display-only Company Asset Register ---------- */
+function nextAssetNo(){return 'AST-'+String(Object.values(db.assets).reduce((m,x)=>Math.max(m,Number(String(x.assetNo||'').replace(/\D/g,''))||0),0)+1).padStart(4,'0');}
+function nextAssetEventNo(){return 'AE-'+String(db.assetEvents.reduce((m,x)=>Math.max(m,Number(String(x.eventNo||'').replace(/\D/g,''))||0),0)+1).padStart(5,'0');}
+function assetEventsFor(id){return db.assetEvents.filter(x=>x.assetId===id).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.ts||0)-Number(b.ts||0));}
+function assetDisposal(id){return [...assetEventsFor(id)].reverse().find(x=>x.eventType==='disposal')||null;}
+function assetStatus(a){const d=assetDisposal(a.id);return d?(d.outcome||'disposed'):'active';}
+function assetEstimatedValue(a){const v=[...assetEventsFor(a.id)].reverse().find(x=>x.eventType==='valuation');return v?Number(v.estimatedValue||0):Number(a.estimatedValue||a.bookValue||a.acquisitionCost||0);}
+function assetTypeLabel(t){return t==='intangible'?'Intangible / Licence':t==='deposit'?'Financial / Refundable Deposit':t==='tangible'?'Tangible / Fixed Asset':'Other Asset';}
+function renderAssetsPage(){
+  if(!hasPermission('financial_setup')){currentTab='dashboard';renderNav();renderPage();return;}
+  const assets=Object.values(db.assets),active=assets.filter(a=>assetStatus(a)==='active'),totalCost=active.reduce((n,a)=>n+Number(a.acquisitionCost||0),0),book=active.reduce((n,a)=>n+Number(a.bookValue||0),0),estimate=active.reduce((n,a)=>n+assetEstimatedValue(a),0);
+  document.getElementById('content').innerHTML='<div class="toolbar"><input id="assetSearch" placeholder="Search asset, licence no., authority..."><select id="assetTypeFilter"><option value="">All Asset Types</option><option value="intangible">Intangible / Licence</option><option value="deposit">Financial / Deposit</option><option value="tangible">Tangible / Fixed</option><option value="other">Other</option></select><button class="btn amber" onclick="openAssetForm()">+ Add Company Asset</button></div>'
+    +'<div class="asset-card-grid"><div class="asset-card"><small>Active Assets</small><strong>'+active.length+'</strong></div><div class="asset-card"><small>Original Cost</small><strong>৳'+money(totalCost)+'</strong></div><div class="asset-card"><small>Book / Recorded Value</small><strong>৳'+money(book)+'</strong></div><div class="asset-card"><small>Latest Estimated Value</small><strong>৳'+money(estimate)+'</strong></div></div>'
+    +'<div class="panel" style="background:var(--gold-bg)"><strong>Information-only Asset Register</strong><div class="field-hint">Estimated value এখানে display হবে; Profit/Loss, Bank Balance বা Payment Ledger নিজে থেকে পরিবর্তন করবে না। Actual cash transaction হলে Payment Ledger-এ আলাদা entry দিন।</div></div><div class="panel"><h3>🏛️ Company Assets</h3><div id="assetTable"></div></div>';
+  const draw=()=>{const q=document.getElementById('assetSearch').value.trim().toLowerCase(),type=document.getElementById('assetTypeFilter').value,list=assets.filter(a=>(!type||a.assetType===type)&&(!q||JSON.stringify(a).toLowerCase().includes(q))).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));const rows=list.map(a=>{const st=assetStatus(a);return '<tr><td><strong>'+escapeHtml(a.assetNo||'—')+'</strong></td><td>'+escapeHtml(a.name||'—')+'<br><small>'+escapeHtml(a.registrationNo||'')+'</small></td><td>'+assetTypeLabel(a.assetType)+'<br><small>'+escapeHtml(a.category||'')+'</small></td><td>'+escapeHtml(a.issuingAuthority||'—')+'</td><td>৳'+money(a.acquisitionCost)+'</td><td>৳'+money(a.bookValue)+'</td><td><strong>৳'+money(assetEstimatedValue(a))+'</strong></td><td><span class="pill '+(st==='active'?'green':'red')+'">'+escapeHtml(st.toUpperCase())+'</span></td><td><button class="icon-btn" onclick="openAssetDetail(\''+a.id+'\')" title="Asset Card">📋</button>'+(isSuperUser()?'<button class="icon-btn" onclick="deleteAsset(\''+a.id+'\')" title="Delete">🗑️</button>':'')+'</td></tr>';}).join('');document.getElementById('assetTable').innerHTML=rows?'<div style="overflow-x:auto"><table class="data"><thead><tr><th>Asset ID</th><th>Asset</th><th>Type</th><th>Authority</th><th>Cost</th><th>Book Value</th><th>Estimated Value</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty">No company assets added yet.</div>';};
+  document.getElementById('assetSearch').oninput=draw;document.getElementById('assetTypeFilter').onchange=draw;draw();
+}
+function openAssetForm(){
+  if(!hasPermission('financial_setup'))return;const html='<div class="overlay open" id="assetFormOverlay" style="z-index:195"><div class="modal" style="max-width:720px;width:96%"><h2>+ Add Company Asset</h2><p class="field-hint">Licence, refundable bank draft/security deposit, vehicle, equipment বা অন্য company asset এখানে record করুন।</p><div class="field-row"><div class="field"><label>Asset Name</label><input id="astName" placeholder="e.g. Hajj Agency Licence"></div><div class="field"><label>Asset Type</label><select id="astType"><option value="intangible">Intangible / Licence</option><option value="deposit">Financial / Refundable Deposit</option><option value="tangible">Tangible / Fixed Asset</option><option value="other">Other Asset</option></select></div><div class="field"><label>Category</label><select id="astCategory"><option>Hajj / Umrah Licence</option><option>Bank Draft / Security Deposit</option><option>Airline Deposit</option><option>Office Equipment</option><option>Vehicle</option><option>Property</option><option>Software</option><option>Other</option></select></div></div><div class="field-row"><div class="field"><label>Licence / Registration No.</label><input id="astRegNo"></div><div class="field"><label>Issuing Authority / Holder</label><input id="astAuthority" placeholder="Ministry / Bank / Authority"></div></div><div class="field-row"><div class="field"><label>Acquisition Date</label><input type="date" id="astDate" value="'+todayStr()+'"></div><div class="field"><label>Original Cost</label><input type="number" id="astCost" min="0" step="any"></div><div class="field"><label>Current Book / Recorded Value</label><input type="number" id="astBook" min="0" step="any"></div><div class="field"><label>Estimated Market / Recoverable Value</label><input type="number" id="astEstimate" min="0" step="any"></div></div><div class="field-row"><div class="field"><label>Useful Life</label><select id="astLife"><option value="indefinite">Indefinite / No fixed life</option><option value="finite">Finite</option></select></div><div class="field"><label>Expiry / Renewal Date</label><input type="date" id="astExpiry"></div><div class="field"><label>ERP Starting Position</label><select id="astMode"><option value="opening">Held before ERP start (Opening Asset)</option><option value="information_only">Added after ERP start (Information only)</option></select></div></div><div class="field"><label>Notes / Transfer restrictions</label><textarea id="astNote" rows="3" placeholder="Renewal, transferability, refundable conditions, document location..."></textarea></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById(\'assetFormOverlay\').remove()">Cancel</button><button class="btn amber" id="astSave">Save Asset</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);document.getElementById('astCost').oninput=e=>{if(!document.getElementById('astBook').value)document.getElementById('astBook').value=e.target.value;if(!document.getElementById('astEstimate').value)document.getElementById('astEstimate').value=e.target.value;};
+  document.getElementById('astSave').onclick=async()=>{const name=document.getElementById('astName').value.trim(),costRaw=document.getElementById('astCost').value,cost=Number(costRaw);if(!name||costRaw===''||!Number.isFinite(cost)||cost<0){alert(t('required_fields'));return;}const id=uid(),rec={id,assetNo:nextAssetNo(),name,assetType:document.getElementById('astType').value,category:document.getElementById('astCategory').value,registrationNo:document.getElementById('astRegNo').value.trim(),issuingAuthority:document.getElementById('astAuthority').value.trim(),acquisitionDate:document.getElementById('astDate').value||todayStr(),acquisitionCost:cost,bookValue:Number(document.getElementById('astBook').value)||cost,estimatedValue:Number(document.getElementById('astEstimate').value)||Number(document.getElementById('astBook').value)||cost,usefulLife:document.getElementById('astLife').value,expiryDate:document.getElementById('astExpiry').value||'',acquisitionMode:document.getElementById('astMode').value,note:document.getElementById('astNote').value.trim(),createdBy:currentUserEmail(),ts:Date.now()};db.assets[id]=rec;await safePut('assets',id,rec);document.getElementById('assetFormOverlay').remove();showToast('Company asset saved');renderAssetsPage();};
+}
+function openAssetDetail(id){
+  const a=db.assets[id];if(!a)return;const events=assetEventsFor(id),st=assetStatus(a),rows=events.map(x=>'<tr><td>'+formatDateDMY(x.date)+'</td><td>'+escapeHtml(x.eventType==='valuation'?'Estimated Valuation':(x.outcome||'Status Update'))+'</td><td>'+(x.eventType==='valuation'?'৳'+money(x.estimatedValue):'Recovered / Return amount: ৳'+money(x.recoveredAmount||0))+'</td><td>'+escapeHtml(x.source||x.note||'—')+'</td><td>'+(isSuperUser()?'<button class="icon-btn" onclick="deleteAssetEvent(\''+x.id+'\',\''+id+'\')">🗑️</button>':'')+'</td></tr>').join('');
+  const html='<div class="overlay open" id="assetDetailOverlay" style="z-index:190"><div class="modal" style="max-width:820px;width:96%"><h2>'+escapeHtml(a.assetNo)+' — '+escapeHtml(a.name)+'</h2><div class="asset-card-grid"><div class="asset-card"><small>Original Cost</small><strong>৳'+money(a.acquisitionCost)+'</strong></div><div class="asset-card"><small>Book Value</small><strong>৳'+money(a.bookValue)+'</strong></div><div class="asset-card"><small>Latest Estimate</small><strong>৳'+money(assetEstimatedValue(a))+'</strong></div><div class="asset-card"><small>Status</small><strong>'+escapeHtml(st.toUpperCase())+'</strong></div></div><div class="panel"><div><strong>Type:</strong> '+assetTypeLabel(a.assetType)+' · '+escapeHtml(a.category||'')+'</div><div><strong>Licence/Registration:</strong> '+escapeHtml(a.registrationNo||'—')+'</div><div><strong>Authority:</strong> '+escapeHtml(a.issuingAuthority||'—')+'</div><div><strong>Acquired:</strong> '+formatDateDMY(a.acquisitionDate)+(a.expiryDate?' · <strong>Expiry/Renewal:</strong> '+formatDateDMY(a.expiryDate):'')+'</div><div><strong>Notes:</strong> '+escapeHtml(a.note||'—')+'</div></div><div class="toolbar no-print"><button class="btn amber" onclick="openAssetValuation(\''+id+'\')">+ Update Estimated Value</button>'+(isSuperUser()&&st==='active'?'<button class="btn" onclick="openAssetDisposal(\''+id+'\')">Mark Sold / Returned / Expired</button>':'')+'<button class="btn ghost" style="margin-left:auto" onclick="safePrintPage()">🖨 Print Asset Card</button></div><div class="panel"><h3>Asset History</h3>'+(rows?'<table class="data"><thead><tr><th>Date</th><th>Event</th><th>Value / Amount</th><th>Evidence / Note</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>':'<div class="empty">No valuation or status history yet.</div>')+'</div><div class="modal-actions no-print"><button class="btn ghost" onclick="document.getElementById(\'assetDetailOverlay\').remove()">Close</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function openAssetValuation(id){
+  const a=db.assets[id];if(!a||!hasPermission('financial_setup'))return;const html='<div class="overlay open" id="assetValuationOverlay" style="z-index:205"><div class="modal" style="max-width:450px"><h2>Update Estimated Value</h2><p class="field-hint">Information only—Profit/Loss বা Book Value পরিবর্তন করবে না।</p><div class="field"><label>Valuation Date</label><input type="date" id="avDate" value="'+todayStr()+'"></div><div class="field"><label>Estimated Market / Recoverable Value</label><input type="number" id="avValue" value="'+assetEstimatedValue(a)+'" min="0" step="any"></div><div class="field"><label>Evidence / Source</label><input id="avSource" placeholder="Valuer, market offer, authority letter..."></div><div class="field"><label>Note</label><input id="avNote"></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById(\'assetValuationOverlay\').remove()">Cancel</button><button class="btn amber" id="avSave">Save Estimate</button></div></div></div>';document.body.insertAdjacentHTML('beforeend',html);document.getElementById('avSave').onclick=async()=>{const value=Number(document.getElementById('avValue').value);if(value<0)return;const rec={id:uid(),eventNo:nextAssetEventNo(),assetId:id,assetName:a.name,eventType:'valuation',date:document.getElementById('avDate').value||todayStr(),estimatedValue:value,source:document.getElementById('avSource').value.trim(),note:document.getElementById('avNote').value.trim(),createdBy:currentUserEmail(),ts:Date.now()};db.assetEvents.push(rec);await safePut('assetEvents',rec.id,rec);document.getElementById('assetValuationOverlay').remove();document.getElementById('assetDetailOverlay').remove();showToast('Estimated value updated');openAssetDetail(id);};
+}
+function openAssetDisposal(id){
+  if(!isSuperUser())return;const a=db.assets[id];if(!a)return;const html='<div class="overlay open" id="assetDisposalOverlay" style="z-index:205"><div class="modal" style="max-width:450px"><h2>Asset Status Update</h2><p class="field-hint">এটি শুধু Asset Register-এর status ও recovered amount দেখাবে; Profit/Loss বা Bank balance-এ post করবে না।</p><div class="field"><label>Outcome</label><select id="adOutcome"><option value="sold">Sold</option><option value="returned">Returned to Authority / Government</option><option value="expired">Expired / Cancelled</option></select></div><div class="field"><label>Date</label><input type="date" id="adDate" value="'+todayStr()+'"></div><div class="field"><label>Recovered / Return Amount (Information only)</label><input type="number" id="adAmount" min="0" step="any" value="0"></div><div class="field"><label>Reference / Note</label><input id="adNote"></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById(\'assetDisposalOverlay\').remove()">Cancel</button><button class="btn amber" id="adSave">Save Status</button></div></div></div>';document.body.insertAdjacentHTML('beforeend',html);document.getElementById('adSave').onclick=async()=>{const rec={id:uid(),eventNo:nextAssetEventNo(),assetId:id,assetName:a.name,eventType:'disposal',outcome:document.getElementById('adOutcome').value,date:document.getElementById('adDate').value||todayStr(),recoveredAmount:Number(document.getElementById('adAmount').value)||0,note:document.getElementById('adNote').value.trim(),createdBy:currentUserEmail(),ts:Date.now()};db.assetEvents.push(rec);await safePut('assetEvents',rec.id,rec);document.getElementById('assetDisposalOverlay').remove();document.getElementById('assetDetailOverlay').remove();showToast('Asset status updated');renderAssetsPage();};
+}
+async function deleteAssetEvent(eventId,assetId){if(!requirePermission('delete_records'))return;if(!confirm(t('confirm_delete')))return;db.assetEvents=db.assetEvents.filter(x=>x.id!==eventId);await safeRemove('assetEvents',eventId);document.getElementById('assetDetailOverlay').remove();openAssetDetail(assetId);}
+async function deleteAsset(id){if(!requirePermission('delete_records'))return;if(assetEventsFor(id).length){alert('Delete valuation/status history first.');return;}if(!confirm(t('confirm_delete')))return;delete db.assets[id];await safeRemove('assets',id);showToast(t('deleted_toast'));renderAssetsPage();}
+
 /* ---------- Load / Save ---------- */
 async function loadAll(){
   let hadError = false;
@@ -1637,8 +1735,8 @@ async function loadAll(){
     if(useFirebase) await firebase.auth().signOut();
     return;
   }
-  const objTabs = ['customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','agentLedgerHeads'];
-  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','agentLedger'];
+  const objTabs = ['customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','agentLedgerHeads','assets'];
+  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','agentLedger','openingBalances','assetEvents'];
   if(hasPermission('view_ledger')){objTabs.push('paymentHeads');arrTabs.push('paymentLedger');}
   else{db.paymentHeads={};db.paymentLedger=[];}
   for(const key of [...objTabs, ...arrTabs]){
@@ -1794,6 +1892,8 @@ function renderPage(){
   else if(currentTab==='returns') renderReturnsPage();
   else if(currentTab==='group_members') renderGroupMembersPage();
   else if(currentTab==='groups') renderGroupsPage();
+  else if(currentTab==='opening_balances') renderOpeningBalancesPage();
+  else if(currentTab==='assets') renderAssetsPage();
   else if(currentTab==='payment_ledger') renderPaymentLedgerPage();
   else if(currentTab==='reports') renderReportsPage();
   else if(currentTab==='settings') renderSettingsPage();
@@ -1837,9 +1937,12 @@ function pageDashboard(){
   const totalProductQty = Object.values(db.products).reduce((s,p)=>s+Number(p.qty),0);
   const totalBalance = computeTotalBalance();
   const totalDue = Object.keys(db.customers).reduce((sum,id)=>sum+calculateCustomerDueFromLedger(id),0);
-  const totalPaid = totalSales - totalDue;
+  const totalPaid = db.sales.reduce((n,s)=>n+Number(s.initialPaid!==undefined?s.initialPaid:s.paid||0),0)+db.installments.reduce((n,x)=>n+Number(x.amount||0),0);
   const todayBookings = db.sales.filter(x=>x.date===today).length;
-  const vendorDue = Object.values(db.suppliers).reduce((s,sup)=>s+Number(sup.due||0),0);
+  const vendorDue = Object.keys(db.suppliers).reduce((n,id)=>n+Math.max(0,calculateSupplierBalanceFromLedger(id)),0);
+  const bankBalance=Object.keys(db.bankAccounts).reduce((n,id)=>n+accountTotals(id).balance,0);
+  const mobileBalance=Object.keys(db.mobileAccounts).reduce((n,id)=>n+accountTotals(id).balance,0);
+  const companyAssetValue=Object.values(db.assets).filter(a=>assetStatus(a)==='active').reduce((n,a)=>n+assetEstimatedValue(a),0);
   const pendingInstallments = Object.keys(db.customers).filter(id=>calculateCustomerDueFromLedger(id)>0).length;
 
   // গত ১৪ দিনের trend data
@@ -1917,6 +2020,13 @@ function pageDashboard(){
         <div class="lbl">${vendorDue>0?t('vnd_due'):t('vnd_clear')}</div>
       </div>
     </div>
+
+    <div class="panel" style="margin-bottom:22px;"><h3>💼 Company Financial Position <span class="field-hint">(Profit থেকে আলাদা)</span></h3><div class="asset-card-grid" style="margin-bottom:0;">
+      <div class="asset-card"><small>🏦 Total Bank Balance</small><strong>৳${money(bankBalance)}</strong></div>
+      <div class="asset-card"><small>📱 Mobile Banking Balance</small><strong>৳${money(mobileBalance)}</strong></div>
+      <div class="asset-card"><small>💵 Operational Cash Flow Balance</small><strong>৳${money(totalBalance)}</strong></div>
+      <div class="asset-card"><small>🏛️ Company Assets (Estimated)</small><strong>৳${money(companyAssetValue)}</strong></div>
+    </div></div>
 
     <!-- ২ কলাম: Trend + সাম্প্রতিক বুকিং -->
     <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:16px;margin-bottom:16px;">
@@ -2015,27 +2125,32 @@ function openVendorStatement(supplierId){
   const totalReturn = db.vendorPayments
     .filter(vp=>vp.supplierId===supplierId && vp.type==='purchase_return' && vp.returnType==='cash')
     .reduce((s,vp)=>s+Number(vp.amount||0),0);
-  const due = Number(supplier.due||0);
+  const due = calculateSupplierBalanceFromLedger(supplierId);
+  const opening=openingBalanceRecord('supplier',supplierId),openingNet=openingBalanceNet('supplier',supplierId);
 
   // Unified timeline
   const timeline = [
+    ...(opening?[{ts:opening.ts||0,date:opening.date,type:'opening',label:openingSideLabel(opening)+(opening.reference?' — '+escapeHtml(opening.reference):''),qty:'',amount:Math.abs(openingNet),debit:openingNet>0?openingNet:0,credit:openingNet<0?Math.abs(openingNet):0,id:opening.id}]:[]),
     ...purchases.map(p=>({ts:p.ts, date:p.date, type:'purchase', label:escapeHtml(p.sector||p.productName||'—'), qty:p.qty, amount:p.total, debit:p.total, credit:0, id:p.id})),
     ...payments.map(vp=>({ts:vp.ts, date:vp.date, type:vp.type, label:vp.note||'—', qty:vp.qty||'', amount:vp.amount||0,
-      debit: vp.type==='purchase_return'&&vp.returnType==='adjust' ? vp.amount : 0,
-      credit: vp.type==='payment'||vp.type==='purchase_payment' ? vp.amount : (vp.type==='purchase_return'&&vp.returnType==='cash' ? vp.amount : 0),
+      debit:0,
+      credit: vp.type==='payment'||vp.type==='purchase_payment'||vp.type==='purchase_return' ? vp.amount : 0,
       id:vp.id}))
-  ].sort((a,b)=>a.ts-b.ts);
+  ].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.ts||0)-Number(b.ts||0));
 
   // Running balance
   let running = 0;
   const rows = timeline.map(function(tx){
-    if(tx.type==='purchase'){ running += tx.amount; }
+    if(tx.type==='opening'){running+=openingNet;}
+    else if(tx.type==='purchase'){ running += tx.amount; }
     else if(tx.type==='payment'||tx.type==='purchase_payment'){ running -= tx.amount; }
     else if(tx.type==='purchase_return'){
       if(tx.returnType==='cash') running -= tx.amount||0;
       else running -= tx.amount||0; // adjust also reduces
     }
-    const typePill = tx.type==='purchase'
+    const typePill = tx.type==='opening'
+      ? '<span class="pill" style="background:var(--gold);color:#fff;font-size:10px;">OPEN</span>'
+      : tx.type==='purchase'
       ? '<span class="pill" style="background:#2E6B8A;color:#fff;font-size:10px;">'+t('vnd_type_purchase')+'</span>'
       : tx.type==='purchase_return'
         ? '<span class="pill red" style="font-size:10px;">'+t('vnd_type_return')+'</span>'
@@ -2136,7 +2251,7 @@ function openVendorStatement(supplierId){
 function openVendorPayForm(supplierId){
   const supplier = db.suppliers[supplierId];
   if(!supplier) return;
-  const due = Number(supplier.due||0);
+  const due = calculateSupplierBalanceFromLedger(supplierId);
 
   const html = '<div class="overlay open" id="vndPayOverlay" style="z-index:120;">'
     +'<div class="modal" style="max-width:400px;">'
@@ -2175,6 +2290,7 @@ function openVendorPayForm(supplierId){
       amount:amt, note:note||'Payment', paymentSystem,paymentAccountId,paymentAccountName:paymentAccountLabel(paymentAccountId),date, ts:Date.now() };
     db.vendorPayments.push(vp);
     await safePut('vendorPayments', vp.id, vp);
+    supplier.due=calculateSupplierBalanceFromLedger(supplierId);await safePut('suppliers',supplierId,supplier);
     document.getElementById('vndPayOverlay').remove();
     showToast(t('saved_toast'));
     openVendorStatement(supplierId);
@@ -2418,7 +2534,7 @@ async function deleteGroupMember(id){
   if(!requirePermission('delete_records'))return;
   const m = db.groupMembers[id];
   if(!m) return;
-  if(db.sales.some(s=>s.groupMemberId===id) || db.installments.some(i=>i.groupMemberId===id) || db.installmentPlans.some(p=>p.groupMemberId===id) || db.agentLedger.some(x=>x.memberId===id)){
+  if(db.sales.some(s=>s.groupMemberId===id) || db.installments.some(i=>i.groupMemberId===id) || db.installmentPlans.some(p=>p.groupMemberId===id) || db.agentLedger.some(x=>x.memberId===id) || openingBalanceRecord('agent',id)){
     alert(t('group_agent_has_bookings'));
     return;
   }
@@ -2460,6 +2576,7 @@ function agentLedgerYears(memberId){
   db.agentLedger.filter(x=>x.memberId===memberId).forEach(x=>years.add(String(x.accountingYear||yearFromDate(x.date))));
   db.sales.filter(x=>x.groupMemberId===memberId).forEach(x=>years.add(yearFromDate(x.date)));
   db.installments.filter(x=>x.groupMemberId===memberId).forEach(x=>years.add(yearFromDate(x.date)));
+  const opening=openingBalanceRecord('agent',memberId);if(opening)years.add(yearFromDate(opening.date));
   Object.values(db.groups).filter(g=>g.memberId===memberId&&g.year).forEach(g=>years.add(String(g.year)));
   return [...years].filter(Boolean).sort((a,b)=>b.localeCompare(a));
 }
@@ -2477,6 +2594,8 @@ function buildGroupAgentLedger(memberId,year){
     invoiceMap.get(key).push(s);
   });
   const rows = [];
+  const opening=openingBalanceRecord('agent',memberId);
+  if(opening){const net=openingBalanceNet('agent',memberId);rows.push({date:opening.date,year:yearFromDate(opening.date),ts:Number(opening.ts||0),order:-5,ref:'OPEN',desc:openingSideLabel(opening),debit:net>0?net:0,credit:net<0?Math.abs(net):0,method:'—',context:opening.reference||'ERP Start',source:'opening'});}
   invoiceMap.forEach(items=>{
     const first = items[0];
     const debit = items.reduce((n,s)=>n+Number(s.total||0),0);
@@ -2960,19 +3079,19 @@ function renderAccountItems(kind){
   if(!entries.length) return '<div class="field-hint" style="padding:14px 0;">No account added yet.</div>';
   return entries.map(([id,a])=>{const s=accountTotals(id);return '<div class="account-item">'
     +'<div class="account-item-head"><div><strong>'+escapeHtml(paymentAccountLabel(id))+'</strong>'+(a.accountType?'<div class="field-hint">'+escapeHtml(a.accountType)+'</div>':'')+'</div>'
-    +'<div style="display:flex;gap:5px;"><button class="icon-btn" onclick="openAccountStatement(\''+id+'\')" title="Statement">📋</button><button class="icon-btn" onclick="deletePaymentAccount(\''+kind+'\',\''+id+'\')" title="Delete">🗑️</button></div></div>'
+    +'<div style="display:flex;gap:5px;"><button class="icon-btn" onclick="openAccountStatement(\''+id+'\')" title="Statement">📋</button>'+(isSuperUser()?'<button class="icon-btn" onclick="editPaymentAccountOpening(\''+kind+'\',\''+id+'\')" title="Edit Opening Balance">✏️</button><button class="icon-btn" onclick="deletePaymentAccount(\''+kind+'\',\''+id+'\')" title="Delete">🗑️</button>':'')+'</div></div>'
     +'<div class="account-metrics"><div><small>IN</small><strong style="color:var(--green)">৳'+money(s.incoming)+'</strong></div><div><small>OUT</small><strong style="color:var(--red)">৳'+money(s.outgoing)+'</strong></div><div><small>CURRENT</small><strong>৳'+money(s.balance)+'</strong></div></div></div>';}).join('');
 }
 async function addBankAccount(){
   const bankName=document.getElementById('setBankName').value.trim(), accountName=document.getElementById('setBankAccountName').value.trim(), accountNumber=document.getElementById('setBankAccountNumber').value.trim();
   if(!bankName||!accountName||!accountNumber){alert(t('required_fields'));return;}
-  const id=uid(), rec={id,kind:'bank',bankName,accountName,accountNumber,openingBalance:Number(document.getElementById('setBankOpening').value)||0,ts:Date.now()};
+  const id=uid(), rec={id,kind:'bank',bankName,accountName,accountNumber,openingBalance:Number(document.getElementById('setBankOpening').value)||0,openingDate:document.getElementById('setBankOpeningDate').value||todayStr(),ts:Date.now()};
   db.bankAccounts[id]=rec; await safePut('bankAccounts',id,rec); showToast('Bank account added'); renderSettingsPage();
 }
 async function addMobileAccount(){
   const service=document.getElementById('setMobileService').value, accountName=document.getElementById('setMobileAccountName').value.trim(), accountNumber=document.getElementById('setMobileAccountNumber').value.trim();
   if(!service||!accountName||!accountNumber){alert(t('required_fields'));return;}
-  const id=uid(), rec={id,kind:'mobile',service,accountName,accountNumber,accountType:document.getElementById('setMobileType').value,openingBalance:Number(document.getElementById('setMobileOpening').value)||0,ts:Date.now()};
+  const id=uid(), rec={id,kind:'mobile',service,accountName,accountNumber,accountType:document.getElementById('setMobileType').value,openingBalance:Number(document.getElementById('setMobileOpening').value)||0,openingDate:document.getElementById('setMobileOpeningDate').value||todayStr(),ts:Date.now()};
   db.mobileAccounts[id]=rec; await safePut('mobileAccounts',id,rec); showToast('Mobile account added'); renderSettingsPage();
 }
 async function deletePaymentAccount(kind,id){
@@ -2981,9 +3100,14 @@ async function deletePaymentAccount(kind,id){
   if(!confirm(t('confirm_delete'))) return;
   const collection=kind==='bank'?'bankAccounts':'mobileAccounts'; delete db[collection][id]; await safeRemove(collection,id); renderSettingsPage();
 }
+function editPaymentAccountOpening(kind,id){
+  if(!isSuperUser())return;const collection=kind==='bank'?'bankAccounts':'mobileAccounts',a=db[collection][id];if(!a)return;
+  const html='<div class="overlay open" id="accountOpeningOverlay" style="z-index:195"><div class="modal" style="max-width:420px"><h2>Edit Account Opening Balance</h2><p class="field-hint">'+escapeHtml(paymentAccountLabel(id))+'</p><div class="field"><label>Opening Balance (BDT)</label><input type="number" id="accountOpeningAmount" value="'+Number(a.openingBalance||0)+'" step="any"></div><div class="field"><label>Opening Date</label><input type="date" id="accountOpeningDate" value="'+(a.openingDate||todayStr())+'"></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById(\'accountOpeningOverlay\').remove()">Cancel</button><button class="btn amber" id="accountOpeningSave">Save</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);document.getElementById('accountOpeningSave').onclick=async()=>{a.openingBalance=Number(document.getElementById('accountOpeningAmount').value)||0;a.openingDate=document.getElementById('accountOpeningDate').value||todayStr();a.updatedAt=Date.now();await safePut(collection,id,a);document.getElementById('accountOpeningOverlay').remove();showToast('Account opening balance updated');renderSettingsPage();};
+}
 function openAccountStatement(id){
   const a=getPaymentAccount(id); if(!a)return; const s=accountTotals(id); let running=s.opening;
-  const rows='<tr><td>—</td><td>OPEN</td><td>Opening Balance</td><td>৳'+money(s.opening)+'</td><td>—</td><td><strong>৳'+money(running)+'</strong></td></tr>'+s.rows.map(r=>{running+=r.flow==='in'?r.amount:-r.amount;return '<tr><td>'+formatDateDMY(r.date)+'</td><td>'+escapeHtml(r.ref)+'</td><td>'+escapeHtml(r.desc)+'</td><td>'+(r.flow==='in'?'৳'+money(r.amount):'—')+'</td><td>'+(r.flow==='out'?'৳'+money(r.amount):'—')+'</td><td><strong>৳'+money(running)+'</strong></td></tr>';}).join('');
+  const rows='<tr><td>'+formatDateDMY(a.openingDate)+'</td><td>OPEN</td><td>Opening Balance</td><td>৳'+money(s.opening)+'</td><td>—</td><td><strong>৳'+money(running)+'</strong></td></tr>'+s.rows.map(r=>{running+=r.flow==='in'?r.amount:-r.amount;return '<tr><td>'+formatDateDMY(r.date)+'</td><td>'+escapeHtml(r.ref)+'</td><td>'+escapeHtml(r.desc)+'</td><td>'+(r.flow==='in'?'৳'+money(r.amount):'—')+'</td><td>'+(r.flow==='out'?'৳'+money(r.amount):'—')+'</td><td><strong>৳'+money(running)+'</strong></td></tr>';}).join('');
   const html='<div class="overlay open" id="accountStatementOverlay" style="z-index:190"><div class="modal" style="max-width:900px;width:96%"><h2>'+escapeHtml(paymentAccountLabel(id))+'</h2><div class="account-metrics" style="margin-bottom:15px"><div><small>IN</small><strong>৳'+money(s.incoming)+'</strong></div><div><small>OUT</small><strong>৳'+money(s.outgoing)+'</strong></div><div><small>CURRENT BALANCE</small><strong>৳'+money(s.balance)+'</strong></div></div><div style="overflow-x:auto"><table class="data"><thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>IN</th><th>OUT</th><th>Balance</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="modal-actions no-print"><button class="btn ghost" onclick="document.getElementById(\'accountStatementOverlay\').remove()">Close</button><button class="btn amber" onclick="safePrintPage()">🖨 Print</button></div></div></div>';
   document.body.insertAdjacentHTML('beforeend',html);
 }
@@ -3010,6 +3134,7 @@ function renderSettingsPage(){
       <div class="field"><label>Account Name</label><input id="setBankAccountName" placeholder="e.g. Agency Main Account"></div>
       <div class="field"><label>Account Number</label><input id="setBankAccountNumber" placeholder="1234-XXXXX"></div>
       <div class="field"><label>Opening Balance (BDT)</label><input type="number" id="setBankOpening" value="0" step="any"></div>
+      <div class="field"><label>Opening Date</label><input type="date" id="setBankOpeningDate" value="${todayStr()}"></div>
       <button class="btn amber" style="width:100%" onclick="addBankAccount()">+ Add Bank Account</button><div id="bankAccountList">${renderAccountItems('bank')}</div>
     </div>
     <div class="erp-card"><h3>📱 Mobile Banking Accounts</h3><p class="field-hint">bKash, Nagad and other accounts keep separate IN, OUT and current balances.</p>
@@ -3018,6 +3143,7 @@ function renderSettingsPage(){
       <div class="field"><label>Account Number</label><input id="setMobileAccountNumber" placeholder="01XXXXXXXXX"></div>
       <div class="field"><label>Account Type</label><select id="setMobileType"><option>Personal</option><option>Agent</option><option>Merchant</option></select></div>
       <div class="field"><label>Opening Balance (BDT)</label><input type="number" id="setMobileOpening" value="0" step="any"></div>
+      <div class="field"><label>Opening Date</label><input type="date" id="setMobileOpeningDate" value="${todayStr()}"></div>
       <button class="btn amber" style="width:100%" onclick="addMobileAccount()">+ Add Mobile Account</button><div id="mobileAccountList">${renderAccountItems('mobile')}</div>
     </div>
   </div>${renderAgentLedgerHeadSettings()}<div class="panel"><h3>🔐 Role & Feature Permissions</h3><p class="field-hint">আপনার role অনুযায়ী কোন feature দেখা ও ব্যবহার করা যাবে—এখানে এক নজরে দেখুন।</p>${renderRolePermissionMatrix()}</div><div class="panel" style="${superUser?'':'display:none;'}">
@@ -3060,8 +3186,8 @@ function renderSettingsPage(){
       reader.onload=async(ev)=>{
         try{
           const data=JSON.parse(ev.target.result);const puts=[];
-          ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>puts.push(safePut(k,id,v)));});
-          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','paymentLedger','agentLedger'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
+          ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads','assets'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>puts.push(safePut(k,id,v)));});
+          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','paymentLedger','agentLedger','openingBalances','assetEvents'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
           await Promise.all(puts);showToast(t('restore_success'));setTimeout(()=>location.reload(),1500);
         }catch(err){alert(t('restore_failed')+': '+err.message);}
       };reader.readAsText(file);
@@ -3136,7 +3262,7 @@ function renderUserManagementPage(){
   ensurePrimarySuperUser();
   const users=Object.values(db.appUsers).sort((a,b)=>(a.isPrimary?-1:b.isPrimary?1:String(a.name||'').localeCompare(String(b.name||''))));
   const rows=users.map(u=>'<tr><td><strong>'+escapeHtml(u.name||'—')+'</strong>'+(u.isPrimary?'<br><small style="color:var(--gold)">Primary Super User</small>':'')+'</td><td>'+escapeHtml(u.email)+'</td><td><span class="role-badge '+escapeHtml(u.role)+'">'+roleLabel(u.role)+'</span></td><td><span class="role-badge '+(u.active===false?'inactive':'staff')+'">'+(u.active===false?'Disabled':'Active')+'</span></td><td>'+formatDateDMY(new Date(u.updatedAt||u.createdAt||Date.now()).toISOString().slice(0,10))+'</td><td class="actions-cell"><button class="icon-btn" onclick="editAppUser(\''+u.id+'\')" title="Edit">✏️</button>'+(u.isPrimary?'':'<button class="icon-btn" onclick="sendUserPasswordReset(\''+u.id+'\')" title="Send password reset">🔑</button><button class="icon-btn" onclick="toggleAppUser(\''+u.id+'\')" title="'+(u.active===false?'Enable':'Disable')+'">'+(u.active===false?'✅':'🚫')+'</button>')+'</td></tr>').join('');
-  document.getElementById('content').innerHTML='<div class="panel"><h3>🛡️ ERP Role Model</h3><p class="field-hint">Primary Super User is permanently protected: <strong>'+PRIMARY_SUPER_EMAIL+'</strong></p><div class="role-matrix"><div><span class="role-badge super">Super User</span><ul><li>Full ERP access</li><li>User and role management</li><li>Can edit and delete records</li><li>Backup, restore and reset</li></ul></div><div><span class="role-badge moderator">Moderator</span><ul><li>Daily ERP create operations</li><li>Reports and payment ledger</li><li>Bank/mobile account access</li><li>No edit or delete permission</li></ul></div><div><span class="role-badge staff">Staff</span><ul><li>Daily create operations</li><li>Payments and installments</li><li>Bank/mobile account access</li><li>No edit, delete, reports or ledger</li></ul></div></div>'+renderRolePermissionMatrix()+'</div>'
+  document.getElementById('content').innerHTML='<div class="panel"><h3>🛡️ ERP Role Model</h3><p class="field-hint">Primary Super User is permanently protected: <strong>'+PRIMARY_SUPER_EMAIL+'</strong></p><div class="role-matrix"><div><span class="role-badge super">Super User</span><ul><li>Full ERP access</li><li>User and role management</li><li>Can edit and delete records</li><li>Backup, restore and reset</li></ul></div><div><span class="role-badge moderator">Moderator</span><ul><li>Daily ERP create operations</li><li>Reports and payment ledger</li><li>Opening balance and asset create</li><li>No edit or delete permission</li></ul></div><div><span class="role-badge staff">Staff</span><ul><li>Daily create operations</li><li>Payments and installments</li><li>Bank/mobile account access</li><li>No edit, delete, reports or ledger</li></ul></div></div>'+renderRolePermissionMatrix()+'</div>'
     +'<div class="panel"><h3>'+((editingAppUserId?'Edit':'Add')+' User')+'</h3><div class="field-row"><div class="field"><label>Name</label><input id="umName" placeholder="User full name"></div><div class="field"><label>Email</label><input type="email" id="umEmail" placeholder="user@example.com"></div></div><div class="field-row"><div class="field"><label>Password (new login only)</label><input type="password" id="umPassword" placeholder="Minimum 6 characters"></div><div class="field"><label>Role</label><select id="umRole"><option value="staff">Staff</option><option value="moderator">Moderator</option><option value="super">Super User</option></select></div></div><div class="field" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="umActive" checked style="width:auto"><label for="umActive" style="margin:0;text-transform:none">Active access</label></div><p class="field-hint">For an existing Firebase login, leave Password blank. For a new user, enter a password and the login account will be created without logging you out.</p><div style="display:flex;gap:8px"><button class="btn amber" id="umSave" onclick="saveAppUser()">+ Create / Save User</button><button class="btn ghost" id="umCancelEdit" onclick="cancelUserEdit()" style="display:none">Cancel Edit</button></div></div>'
     +'<div class="panel"><h3>Users ('+users.length+')</h3><div style="overflow-x:auto">'+(rows?'<table class="data"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Updated</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>':'<div class="empty">No users added yet.</div>')+'</div></div>';
   if(editingAppUserId){const id=editingAppUserId;editingAppUserId=null;editAppUser(id);}
@@ -4505,6 +4631,7 @@ function printCustLedger(cid){
   const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - installmentDiscount;
 
   const ledgerRaw = [
+    ...customerOpeningLedgerRows(cid),
     ...sales.map(s=>({
       ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
       label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
@@ -4521,13 +4648,14 @@ function printCustLedger(cid){
     }))
   ].sort((a,b)=>{
     if(a.date!==b.date) return a.date<b.date?-1:1;
-    if(a.type!==b.type) return a.type==='booking'?-1:1;
+    if(a.type!==b.type) return ({opening:0,booking:1,installment:2}[a.type]??9)-({opening:0,booking:1,installment:2}[b.type]??9);
     return a.ts-b.ts;
   });
 
   let runningDue = 0;
   const ledger = ledgerRaw.map(tx=>{
-    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    if(tx.type==='opening') runningDue += tx.net;
+    else if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
     else runningDue -= (tx.paid + tx.discount);
     return { ...tx, runningDue: Math.round(runningDue) };
   });
@@ -4540,10 +4668,10 @@ function printCustLedger(cid){
         <td>${formatDateDMY(tx.date)}</td>
         <td>${tx.label}</td>
         <td>${tx.qty!==null?tx.qty:'—'}</td>
-        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.type==='booking'||tx.type==='opening'?'৳'+money(tx.total):'—'}</td>
         <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
         <td>৳${money(tx.paid)}</td>
-        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):tx.runningDue<0?'<span style="color:var(--green)">Advance ৳'+money(Math.abs(tx.runningDue))+'</span>':'৳0'}</td>
         <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
       </tr>`).join('')}</tbody>
       <tfoot><tr>
@@ -4694,6 +4822,7 @@ function renderCustomerReport(body){
     // একটাই ব্যাংক-স্টেটমেন্ট স্টাইল লেজার — বুকিং ও কিস্তি, তারিখ অনুযায়ী,
     // চলমান ব্যালেন্স নিজে হিসাব করে বসানো হচ্ছে (কোনো আগের সেভ করা "due" এর উপর নির্ভর করছি না)
     const ledgerRaw = [
+      ...customerOpeningLedgerRows(cid),
       ...sales.map(s=>({
         ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
         label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
@@ -4710,13 +4839,14 @@ function renderCustomerReport(body){
       }))
     ].sort((a,b)=>{
     if(a.date!==b.date) return a.date<b.date?-1:1;
-    if(a.type!==b.type) return a.type==='booking'?-1:1;
+    if(a.type!==b.type) return ({opening:0,booking:1,installment:2}[a.type]??9)-({opening:0,booking:1,installment:2}[b.type]??9);
     return a.ts-b.ts;
   });
 
     let runningDue = 0;
     const ledger = ledgerRaw.map(tx=>{
-      if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+      if(tx.type==='opening') runningDue += tx.net;
+      else if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
       else runningDue -= (tx.paid + tx.discount);
       return { ...tx, runningDue: Math.round(runningDue) };
     });
@@ -4738,10 +4868,10 @@ function renderCustomerReport(body){
             <td>${formatDateDMY(tx.date)}</td>
             <td>${tx.label}</td>
             <td>${tx.qty!==null?tx.qty:'—'}</td>
-            <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+            <td>${tx.type==='booking'||tx.type==='opening'?'৳'+money(tx.total):'—'}</td>
             <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
             <td>৳${money(tx.paid)}</td>
-            <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+            <td>${tx.runningDue>0?'৳'+money(tx.runningDue):tx.runningDue<0?'<span style="color:var(--green)">Advance ৳'+money(Math.abs(tx.runningDue))+'</span>':'৳0'}</td>
             <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
           </tr>`).join('')}</tbody>
           <tfoot><tr style="font-weight:700;background:var(--paper-card);">
@@ -5110,8 +5240,12 @@ function renderTable(tab, items, search){
     const isGroup = !!item._groupIds;
     const cells = cfg.columns.map(function(c){
       if(tab==='customers' && c.k==='due'){
-        const canonicalDue = calculateCustomerDueFromLedger(id);
-        return '<td>৳'+money(canonicalDue)+'</td>';
+        const balance=calculateCustomerBalanceFromLedger(id);
+        return '<td>'+(balance>0?'<span class="pill red">৳'+money(balance)+'</span>':balance<0?'<span class="pill green">Advance ৳'+money(Math.abs(balance))+'</span>':'<span class="pill green">Clear</span>')+'</td>';
+      }
+      if(tab==='suppliers' && c.k==='due'){
+        const balance=calculateSupplierBalanceFromLedger(id);
+        return '<td>'+(balance>0?'<span class="pill red">৳'+money(balance)+'</span>':balance<0?'<span class="pill green">Advance ৳'+money(Math.abs(balance))+'</span>':'<span class="pill green">ক্লিয়ার</span>')+'</td>';
       }
       return '<td>'+(c.fmt ? c.fmt(item[c.k], item) : escapeHtml(item[c.k]==null?'—':item[c.k]))+'</td>';
     }).join('');
@@ -5518,6 +5652,9 @@ async function deleteHajji(custId){
     await safeRemove('returns', ret.id);
   }
 
+  const opening=openingBalanceRecord('customer',custId);
+  if(opening){db.openingBalances=db.openingBalances.filter(x=>x.id!==opening.id);await safeRemove('openingBalances',opening.id);}
+
   // ── customer নিজে মুছো ───────────────────────────────────────────────
   delete db.customers[custId];
   await safeRemove('customers', custId);
@@ -5564,20 +5701,38 @@ async function deleteItem(tab, id){
       await safeRemove('vendorPayments', oldVp.id);
     }
   }
+  if(tab==='suppliers'){
+    const opening=openingBalanceRecord('supplier',id);if(opening){db.openingBalances=db.openingBalances.filter(x=>x.id!==opening.id);await safeRemove('openingBalances',opening.id);}
+  }
   if(cfg.isObj) delete db[tab][id];
   else db[tab] = db[tab].filter(x=>x.id!==id);
   await safeRemove(tab, id);
   renderNav(); renderPage();
 }
 
-function calculateCustomerDueFromLedger(custId){
+function customerOpeningLedgerRows(custId){
+  const x=openingBalanceRecord('customer',custId);if(!x)return[];const net=openingBalanceNet('customer',custId);
+  return [{ts:x.ts||0,date:x.date,type:'opening',qty:null,label:'OPEN — '+openingSideLabel(x)+(x.reference?' — '+escapeHtml(x.reference):''),total:net>0?net:0,discount:0,paid:net<0?Math.abs(net):0,profit:null,net}];
+}
+function calculateCustomerBalanceFromLedger(custId){
   const sales=db.sales.filter(s=>s.customerId===custId);
   const installments=db.installments.filter(i=>i.customerId===custId);
   const bookedNet=sales.reduce((n,s)=>n+Number(s.total||0),0);
   const initialPaid=sales.reduce((n,s)=>n+Number(s.initialPaid!==undefined?s.initialPaid:s.paid||0),0);
   const laterSettled=installments.reduce((n,i)=>n+Number(i.amount||0)+Number(i.discount||0),0);
   const returnAdjust=db.returns.filter(r=>!r.cancelled&&r.customerId===custId).reduce((n,r)=>n+Number(r.dueAdjust||0),0);
-  return Math.max(0,Math.round(bookedNet-initialPaid-laterSettled-returnAdjust));
+  return Math.round(openingBalanceNet('customer',custId)+bookedNet-initialPaid-laterSettled-returnAdjust);
+}
+function calculateCustomerDueFromLedger(custId){
+  return Math.max(0,calculateCustomerBalanceFromLedger(custId));
+}
+function calculateCustomerAdvanceFromLedger(custId){
+  return Math.max(0,-calculateCustomerBalanceFromLedger(custId));
+}
+function calculateSupplierBalanceFromLedger(supplierId){
+  const purchaseTotal=db.purchases.filter(p=>p.supplierId===supplierId).reduce((n,p)=>n+Number(p.total||0),0);
+  const settled=db.vendorPayments.filter(x=>x.supplierId===supplierId).reduce((n,x)=>n+((x.type==='payment'||x.type==='purchase_payment'||x.type==='purchase_return')?Number(x.amount||0):0),0);
+  return Math.round(openingBalanceNet('supplier',supplierId)+purchaseTotal-settled);
 }
 function calculateGroupMemberBookingDueFromLedger(memberId){
   const sales = db.sales.filter(s=>s.groupMemberId===memberId);
@@ -5591,7 +5746,7 @@ function calculateGroupMemberBookingDueFromLedger(memberId){
 function calculateGroupMemberBalanceFromLedger(memberId){
   const bookingDue=calculateGroupMemberBookingDueFromLedger(memberId);
   const manualNet=db.agentLedger.filter(x=>x.memberId===memberId).reduce((n,x)=>n+(x.type==='debit'?Number(x.amount||0):-Number(x.amount||0)),0);
-  return Math.round(bookingDue+manualNet);
+  return Math.round(openingBalanceNet('agent',memberId)+bookingDue+manualNet);
 }
 function calculateGroupMemberDueFromLedger(memberId){
   return Math.max(0,calculateGroupMemberBalanceFromLedger(memberId));
@@ -5607,6 +5762,7 @@ function openCustomerHistory(custId){
   const totalPaid = totalInitialPaid + totalInstPaid;
 
   const ledgerRaw = [
+    ...customerOpeningLedgerRows(custId),
     ...sales.map(s=>({
       ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
       label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
@@ -5621,13 +5777,14 @@ function openCustomerHistory(custId){
     }))
   ].sort((a,b)=>{
     if(a.date!==b.date) return a.date<b.date?-1:1;
-    if(a.type!==b.type) return a.type==='booking'?-1:1; // একই তারিখে বুকিং আগে, কিস্তি পরে
+    if(a.type!==b.type) return ({opening:0,booking:1,installment:2}[a.type]??9)-({opening:0,booking:1,installment:2}[b.type]??9);
     return a.ts-b.ts;
   });
 
   let runningDue = 0;
   const ledger = ledgerRaw.map(tx=>{
-    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
+    if(tx.type==='opening') runningDue += tx.net;
+    else if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
     else runningDue -= (tx.paid + tx.discount);
     return { ...tx, runningDue: Math.round(runningDue) };
   });
@@ -5647,10 +5804,10 @@ function openCustomerHistory(custId){
         <td>${formatDateDMY(tx.date)}</td>
         <td>${tx.label}</td>
         <td>${tx.qty!==null?tx.qty:'—'}</td>
-        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
+        <td>${tx.type==='booking'||tx.type==='opening'?'৳'+money(tx.total):'—'}</td>
         <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
         <td>৳${money(tx.paid)}</td>
-        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):tx.runningDue<0?'<span style="color:var(--green)">Advance ৳'+money(Math.abs(tx.runningDue))+'</span>':'৳0'}</td>
       </tr>`).join('')}</tbody>
       <tfoot><tr style="font-weight:700;background:var(--paper-card);">
         <td colspan="3">${t('totals_label')}</td>
@@ -6976,16 +7133,16 @@ async function clearAllData(){
   const typed = prompt(t('clear_all_confirm2'));
   if(typed !== t('clear_all_confirm_word')) { alert(t('clear_all_aborted')); return; }
 
-  const collections = ['customers','suppliers','products','categories','groupMembers','groups','purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','bankAccounts','mobileAccounts','paymentHeads','paymentLedger','agentLedgerHeads','agentLedger'];
+  const collections = ['customers','suppliers','products','categories','groupMembers','groups','purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','bankAccounts','mobileAccounts','paymentHeads','paymentLedger','agentLedgerHeads','agentLedger','openingBalances','assets','assetEvents'];
   for(const name of collections){
     const items = db[name];
     const ids = Array.isArray(items) ? items.map(x=>x.id) : Object.keys(items);
     for(const id of ids){ await safeRemove(name, id); }
   }
   db.customers = {}; db.suppliers = {}; db.products = {}; db.categories={}; db.groupMembers={}; db.groups={};
-  db.bankAccounts={}; db.mobileAccounts={}; db.paymentHeads={}; db.agentLedgerHeads={};
+  db.bankAccounts={}; db.mobileAccounts={}; db.paymentHeads={}; db.agentLedgerHeads={}; db.assets={};
   db.purchases = []; db.sales = []; db.expenses = [];
-  db.installments = []; db.installmentPlans = []; db.returns = []; db.vendorPayments=[]; db.paymentLedger=[]; db.agentLedger=[];
+  db.installments = []; db.installmentPlans = []; db.returns = []; db.vendorPayments=[]; db.paymentLedger=[]; db.agentLedger=[]; db.openingBalances=[]; db.assetEvents=[];
   try{ await storageSet(K.logo, null); }catch(e){}
   logoData = null;
 
