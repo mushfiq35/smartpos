@@ -200,6 +200,32 @@
 
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,12,16,0.55); justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
     .modal-content { background: #fff; padding: 22px; border-radius: 12px; width: 600px; max-width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    #viewSupplierModal .modal-content{width:min(1100px,calc(100vw - 24px));max-width:1100px;overflow-x:hidden}
+    #viewSupplierContent .table-responsive{overflow-x:hidden!important;width:100%}
+    #viewSupplierContent .supplier-history-table{width:100%!important;min-width:0!important;table-layout:fixed}
+    #viewSupplierContent .supplier-history-table th,#viewSupplierContent .supplier-history-table td{white-space:normal;overflow-wrap:anywhere;word-break:normal;padding:7px 6px}
+    @media(max-width:700px){
+      #viewSupplierModal{padding:6px;align-items:flex-start}
+      #viewSupplierModal .modal-content{width:100%;max-width:100%;padding:12px;max-height:97vh}
+      #viewSupplierContent .supplier-history-table thead{display:none}
+      #viewSupplierContent .supplier-history-table,#viewSupplierContent .supplier-history-table tbody,#viewSupplierContent .supplier-history-table tr,#viewSupplierContent .supplier-history-table td{display:block;width:100%!important}
+      #viewSupplierContent .supplier-history-table tbody tr{border:1px solid var(--border);border-radius:8px;margin:0 0 9px;overflow:hidden;background:#fff}
+      #viewSupplierContent .supplier-history-table tbody td{display:grid!important;grid-template-columns:88px minmax(0,1fr);gap:8px;text-align:right!important;border-bottom:1px solid #eef2f7;padding:7px 9px}
+      #viewSupplierContent .supplier-history-table tbody td:last-child{border-bottom:0}
+      #viewSupplierContent .supplier-history-table tbody td::before{text-align:left;font-weight:800;color:var(--muted);font-size:10px}
+      #viewSupplierContent .supplier-history-table tbody td:nth-child(1)::before{content:'Invoice'}
+      #viewSupplierContent .supplier-history-table tbody td:nth-child(2)::before{content:'Date'}
+      #viewSupplierContent .supplier-history-table tbody td:nth-child(3)::before{content:'Details'}
+      #viewSupplierContent .supplier-history-table tbody td:nth-child(4)::before{content:'Qty'}
+      #viewSupplierContent .supplier-history-table tbody td:nth-child(5)::before{content:'Total'}
+      #viewSupplierContent .supplier-history-table tbody td:nth-child(6)::before{content:'Paid'}
+      #viewSupplierContent .supplier-history-table tbody td:nth-child(7)::before{content:'Due / Method'}
+      #viewSupplierContent .supplier-history-table tbody td:nth-child(8)::before{content:'Action'}
+      #viewSupplierContent .supplier-history-table tfoot{display:block;width:100%}
+      #viewSupplierContent .supplier-history-table tfoot tr{display:grid!important;grid-template-columns:1fr 1fr;gap:4px;background:#f1f5f9;padding:8px;border-radius:8px}
+      #viewSupplierContent .supplier-history-table tfoot td{display:block!important;width:auto!important;text-align:right!important;padding:4px!important;border:0}
+      #viewSupplierContent .supplier-history-table tfoot td:first-child{grid-column:1/-1;text-align:left!important}
+    }
 
     /* LOGIN SCREEN */
     #loginScreen { position: fixed; inset: 0; background: linear-gradient(135deg, var(--navy), var(--navy-2)); display: flex; align-items: center; justify-content: center; z-index: 5000; padding: 20px; }
@@ -7838,7 +7864,7 @@
       if(current) sel.value=current;
     }
 
-    function readPaymentDetails(method, bankSelectId, prefix, amount, isOut) {
+    function readPaymentDetails(method, bankSelectId, prefix, amount, isOut, creditBack=null) {
       let bankId = method === 'Bank' ? (document.getElementById(bankSelectId)?.value || '') : '';
       let bank = bankAccounts.find(b => String(b.id) === String(bankId));
       let mobileAccountId=isMobileMethod(method)?(document.getElementById(prefix+'MobileAccountId')?.value||''):'';
@@ -7851,10 +7877,12 @@
         alert(currentLang === 'BN' ? 'একটি সংরক্ষিত মোবাইল ব্যাংকিং অ্যাকাউন্ট নির্বাচন করুন।' : 'Select a saved mobile banking account.');
         return null;
       }
-      if (isOut && method === 'Bank' && getBankBalance(bankId) + 0.001 < (Number(amount)||0)) {
+      let bankCredit=creditBack&&creditBack.method==='Bank'&&String(creditBack.bankId)===String(bankId)?(Number(creditBack.amount)||0):0;
+      let mobileCredit=creditBack&&isMobileMethod(creditBack.method)&&String(creditBack.mobileAccountId)===String(mobileAccountId)?(Number(creditBack.amount)||0):0;
+      if (isOut && method === 'Bank' && getBankBalance(bankId)+bankCredit + 0.001 < (Number(amount)||0)) {
         alert(t('alertInsufficientBankBalance')); return null;
       }
-      if(isOut&&isMobileMethod(method)&&getMobileAccountBalance(mobileAccountId)+0.001<(Number(amount)||0)) {
+      if(isOut&&isMobileMethod(method)&&getMobileAccountBalance(mobileAccountId)+mobileCredit+0.001<(Number(amount)||0)) {
         alert(currentLang==='BN'?'নির্বাচিত মোবাইল ব্যাংকিং অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।':'The selected mobile banking account has insufficient balance.'); return null;
       }
       return {bankId: bank ? Number(bank.id) : null, bankName: bank ? `${bankDisplayName(bank)} (${bank.number || '—'})` : '', mobileAccountId:mobileAccount?Number(mobileAccount.id):null, mobileProvider:mobileAccount?mobileAccount.service:'', mobileNumber:mobileAccount?mobileAccount.number:'', mobileAccountName:mobileAccount?mobileAccount.name:''};
@@ -9735,12 +9763,14 @@
 
     function addSupplier() { saveSupplier(); }
 
-    function openSupplierOpeningPayment(id) {
-      let s=suppliers.find(x=>x.id==id), balance=getSupplierNetBalance(id); if(!s)return;
+    function openSupplierOpeningPayment(id,paymentId=null) {
+      let s=suppliers.find(x=>x.id==id),editing=(openingConfig.supplierPayments||[]).find(p=>String(p.id)===String(paymentId)&&!p.reversed),balance=getSupplierNetBalance(id)+(editing?(Number(editing.amount)||0):0); if(!s)return;
       let old=document.getElementById('supplierOpeningPayModal'); if(old)old.remove();
       let status=balance>0?`Current Due: <b>৳${balance.toFixed(2)}</b>`:balance<0?`Current Supplier Advance: <b>৳${Math.abs(balance).toFixed(2)}</b>`:'Current Balance: <b>৳0.00</b>';
-      document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="supplierOpeningPayModal" style="display:flex;"><div class="modal-content" style="max-width:520px;"><h2>💳 Pay Supplier</h2><p style="padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:12px;"><b>${s.name}</b><br>${status}<br><small style="color:var(--muted);">You may pay the exact due, a partial amount, or extra as supplier advance.</small></p><input type="hidden" id="openingPaySupplierId" value="${s.id}"><label>Payment Amount:</label><input type="number" id="openingPayAmount" min="0.01" step="0.01" value="${balance>0?balance.toFixed(2):''}" placeholder="Enter any payment amount"><label>Date:</label><input type="date" id="openingPayDate" value="${new Date().toISOString().split('T')[0]}"><label>Payment Method:</label><select id="openingPayMethod" onchange="toggleOpeningSupplierPaymentFields()"><option value="Cash">Cash</option><option value="Bank">Bank</option><option value="Mobile Banking">Mobile Banking</option></select><div id="openingPayBankWrap" style="display:none;"><label>Bank Account:</label><select id="openingPayBankId"></select></div><div id="openingSupplierMobileWrap" style="display:none;"><label>Mobile Banking Account:</label><select id="openingSupplierMobileAccountId"></select></div><label>Note:</label><input type="text" id="openingPayNote" placeholder="Supplier payment / advance"><div style="display:flex;gap:10px;"><button class="btn-success" onclick="saveSupplierOpeningPayment()">Save Payment</button><button class="btn-danger" onclick="document.getElementById('supplierOpeningPayModal').remove()">Cancel</button></div></div></div>`);
+      document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="supplierOpeningPayModal" style="display:flex;"><div class="modal-content" style="max-width:520px;"><h2>${editing?'✏️ Edit Supplier Payment':'💳 Pay Supplier'}</h2><p style="padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:12px;"><b>${s.name}</b><br>${status}<br><small style="color:var(--muted);">You may pay the exact due, a partial amount, or extra as supplier advance.</small></p><input type="hidden" id="openingPaySupplierId" value="${s.id}"><input type="hidden" id="openingPayEditId" value="${editing?editing.id:''}"><label>Payment Amount:</label><input type="number" id="openingPayAmount" min="0.01" step="0.01" value="${editing?(Number(editing.amount)||0).toFixed(2):(balance>0?balance.toFixed(2):'')}" placeholder="Enter any payment amount"><label>Date:</label><input type="date" id="openingPayDate" value="${editing?(editing.date||''):new Date().toISOString().split('T')[0]}"><label>Payment Method:</label><select id="openingPayMethod" onchange="toggleOpeningSupplierPaymentFields()"><option value="Cash" ${!editing||editing.method==='Cash'?'selected':''}>Cash</option><option value="Bank" ${editing?.method==='Bank'?'selected':''}>Bank</option><option value="Mobile Banking" ${editing&&isMobileMethod(editing.method)?'selected':''}>Mobile Banking</option></select><div id="openingPayBankWrap" style="display:none;"><label>Bank Account:</label><select id="openingPayBankId"></select></div><div id="openingSupplierMobileWrap" style="display:none;"><label>Mobile Banking Account:</label><select id="openingSupplierMobileAccountId"></select></div><label>Note:</label><input type="text" id="openingPayNote" value="${String(editing?.note||'').replaceAll('&','&amp;').replaceAll('"','&quot;')}" placeholder="Supplier payment / advance"><div style="display:flex;gap:10px;"><button class="btn-success" onclick="saveSupplierOpeningPayment()">${editing?'Update Payment':'Save Payment'}</button><button class="btn-danger" onclick="document.getElementById('supplierOpeningPayModal').remove()">Cancel</button></div></div></div>`);
       toggleOpeningSupplierPaymentFields();
+      if(editing?.method==='Bank')document.getElementById('openingPayBankId').value=editing.bankId||'';
+      if(editing&&isMobileMethod(editing.method))document.getElementById('openingSupplierMobileAccountId').value=editing.mobileAccountId||'';
     }
 
     function toggleOpeningSupplierPaymentFields() {
@@ -9751,14 +9781,15 @@
       if(isMobileMethod(method)) populateMobileAccountSelect('openingSupplierMobileAccountId');
     }
 
-    function saveSupplierOpeningPayment() {
-      let supplierId=Number(document.getElementById('openingPaySupplierId').value), amount=openingNum(document.getElementById('openingPayAmount').value), balance=getSupplierNetBalance(supplierId), method=document.getElementById('openingPayMethod').value;
+    async function saveSupplierOpeningPayment() {
+      let supplierId=Number(document.getElementById('openingPaySupplierId').value),editId=document.getElementById('openingPayEditId')?.value||'',existing=(openingConfig.supplierPayments||[]).find(p=>String(p.id)===String(editId)&&!p.reversed),amount=openingNum(document.getElementById('openingPayAmount').value),balance=getSupplierNetBalance(supplierId)+(existing?(Number(existing.amount)||0):0),method=document.getElementById('openingPayMethod').value;
       if(amount<=0)return alert('Enter a payment amount greater than zero.');
       if(amount>Math.max(0,balance)+0.001&&!confirm(`This payment is ৳${(amount-Math.max(0,balance)).toFixed(2)} more than the current due. The extra amount will be recorded as Supplier Advance. Continue?`))return;
-      let details=readPaymentDetails(method,'openingPayBankId','openingSupplier',amount,true); if(!details)return;
+      let details=readPaymentDetails(method,'openingPayBankId','openingSupplier',amount,true,existing); if(!details)return;
       if(!openingConfig.supplierPayments)openingConfig.supplierPayments=[];
-      openingConfig.supplierPayments.push({id:Date.now(),payNo:nextInvoiceNo('PAY'),supplierId,date:document.getElementById('openingPayDate').value||new Date().toISOString().split('T')[0],amount,method,note:document.getElementById('openingPayNote').value.trim(),paymentScope:'supplier-account',bankId:details.bankId,bankName:details.bankName,mobileAccountId:details.mobileAccountId,mobileAccountName:details.mobileAccountName,mobileProvider:details.mobileProvider,mobileNumber:details.mobileNumber,reversed:false});
-      saveData(); document.getElementById('supplierOpeningPayModal').remove(); renderSupplierTable(); renderBankAccounts(); renderMobileAccounts(); renderDashboard(); alert('Supplier payment saved.');
+      let updated={...(existing||{}),id:existing?.id||Date.now(),payNo:existing?.payNo||nextInvoiceNo('PAY'),supplierId,date:document.getElementById('openingPayDate').value||new Date().toISOString().split('T')[0],amount,method,note:document.getElementById('openingPayNote').value.trim(),paymentScope:'supplier-account',bankId:details.bankId,bankName:details.bankName,mobileAccountId:details.mobileAccountId,mobileAccountName:details.mobileAccountName,mobileProvider:details.mobileProvider,mobileNumber:details.mobileNumber,reversed:false,updatedAt:existing?new Date().toISOString():(existing?.updatedAt||'')};
+      if(existing)openingConfig.supplierPayments[openingConfig.supplierPayments.indexOf(existing)]=updated;else openingConfig.supplierPayments.push(updated);
+      saveData();await firestoreSaveQueue.catch(()=>{});document.getElementById('supplierOpeningPayModal').remove();renderSupplierTable();renderBankAccounts();renderMobileAccounts();renderDashboard();if(document.getElementById('viewSupplierModal').style.display==='flex')viewSupplier(supplierId);if(firestoreLastSaveError)return alert('Payment changed locally, but Cloud save failed. Reconnect and update it again.');alert(existing?'Supplier payment updated. All balances recalculated.':'Supplier payment saved.');
     }
 
     function editSupplier(id) {
@@ -9796,7 +9827,7 @@
       document.getElementById('viewSupplierTitle').innerText = `👤 ${s.name}`;
 
       // Screen rows (with action buttons + payment history)
-      let openingPayRows=(openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&String(p.supplierId)===String(id)).map(p=>`<tr style="background:#f0fff4;"><td><b>${p.payNo}</b></td><td>${p.date}</td><td>↳ Supplier Payment${p.note?' — '+p.note:''}</td><td>—</td><td style="text-align:right;">—</td><td style="text-align:right;color:var(--green);">৳${p.amount.toFixed(2)}</td><td style="text-align:right;">${paymentMethodDisplay(p)}</td><td class="no-print"></td></tr>`).join('');
+      let openingPayRows=(openingConfig.supplierPayments||[]).filter(p=>!p.reversed&&String(p.supplierId)===String(id)).map(p=>`<tr style="background:#f0fff4;"><td><b>${p.payNo}</b></td><td>${p.date}</td><td>↳ Supplier Payment${p.note?' — '+p.note:''}</td><td>—</td><td style="text-align:right;">—</td><td style="text-align:right;color:var(--green);">৳${p.amount.toFixed(2)}</td><td style="text-align:right;">${paymentMethodDisplay(p)}</td><td class="no-print" style="text-align:center;"><button type="button" onclick="openSupplierOpeningPayment('${id}','${p.id}')" class="btn-icon-action btn-edit" title="Edit Payment">${SVG_EDIT}</button></td></tr>`).join('');
       let openingSupplierRow=(openingDue>0?`<tr style="background:#f8fafc;"><td><b>OPENING</b></td><td>${openingConfig.date||'—'}</td><td>Previous supplier payable</td><td>—</td><td style="text-align:right;"><b>৳${openingDue.toFixed(2)}</b></td><td style="text-align:right;">—</td><td style="text-align:right;font-weight:700;">৳${openingDue.toFixed(2)}</td><td class="no-print"></td></tr>`:'')+openingPayRows;
       let screenRows = openingSupplierRow+(supPurchases.length ? supPurchases.map(p => {
         let purNo = p.purchaseNo || ('PUR-' + String(p.id).slice(-6));
@@ -9875,7 +9906,7 @@
         <!-- Transaction table -->
         <h4 style="margin-bottom:8px; font-size:14px;">📋 Purchase Transaction History</h4>
         <div class="table-responsive">
-          <table>
+          <table class="supplier-history-table">
             <thead>
               <tr>
                 <th style="width:110px;">Invoice</th>
