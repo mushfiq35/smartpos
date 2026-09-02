@@ -542,17 +542,6 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
     <button class="newsale-btn" id="quickSaleBtn">+ নতুন বুকিং</button>
     <nav class="nav" id="navList"></nav>
     <div class="user-role-card" id="currentUserRoleCard" style="display:none;"></div>
-    <div class="backup-row" id="backupRow" style="display:none;">
-      <button id="backupBtn">☁️ Backup</button>
-      <button id="restoreBtn">♻️ Restore</button>
-    </div>
-    <div class="backup-row" id="pcBackupRow" style="display:none;">
-      <button id="pcBackupBtn">💾 PC Backup</button>
-      <button id="pcRestoreBtn">📂 PC Restore</button>
-    </div>
-    <div class="backup-row" id="clearAllRow" style="display:none;">
-      <button id="clearAllBtn" style="border-color:rgba(180,66,58,0.5);color:#e6a29c;">🗑️ Clear All Data</button>
-    </div>
     <div class="logout-row" id="logoutRow" style="display:none;">
       <button id="logoutBtn">Logout</button>
     </div>
@@ -710,6 +699,16 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
         <option value="group_agent">Groups/Agent</option>
       </select>
     </div>
+    <div class="field">
+      <label id="msPassengerTypeLabel">Passenger Type</label>
+      <select id="msPassengerType">
+        <option value="adult_male">Adult Male</option>
+        <option value="adult_female">Adult Female</option>
+        <option value="child">Child</option>
+        <option value="group_mixed">Group / Mixed</option>
+      </select>
+      <small class="field-hint" id="msPassengerTypeHint">Select Group / Mixed when one agent booking includes different passenger types.</small>
+    </div>
     <div class="field" id="msGroupField">
       <label id="msGroupLabel">Group / Lot <span style="font-size:11px;color:var(--ink-soft);">(optional)</span></label>
       <div class="select-row">
@@ -802,6 +801,11 @@ const K = {
   settings:'pos-settings'
 };
 let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], groupMembers:{}, groups:{}, vendorPayments:[], travelAdjustments:[], preRegBatches:[], preRegPilgrims:[], loanAccounts:[], loanTransactions:[], creditFacilities:[], creditTransactions:[], bankAccounts:{}, mobileAccounts:{}, paymentHeads:{}, paymentLedger:[], agentLedgerHeads:{}, agentLedger:[], openingBalances:[], assets:{}, assetEvents:[], appUsers:{} };
+const BACKUP_SCHEMA_VERSION = 6;
+function createBackupPayload(){
+  const appUsers=Object.fromEntries(Object.entries(db.appUsers||{}).filter(([id,u])=>normalizeEmail((u&&u.email)||id)!==PRIMARY_SUPER_EMAIL));
+  return {...db, appUsers, backupMeta:{schemaVersion:BACKUP_SCHEMA_VERSION, exportedAt:new Date().toISOString(), includesPassengerType:true, primaryUserExcluded:true}};
+}
 let currentTab = 'dashboard';
 let logoData = null;
 let activeGroupAgentTab = 'overview';
@@ -875,13 +879,13 @@ const I18N = {
     grp_name_required:'গ্রুপ নাম ও মোয়াল্লেম আবশ্যক', grp_member_required:'নম্বর ও নাম আবশ্যক',
     grp_no_members:'কোনো গ্রুপস/এজেন্ট নেই', grp_no_groups:'কোনো গ্রুপ নেই',
     grp_no_lots:'এই গ্রুপস/এজেন্টের কোনো লট বা সরাসরি বুকিং নেই', grp_no_bookings:'কোনো বুকিং নেই', grp_no_inst:'কোনো কিস্তি নেই',
-    grp_col_name:'গ্রুপ নাম', grp_col_moallem:'মোয়াল্লেম', grp_col_year:'বছর', grp_col_hajji:'কাস্টমার', grp_col_total:'মোট বুকিং', grp_col_lot:'লট',
+    grp_col_name:'গ্রুপ নাম', grp_col_moallem:'মোয়াল্লেম', grp_col_agent_no:'এজেন্ট নং', grp_col_agent:'এজেন্ট', grp_col_lots:'লটস', grp_col_year:'বছর', grp_col_hajji:'কাস্টমার', grp_col_total:'মোট বুকিং', grp_col_lot:'লট',
     grp_col_lot_name:'লট নাম', grp_col_due:'বাকি',
     grp_member_no_label:'এজেন্ট নম্বর', grp_total_lots:'মোট লট', grp_inst_history:'কিস্তি ইতিহাস',
     grp_back:'← গ্রুপে ফিরুন', grp_back_members:'← গ্রুপস/এজেন্ট', grp_paid:'পরিশোধিত',
     grp_lot_label:'টি লট', grp_member_label:'এজেন্ট নম্বর:', grp_lot_count:'টি লট',
     grp_rpt_search:'গ্রুপ / মোয়াল্লেম খুঁজুন...', grp_name_placeholder:'যেমন: রফিক — হজ্জ ২০২৬ — লট ১',
-    grp_select_member:'— নির্বাচন করুন —', grp_moallem_label:'মোয়াল্লেম',
+    grp_select_member:'— নির্বাচন করুন —', grp_moallem_label:'মোয়াল্লেম', passenger_type:'যাত্রীর ধরন', passenger_adult_male:'প্রাপ্তবয়স্ক পুরুষ', passenger_adult_female:'প্রাপ্তবয়স্ক মহিলা', passenger_child:'শিশু', passenger_group_mixed:'গ্রুপ / মিশ্র', passenger_type_hint:'একটি এজেন্ট বুকিংয়ে বিভিন্ন ধরনের যাত্রী থাকলে “গ্রুপ / মিশ্র” নির্বাচন করুন।',
     vnd_statement:'ভেন্ডর স্টেটমেন্ট', vnd_pay_btn:'+ পেমেন্ট দিন', vnd_return_btn:'+ রিটার্ন করুন',
     vnd_total_purchase:'মোট ক্রয়', vnd_total_paid:'মোট পরিশোধ', vnd_due:'আমাদের দিতে হবে',
     vnd_advance:'ভেন্ডর এগিয়ে আছে', vnd_clear:'ক্লিয়ার',
@@ -1023,13 +1027,13 @@ const I18N = {
     grp_name_required:'Group name and Moallem are required', grp_member_required:'Number and name are required',
     grp_no_members:'No Groups/Agent yet', grp_no_groups:'No groups yet',
     grp_no_lots:'No lots or direct bookings for this Groups/Agent', grp_no_bookings:'No bookings', grp_no_inst:'No installments',
-    grp_col_name:'Group Name', grp_col_moallem:'Moallem', grp_col_year:'Year', grp_col_hajji:'Customers', grp_col_total:'Total Booking', grp_col_lot:'Lots',
+    grp_col_name:'Group Name', grp_col_moallem:'Moallem', grp_col_agent_no:'Agent No.', grp_col_agent:'Agent', grp_col_lots:'Lots', grp_col_year:'Year', grp_col_hajji:'Customers', grp_col_total:'Total Booking', grp_col_lot:'Lots',
     grp_col_lot_name:'Lot Name', grp_col_due:'Due',
     grp_member_no_label:'Agent No', grp_total_lots:'Total Lots', grp_inst_history:'Installment History',
     grp_back:'← Back to Group', grp_back_members:'← Groups/Agent', grp_paid:'Paid',
     grp_lot_label:'Lots', grp_member_label:'Agent No:', grp_lot_count:'Lots',
     grp_rpt_search:'Search group / moallem...', grp_name_placeholder:'e.g. Rafiq — Hajj 2026 — Lot 1',
-    grp_select_member:'— Select —', grp_moallem_label:'Moallem',
+    grp_select_member:'— Select —', grp_moallem_label:'Moallem', passenger_type:'Passenger Type', passenger_adult_male:'Adult Male', passenger_adult_female:'Adult Female', passenger_child:'Child', passenger_group_mixed:'Group / Mixed', passenger_type_hint:'Select “Group / Mixed” when one agent booking includes different passenger types.',
     vnd_statement:'Vendor Statement', vnd_pay_btn:'+ Pay Vendor', vnd_return_btn:'+ Purchase Return',
     vnd_total_purchase:'Total Purchase', vnd_total_paid:'Total Paid', vnd_due:'We Owe',
     vnd_advance:'Vendor Advance', vnd_clear:'Clear',
@@ -1166,6 +1170,13 @@ function normalizeEmail(email){ return String(email||'').trim().toLowerCase(); }
 function userDocId(email){ return normalizeEmail(email); }
 function findAppUser(email){ const e=normalizeEmail(email); return Object.values(db.appUsers||{}).find(u=>normalizeEmail(u.email)===e)||null; }
 function currentUserEmail(){ const u=currentAuthUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser); return normalizeEmail(u&&u.email); }
+function isPrimaryUserRecord(id,user){ return normalizeEmail((user&&user.email)||id)===PRIMARY_SUPER_EMAIL; }
+function hidePrimaryFromStoredUsers(users){
+  return Object.fromEntries(Object.entries(users||{}).filter(([id,u])=>!isPrimaryUserRecord(id,u)));
+}
+function primaryUserProfile(){
+  return {id:'__primary__',name:'Mushfiq Rahman',email:PRIMARY_SUPER_EMAIL,role:'super',active:true,isPrimary:true,isVirtualPrimary:true};
+}
 function currentRole(){
   const email=currentUserEmail();
   if(email===PRIMARY_SUPER_EMAIL) return 'super';
@@ -1203,11 +1214,14 @@ function requirePermission(permission,message){
   return false;
 }
 async function ensurePrimarySuperUser(){
-  const id=userDocId(PRIMARY_SUPER_EMAIL), existing=db.appUsers[id]||findAppUser(PRIMARY_SUPER_EMAIL)||{};
-  const needsSave=!db.appUsers[id]||existing.role!=='super'||existing.active===false||existing.isPrimary!==true;
-  const rec={...existing,id,email:PRIMARY_SUPER_EMAIL,name:existing.name||'Mushfiq Rahman',role:'super',active:true,isPrimary:true,updatedAt:needsSave?Date.now():(existing.updatedAt||Date.now())};
-  db.appUsers[id]=rec;
-  if(needsSave) await safePut('appUsers',id,rec);
+  // Primary access is recognized directly from Firebase Auth and is never
+  // stored as an appUsers document. This keeps it out of other Super Users'
+  // collection data, backups and User Management lists.
+  const primaryEntries=Object.entries(db.appUsers||{}).filter(([id,u])=>isPrimaryUserRecord(id,u));
+  db.appUsers=hidePrimaryFromStoredUsers(db.appUsers);
+  if(isPrimarySuperUser()){
+    for(const [id] of primaryEntries) await safeRemove('appUsers',id);
+  }
 }
 function roleLabel(role){ return role==='super'?'Super User':role==='moderator'?'Moderator':role==='staff'?'Staff':'Inactive'; }
 function renderCurrentUserRoleCard(){
@@ -1232,7 +1246,7 @@ function renderRolePermissionMatrix(){
 }
 function renderUserPermissionChecklist(selected,role){
   const enabled=new Set(selected||[]),lock=role==='super';
-  return '<div class="panel" style="margin:12px 0 0;background:var(--paper)"><h4 style="margin:0 0 6px">✓ One-by-One Feature Permissions</h4><p class="field-hint">Role শুধু starting preset। View, Create, Edit ও Delete-সহ প্রতিটি checkbox এই user-এর জন্য আলাদাভাবে On/Off করুন।</p><div class="erp-grid">'+USER_PERMISSION_CATALOG.map(p=>'<label style="display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:'+(lock?'not-allowed':'pointer')+'"><input type="checkbox" name="umPermission" value="'+p.key+'" '+((lock||enabled.has(p.key))?'checked':'')+' '+(lock?'disabled':'')+' style="width:auto;margin-top:3px"><span><strong>'+p.label+'</strong><small class="field-hint" style="display:block">'+p.hint+'</small></span></label>').join('')+'</div><div style="margin-top:10px;padding:9px;border-radius:7px;background:var(--red-bg)"><strong>🔒 Super-only:</strong> Backup, Restore ও User Management/permission control<br><strong>🔐 Primary Super-only:</strong> Reset / Clear All Data ('+PRIMARY_SUPER_EMAIL+')</div></div>';
+  return '<div class="panel" style="margin:12px 0 0;background:var(--paper)"><h4 style="margin:0 0 6px">✓ One-by-One Feature Permissions</h4><p class="field-hint">Role শুধু starting preset। View, Create, Edit ও Delete-সহ প্রতিটি checkbox এই user-এর জন্য আলাদাভাবে On/Off করুন।</p><div class="erp-grid">'+USER_PERMISSION_CATALOG.map(p=>'<label style="display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:'+(lock?'not-allowed':'pointer')+'"><input type="checkbox" name="umPermission" value="'+p.key+'" '+((lock||enabled.has(p.key))?'checked':'')+' '+(lock?'disabled':'')+' style="width:auto;margin-top:3px"><span><strong>'+p.label+'</strong><small class="field-hint" style="display:block">'+p.hint+'</small></span></label>').join('')+'</div><div style="margin-top:10px;padding:9px;border-radius:7px;background:var(--red-bg)"><strong>🔒 Super-only:</strong> Backup, Restore ও User Management/permission control<br><strong>🔐 Primary-only:</strong> Reset / Clear All Data</div></div>';
 }
 function updateUserPermissionChecklist(role,selected){
   const values=new Set(selected||ROLE_PERMISSIONS[role]||[]),lock=role==='super';
@@ -1295,7 +1309,10 @@ function initGoogleDrive(retriesLeft){
 }
 
 function requestDriveToken(onReady){
-  if(!gisTokenClient) return;
+  if(!gisTokenClient){
+    alert(currentLang==='bn'?'Cloud Backup এখনো প্রস্তুত হয়নি। কয়েক সেকেন্ড পরে আবার চেষ্টা করুন।':'Cloud Backup is not ready yet. Please try again in a few seconds.');
+    return;
+  }
   gisTokenClient.callback = (resp) => {
     if(resp.error){ console.error('drive auth failed', resp); showToast(t('drive_auth_failed')); return; }
     gisAccessToken = resp.access_token;
@@ -1308,7 +1325,7 @@ async function backupToDrive(){
   if(!isSuperUser()){alert('⛔ Backup শুধুমাত্র Super User করতে পারবেন।');return;}
   requestDriveToken(async () => {
     try{
-      const payload = JSON.stringify({...db, exportedAt: new Date().toISOString()}, null, 2);
+      const payload = JSON.stringify(createBackupPayload(), null, 2);
       const fileName = `${SHOP_NAME}-backup-${todayStr()}-${Date.now()}.json`;
       const metadata = { name: fileName, mimeType: 'application/json' };
       const boundary = 'maxbackupboundary';
@@ -1354,7 +1371,7 @@ async function restoreFromDrive(){
       });
       const backupData = await fileRes.json();
       if(!confirm(t('confirm_restore'))) return;
-      for(const key of ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads','assets']) for(const [rid,rec] of Object.entries(backupData[key]||{})){db[key][rid]=rec;await safePut(key,rid,rec);}
+      for(const key of ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads','assets']) for(const [rid,rec] of Object.entries(backupData[key]||{})){if(key==='appUsers'&&isPrimaryUserRecord(rid,rec))continue;db[key][rid]=rec;await safePut(key,rid,rec);}
       for(const key of ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','travelAdjustments','preRegBatches','preRegPilgrims','loanAccounts','loanTransactions','creditFacilities','creditTransactions','paymentLedger','agentLedger','openingBalances','assetEvents']) for(const rec of (backupData[key]||[])) await safePut(key,rec.id,rec);
       await loadAll();
       showToast(t('restore_success'));
@@ -1925,10 +1942,6 @@ function renderNav(){
   });
   document.getElementById('quickSaleBtn').textContent = t('new_sale');
   const superUser=isSuperUser();
-  const backupRow=document.getElementById('backupRow'),pcRow=document.getElementById('pcBackupRow'),clearRow=document.getElementById('clearAllRow');
-  if(backupRow) backupRow.style.display=superUser&&gisTokenClient?'flex':'none';
-  if(pcRow) pcRow.style.display=superUser?'flex':'none';
-  if(clearRow) clearRow.style.display=isPrimarySuperUser()?'flex':'none';
   const logoBtn=document.getElementById('logoUploadBtn');if(logoBtn)logoBtn.style.display=superUser?'block':'none';
   renderCurrentUserRoleCard();
 }
@@ -1978,9 +1991,6 @@ function renderBrandTexts(){
   document.getElementById('loginPasswordLabel').textContent = t('login_password');
   document.getElementById('loginBtn').textContent = t('login_btn');
   document.getElementById('logoutBtn').textContent = t('logout');
-  document.getElementById('backupBtn').textContent = t('backup_btn');
-  document.getElementById('clearAllBtn').textContent = t('clear_all_btn');
-  document.getElementById('restoreBtn').textContent = t('restore_btn');
 }
 function renderLogo(){
   const wrap = document.getElementById('logoWrap');
@@ -3329,7 +3339,15 @@ function renderSettingsPage(){
     <h3>⚙️ System Settings</h3>
     <div style="margin-bottom:20px;">
       <h4 style="margin:0 0 10px;">Role & Access Control</h4>
-      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 8px;">User access is now controlled from User Management. Primary Super User: <strong>${PRIMARY_SUPER_EMAIL}</strong></p>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 8px;">User access is controlled from User Management. Protected system ownership is managed separately.</p>
+    </div>
+    <div style="margin-bottom:20px;">
+      <h4 style="margin:0 0 10px;">☁️ Cloud Backup / Restore</h4>
+      <p class="field-hint">Super Users can save a full ERP backup file to the connected Google Drive and restore it when required.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn" id="settingsCloudBackup">☁️ Cloud Backup</button>
+        <button class="btn ghost" id="settingsCloudRestore">♻️ Cloud Restore</button>
+      </div>
     </div>
     <div style="margin-bottom:20px;">
       <h4 style="margin:0 0 10px;">PC Backup / Restore</h4>
@@ -3338,19 +3356,21 @@ function renderSettingsPage(){
         <button class="btn ghost" id="settingsPcRestore">📂 Restore from File</button>
       </div>
     </div>
-    <div style="${isPrimarySuperUser()?'':'display:none;'}margin-bottom:20px;padding:14px;border:1px solid rgba(180,66,58,0.3);border-radius:8px;background:var(--red-bg);">
+    ${isPrimarySuperUser()?`<div style="margin-bottom:20px;padding:14px;border:1px solid rgba(180,66,58,0.3);border-radius:8px;background:var(--red-bg);">
       <h4 style="margin:0 0 8px;color:var(--red);">⚠️ Danger Zone</h4>
       <p class="field-hint">Only Primary Super User: ${PRIMARY_SUPER_EMAIL}</p><button class="btn" style="background:var(--red);color:#fff;border:none;" id="settingsClearAll">🗑️ Clear All Data</button>
-    </div>
+    </div>`:''}
     <button class="btn amber" id="settingsSave">🛡️ Open User Management</button>
     <span id="settingsSaveMsg" style="font-size:13px;margin-left:12px;color:var(--green);"></span>
   </div>`;
   document.getElementById('settingsSave').addEventListener('click',async()=>{
     if(!isSuperUser())return;currentTab='user_management';renderNav();renderPage();
   });
+  document.getElementById('settingsCloudBackup').addEventListener('click',backupToDrive);
+  document.getElementById('settingsCloudRestore').addEventListener('click',restoreFromDrive);
   document.getElementById('settingsPcBackup').addEventListener('click',()=>{
     if(!requirePermission('*'))return;
-    const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+    const blob=new Blob([JSON.stringify(createBackupPayload(),null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);const a=document.createElement('a');
     a.href=url;a.download=SHOP_NAME+'-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
     URL.revokeObjectURL(url);showToast(t('backup_success'));
@@ -3365,14 +3385,15 @@ function renderSettingsPage(){
       reader.onload=async(ev)=>{
         try{
           const data=JSON.parse(ev.target.result);const puts=[];
-          ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads','assets'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>puts.push(safePut(k,id,v)));});
+          ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads','assets'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>{if(k==='appUsers'&&isPrimaryUserRecord(id,v))return;puts.push(safePut(k,id,v));});});
           ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','travelAdjustments','preRegBatches','preRegPilgrims','loanAccounts','loanTransactions','creditFacilities','creditTransactions','paymentLedger','agentLedger','openingBalances','assetEvents'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
           await Promise.all(puts);showToast(t('restore_success'));setTimeout(()=>location.reload(),1500);
         }catch(err){alert(t('restore_failed')+': '+err.message);}
       };reader.readAsText(file);
     };input.click();
   });
-  document.getElementById('settingsClearAll').addEventListener('click',clearAllData);
+  const settingsClearAll=document.getElementById('settingsClearAll');
+  if(settingsClearAll)settingsClearAll.addEventListener('click',clearAllData);
 }
 let editingAppUserId=null;
 async function createFirebaseLogin(email,password){
@@ -3401,7 +3422,7 @@ function resetUserForm(){
   const cancel=document.getElementById('umCancelEdit');if(cancel)cancel.style.display='none';
 }
 function editAppUser(id){
-  if(!isSuperUser())return;const u=db.appUsers[id];if(!u)return;editingAppUserId=id;
+  if(!isSuperUser())return;const u=db.appUsers[id];if(!u||isPrimaryUserRecord(id,u))return;editingAppUserId=id;
   document.getElementById('umName').value=u.name||'';document.getElementById('umEmail').value=u.email||'';document.getElementById('umEmail').disabled=true;
   document.getElementById('umPassword').value='';document.getElementById('umRole').value=u.role||'staff';document.getElementById('umRole').disabled=u.isPrimary===true;
   document.getElementById('umActive').checked=u.active!==false;document.getElementById('umActive').disabled=u.isPrimary===true;
@@ -3418,7 +3439,7 @@ async function saveAppUser(){
   if(password&&password.length<6){alert('Password must be at least 6 characters.');return;}
   const existingByEmail=findAppUser(email);
   if(existingByEmail&&existingByEmail.id!==editingAppUserId){alert('This email is already in User Management.');return;}
-  if(email===PRIMARY_SUPER_EMAIL&&(role!=='super'||!active)){alert('Primary Super User cannot be downgraded or disabled.');return;}
+  if(email===PRIMARY_SUPER_EMAIL){alert('This protected system identity cannot be added or changed here.');return;}
   if(email===currentUserEmail()&&(role!=='super'||!active)){alert('You cannot downgrade or disable your own active Super User account.');return;}
   let authResult='role_only';
   try{authResult=await createFirebaseLogin(email,password);}catch(err){alert('Firebase user creation failed: '+(err.message||err));return;}
@@ -3440,10 +3461,11 @@ async function sendUserPasswordReset(id){
 }
 function renderUserManagementPage(){
   if(!isSuperUser()){currentTab='dashboard';renderNav();renderPage();return;}
-  ensurePrimarySuperUser();
-  const users=Object.values(db.appUsers).sort((a,b)=>(a.isPrimary?-1:b.isPrimary?1:String(a.name||'').localeCompare(String(b.name||''))));
-  const rows=users.map(u=>{const perms=permissionsForUser(u);return '<tr><td><strong>'+escapeHtml(u.name||'—')+'</strong>'+(u.isPrimary?'<br><small style="color:var(--gold)">Primary Super User</small>':'')+'</td><td>'+escapeHtml(u.email)+'</td><td><span class="role-badge '+escapeHtml(u.role)+'">'+roleLabel(u.role)+'</span></td><td>'+(u.role==='super'?'<strong>All Features</strong>':USER_PERMISSION_CATALOG.map(p=>'<span title="'+escapeHtml(p.label)+'" style="display:inline-block;margin:2px;padding:3px 6px;border-radius:5px;background:'+(perms.includes(p.key)?'var(--green-bg)':'var(--red-bg)')+';color:'+(perms.includes(p.key)?'var(--green)':'var(--red)')+'">'+(perms.includes(p.key)?'✓':'✕')+' '+escapeHtml(p.label)+'</span>').join(''))+'</td><td><span class="role-badge '+(u.active===false?'inactive':'staff')+'">'+(u.active===false?'Disabled':'Active')+'</span></td><td>'+formatDateDMY(new Date(u.updatedAt||u.createdAt||Date.now()).toISOString().slice(0,10))+'</td><td class="actions-cell"><button class="icon-btn" onclick="editAppUser(\''+u.id+'\')" title="Edit permissions">☑️</button>'+(u.isPrimary?'':'<button class="icon-btn" onclick="sendUserPasswordReset(\''+u.id+'\')" title="Send password reset">🔑</button><button class="icon-btn" onclick="toggleAppUser(\''+u.id+'\')" title="'+(u.active===false?'Enable':'Disable')+'">'+(u.active===false?'✅':'🚫')+'</button>')+'</td></tr>';}).join('');
-  document.getElementById('content').innerHTML='<div class="panel"><h3>🛡️ Default Role Presets</h3><p class="field-hint">Role শুধু starting preset; নিচের user form-এর checkbox-ই final access নির্ধারণ করবে। Primary protected: <strong>'+PRIMARY_SUPER_EMAIL+'</strong></p><div class="role-matrix"><div><span class="role-badge super">Super User</span><ul><li>Full ERP access</li><li>User and role management</li><li>Can edit and delete records</li><li>Backup and restore (Reset: Primary only)</li></ul></div><div><span class="role-badge moderator">Moderator</span><ul><li>Daily ERP create operations</li><li>Reports and payment ledger</li><li>Opening balance and asset create</li><li>Edit/Delete checkbox can be enabled</li></ul></div><div><span class="role-badge staff">Staff</span><ul><li>Daily create operations</li><li>Payments and installments</li><li>Bank/mobile account access</li><li>Every access can be enabled separately</li></ul></div></div>'+renderRolePermissionMatrix()+'</div>'
+  const storedUsers=Object.values(hidePrimaryFromStoredUsers(db.appUsers)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+  const users=isPrimarySuperUser()?[primaryUserProfile(),...storedUsers]:storedUsers;
+  const rows=users.map(u=>{const perms=permissionsForUser(u);return '<tr><td><strong>'+escapeHtml(u.name||'—')+'</strong>'+(u.isPrimary?'<br><small style="color:var(--gold)">Primary Super User</small>':'')+'</td><td>'+escapeHtml(u.email)+'</td><td><span class="role-badge '+escapeHtml(u.role)+'">'+roleLabel(u.role)+'</span></td><td>'+(u.role==='super'?'<strong>All Features</strong>':USER_PERMISSION_CATALOG.map(p=>'<span title="'+escapeHtml(p.label)+'" style="display:inline-block;margin:2px;padding:3px 6px;border-radius:5px;background:'+(perms.includes(p.key)?'var(--green-bg)':'var(--red-bg)')+';color:'+(perms.includes(p.key)?'var(--green)':'var(--red)')+'">'+(perms.includes(p.key)?'✓':'✕')+' '+escapeHtml(p.label)+'</span>').join(''))+'</td><td><span class="role-badge '+(u.active===false?'inactive':'staff')+'">'+(u.active===false?'Disabled':'Active')+'</span></td><td>'+formatDateDMY(new Date(u.updatedAt||u.createdAt||Date.now()).toISOString().slice(0,10))+'</td><td class="actions-cell">'+(u.isPrimary?'':'<button class="icon-btn" onclick="editAppUser(\''+u.id+'\')" title="Edit permissions">☑️</button><button class="icon-btn" onclick="sendUserPasswordReset(\''+u.id+'\')" title="Send password reset">🔑</button><button class="icon-btn" onclick="toggleAppUser(\''+u.id+'\')" title="'+(u.active===false?'Enable':'Disable')+'">'+(u.active===false?'✅':'🚫')+'</button>')+'</td></tr>';}).join('');
+  const ownershipNote=isPrimarySuperUser()?'You can view every managed user. Your protected Primary identity is visible only to you.':'Protected system ownership is managed separately and is not included in this list.';
+  document.getElementById('content').innerHTML='<div class="panel"><h3>🛡️ Default Role Presets</h3><p class="field-hint">Role শুধু starting preset; নিচের user form-এর checkbox-ই final access নির্ধারণ করবে। '+ownershipNote+'</p><div class="role-matrix"><div><span class="role-badge super">Super User</span><ul><li>Full ERP access</li><li>User and role management</li><li>Can edit and delete records</li><li>Backup and restore (Reset: Primary only)</li></ul></div><div><span class="role-badge moderator">Moderator</span><ul><li>Daily ERP create operations</li><li>Reports and payment ledger</li><li>Opening balance and asset create</li><li>Edit/Delete checkbox can be enabled</li></ul></div><div><span class="role-badge staff">Staff</span><ul><li>Daily create operations</li><li>Payments and installments</li><li>Bank/mobile account access</li><li>Every access can be enabled separately</li></ul></div></div>'+renderRolePermissionMatrix()+'</div>'
     +'<div class="panel"><h3>'+((editingAppUserId?'Edit':'Add')+' User')+'</h3><div class="field-row"><div class="field"><label>Name</label><input id="umName" placeholder="User full name"></div><div class="field"><label>Email</label><input type="email" id="umEmail" placeholder="user@example.com"></div></div><div class="field-row"><div class="field"><label>Password (new login only)</label><input type="password" id="umPassword" placeholder="Minimum 6 characters"></div><div class="field"><label>Role Preset</label><select id="umRole"><option value="staff">Staff</option><option value="moderator">Moderator</option><option value="super">Super User</option></select></div></div><div class="field" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="umActive" checked style="width:auto"><label for="umActive" style="margin:0;text-transform:none">Active access</label></div>'+renderUserPermissionChecklist(ROLE_PERMISSIONS.staff,'staff')+'<p class="field-hint">For an existing Firebase login, leave Password blank. For a new user, enter a password and the login account will be created without logging you out.</p><div style="display:flex;gap:8px"><button class="btn amber" id="umSave" onclick="saveAppUser()">+ Create / Save User</button><button class="btn ghost" id="umCancelEdit" onclick="cancelUserEdit()" style="display:none">Cancel Edit</button></div></div>'
     +'<div class="panel"><h3>Users ('+users.length+')</h3><div style="overflow-x:auto">'+(rows?'<table class="data"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Feature Permissions</th><th>Status</th><th>Updated</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>':'<div class="empty">No users added yet.</div>')+'</div></div>';
   document.getElementById('umRole').addEventListener('change',e=>updateUserPermissionChecklist(e.target.value,ROLE_PERMISSIONS[e.target.value]||[]));
@@ -3518,7 +3540,10 @@ function renderGroupsPage(){
 
   function renderGrpList(){
     // Always rebuild from the live db object so newly-created/edited lots appear immediately.
-    const groups = Object.entries(db.groups).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
+    const groups = Object.entries(db.groups).sort((a,b)=>
+      Number(a[1].memberNo||999999)-Number(b[1].memberNo||999999)
+      || String(a[1].name||'').localeCompare(String(b[1].name||''), undefined, {numeric:true})
+    );
     const q2 = document.getElementById('grpSearch').value.trim().toLowerCase();
     const filtered = groups.filter(([,g])=>
       !q2 || (g.name||'').toLowerCase().includes(q2)
@@ -3550,8 +3575,9 @@ function renderGroupsPage(){
       }).join('');
 
       const mainRow = '<tr style="cursor:pointer;" data-grptoggle="'+gid+'">'
+        +'<td><strong>'+(g.memberNo?escapeHtml(String(g.memberNo)):'—')+'</strong></td>'
+        +'<td>'+escapeHtml(g.memberName||'—')+'</td>'
         +'<td><strong>'+escapeHtml(g.name)+'</strong></td>'
-        +'<td>'+(g.memberNo?'#'+g.memberNo+' ':'')+escapeHtml(g.memberName||'—')+'</td>'
         +'<td>'+(g.year||'—')+'</td>'
         +'<td>'+hajjiIds.length+'</td>'
         +'<td>৳'+money(total)+'</td>'
@@ -3564,7 +3590,7 @@ function renderGroupsPage(){
 
       // IMPORTANT: this detail <tr> is returned immediately after its own main row.
       const detailRow = '<tr id="grpexp-'+gid+'" style="display:none;">'
-        +'<td colspan="6" style="padding:0 0 8px;border-bottom:none;background:transparent;">'
+        +'<td colspan="7" style="padding:0 0 8px;border-bottom:none;background:transparent;">'
         +'<div class="panel" style="margin:0;border-top:3px solid var(--hajj-green);border-radius:0 0 10px 10px;">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" class="no-print">'
         +'<strong style="font-size:14px;">'+escapeHtml(g.name)+' — Customer List</strong>'
@@ -3577,7 +3603,7 @@ function renderGroupsPage(){
     }).join('');
 
     body.innerHTML = '<div style="overflow-x:auto;"><table class="data"><thead><tr>'
-      +'<th>'+t('grp_col_name')+'</th><th>'+t('grp_col_moallem')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th class="no-print"></th>'
+      +'<th>'+t('grp_col_agent_no')+'</th><th>'+t('grp_col_agent')+'</th><th>'+t('grp_col_lots')+'</th><th>'+t('grp_col_year')+'</th><th>'+t('grp_col_hajji')+'</th><th>'+t('grp_col_total')+'</th><th class="no-print"></th>'
       +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 
     body.onclick = function(e){
@@ -3671,6 +3697,24 @@ function onMsGroupChange(){
   // Group select করলে কিছু auto-fill করা যায় ভবিষ্যতে
 }
 
+function passengerTypeLabel(value){
+  const key = {
+    adult_male:'passenger_adult_male',
+    adult_female:'passenger_adult_female',
+    child:'passenger_child',
+    group_mixed:'passenger_group_mixed'
+  }[value];
+  return key ? t(key) : '—';
+}
+
+function renderPassengerTypeOptions(selected){
+  const el = document.getElementById('msPassengerType');
+  if(!el) return;
+  const valid = ['adult_male','adult_female','child','group_mixed'];
+  el.innerHTML = valid.map(value=>'<option value="'+value+'">'+passengerTypeLabel(value)+'</option>').join('');
+  el.value = valid.includes(selected) ? selected : 'adult_male';
+}
+
 function onMsBuyerTypeChange(){
   const typeEl = document.getElementById('msBuyerType');
   const isAgent = typeEl && typeEl.value === 'group_agent';
@@ -3682,6 +3726,13 @@ function onMsBuyerTypeChange(){
   // A direct Groups/Agent booking belongs to that agent account, not to an
   // individual customer's optional group/lot assignment.
   if(lotField) lotField.style.display = isAgent ? 'none' : '';
+  const passengerEl = document.getElementById('msPassengerType');
+  if(passengerEl){
+    // A mixed batch is meaningful for an agent booking. Direct customer
+    // bookings always default back to an individual passenger type.
+    if(isAgent && (!passengerEl.value || passengerEl.value === 'adult_male')) passengerEl.value = 'group_mixed';
+    else if(!isAgent && passengerEl.value === 'group_mixed') passengerEl.value = 'adult_male';
+  }
   if(isAgent){
     selectMsCustomer('');
     const groupSelect = document.getElementById('msGroupSelect');
@@ -5296,7 +5347,7 @@ const CONFIG = {
   },
   sales: {
     titleKey:'title_sales', addLabelKey:'add_sales',
-    columns:[{k:'invoiceNo',hKey:'col_invoice_no',fmt:v=>v?('#'+v):'—'},{k:'voucherNo',hKey:'col_voucher',fmt:v=>v||'—'},{k:'date',hKey:'col_date'},{k:'customerName',hKey:'col_customer',fmt:v=>v||t('walk_in')},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)},{k:'discount',hKey:'col_discount',fmt:v=>Number(v)>0?'৳'+money(v):'—'},{k:'paid',hKey:'col_paid',fmt:v=>'৳'+money(v)},{k:'due',hKey:'col_due',fmt:v=>v>0?'৳'+money(v):'—'},{k:'paymentSystem',hKey:'col_payment_system',fmt:v=>{const k=paymentSystemKey(v); return k?t(k):'—';}},{k:'voucherTag',hKey:'col_voucher_tag',fmt:v=>v||'—'}],
+    columns:[{k:'invoiceNo',hKey:'col_invoice_no',fmt:v=>v?('#'+v):'—'},{k:'voucherNo',hKey:'col_voucher',fmt:v=>v||'—'},{k:'date',hKey:'col_date'},{k:'customerName',hKey:'col_customer',fmt:v=>v||t('walk_in')},{k:'passengerType',hKey:'passenger_type',fmt:v=>passengerTypeLabel(v)},{k:'productName',hKey:'col_product'},{k:'qty',hKey:'col_qty'},{k:'total',hKey:'col_total',fmt:v=>'৳'+money(v)},{k:'discount',hKey:'col_discount',fmt:v=>Number(v)>0?'৳'+money(v):'—'},{k:'paid',hKey:'col_paid',fmt:v=>'৳'+money(v)},{k:'due',hKey:'col_due',fmt:v=>v>0?'৳'+money(v):'—'},{k:'paymentSystem',hKey:'col_payment_system',fmt:v=>{const k=paymentSystemKey(v); return k?t(k):'—';}},{k:'voucherTag',hKey:'col_voucher_tag',fmt:v=>v||'—'}],
     fields:[
       {key:'customerId', labelKey:'f_customer_opt', type:'select', optionsFrom:'customers', allowEmptyKey:'walk_in', quickAdd:'customers'},
       {key:'productId', labelKey:'f_product_select', type:'select', optionsFrom:'products', required:true, quickAdd:'products'},
@@ -6637,6 +6688,7 @@ function openSaleView(id){
         ${sale.invoiceNo ? `<tr><td>${t('col_invoice_no')}</td><td>#${sale.invoiceNo}</td></tr>` : ''}
         <tr><td>${t('col_date')}</td><td>${sale.date}</td></tr>
         <tr><td>${sale.buyerType==='group_agent'||sale.groupMemberId?t('booking_for_group_agent'):t('booking_for_customer')}</td><td>${escapeHtml(sale.customerName||t('walk_in'))}</td></tr>
+        <tr><td>${t('passenger_type')}</td><td>${escapeHtml(passengerTypeLabel(sale.passengerType))}</td></tr>
         ${(custRecord||memberRecord) && (custRecord||memberRecord).phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml((custRecord||memberRecord).phone)}</td></tr>` : ''}
         ${sale.referrerMemberName ? `<tr><td>${t('grp_linked_agent')}</td><td>${escapeHtml(sale.referrerMemberName)}</td></tr>` : ''}
         ${sale.groupName && sale.customerId ? `<tr><td>${t('grp_linked_lot')}</td><td>${escapeHtml(sale.groupName)}</td></tr>` : ''}
@@ -6691,6 +6743,9 @@ function openMultiSale(editInvoiceId){
   const buyerTypeEl = document.getElementById('msBuyerType');
   buyerTypeEl.innerHTML = `<option value="customer">${t('booking_for_customer')}</option><option value="group_agent">${t('booking_for_group_agent')}</option>`;
   buyerTypeEl.value = 'customer';
+  document.getElementById('msPassengerTypeLabel').textContent = t('passenger_type');
+  document.getElementById('msPassengerTypeHint').textContent = t('passenger_type_hint');
+  renderPassengerTypeOptions('adult_male');
   document.getElementById('msCustomerLabel').textContent = t('f_customer_opt');
   document.getElementById('msCustomer').placeholder = t('walk_in');
   document.getElementById('msGroupAgentLabel').textContent = t('booking_for_group_agent');
@@ -6759,6 +6814,7 @@ function openMultiSale(editInvoiceId){
         if(gmEl) gmEl.value = first.groupMemberId || '';
         if(gsEl) gsEl.value = first.groupId || '';
         onMsBuyerTypeChange();
+        renderPassengerTypeOptions(first.passengerType || (buyerTypeEl.value==='group_agent' ? 'group_mixed' : 'adult_male'));
         document.getElementById('msDate').value = first.date;
         document.getElementById('msVoucher').value = first.voucherNo || '';
         document.getElementById('msVoucherTag').value = first.voucherTag || '';
@@ -6774,6 +6830,7 @@ function openMultiSale(editInvoiceId){
     }
   }
   msEditInvoiceNo = null;
+  renderPassengerTypeOptions('adult_male');
   document.getElementById('msPaid').value = 0;
   document.getElementById('msInstCount').value = '';
   document.getElementById('msDate').value = todayStr();
@@ -6911,6 +6968,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   if(msEditInvoiceId&&!requirePermission('edit_records'))return;
   if(!msEditInvoiceId&&!requirePermission('create_records'))return;
   const buyerType = document.getElementById('msBuyerType').value === 'group_agent' ? 'group_agent' : 'customer';
+  const passengerType = document.getElementById('msPassengerType').value || (buyerType==='group_agent'?'group_mixed':'adult_male');
   const groupMemberId = buyerType==='group_agent' ? (document.getElementById('msGroupMemberSelect').value || null) : null;
   const groupMember = groupMemberId ? db.groupMembers[groupMemberId] : null;
   if(buyerType==='group_agent' && !groupMember){ alert(t('group_agent_required')); return; }
@@ -6997,7 +7055,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     const msGroupObj = selectedLot;
     const record = {
       id: saleId, invoiceId, invoiceNo, voucherNo, voucherTag, paymentSystem, paymentAccountId, paymentAccountName:paymentAccountLabel(paymentAccountId), isOldEntry, customerId, customerName,
-      buyerType, groupMemberId, groupMemberName: groupMember ? groupMember.name : '',
+      buyerType, passengerType, groupMemberId, groupMemberName: groupMember ? groupMember.name : '',
       referrerMemberId: buyerType==='customer'&&msGroupObj ? (msGroupObj.memberId||null) : null,
       referrerMemberName: buyerType==='customer'&&referrerMember ? referrerMember.name : '',
       productId: r.pid, productName: r.product.name,
@@ -7036,7 +7094,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     const productNames = rowsData.map(r=>r.product.name).join(', ');
     const plan = {
       id: uid(), saleId: saleRecords[0].id, invoiceId, customerId, customerName,
-      buyerType, groupMemberId, groupMemberName: groupMember ? groupMember.name : '',
+      buyerType, passengerType, groupMemberId, groupMemberName: groupMember ? groupMember.name : '',
       groupId:selectedLotId||null, groupName:selectedLot?selectedLot.name:'',
       referrerMemberId:selectedLot?(selectedLot.memberId||null):null,
       referrerMemberName:referrerMember?referrerMember.name:'',
@@ -7342,6 +7400,7 @@ function startRoleMonitor(){
     if(!currentAuthUser)return;
     try{
       db.appUsers=await fetchCollection('appUsers');
+      await ensurePrimarySuperUser();
       if(currentRole()==='inactive'){alert('Your ERP access has been disabled by a Super User.');await firebase.auth().signOut();return;}
       renderNav();
       if(!canAccessTab(currentTab)){currentTab='dashboard';renderPage();}
@@ -7411,9 +7470,6 @@ document.getElementById('forgotSendBtn').addEventListener('click', async () => {
 document.getElementById('logoutBtn').addEventListener('click', () => {
   if(useFirebase) firebase.auth().signOut();
 });
-document.getElementById('backupBtn').addEventListener('click', backupToDrive);
-document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
-
 async function clearAllData(){
   if(!isPrimarySuperUser()){ alert('⛔ শুধুমাত্র Primary Super User ('+PRIMARY_SUPER_EMAIL+') Reset করতে পারবেন।'); return; }
   const step1 = confirm(t('clear_all_confirm1'));
@@ -7439,8 +7495,6 @@ async function clearAllData(){
   renderLogo();
   showToast(t('clear_all_done'));
 }
-document.getElementById('restoreBtn').addEventListener('click', restoreFromDrive);
-
 document.getElementById('footerYear').textContent = new Date().getFullYear();
 
 function safeShowAppOrLogin(){
