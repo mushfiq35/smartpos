@@ -1164,7 +1164,8 @@ async function exportBackupToFile(){
       shopName: SHOP_NAME,
       customers: db.customers, suppliers: db.suppliers, products: db.products, categories: db.categories,
       purchases: db.purchases, sales: db.sales, expenses: db.expenses,
-      installments: db.installments, installmentPlans: db.installmentPlans, returns: db.returns, supplierPayments: db.supplierPayments,
+      installments: db.installments, installmentPlans: db.installmentPlans, returns: db.returns,
+      supplierPayments: db.supplierPayments,
       personalLoanAccounts: db.personalLoanAccounts, personalLoanTransactions: db.personalLoanTransactions
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1215,9 +1216,11 @@ async function backupToDrive(){
     try{
       const payload = JSON.stringify({
         exportedAt: new Date().toISOString(),
+        shopName: SHOP_NAME,
         customers: db.customers, suppliers: db.suppliers, products: db.products, categories: db.categories,
         purchases: db.purchases, sales: db.sales, expenses: db.expenses,
-        installments: db.installments, installmentPlans: db.installmentPlans, returns: db.returns, supplierPayments: db.supplierPayments,
+        installments: db.installments, installmentPlans: db.installmentPlans, returns: db.returns,
+        supplierPayments: db.supplierPayments,
         personalLoanAccounts: db.personalLoanAccounts, personalLoanTransactions: db.personalLoanTransactions
       }, null, 2);
       const fileName = `${SHOP_NAME}-backup-${todayStr()}-${Date.now()}.json`;
@@ -1570,6 +1573,16 @@ function paymentSystemKey(v){
   if(v==='mobile_banking') return 'payment_mobile_banking';
   return 'payment_cash';
 }
+
+function paymentSystemLabel(v){
+  const k = paymentSystemKey(v);
+  if(k==='bank') return t('payment_bank');
+  if(k==='mobile_banking') return t('payment_mobile_banking');
+  if(k==='cash') return t('payment_cash');
+  if(String(v||'').toLowerCase()==='opening') return 'Opening Balance';
+  return v ? String(v) : '—';
+}
+
 
 /* ---------- Load / Save ---------- */
 async function loadAll(){
@@ -2497,7 +2510,13 @@ function openPersonalLoanAccountModal(id=''){
       if(principal>0){
         const openingOnly=document.getElementById('plaOpeningOnly').checked;
         const kind=openingOnly?'opening':(type==='advance'?'advance-given':'borrowed-received');
-        const tx=makePersonalLoanTransaction(rec,kind,principal,rec.startDate,openingOnly?'cash':document.getElementById('plaPayment').value,rec.note,openingOnly);
+        const initialPaySystem=openingOnly?'cash':document.getElementById('plaPayment').value;
+        const tx=makePersonalLoanTransaction(rec,kind,principal,rec.startDate,initialPaySystem,rec.note,openingOnly);
+        if(tx.cashDirection==='out' && initialPaySystem==='cash' && computeTotalBalance()+0.001<Number(tx.cashAmount||0)){
+          db.personalLoanAccounts=db.personalLoanAccounts.filter(x=>String(x.id)!==String(rec.id));
+          await safeRemove('personalLoanAccounts',rec.id);
+          return alert(currentLang==='bn'?'ক্যাশ ব্যালেন্স পর্যাপ্ত নয়।':'Cash balance is insufficient.');
+        }
         db.personalLoanTransactions.push(tx);await safePut('personalLoanTransactions',tx.id,tx);
       }
     }
@@ -2542,7 +2561,11 @@ function openPersonalLoanActivityModal(id){
     if(['collection','repayment'].includes(kind)&&amount>personalLoanOutstanding(id)+0.001){
       return alert((currentLang==='bn'?'পরিমাণ বর্তমান বকেয়ার বেশি হতে পারবে না: ৳':'Amount cannot exceed outstanding: ৳')+money(personalLoanOutstanding(id)));
     }
-    const tx=makePersonalLoanTransaction(loan,kind,amount,document.getElementById('plaActDate').value||todayStr(),document.getElementById('plaActPay').value,document.getElementById('plaActNote').value.trim(),false);
+    const paySystem=document.getElementById('plaActPay').value;
+    const tx=makePersonalLoanTransaction(loan,kind,amount,document.getElementById('plaActDate').value||todayStr(),paySystem,document.getElementById('plaActNote').value.trim(),false);
+    if(tx.cashDirection==='out' && paySystem==='cash' && computeTotalBalance()+0.001<Number(tx.cashAmount||0)){
+      return alert(currentLang==='bn'?'ক্যাশ ব্যালেন্স পর্যাপ্ত নয়।':'Cash balance is insufficient.');
+    }
     db.personalLoanTransactions.push(tx);await safePut('personalLoanTransactions',tx.id,tx);
     wrap.remove();refreshCurrentView();
   };
