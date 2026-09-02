@@ -134,7 +134,60 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 .pill.red{background:var(--red-bg);color:var(--red);}
 .actions-cell{display:flex;gap:6px;flex-wrap:nowrap;white-space:nowrap;align-items:center;}
 .icon-btn{border:1px solid var(--line);background:#fff;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+
 .icon-btn:hover{border-color:var(--ink);}
+
+/* Personal Loan / Advance */
+.loan-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.loan-summary-card{border:1px solid var(--line);background:var(--paper-card);border-radius:10px;padding:14px 16px;}
+.loan-summary-card .v{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;margin-top:4px;}
+.loan-summary-card .l{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+.loan-account-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.loan-account-card{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px;border-top:4px solid var(--blue);}
+.loan-account-card.borrowed{border-top-color:var(--red);}
+.loan-account-card .loan-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;}
+.loan-account-card .loan-name{font-weight:700;font-size:15px;}
+.loan-account-card .loan-sub{font-size:11px;color:var(--ink-soft);margin-top:3px;}
+.loan-account-card .loan-kv{font-size:12px;line-height:1.8;margin-top:10px;}
+.loan-account-card .loan-kv div{display:flex;justify-content:space-between;gap:10px;}
+.loan-account-card .loan-kv strong{text-align:right;}
+.loan-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+.loan-status{display:inline-block;border-radius:20px;padding:3px 8px;font-size:10px;font-weight:700;}
+.loan-status.active{background:var(--gold-bg);color:var(--gold);}
+.loan-status.overdue{background:var(--red-bg);color:var(--red);}
+.loan-status.paid{background:var(--green-bg);color:var(--green);}
+.loan-ledger-wrap{overflow-x:auto;}
+.loan-ledger-wrap table.data{min-width:900px;}
+.loan-pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 2px 2px;color:var(--ink-soft);font-size:12px;}
+.loan-pagination .controls{display:flex;align-items:center;gap:8px;}
+.loan-statement-summary{display:flex;gap:14px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper-card);margin-bottom:12px;font-size:12px;}
+@media(max-width:1000px){.loan-account-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.loan-summary-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.loan-account-grid,.loan-summary-grid{grid-template-columns:1fr;}}
+@media print{
+  .loan-account-grid{grid-template-columns:repeat(2,1fr)!important;}
+  .loan-pagination{display:none!important;}
+  .loan-ledger-wrap{overflow:visible!important;}
+  .loan-ledger-wrap table.data{min-width:0!important;width:100%!important;font-size:10px!important;table-layout:fixed!important;}
+  .loan-ledger-wrap table.data th,.loan-ledger-wrap table.data td{white-space:normal!important;word-break:break-word!important;padding:5px 4px!important;}
+}
+
+/* Customer bank-style ledger */
+.customer-ledger-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:9px;background:#fff;}
+table.customer-ledger{width:100%;border-collapse:collapse;font-size:13px;min-width:820px;}
+table.customer-ledger th{background:var(--paper-card);color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.035em;padding:9px 10px;border-bottom:2px solid var(--line);text-align:left;white-space:nowrap;}
+table.customer-ledger td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap;}
+table.customer-ledger td.ledger-desc{white-space:normal;min-width:230px;}
+table.customer-ledger tr.ledger-opening td{background:var(--gold-bg);font-weight:700;}
+table.customer-ledger tr.ledger-sale td{background:rgba(54,114,164,.035);}
+table.customer-ledger tr.ledger-payment td{background:rgba(46,139,87,.035);}
+table.customer-ledger tr.ledger-return td{background:rgba(176,141,46,.045);}
+table.customer-ledger tfoot td{font-weight:700;border-top:2px solid var(--ink);background:var(--paper-card);}
+.ledger-debit{color:var(--red);font-weight:600;}
+.ledger-credit{color:var(--green);font-weight:600;}
+.ledger-balance{font-family:'IBM Plex Mono',monospace;font-weight:700;}
+.ledger-meta{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 14px;padding:10px 12px;background:var(--paper-card);border:1px solid var(--line);border-radius:8px;font-size:12px;}
+.ledger-meta strong{color:var(--ink);}
+
 
 .empty{text-align:center;padding:50px 20px;color:var(--ink-soft);border:1px dashed var(--line);border-radius:10px;}
 .pagination-row{
@@ -232,6 +285,43 @@ table.data tr:hover td{background:rgba(193,119,46,0.06);}
 
 @media print{
   .sidebar, .topbar, #storageBanner, .toast, #backdrop, .toolbar button, .actions-cell, .no-print{display:none !important;}
+  html, body{width:100% !important;overflow:visible !important;}
+  .content{padding:0 !important;overflow:visible !important;}
+  .panel{overflow:visible !important;max-width:none !important;}
+  .customer-ledger-wrap{overflow:visible !important;border:none !important;}
+  table.customer-ledger{
+    min-width:0 !important;
+    width:100% !important;
+    table-layout:fixed !important;
+    font-size:10px !important;
+  }
+  table.customer-ledger th,
+  table.customer-ledger td{
+    white-space:normal !important;
+    word-break:break-word !important;
+    padding:5px 4px !important;
+  }
+  table.customer-ledger td.ledger-desc{
+    min-width:0 !important;
+    width:auto !important;
+  }
+  table.customer-ledger th:nth-child(1),
+  table.customer-ledger td:nth-child(1){width:10% !important;}
+  table.customer-ledger th:nth-child(2),
+  table.customer-ledger td:nth-child(2){width:10% !important;}
+  table.customer-ledger th:nth-child(3),
+  table.customer-ledger td:nth-child(3){width:24% !important;}
+  table.customer-ledger th:nth-child(4),
+  table.customer-ledger td:nth-child(4){width:6% !important;}
+  table.customer-ledger th:nth-child(5),
+  table.customer-ledger td:nth-child(5){width:13% !important;}
+  table.customer-ledger th:nth-child(6),
+  table.customer-ledger td:nth-child(6){width:13% !important;}
+  table.customer-ledger th:nth-child(7),
+  table.customer-ledger td:nth-child(7){width:11% !important;}
+  table.customer-ledger th:nth-child(8),
+  table.customer-ledger td:nth-child(8){width:13% !important;}
+
   .main{margin-left:0 !important;}
   body{background:#fff;}
   .panel, table.data{border-color:#ccc;}
@@ -704,7 +794,7 @@ const K = {
   customers:'pos-customers', suppliers:'pos-suppliers', products:'pos-products',
   purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo', settings:'pos-settings'
 };
-let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], supplierPayments:[] };
+let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], supplierPayments:[], personalLoanAccounts:[], personalLoanTransactions:[] };
 let currentTab = 'dashboard';
 let logoData = null;
 
@@ -716,7 +806,7 @@ const I18N = {
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'কাস্টমার', nav_products:'পণ্য', nav_categories:'ক্যাটাগরি', nav_suppliers:'সাপ্লায়ার',
     title_categories:'ক্যাটাগরি', add_categories:'+ নতুন ক্যাটাগরি', f_category_name:'ক্যাটাগরির নাম',
-    nav_purchases:'ক্রয়', nav_sales:'বিক্রি', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'রিটার্ন', nav_reports:'রিপোর্ট',
+    nav_purchases:'ক্রয়', nav_sales:'বিক্রি', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'রিটার্ন', nav_personal_loans:'ব্যক্তিগত ঋণ', nav_reports:'রিপোর্ট',
     reports_sales_returns_tab:'বিক্রি ও রিটার্ন', sr_sales_count:'বিক্রি সংখ্যা', sr_returns_count:'রিটার্ন সংখ্যা', sr_net_label:'নিট',
     return_title:'রিটার্ন', return_new:'নতুন রিটার্ন', return_no:'রিটার্ন নং',
     return_original_qty:'বিক্রিত পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
@@ -836,7 +926,7 @@ const I18N = {
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Customers', nav_products:'Products', nav_categories:'Category', nav_suppliers:'Suppliers',
     title_categories:'Category', add_categories:'+ New Category', f_category_name:'Category Name',
-    nav_purchases:'Purchases', nav_sales:'Sales', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Returns', nav_reports:'Reports',
+    nav_purchases:'Purchases', nav_sales:'Sales', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Returns', nav_personal_loans:'Personal Loans', nav_reports:'Reports',
     reports_sales_returns_tab:'Sales & Returns', sr_sales_count:'Sales Count', sr_returns_count:'Returns Count', sr_net_label:'Net',
     return_title:'Returns', return_new:'New Return', return_no:'Return No.',
     return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
@@ -1074,7 +1164,8 @@ async function exportBackupToFile(){
       shopName: SHOP_NAME,
       customers: db.customers, suppliers: db.suppliers, products: db.products, categories: db.categories,
       purchases: db.purchases, sales: db.sales, expenses: db.expenses,
-      installments: db.installments, installmentPlans: db.installmentPlans, returns: db.returns
+      installments: db.installments, installmentPlans: db.installmentPlans, returns: db.returns, supplierPayments: db.supplierPayments,
+      personalLoanAccounts: db.personalLoanAccounts, personalLoanTransactions: db.personalLoanTransactions
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -1108,6 +1199,9 @@ async function importBackupFromFile(file){
     for(const rec of (backupData.installments||[])) await safePut('installments', rec.id, rec);
     for(const rec of (backupData.installmentPlans||[])) await safePut('installmentPlans', rec.id, rec);
     for(const rec of (backupData.returns||[])) await safePut('returns', rec.id, rec);
+    for(const rec of (backupData.supplierPayments||[])) await safePut('supplierPayments', rec.id, rec);
+    for(const rec of (backupData.personalLoanAccounts||[])) await safePut('personalLoanAccounts', rec.id, rec);
+    for(const rec of (backupData.personalLoanTransactions||[])) await safePut('personalLoanTransactions', rec.id, rec);
     await loadAll();
     showToast(t('restore_success'));
   }catch(e){
@@ -1121,8 +1215,10 @@ async function backupToDrive(){
     try{
       const payload = JSON.stringify({
         exportedAt: new Date().toISOString(),
-        customers: db.customers, suppliers: db.suppliers, products: db.products,
-        purchases: db.purchases, sales: db.sales, expenses: db.expenses
+        customers: db.customers, suppliers: db.suppliers, products: db.products, categories: db.categories,
+        purchases: db.purchases, sales: db.sales, expenses: db.expenses,
+        installments: db.installments, installmentPlans: db.installmentPlans, returns: db.returns, supplierPayments: db.supplierPayments,
+        personalLoanAccounts: db.personalLoanAccounts, personalLoanTransactions: db.personalLoanTransactions
       }, null, 2);
       const fileName = `${SHOP_NAME}-backup-${todayStr()}-${Date.now()}.json`;
       const metadata = { name: fileName, mimeType: 'application/json' };
@@ -1171,9 +1267,16 @@ async function restoreFromDrive(){
       for(const [rid, rec] of Object.entries(backupData.customers||{})){ db.customers[rid]=rec; await safePut('customers', rid, rec); }
       for(const [rid, rec] of Object.entries(backupData.suppliers||{})){ db.suppliers[rid]=rec; await safePut('suppliers', rid, rec); }
       for(const [rid, rec] of Object.entries(backupData.products||{})){ db.products[rid]=rec; await safePut('products', rid, rec); }
+      for(const [rid, rec] of Object.entries(backupData.categories||{})){ db.categories[rid]=rec; await safePut('categories', rid, rec); }
       for(const rec of (backupData.purchases||[])) await safePut('purchases', rec.id, rec);
       for(const rec of (backupData.sales||[])) await safePut('sales', rec.id, rec);
       for(const rec of (backupData.expenses||[])) await safePut('expenses', rec.id, rec);
+      for(const rec of (backupData.installments||[])) await safePut('installments', rec.id, rec);
+      for(const rec of (backupData.installmentPlans||[])) await safePut('installmentPlans', rec.id, rec);
+      for(const rec of (backupData.returns||[])) await safePut('returns', rec.id, rec);
+      for(const rec of (backupData.supplierPayments||[])) await safePut('supplierPayments', rec.id, rec);
+      for(const rec of (backupData.personalLoanAccounts||[])) await safePut('personalLoanAccounts', rec.id, rec);
+      for(const rec of (backupData.personalLoanTransactions||[])) await safePut('personalLoanTransactions', rec.id, rec);
       await loadAll();
       showToast(t('restore_success'));
     }catch(e){
@@ -1340,11 +1443,19 @@ async function removeRecord(name, id){
 }
 async function safePut(name, id, data){
   try{ await putRecord(name, id, data); }
-  catch(e){ console.error('save failed', name, id, e); showToast(t('save_failed_toast')); }
+  catch(e){
+    console.error('save failed', name, id, e);
+    showToast(t('save_failed_toast'));
+    throw e;
+  }
 }
 async function safeRemove(name, id){
   try{ await removeRecord(name, id); }
-  catch(e){ console.error('delete failed', name, id, e); showToast(t('save_failed_toast')); }
+  catch(e){
+    console.error('delete failed', name, id, e);
+    showToast(t('save_failed_toast'));
+    throw e;
+  }
 }
 
 function showToast(msg){
@@ -1384,6 +1495,7 @@ const NAV = [
   {id:'installments', ic:'📆', key:'nav_installments'},
   {id:'expenses', ic:'💸', key:'nav_expenses'},
   {id:'returns', ic:'↩️', key:'nav_returns'},
+  {id:'personalLoans', ic:'🤝', key:'nav_personal_loans'},
   {id:'reports', ic:'📈', key:'nav_reports'},
   {id:'settings', ic:'⚙️', key:'nav_settings'},
 ];
@@ -1462,7 +1574,7 @@ function paymentSystemKey(v){
 /* ---------- Load / Save ---------- */
 async function loadAll(){
   const objTabs = ['customers','suppliers','products','categories'];
-  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','supplierPayments'];
+  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','supplierPayments','personalLoanAccounts','personalLoanTransactions'];
   let hadError = false;
   for(const key of [...objTabs, ...arrTabs]){
     try{
@@ -1476,6 +1588,25 @@ async function loadAll(){
   }
   if(hadError) showToast(t('load_error_toast'));
   try{ logoData = await withTimeout(storageGet(K.logo), 8000); }catch(e){ logoData = null; }
+  // Repair legacy sale payment fields that became inconsistent after old sale edits.
+  const salesNeedingRepair = [];
+  db.sales.forEach(sale=>{
+    const oldInitial = sale.initialPaid;
+    const oldPaid = sale.paid;
+    const oldDue = sale.due;
+    const initial = getSaleInitialPaid(sale);
+    const currentPaid = getSaleCurrentCashPaid(sale);
+    const expectedDue = getSaleExpectedDue(sale);
+    if(Math.abs(Number(oldInitial||0)-initial)>0.01 || Math.abs(Number(oldPaid||0)-currentPaid)>0.01 || Math.abs(Number(oldDue||0)-expectedDue)>0.01){
+      sale.initialPaid=initial; sale.paid=currentPaid; sale.due=expectedDue;
+      salesNeedingRepair.push(sale);
+    }
+  });
+  if(salesNeedingRepair.length){
+    try{ await Promise.all(salesNeedingRepair.map(x=>safePut('sales',x.id,x))); }
+    catch(e){ console.error('sale payment reconciliation save failed',e); }
+  }
+
   await loadSettings();
   applyFeatureVisibility();
   renderLangSwitch();
@@ -1590,7 +1721,215 @@ document.getElementById('logoFileInput').addEventListener('change', async (e) =>
   reader.readAsDataURL(file);
 });
 
+function saleInstallmentAllocationTotals(saleId){
+  let cash=0, discount=0, settlement=0;
+  (db.installments||[]).forEach(inst=>{
+    const adjs=Array.isArray(inst.adjustments)?inst.adjustments:[];
+    adjs.forEach(adj=>{
+      if(String(adj.saleId)!==String(saleId)) return;
+      if(adj.cashAmount!==undefined || adj.discountAmount!==undefined){
+        const c=Number(adj.cashAmount||0), d=Number(adj.discountAmount||0);
+        cash+=c; discount+=d; settlement+=c+d;
+      }else{
+        // Legacy installments stored cash+discount together in adj.amount and
+        // also added that whole amount into sale.paid. For initial-paid recovery
+        // the exact amount added to sale.paid is therefore adj.amount.
+        const a=Number(adj.amount||0);
+        settlement+=a;
+        cash+=a;
+      }
+    });
+  });
+  return {cash,discount,settlement};
+}
+
+function saleReturnDueAdjustTotal(saleId){
+  return (db.returns||[])
+    .filter(r=>!r.cancelled)
+    .reduce((sum,r)=>{
+      const adjs=Array.isArray(r.adjustments)&&r.adjustments.length
+        ? r.adjustments
+        : (String(r.saleId)===String(saleId)?[{saleId:r.saleId,amount:r.dueAdjust}]:[]);
+      return sum+adjs.filter(a=>String(a.saleId)===String(saleId)).reduce((x,a)=>x+Number(a.amount||0),0);
+    },0);
+}
+
+function getSaleInitialPaid(sale){
+  if(!sale) return 0;
+  const paidField=Math.max(0,Number(sale.paid||0));
+  const alloc=saleInstallmentAllocationTotals(sale.id);
+
+  // sale.paid is the cumulative CASH field in the transactional sale record.
+  // Recover booking-time cash by removing later installment cash/legacy paid increments.
+  const inferred=Math.max(0,paidField-Number(alloc.cash||0));
+
+  if(sale.initialPaid===undefined || sale.initialPaid===null || sale.initialPaid===''){
+    return inferred;
+  }
+
+  const stored=Math.max(0,Number(sale.initialPaid||0));
+  const expectedCumulative=stored+Number(alloc.cash||0);
+
+  // Critical legacy/self-heal rule:
+  // if an old edit left initialPaid inconsistent with sale.paid, trust the
+  // transaction state rather than the stale snapshot.
+  if(Math.abs(expectedCumulative-paidField)>0.01){
+    return inferred;
+  }
+  return stored;
+}
+
+function getSaleCurrentCashPaid(sale){
+  const alloc=saleInstallmentAllocationTotals(sale.id);
+  return getSaleInitialPaid(sale)+Number(alloc.cash||0);
+}
+
+function getSaleExpectedDue(sale){
+  if(!sale) return 0;
+  const alloc=saleInstallmentAllocationTotals(sale.id);
+  const ret=saleReturnDueAdjustTotal(sale.id);
+  return Math.max(0, Math.round((
+    Number(sale.total||0)
+    - getSaleInitialPaid(sale)
+    - Number(alloc.settlement||0)
+    - Number(ret||0)
+  )*100)/100);
+}
+
+function reconcileSalePaymentFieldsInMemory(){
+  (db.sales||[]).forEach(sale=>{
+    const initial=getSaleInitialPaid(sale);
+    sale.initialPaid=initial;
+    sale.paid=getSaleCurrentCashPaid(sale);
+    sale.due=getSaleExpectedDue(sale);
+  });
+}
+
+function buildCustomerReceivableEvents(custId){
+  const sales = db.sales.filter(s=>s.customerId===custId);
+  const installments = db.installments.filter(i=>i.customerId===custId);
+  const returns = db.returns.filter(r=>!r.cancelled && r.customerId===custId);
+
+  const events = [
+    ...sales.map(s=>({
+      id:s.id, type:'sale', date:s.date||'', ts:Number(s.ts||0),
+      ref:s.invoiceNo ? '#'+s.invoiceNo : (s.voucherNo||'—'),
+      label:(s.productName||t('history_type_sale')),
+      saleNet:Number(s.total||0),
+      initialPaid:getSaleInitialPaid(s),
+      amount:0, discount:Number(s.discount||0), dueAdjust:0,
+      note:s.voucherTag||''
+    })),
+    ...installments.map(i=>({
+      id:i.id, type:'installment', date:i.date||'', ts:Number(i.ts||0),
+      ref:i.receiptNo ? '#'+i.receiptNo : '—',
+      label:t('installment_receipt_title'),
+      saleNet:0, initialPaid:0,
+      amount:Number(i.amount||0), discount:Number(i.discount||0), dueAdjust:0,
+      note:i.note||'',
+      record:i
+    })),
+    ...returns.map(r=>({
+      id:r.id, type:'return', date:r.date||'', ts:Number(r.ts||0),
+      ref:r.returnNo ? '#'+r.returnNo : '—',
+      label:currentLang==='bn' ? 'রিটার্ন সমন্বয়' : 'Return Adjustment',
+      saleNet:0, initialPaid:0, amount:0, discount:0,
+      dueAdjust:Number(r.dueAdjust||0),
+      note:r.note||r.productName||''
+    }))
+  ];
+
+  // Date is the accounting date. On the same date, create receivable first,
+  // then apply installment/return settlements. This avoids stale saved snapshots.
+  const priority = {sale:1, installment:2, return:3};
+  events.sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date ? -1 : 1;
+    if(a.type!==b.type) return (priority[a.type]||9)-(priority[b.type]||9);
+    return a.ts-b.ts;
+  });
+  return events;
+}
+
+function buildCustomerReceivableStatement(custId, fromStr='', toStr=''){
+  const events = buildCustomerReceivableEvents(custId);
+  const hasFrom = !!fromStr;
+  const hasTo = !!toStr;
+
+  let running = 0;
+  let opening = 0;
+  const rows = [];
+
+  const applyEvent = ev => {
+    const previousDue = Math.max(0, Math.round(running));
+    if(ev.type==='sale'){
+      // sale.total is already NET of booking-time discount.
+      running += Math.max(0, Number(ev.saleNet||0) - Number(ev.initialPaid||0));
+    }else if(ev.type==='installment'){
+      // Cash + later discount both settle receivable; discount is not cash.
+      running -= Number(ev.amount||0) + Number(ev.discount||0);
+    }else if(ev.type==='return'){
+      running -= Number(ev.dueAdjust||0);
+    }
+    running = Math.max(0, running);
+    return {
+      ...ev,
+      previousDue,
+      newDue:Math.max(0, Math.round(running))
+    };
+  };
+
+  // First calculate opening balance from every due-changing event before the range.
+  for(const ev of events){
+    if(hasFrom && ev.date && ev.date < fromStr){
+      applyEvent(ev);
+    }
+  }
+  opening = Math.max(0, Math.round(running));
+
+  // Then calculate visible period rows from the same running balance.
+  for(const ev of events){
+    if(hasFrom && ev.date && ev.date < fromStr) continue;
+    if(hasTo && ev.date && ev.date > toStr) continue;
+    rows.push(applyEvent(ev));
+  }
+
+  return {rows, opening, closing:Math.max(0,Math.round(running))};
+}
+
+function calculateCustomerDueFromLedger(custId){
+  // One source of truth for every page/report.
+  return buildCustomerReceivableStatement(custId).closing;
+}
+
+function calculateCustomerDueAsOf(custId, toStr){
+  return buildCustomerReceivableStatement(custId, '', toStr||'').closing;
+}
+
+function getDerivedInstallmentSnapshot(custId, installmentId){
+  const st = buildCustomerReceivableStatement(custId);
+  return st.rows.find(x=>x.type==='installment' && x.id===installmentId) || null;
+}
+
+function reconcileCustomerDueCacheInMemory(){
+  // First self-heal sale initial/cumulative paid fields, then customer due.
+  reconcileSalePaymentFieldsInMemory();
+  Object.entries(db.customers).forEach(([custId,cust])=>{
+    cust.due = calculateCustomerDueFromLedger(custId);
+  });
+}
+
+function refreshCurrentView(){
+  reconcileCustomerDueCacheInMemory();
+  renderNav();
+  renderPage();
+  requestAnimationFrame(()=>{
+    renderNav();
+    renderPage();
+  });
+}
+
 function renderPage(){
+  reconcileCustomerDueCacheInMemory();
   if(currentTab==='settings' && !isAdminUser()) currentTab = 'dashboard';
   setTitle(currentTab);
   const c = document.getElementById('content');
@@ -1604,23 +1943,68 @@ function renderPage(){
   else if(currentTab==='installments') renderInstallmentsPage();
   else if(currentTab==='expenses') renderListPage('expenses');
   else if(currentTab==='returns') renderReturnsPage();
+  else if(currentTab==='personalLoans') renderPersonalLoansPage();
   else if(currentTab==='reports') renderReportsPage();
   else if(currentTab==='settings') renderSettingsPage();
   attachPageEvents();
 }
 
 /* ---------- Dashboard ---------- */
+function personalLoanCashSigned(tx){
+  if(!tx || tx.reversed || tx.openingOnly) return 0;
+  const amount = Number(tx.cashAmount!==undefined ? tx.cashAmount : tx.principal||0);
+  if(tx.cashDirection==='in') return amount;
+  if(tx.cashDirection==='out') return -amount;
+  // Backward-safe inference.
+  if(['collection','borrowed-received','borrow-more'].includes(tx.kind)) return amount;
+  if(['advance-given','advance-more','repayment'].includes(tx.kind)) return -amount;
+  return 0;
+}
+
+function personalLoanOutstanding(loanId){
+  return Math.max(0, Math.round(
+    db.personalLoanTransactions
+      .filter(x=>String(x.loanId)===String(loanId) && !x.reversed)
+      .reduce((sum,x)=>sum+Number(x.principalDelta||0),0) * 100
+  )/100);
+}
+
+function personalLoanTypeLabel(type){
+  if(currentLang==='bn') return type==='advance' ? 'আমরা দিয়েছি / Advance Given' : 'আমরা নিয়েছি / Borrowed';
+  return type==='advance' ? 'Advance Given' : 'Borrowed from Person';
+}
+
+function personalLoanActivityLabel(kind){
+  const bn={
+    opening:'Opening Balance', 'advance-given':'প্রথম Advance', 'advance-more':'আরও Advance',
+    collection:'টাকা ফেরত পেয়েছি', 'borrowed-received':'ঋণ গ্রহণ', 'borrow-more':'আরও ঋণ গ্রহণ',
+    repayment:'ঋণ পরিশোধ'
+  };
+  const en={
+    opening:'Opening Balance', 'advance-given':'Advance Given', 'advance-more':'Additional Advance',
+    collection:'Repayment Collected', 'borrowed-received':'Loan Received', 'borrow-more':'Additional Borrowing',
+    repayment:'Loan Repayment'
+  };
+  return (currentLang==='bn'?bn:en)[kind] || kind;
+}
+
 function computeTotalBalance(){
   const fromStr = SUMMARY_START_DATE;
   const toStr = todayStr();
   const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
   let dp = 0, de = 0;
-  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
-  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); });
+  db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += getSaleInitialPaid(s); });
+  db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount||0); });
   db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
   db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
   db.purchases.forEach(p => { if(inRange(p.date)) de += Number(p.initialPaid!==undefined ? p.initialPaid : p.paid||0); });
   db.supplierPayments.forEach(p => { if(inRange(p.date)) de += Number(p.amount); });
+  db.personalLoanTransactions.forEach(tx => {
+    if(!inRange(tx.date)) return;
+    const signed = personalLoanCashSigned(tx);
+    if(signed>0) dp += signed;
+    else if(signed<0) de += Math.abs(signed);
+  });
   return dp - de;
 }
 
@@ -1634,7 +2018,8 @@ function pageDashboard(){
   const todayReturnsValue = db.returns.filter(r=>!r.cancelled && r.date===today).reduce((s,r)=>s+Number(r.value),0);
   const todaySales = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.total),0) - todayReturnsValue;
   const todayExpense = db.expenses.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.amount),0);
-  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0);
+  const todayProfit = db.sales.filter(x=>x.date===today).reduce((s,x)=>s+saleNetProfit(x),0)
+    - db.installments.filter(i=>i.date===today && !i.isOldEntry).reduce((sum,i)=>sum+Number(i.discount||0),0);
   const todayIncome = todayProfit - todayExpense;
   const lowStock = Object.values(db.products).filter(p=>Number(p.qty)<=Number(p.threshold));
   const totalProductQty = Object.values(db.products).reduce((s,p)=>s+Number(p.qty),0);
@@ -1713,7 +2098,7 @@ function getEarliestDate(){
   const isValidISODate = (d) => typeof d==='string' && /^\d{4}-\d{2}-\d{2}/.test(d);
   const allDates = [
     ...db.sales, ...db.purchases, ...db.expenses,
-    ...(db.installments||[]), ...(db.returns||[])
+    ...(db.installments||[]), ...(db.returns||[]), ...(db.personalLoanTransactions||[])
   ].map(x=>x.date).filter(isValidISODate).sort();
   return allDates.length ? allDates[0] : todayStr();
 }
@@ -1743,24 +2128,46 @@ function aggregatePeriod(fromStr, toStr){
   const buckets = {};
   if(!groupByMonth){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)){
-      buckets[toISODate(d)] = {s:0,p:0,e:0};
+      buckets[toISODate(d)] = {s:0,disc:0,p:0,e:0};
     }
   } else {
     let d = new Date(from.getFullYear(), from.getMonth(), 1);
     const last = new Date(to.getFullYear(), to.getMonth(), 1);
     while(d<=last){
-      buckets[`${d.getFullYear()}-${pad2(d.getMonth()+1)}`] = {s:0,p:0,e:0};
+      buckets[`${d.getFullYear()}-${pad2(d.getMonth()+1)}`] = {s:0,disc:0,p:0,e:0};
       d.setMonth(d.getMonth()+1);
     }
   }
-  const bucketKey = (dateStr) => groupByMonth ? dateStr.slice(0,7) : dateStr;
-  const inRange = (dateStr) => dateStr >= fromStr && dateStr <= toStr;
-  db.sales.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].s += Number(x.total); } });
-  db.purchases.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].p += Number(x.total); } });
-  db.expenses.forEach(x => { if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].e += Number(x.amount); } });
-  const rows = Object.entries(buckets).map(([k,v]) => ({ d:k, s:v.s, p:v.p, e:v.e, net:v.s-v.p-v.e })).sort((a,b)=>b.d.localeCompare(a.d));
-  const totals = rows.reduce((a,r)=>({s:a.s+r.s,p:a.p+r.p,e:a.e+r.e,net:a.net+r.net}), {s:0,p:0,e:0,net:0});
-  return { rows, totals, groupByMonth };
+  const bucketKey = dateStr => groupByMonth ? dateStr.slice(0,7) : dateStr;
+  const inRange = dateStr => !!dateStr && dateStr>=fromStr && dateStr<=toStr;
+
+  // sale.total is booking/sale revenue after booking-time discount.
+  db.sales.forEach(x=>{
+    if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].s += Number(x.total||0); }
+  });
+
+  // Later installment discount is a revenue/receivable waiver, not cash and not a booking-time discount.
+  db.installments.forEach(i=>{
+    if(inRange(i.date) && !i.isOldEntry){
+      const k=bucketKey(i.date); if(buckets[k]) buckets[k].disc += Number(i.discount||0);
+    }
+  });
+
+  db.purchases.forEach(x=>{
+    if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].p += Number(x.total||0); }
+  });
+  db.expenses.forEach(x=>{
+    if(inRange(x.date)){ const k=bucketKey(x.date); if(buckets[k]) buckets[k].e += Number(x.amount||0); }
+  });
+
+  const rows = Object.entries(buckets)
+    .map(([k,v])=>({d:k,s:v.s,disc:v.disc,p:v.p,e:v.e,net:v.s-v.disc-v.p-v.e}))
+    .sort((a,b)=>b.d.localeCompare(a.d));
+  const totals = rows.reduce(
+    (a,r)=>({s:a.s+r.s,disc:a.disc+r.disc,p:a.p+r.p,e:a.e+r.e,net:a.net+r.net}),
+    {s:0,disc:0,p:0,e:0,net:0}
+  );
+  return {rows,totals,groupByMonth};
 }
 
 function getAvailableYears(){
@@ -1806,7 +2213,7 @@ function renderInstallmentsPage(){
       return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
     }
     const entries = Object.entries(db.customers).filter(([id,cust]) => {
-      if(!(Number(cust.due)>0 || historyIds.has(id) || planIds.has(id))) return false;
+      if(!(calculateCustomerDueFromLedger(id)>0 || historyIds.has(id) || planIds.has(id))) return false;
       if(!q) return true;
       if(cust.name.toLowerCase().includes(q)) return true;
       if(String(cust.displayId||'').includes(q)) return true;
@@ -1828,7 +2235,7 @@ function renderInstallmentsPage(){
         <thead><tr><th>${t('col_id')}</th><th>${t('col_name')}</th><th>${t('col_phone')}</th><th>${t('col_voucher')}</th><th>${t('inst_remaining')}</th><th></th></tr></thead>
         <tbody>
           ${pageEntries.map(([id,cust]) => {
-            const due = Number(cust.due);
+            const due = calculateCustomerDueFromLedger(id);
             const accNos = accountNumbersFor(id);
             return `<tr>
               <td>${cust.displayId?('#'+cust.displayId):'—'}</td>
@@ -1851,6 +2258,353 @@ function renderInstallmentsPage(){
   }
 
   renderInstList();
+}
+
+
+/* ---------- Personal Loans / Staff Advances ---------- */
+let loanAccountPage=1, loanTxnPage=1, loanAccountQuery='', loanAccountType='all', loanTxnAccount='all', loanTxnType='all', loanTxnFrom='', loanTxnTo='';
+const LOAN_ACCOUNT_PAGE_SIZE=12;
+const LOAN_TXN_PAGE_SIZE=25;
+
+function nextPersonalLoanNo(){
+  const maxNo=db.personalLoanAccounts.reduce((m,x)=>Math.max(m,Number(x.displayNo)||0),0);
+  return maxNo+1;
+}
+function personalLoanNoText(loan){ return 'PL-'+String(Number(loan.displayNo||0)||1).padStart(4,'0'); }
+
+function loanPaginationHtml(prefix,cur,totalPages,totalCount,pageSize){
+  if(totalPages<=1) return '';
+  const st=(cur-1)*pageSize+1, en=Math.min(cur*pageSize,totalCount);
+  return `<div class="loan-pagination no-print">
+    <span>${t('pagination_showing')(st,en,totalCount)}</span>
+    <div class="controls">
+      <button class="btn ghost small" id="${prefix}Prev" ${cur<=1?'disabled':''}>‹ ${t('pagination_prev')}</button>
+      <strong>${cur} / ${totalPages}</strong>
+      <button class="btn ghost small" id="${prefix}Next" ${cur>=totalPages?'disabled':''}>${t('pagination_next')} ›</button>
+    </div>
+  </div>`;
+}
+function wireLoanPagination(prefix,getPage,setPage,totalPages,rerender){
+  const prev=document.getElementById(prefix+'Prev'),next=document.getElementById(prefix+'Next');
+  if(prev)prev.onclick=()=>{setPage(Math.max(1,getPage()-1));rerender();};
+  if(next)next.onclick=()=>{setPage(Math.min(totalPages,getPage()+1));rerender();};
+}
+
+function renderPersonalLoansPage(){
+  const c=document.getElementById('content');
+  const advanceOut=db.personalLoanAccounts.filter(x=>x.type==='advance').reduce((sum,x)=>sum+personalLoanOutstanding(x.id),0);
+  const borrowedOut=db.personalLoanAccounts.filter(x=>x.type==='borrowed').reduce((sum,x)=>sum+personalLoanOutstanding(x.id),0);
+  const overdueCount=db.personalLoanAccounts.filter(x=>personalLoanOutstanding(x.id)>0 && x.dueDate && x.dueDate<todayStr()).length;
+  const activeCount=db.personalLoanAccounts.filter(x=>personalLoanOutstanding(x.id)>0).length;
+
+  c.innerHTML=`
+    <div class="toolbar no-print">
+      <button class="btn amber" id="loanNewBtn">+ ${currentLang==='bn'?'নতুন ঋণ/Advance':'New Loan / Advance'}</button>
+      <input type="text" id="loanSearch" placeholder="${t('search_placeholder')}" value="${escapeHtml(loanAccountQuery)}">
+      <select id="loanTypeFilter">
+        <option value="all">${currentLang==='bn'?'সব ধরন':'All Types'}</option>
+        <option value="advance" ${loanAccountType==='advance'?'selected':''}>${currentLang==='bn'?'আমরা দিয়েছি':'Advance Given'}</option>
+        <option value="borrowed" ${loanAccountType==='borrowed'?'selected':''}>${currentLang==='bn'?'আমরা নিয়েছি':'Borrowed'}</option>
+      </select>
+    </div>
+    <div class="loan-summary-grid">
+      <div class="loan-summary-card"><div class="l">${currentLang==='bn'?'আমাদের পাওনা':'Advance Receivable'}</div><div class="v" style="color:var(--green)">৳${money(advanceOut)}</div></div>
+      <div class="loan-summary-card"><div class="l">${currentLang==='bn'?'আমাদের দেনা':'Loan Payable'}</div><div class="v" style="color:var(--red)">৳${money(borrowedOut)}</div></div>
+      <div class="loan-summary-card"><div class="l">${currentLang==='bn'?'সক্রিয় অ্যাকাউন্ট':'Active Accounts'}</div><div class="v">${activeCount}</div></div>
+      <div class="loan-summary-card"><div class="l">${currentLang==='bn'?'Overdue':'Overdue'}</div><div class="v" style="color:var(--red)">${overdueCount}</div></div>
+    </div>
+    <div class="panel">
+      <h3>${currentLang==='bn'?'👥 ঋণ / Advance অ্যাকাউন্ট':'👥 Loan / Advance Accounts'}</h3>
+      <div id="loanAccountList"></div>
+    </div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+        <h3 style="margin:0;">${currentLang==='bn'?'🏦 লেনদেন লেজার':'🏦 Transaction Ledger'}</h3>
+        <button class="btn ghost no-print" id="loanPrintBtn">${t('print_report')}</button>
+      </div>
+      <div class="toolbar no-print" style="margin-top:12px;">
+        <select id="loanTxnAccountFilter"></select>
+        <select id="loanTxnTypeFilter">
+          <option value="all">${currentLang==='bn'?'সব ধরন':'All Types'}</option>
+          <option value="advance" ${loanTxnType==='advance'?'selected':''}>${currentLang==='bn'?'আমরা দিয়েছি':'Advance Given'}</option>
+          <option value="borrowed" ${loanTxnType==='borrowed'?'selected':''}>${currentLang==='bn'?'আমরা নিয়েছি':'Borrowed'}</option>
+        </select>
+        <input type="date" id="loanTxnFrom" value="${loanTxnFrom}">
+        <input type="date" id="loanTxnTo" value="${loanTxnTo}">
+      </div>
+      <div id="loanTxnLedger" class="loan-ledger-wrap"></div>
+    </div>`;
+
+  document.getElementById('loanNewBtn').onclick=()=>openPersonalLoanAccountModal();
+  document.getElementById('loanSearch').oninput=e=>{loanAccountQuery=e.target.value;loanAccountPage=1;renderPersonalLoanAccounts();};
+  document.getElementById('loanTypeFilter').onchange=e=>{loanAccountType=e.target.value;loanAccountPage=1;renderPersonalLoanAccounts();};
+
+  const af=document.getElementById('loanTxnAccountFilter');
+  af.innerHTML=`<option value="all">${currentLang==='bn'?'সব অ্যাকাউন্ট':'All Accounts'}</option>`+
+    db.personalLoanAccounts.map(x=>`<option value="${x.id}" ${String(loanTxnAccount)===String(x.id)?'selected':''}>${escapeHtml(x.partyName)} — ${personalLoanTypeLabel(x.type)}</option>`).join('');
+  af.value=[...af.options].some(o=>String(o.value)===String(loanTxnAccount))?String(loanTxnAccount):'all';
+  loanTxnAccount=af.value;
+  af.onchange=e=>{loanTxnAccount=e.target.value;loanTxnPage=1;renderPersonalLoanLedger();};
+  document.getElementById('loanTxnTypeFilter').onchange=e=>{loanTxnType=e.target.value;loanTxnPage=1;renderPersonalLoanLedger();};
+  document.getElementById('loanTxnFrom').onchange=e=>{loanTxnFrom=e.target.value;loanTxnPage=1;renderPersonalLoanLedger();};
+  document.getElementById('loanTxnTo').onchange=e=>{loanTxnTo=e.target.value;loanTxnPage=1;renderPersonalLoanLedger();};
+  document.getElementById('loanPrintBtn').onclick=()=>window.print();
+
+  renderPersonalLoanAccounts();
+  renderPersonalLoanLedger();
+}
+
+function renderPersonalLoanAccounts(){
+  const el=document.getElementById('loanAccountList');if(!el)return;
+  const q=loanAccountQuery.trim().toLowerCase();
+  const list=[...db.personalLoanAccounts]
+    .filter(x=>(loanAccountType==='all'||x.type===loanAccountType) && (!q||[x.partyName,x.phone,x.purpose,x.note,personalLoanNoText(x)].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>Number(b.ts||0)-Number(a.ts||0));
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="big">${t('no_data')}</div></div>`;return;}
+  const totalPages=Math.max(1,Math.ceil(list.length/LOAN_ACCOUNT_PAGE_SIZE));
+  if(loanAccountPage>totalPages)loanAccountPage=totalPages;
+  const part=list.slice((loanAccountPage-1)*LOAN_ACCOUNT_PAGE_SIZE,loanAccountPage*LOAN_ACCOUNT_PAGE_SIZE);
+  el.innerHTML=`<div class="loan-account-grid">${part.map(x=>{
+    const out=personalLoanOutstanding(x.id);
+    const overdue=out>0&&x.dueDate&&x.dueDate<todayStr();
+    const status=out<=0?'paid':overdue?'overdue':'active';
+    const statusText=out<=0?(currentLang==='bn'?'পরিশোধিত':'Paid'):overdue?'Overdue':(currentLang==='bn'?'সক্রিয়':'Active');
+    return `<div class="loan-account-card ${x.type==='borrowed'?'borrowed':''}">
+      <div class="loan-head">
+        <div><div class="loan-name">${x.type==='advance'?'👤':'🤝'} ${escapeHtml(x.partyName)}</div><div class="loan-sub">${personalLoanNoText(x)} · ${escapeHtml(x.phone||'No phone')}</div></div>
+        <span class="loan-status ${status}">${statusText}</span>
+      </div>
+      <div class="loan-kv">
+        <div><span>${currentLang==='bn'?'ধরন':'Type'}</span><strong>${personalLoanTypeLabel(x.type)}</strong></div>
+        <div><span>${currentLang==='bn'?'উদ্দেশ্য':'Purpose'}</span><strong>${escapeHtml(x.purpose||'—')}</strong></div>
+        <div><span>${currentLang==='bn'?'বকেয়া':'Outstanding'}</span><strong style="color:${x.type==='advance'?'var(--green)':'var(--red)'}">৳${money(out)}</strong></div>
+        <div><span>${currentLang==='bn'?'শুরুর তারিখ':'Start Date'}</span><strong>${formatDateDMY(x.startDate)}</strong></div>
+        <div><span>${currentLang==='bn'?'Due Date':'Due Date'}</span><strong>${x.dueDate?formatDateDMY(x.dueDate):'—'}</strong></div>
+      </div>
+      <div class="loan-actions no-print">
+        <button class="btn amber small" onclick="openPersonalLoanActivityModal('${x.id}')">${x.type==='advance'?(currentLang==='bn'?'+ দেওয়া / ফেরত':'+ Give / Collect'):(currentLang==='bn'?'+ নেওয়া / পরিশোধ':'+ Borrow / Repay')}</button>
+        <button class="btn ghost small" onclick="viewPersonalLoanStatement('${x.id}')">📄 ${currentLang==='bn'?'স্টেটমেন্ট':'Statement'}</button>
+        <button class="btn ghost small" onclick="openPersonalLoanAccountModal('${x.id}')">✏️</button>
+        <button class="btn ghost small" onclick="deletePersonalLoanAccount('${x.id}')">🗑️</button>
+      </div>
+    </div>`;}).join('')}</div>${loanPaginationHtml('loanAcct',loanAccountPage,totalPages,list.length,LOAN_ACCOUNT_PAGE_SIZE)}`;
+  wireLoanPagination('loanAcct',()=>loanAccountPage,v=>loanAccountPage=v,totalPages,renderPersonalLoanAccounts);
+}
+
+function personalLoanRunningMap(){
+  const balances={}, map={};
+  db.personalLoanAccounts.forEach(x=>balances[String(x.id)]=0);
+  [...db.personalLoanTransactions].filter(x=>!x.reversed).sort((a,b)=>{
+    if(a.date!==b.date)return String(a.date).localeCompare(String(b.date));
+    return Number(a.ts||0)-Number(b.ts||0);
+  }).forEach(x=>{
+    const id=String(x.loanId);
+    balances[id]=Math.max(0,Math.round(((balances[id]||0)+Number(x.principalDelta||0))*100)/100);
+    map[String(x.id)]=balances[id];
+  });
+  return map;
+}
+
+function renderPersonalLoanLedger(){
+  const el=document.getElementById('loanTxnLedger');if(!el)return;
+  const running=personalLoanRunningMap();
+  const accountMap=Object.fromEntries(db.personalLoanAccounts.map(x=>[String(x.id),x]));
+  const list=[...db.personalLoanTransactions].filter(x=>{
+    if(x.reversed)return false;
+    const loan=accountMap[String(x.loanId)];if(!loan)return false;
+    return (loanTxnAccount==='all'||String(x.loanId)===String(loanTxnAccount))
+      &&(loanTxnType==='all'||loan.type===loanTxnType)
+      &&(!loanTxnFrom||x.date>=loanTxnFrom)&&(!loanTxnTo||x.date<=loanTxnTo);
+  }).sort((a,b)=>{
+    if(a.date!==b.date)return String(b.date).localeCompare(String(a.date));
+    return Number(b.ts||0)-Number(a.ts||0);
+  });
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="big">${t('no_data')}</div></div>`;return;}
+  const totalPages=Math.max(1,Math.ceil(list.length/LOAN_TXN_PAGE_SIZE));
+  if(loanTxnPage>totalPages)loanTxnPage=totalPages;
+  const part=list.slice((loanTxnPage-1)*LOAN_TXN_PAGE_SIZE,loanTxnPage*LOAN_TXN_PAGE_SIZE);
+  el.innerHTML=`<table class="data">
+    <thead><tr><th>${t('col_date')}</th><th>${currentLang==='bn'?'অ্যাকাউন্ট':'Account'}</th><th>${currentLang==='bn'?'লেনদেন':'Activity'}</th><th>${t('col_payment_system')}</th><th>${currentLang==='bn'?'মূল টাকা (+)':'Principal (+)'}</th><th>${currentLang==='bn'?'পরিশোধ (-)':'Principal Paid (-)'}</th><th>${currentLang==='bn'?'বকেয়া':'Outstanding'}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
+    <tbody>${part.map(x=>{
+      const loan=accountMap[String(x.loanId)];
+      const inc=Number(x.principalDelta||0)>0?Number(x.principal||0):0;
+      const dec=Number(x.principalDelta||0)<0?Number(x.principal||0):0;
+      const method=x.openingOnly?(currentLang==='bn'?'Opening Balance':'Opening Balance'):paymentSystemLabel(x.paymentSystem||'cash');
+      return `<tr>
+        <td>${formatDateDMY(x.date)}</td>
+        <td><strong>${escapeHtml(loan?.partyName||'—')}</strong><br><span class="field-hint">${loan?personalLoanTypeLabel(loan.type):''}</span></td>
+        <td>${escapeHtml(personalLoanActivityLabel(x.kind))}${x.txnNo?`<br><span class="field-hint">${escapeHtml(x.txnNo)}</span>`:''}</td>
+        <td>${escapeHtml(method)}</td>
+        <td>${inc?'৳'+money(inc):'—'}</td>
+        <td>${dec?'৳'+money(dec):'—'}</td>
+        <td style="font-weight:700;">৳${money(running[String(x.id)]||0)}</td>
+        <td class="wrap-cell"><div class="wrap-inner">${escapeHtml(x.note||'—')}</div></td>
+        <td class="actions-cell no-print"><button class="icon-btn" onclick="reversePersonalLoanTransaction('${x.id}')" title="${currentLang==='bn'?'লেনদেন Reverse':'Reverse transaction'}">↶</button></td>
+      </tr>`;}).join('')}</tbody>
+  </table>${loanPaginationHtml('loanTxn',loanTxnPage,totalPages,list.length,LOAN_TXN_PAGE_SIZE)}`;
+  wireLoanPagination('loanTxn',()=>loanTxnPage,v=>loanTxnPage=v,totalPages,renderPersonalLoanLedger);
+}
+
+function openPersonalLoanAccountModal(id=''){
+  const loan=id?db.personalLoanAccounts.find(x=>String(x.id)===String(id)):null;
+  document.getElementById('personalLoanDynamicOverlay')?.remove();
+  const wrap=document.createElement('div');
+  wrap.className='overlay open top';wrap.id='personalLoanDynamicOverlay';
+  wrap.innerHTML=`<div class="modal" style="max-width:700px;width:95%;">
+    <h2>${loan?(currentLang==='bn'?'✏️ ঋণ অ্যাকাউন্ট এডিট':'✏️ Edit Loan Account'):(currentLang==='bn'?'➕ নতুন ঋণ / Advance':'➕ New Loan / Advance')}</h2>
+    <div class="field-row">
+      <div class="field"><label>${currentLang==='bn'?'অ্যাকাউন্ট ধরন':'Account Type'}</label><select id="plaType" ${loan?'disabled':''}><option value="advance">${currentLang==='bn'?'আমরা দেব / Advance Given':'Advance Given'}</option><option value="borrowed">${currentLang==='bn'?'আমরা নেব / Borrowed':'Borrowed from Person'}</option></select></div>
+      <div class="field"><label>${currentLang==='bn'?'নাম':'Person / Staff Name'}</label><input id="plaParty"></div>
+    </div>
+    <div class="field-row"><div class="field"><label>${t('col_phone')}</label><input id="plaPhone"></div><div class="field"><label>${currentLang==='bn'?'উদ্দেশ্য':'Purpose'}</label><input id="plaPurpose" placeholder="${currentLang==='bn'?'জরুরি, Salary Advance, ব্যক্তিগত...':'Emergency, salary advance, personal...'}"></div></div>
+    <div class="field-row"><div class="field"><label>${currentLang==='bn'?'শুরুর তারিখ':'Start Date'}</label><input type="date" id="plaStart"></div><div class="field"><label>${currentLang==='bn'?'Expected Due Date (ঐচ্ছিক)':'Expected Due Date (optional)'}</label><input type="date" id="plaDue"></div></div>
+    <div class="field"><label>${t('col_address')}</label><input id="plaAddress"></div>
+    <div class="field"><label>${t('f_note')}</label><input id="plaNote"></div>
+    ${loan?'':`<div class="panel" style="padding:12px;margin:8px 0 0;">
+      <h3>${currentLang==='bn'?'প্রথম / Opening Transaction':'Initial / Opening Transaction'}</h3>
+      <div class="field"><label>${currentLang==='bn'?'মূল টাকা':'Initial Principal'}</label><input type="number" min="0" id="plaInitial" value="0"></div>
+      <div class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="plaOpeningOnly" style="width:auto;"><label style="margin:0;text-transform:none;">${currentLang==='bn'?'শুধু পুরনো Opening Balance — Cash/Balance পরিবর্তন করবে না':'Existing opening balance only — no Cash/Balance movement'}</label></div>
+      <div class="field" id="plaPaymentWrap"><label>${t('f_payment_system')}</label><select id="plaPayment"><option value="cash">${t('payment_cash')}</option><option value="bank">${t('payment_bank')}</option><option value="mobile_banking">${t('payment_mobile_banking')}</option></select></div>
+    </div>`}
+    <div class="modal-actions"><button class="btn ghost" id="plaCancel">${t('cancel')}</button><button class="btn amber" id="plaSave">${t('save')}</button></div>
+  </div>`;
+  document.body.appendChild(wrap);
+  document.getElementById('plaType').value=loan?.type||'advance';
+  document.getElementById('plaParty').value=loan?.partyName||'';
+  document.getElementById('plaPhone').value=loan?.phone||'';
+  document.getElementById('plaPurpose').value=loan?.purpose||'';
+  document.getElementById('plaStart').value=loan?.startDate||todayStr();
+  document.getElementById('plaDue').value=loan?.dueDate||'';
+  document.getElementById('plaAddress').value=loan?.address||'';
+  document.getElementById('plaNote').value=loan?.note||'';
+  if(!loan){
+    document.getElementById('plaOpeningOnly').onchange=e=>{document.getElementById('plaPaymentWrap').style.display=e.target.checked?'none':'';};
+  }
+  document.getElementById('plaCancel').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{if(e.target===wrap)wrap.remove();});
+  document.getElementById('plaSave').onclick=async()=>{
+    const party=document.getElementById('plaParty').value.trim();
+    if(!party)return alert(currentLang==='bn'?'নাম দিন।':'Person name is required.');
+    if(loan){
+      Object.assign(loan,{partyName:party,phone:document.getElementById('plaPhone').value.trim(),purpose:document.getElementById('plaPurpose').value.trim(),startDate:document.getElementById('plaStart').value||todayStr(),dueDate:document.getElementById('plaDue').value,address:document.getElementById('plaAddress').value.trim(),note:document.getElementById('plaNote').value.trim()});
+      await safePut('personalLoanAccounts',loan.id,loan);
+    }else{
+      const type=document.getElementById('plaType').value;
+      const rec={id:uid(),displayNo:nextPersonalLoanNo(),type,partyName:party,phone:document.getElementById('plaPhone').value.trim(),purpose:document.getElementById('plaPurpose').value.trim(),startDate:document.getElementById('plaStart').value||todayStr(),dueDate:document.getElementById('plaDue').value,address:document.getElementById('plaAddress').value.trim(),note:document.getElementById('plaNote').value.trim(),ts:Date.now()};
+      db.personalLoanAccounts.push(rec);await safePut('personalLoanAccounts',rec.id,rec);
+      const principal=Number(document.getElementById('plaInitial').value)||0;
+      if(principal<0)return;
+      if(principal>0){
+        const openingOnly=document.getElementById('plaOpeningOnly').checked;
+        const kind=openingOnly?'opening':(type==='advance'?'advance-given':'borrowed-received');
+        const tx=makePersonalLoanTransaction(rec,kind,principal,rec.startDate,openingOnly?'cash':document.getElementById('plaPayment').value,rec.note,openingOnly);
+        db.personalLoanTransactions.push(tx);await safePut('personalLoanTransactions',tx.id,tx);
+      }
+    }
+    wrap.remove();refreshCurrentView();
+  };
+}
+
+function makePersonalLoanTransaction(loan,kind,principal,date,paymentSystem,note,openingOnly=false){
+  const increase=['opening','advance-given','advance-more','borrowed-received','borrow-more'].includes(kind);
+  let cashDirection='none';
+  if(!openingOnly){
+    if(['collection','borrowed-received','borrow-more'].includes(kind))cashDirection='in';
+    if(['advance-given','advance-more','repayment'].includes(kind))cashDirection='out';
+  }
+  return {id:uid(),txnNo:'LTX-'+Date.now().toString().slice(-7),loanId:loan.id,date:date||todayStr(),kind,principal:Number(principal||0),principalDelta:increase?Number(principal||0):-Number(principal||0),cashAmount:Number(principal||0),cashDirection,paymentSystem:openingOnly?'opening':(paymentSystem||'cash'),note:note||'',openingOnly:!!openingOnly,reversed:false,ts:Date.now()};
+}
+
+function openPersonalLoanActivityModal(id){
+  const loan=db.personalLoanAccounts.find(x=>String(x.id)===String(id));if(!loan)return;
+  const out=personalLoanOutstanding(id);
+  document.getElementById('personalLoanActivityOverlay')?.remove();
+  const wrap=document.createElement('div');wrap.className='overlay open top';wrap.id='personalLoanActivityOverlay';
+  const options=loan.type==='advance'
+    ? `<option value="advance-more">${currentLang==='bn'?'আরও Advance দিন':'Give More Advance'}</option><option value="collection">${currentLang==='bn'?'টাকা ফেরত নিন':'Receive Repayment'}</option>`
+    : `<option value="borrow-more">${currentLang==='bn'?'আরও ঋণ নিন':'Receive More Loan'}</option><option value="repayment">${currentLang==='bn'?'ঋণ পরিশোধ করুন':'Repay Loan'}</option>`;
+  wrap.innerHTML=`<div class="modal" style="max-width:500px;">
+    <h2>💱 ${escapeHtml(loan.partyName)}</h2>
+    <div class="loan-statement-summary"><span>${currentLang==='bn'?'বর্তমান বকেয়া':'Current Outstanding'}: <strong>৳${money(out)}</strong></span></div>
+    <div class="field"><label>${currentLang==='bn'?'লেনদেন':'Activity'}</label><select id="plaActKind">${options}</select></div>
+    <div class="field-row"><div class="field"><label>${t('col_date')}</label><input type="date" id="plaActDate" value="${todayStr()}"></div><div class="field"><label>${currentLang==='bn'?'মূল টাকা':'Principal'}</label><input type="number" min="0" id="plaActAmount"></div></div>
+    <div class="field"><label>${t('f_payment_system')}</label><select id="plaActPay"><option value="cash">${t('payment_cash')}</option><option value="bank">${t('payment_bank')}</option><option value="mobile_banking">${t('payment_mobile_banking')}</option></select></div>
+    <div class="field"><label>${t('f_note')}</label><input id="plaActNote" placeholder="${currentLang==='bn'?'রেফারেন্স / নোট':'Reference / note'}"></div>
+    <div class="modal-actions"><button class="btn ghost" id="plaActCancel">${t('cancel')}</button><button class="btn amber" id="plaActSave">${t('save')}</button></div>
+  </div>`;
+  document.body.appendChild(wrap);
+  document.getElementById('plaActCancel').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{if(e.target===wrap)wrap.remove();});
+  document.getElementById('plaActSave').onclick=async()=>{
+    const kind=document.getElementById('plaActKind').value;
+    const amount=Number(document.getElementById('plaActAmount').value)||0;
+    if(amount<=0)return alert(currentLang==='bn'?'সঠিক পরিমাণ দিন।':'Enter a valid amount.');
+    if(['collection','repayment'].includes(kind)&&amount>personalLoanOutstanding(id)+0.001){
+      return alert((currentLang==='bn'?'পরিমাণ বর্তমান বকেয়ার বেশি হতে পারবে না: ৳':'Amount cannot exceed outstanding: ৳')+money(personalLoanOutstanding(id)));
+    }
+    const tx=makePersonalLoanTransaction(loan,kind,amount,document.getElementById('plaActDate').value||todayStr(),document.getElementById('plaActPay').value,document.getElementById('plaActNote').value.trim(),false);
+    db.personalLoanTransactions.push(tx);await safePut('personalLoanTransactions',tx.id,tx);
+    wrap.remove();refreshCurrentView();
+  };
+}
+
+async function reversePersonalLoanTransaction(id){
+  const tx=db.personalLoanTransactions.find(x=>String(x.id)===String(id));if(!tx||tx.reversed)return;
+  const remaining=[...db.personalLoanTransactions].filter(x=>String(x.loanId)===String(tx.loanId)&&!x.reversed&&String(x.id)!==String(id)).sort((a,b)=>{
+    if(a.date!==b.date)return String(a.date).localeCompare(String(b.date));return Number(a.ts||0)-Number(b.ts||0);
+  });
+  let bal=0;
+  for(const x of remaining){
+    bal+=Number(x.principalDelta||0);
+    if(bal < -0.001){
+      return alert(currentLang==='bn'?'এই লেনদেন Reverse করলে পরের ইতিহাসে বকেয়া ঋণাত্মক হবে। আগে পরের repayment/collection Reverse করুন।':'Reversing this would make a later historical balance negative. Reverse later repayments/collections first.');
+    }
+  }
+  if(!confirm(currentLang==='bn'?'এই ঋণ লেনদেন Reverse করবেন? Balance-ও সাথে ঠিক হবে।':'Reverse this loan transaction? Balance will be adjusted too.'))return;
+  tx.reversed=true;tx.reversedAt=new Date().toISOString();
+  await safePut('personalLoanTransactions',tx.id,tx);
+  refreshCurrentView();
+}
+
+async function deletePersonalLoanAccount(id){
+  const active=db.personalLoanTransactions.filter(x=>String(x.loanId)===String(id)&&!x.reversed);
+  if(active.length)return alert(currentLang==='bn'?'আগে এই অ্যাকাউন্টের সব active transaction Reverse করুন।':'Reverse all active transactions before deleting this account.');
+  if(!confirm(t('confirm_delete')))return;
+  const oldTx=db.personalLoanTransactions.filter(x=>String(x.loanId)===String(id));
+  for(const tx of oldTx)await safeRemove('personalLoanTransactions',tx.id);
+  db.personalLoanTransactions=db.personalLoanTransactions.filter(x=>String(x.loanId)!==String(id));
+  await safeRemove('personalLoanAccounts',id);
+  db.personalLoanAccounts=db.personalLoanAccounts.filter(x=>String(x.id)!==String(id));
+  refreshCurrentView();
+}
+
+function viewPersonalLoanStatement(id){
+  const loan=db.personalLoanAccounts.find(x=>String(x.id)===String(id));if(!loan)return;
+  const running=personalLoanRunningMap();
+  const rows=[...db.personalLoanTransactions].filter(x=>String(x.loanId)===String(id)&&!x.reversed).sort((a,b)=>{
+    if(a.date!==b.date)return String(a.date).localeCompare(String(b.date));return Number(a.ts||0)-Number(b.ts||0);
+  });
+  document.getElementById('personalLoanStatementOverlay')?.remove();
+  const wrap=document.createElement('div');wrap.className='overlay open top';wrap.id='personalLoanStatementOverlay';
+  wrap.innerHTML=`<div class="modal" style="max-width:850px;width:96%;">
+    <h2>${escapeHtml(loan.partyName)} — ${currentLang==='bn'?'Loan Statement':'Loan Statement'}</h2>
+    <div class="loan-statement-summary">
+      <span><strong>${personalLoanNoText(loan)}</strong></span>
+      <span>${personalLoanTypeLabel(loan.type)}</span>
+      <span>${t('col_phone')}: ${escapeHtml(loan.phone||'—')}</span>
+      <span>${currentLang==='bn'?'Current Outstanding':'Current Outstanding'}: <strong>৳${money(personalLoanOutstanding(id))}</strong></span>
+    </div>
+    <div class="loan-ledger-wrap">
+      <table class="data"><thead><tr><th>${t('col_date')}</th><th>Ref</th><th>${currentLang==='bn'?'বিবরণ':'Description'}</th><th>${t('col_payment_system')}</th><th>${currentLang==='bn'?'ডেবিট / বৃদ্ধি':'Debit / Increase'}</th><th>${currentLang==='bn'?'ক্রেডিট / পরিশোধ':'Credit / Paid'}</th><th>${currentLang==='bn'?'ব্যালেন্স':'Balance'}</th><th>${t('f_note')}</th></tr></thead>
+      <tbody>${rows.length?rows.map(x=>`<tr><td>${formatDateDMY(x.date)}</td><td>${escapeHtml(x.txnNo||'—')}</td><td>${escapeHtml(personalLoanActivityLabel(x.kind))}</td><td>${escapeHtml(x.openingOnly?'Opening Balance':paymentSystemLabel(x.paymentSystem||'cash'))}</td><td>${Number(x.principalDelta)>0?'৳'+money(x.principal):'—'}</td><td>${Number(x.principalDelta)<0?'৳'+money(x.principal):'—'}</td><td><strong>৳${money(running[String(x.id)]||0)}</strong></td><td>${escapeHtml(x.note||'—')}</td></tr>`).join(''):`<tr><td colspan="8">${t('no_data')}</td></tr>`}</tbody>
+      </table>
+    </div>
+    <div class="modal-actions no-print"><button class="btn ghost" id="plsClose">${t('close')}</button><button class="btn amber" id="plsPrint">${t('print_report')}</button></div>
+  </div>`;
+  document.body.appendChild(wrap);
+  document.getElementById('plsClose').onclick=()=>wrap.remove();
+  document.getElementById('plsPrint').onclick=()=>window.print();
+  wrap.addEventListener('click',e=>{if(e.target===wrap)wrap.remove();});
 }
 
 /* ---------- Settings (admin only) ---------- */
@@ -1952,12 +2706,17 @@ function renderSummaryReport(body){
   function computeOpeningBalance(beforeDateStr){
     let dp = 0, de = 0;
     const inRange = (d) => d>=SUMMARY_START_DATE && d<beforeDateStr;
-    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); });
+    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry) dp += getSaleInitialPaid(s); });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry) dp += Number(i.amount||0); });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry) de += Number(e.amount); });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)) de += Number(r.excessRefund||0); });
     db.purchases.forEach(p => { if(inRange(p.date)) de += Number(p.initialPaid!==undefined ? p.initialPaid : p.paid||0); });
     db.supplierPayments.forEach(p => { if(inRange(p.date)) de += Number(p.amount); });
+    db.personalLoanTransactions.forEach(tx => {
+      if(!inRange(tx.date)) return;
+      const signed=personalLoanCashSigned(tx);
+      if(signed>0) dp+=signed; else if(signed<0) de+=Math.abs(signed);
+    });
     return dp - de;
   }
 
@@ -1970,12 +2729,18 @@ function renderSummaryReport(body){
     for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)) buckets[toISODate(d)] = {dp:0, de:0};
     const bucketKey = (dateStr) => dateStr;
     const inRange = (dateStr) => dateStr>=fromStr && dateStr<=toStr;
-    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += Number(s.initialPaid!==undefined ? s.initialPaid : s.paid); } });
-    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Math.max(0, Number(i.amount) - Number(i.discount||0)); } });
+    db.sales.forEach(s => { if(inRange(s.date) && !s.isOldEntry){ const k=bucketKey(s.date); if(buckets[k]) buckets[k].dp += getSaleInitialPaid(s); } });
+    db.installments.forEach(i => { if(inRange(i.date) && !i.isOldEntry){ const k=bucketKey(i.date); if(buckets[k]) buckets[k].dp += Number(i.amount||0); } });
     db.expenses.forEach(e => { if(inRange(e.date) && !e.isOldEntry){ const k=bucketKey(e.date); if(buckets[k]) buckets[k].de += Number(e.amount); } });
     db.returns.forEach(r => { if(!r.cancelled && inRange(r.date)){ const k=bucketKey(r.date); if(buckets[k]) buckets[k].de += Number(r.excessRefund||0); } });
     db.purchases.forEach(p => { if(inRange(p.date)){ const k=bucketKey(p.date); if(buckets[k]) buckets[k].de += Number(p.initialPaid!==undefined ? p.initialPaid : p.paid||0); } });
     db.supplierPayments.forEach(p => { if(inRange(p.date)){ const k=bucketKey(p.date); if(buckets[k]) buckets[k].de += Number(p.amount); } });
+    db.personalLoanTransactions.forEach(tx => {
+      if(!inRange(tx.date)) return;
+      const k=bucketKey(tx.date); if(!buckets[k]) return;
+      const signed=personalLoanCashSigned(tx);
+      if(signed>0) buckets[k].dp+=signed; else if(signed<0) buckets[k].de+=Math.abs(signed);
+    });
     let running = computeOpeningBalance(fromStr);
     const rows = Object.entries(buckets).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v]) => {
       running += v.dp - v.de;
@@ -2188,9 +2953,9 @@ function printIsolated(title, tableHtml){
   html,body{margin:0;padding:0;}
   body{font-family:Arial,Helvetica,sans-serif;padding:16px;color:#222;}
   h2{margin:0 0 14px;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th,td{padding:6px 8px;border-bottom:1px solid #ccc;text-align:left;}
-  th{background:#f0f0f0;text-transform:uppercase;font-size:11px;}
+  table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
+  th,td{padding:5px 6px;border-bottom:1px solid #ccc;text-align:left;white-space:normal;word-break:break-word;}
+  th{background:#f0f0f0;text-transform:uppercase;font-size:10px;}
   tfoot td{font-weight:700;border-top:2px solid #333;}
   .no-print, .actions-cell{display:none !important;}
 </style>
@@ -2234,7 +2999,7 @@ function renderInstallmentOnlyReport(body){
     const historyIds = new Set(db.installments.map(i=>i.customerId).filter(Boolean));
     const planIds = new Set(db.installmentPlans.map(p=>p.customerId).filter(Boolean));
     Object.entries(db.customers).forEach(([cid,cust]) => {
-      if(Number(cust.due)>0 || historyIds.has(cid) || planIds.has(cid)){
+      if(calculateCustomerDueFromLedger(cid)>0 || historyIds.has(cid) || planIds.has(cid)){
         if(!byCust[cid]) byCust[cid] = { customerId:cid, customerName:cust.name, count:0, paid:0, discount:0 };
       }
     });
@@ -2242,7 +3007,9 @@ function renderInstallmentOnlyReport(body){
       return [...new Set(db.sales.filter(s=>s.customerId===custId && s.voucherNo).map(s=>s.voucherNo))];
     }
     Object.values(byCust).forEach(c => {
-      c.due = c.customerId && db.customers[c.customerId] ? Number(db.customers[c.customerId].due||0) : 0;
+      // Report due is the closing balance AS OF the selected report end date.
+      // This keeps the header Due equal to the final reconciled New Due in the detail.
+      c.due = c.customerId && db.customers[c.customerId] ? calculateCustomerDueAsOf(c.customerId, toStr) : 0;
       c.accountNos = c.customerId ? accountNumbersFor(c.customerId) : [];
     });
     const q = instRptQuery.trim().toLowerCase();
@@ -2255,18 +3022,92 @@ function renderInstallmentOnlyReport(body){
     const totalDueAll = custRows.reduce((s,c)=>s+Number(c.due||0),0);
 
     function buildCustInstDetail(cid){
-      const rows = list.filter(i=>(i.customerId||'walkin')===cid).sort((a,b)=>b.ts-a.ts);
-      const cust = cid!=='walkin' ? db.customers[cid] : null;
-      const rowsTotalAmount = rows.reduce((s,x)=>s+Number(x.amount),0);
-      const rowsTotalDiscount = rows.reduce((s,x)=>s+Number(x.discount||0),0);
+      if(cid==='walkin'){
+        const rows = list.filter(i=>(i.customerId||'walkin')===cid).sort((a,b)=>b.ts-a.ts);
+        const rowsTotalAmount = rows.reduce((sum,x)=>sum+Number(x.amount||0),0);
+        const rowsTotalDiscount = rows.reduce((sum,x)=>sum+Number(x.discount||0),0);
+        return `
+          <div class="panel">
+            <table class="data">
+              <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('f_note')}</th></tr></thead>
+              <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>${escapeHtml(i.note||'—')}</td></tr>`).join('')}</tbody>
+              <tfoot><tr><td colspan="2">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td></td></tr></tfoot>
+            </table>
+          </div>`;
+      }
+
+      const cust = db.customers[cid];
+      const statement = buildCustomerReceivableStatement(cid, fromStr, toStr);
+      const visiblePayments = statement.rows.filter(x=>x.type==='installment');
+      const rowsTotalAmount = visiblePayments.reduce((sum,x)=>sum+Number(x.amount||0),0);
+      const rowsTotalDiscount = visiblePayments.reduce((sum,x)=>sum+Number(x.discount||0),0);
+
+      const detailRows = [];
+      if(statement.opening>0){
+        detailRows.push({
+          type:'opening', id:'', ref:'—', date:fromStr,
+          previousDue:statement.opening, newDue:statement.opening,
+          amount:0, discount:0,
+          note:currentLang==='bn' ? 'Opening Balance / পূর্বের জের' : 'Opening Balance'
+        });
+      }
+      detailRows.push(...statement.rows);
+
       return `
         <div class="panel">
+          <div class="field-hint" style="margin-bottom:10px;">
+            ${currentLang==='bn'?'এই তালিকার Previous Due / New Due সরাসরি Sale, Installment, Discount ও Return থেকে পুনরায় হিসাব করা হয়েছে।':'Previous/New Due below is recalculated directly from Sales, Installments, Discounts and Returns.'}
+          </div>
           <table class="data">
-            <thead><tr><th>${t('col_receipt_no')}</th><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
-            <tbody>${rows.map(i=>`<tr><td>${i.receiptNo?'#'+i.receiptNo:'—'}</td><td>${formatDateDMY(i.date)}</td><td>৳${money(i.previousDue)}</td><td>৳${money(i.amount)}</td><td>${Number(i.discount)>0?'৳'+money(i.discount):'—'}</td><td>৳${money(i.newDue)}</td><td>${escapeHtml(i.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${i.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${i.id}')">🗑️</button></td></tr>`).join('')}</tbody>
-            <tfoot><tr style="font-weight:700;"><td colspan="3">${t('totals_label')}</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>—</td><td colspan="2"></td></tr></tfoot>
+            <thead><tr>
+              <th>${currentLang==='bn'?'রেফারেন্স':'Reference'}</th>
+              <th>${t('inst_col_date')}</th>
+              <th>${currentLang==='bn'?'ধরন':'Type'}</th>
+              <th>${t('inst_col_previous_due')}</th>
+              <th>${t('inst_col_amount')}</th>
+              <th>${t('inst_col_discount')}</th>
+              <th>${t('inst_col_new_due')}</th>
+              <th>${t('f_note')}</th>
+              <th class="no-print"></th>
+            </tr></thead>
+            <tbody>${detailRows.map(x=>{
+              const isInst=x.type==='installment';
+              const typeLabel = x.type==='opening'
+                ? (currentLang==='bn'?'Opening':'Opening')
+                : x.type==='sale'
+                  ? (currentLang==='bn'?'বিক্রি/বুকিং':'Sale/Booking')
+                  : x.type==='return'
+                    ? (currentLang==='bn'?'রিটার্ন সমন্বয়':'Return Adjustment')
+                    : (currentLang==='bn'?'কিস্তি':'Installment');
+              const amountCell = isInst
+                ? '৳'+money(x.amount)
+                : x.type==='sale'
+                  ? `<span class="field-hint">+৳${money(Math.max(0,Number(x.saleNet||0)-Number(x.initialPaid||0)))}</span>`
+                  : x.type==='return'
+                    ? `<span class="field-hint">−৳${money(x.dueAdjust||0)}</span>`
+                    : '—';
+              const note = x.type==='sale'
+                ? `${x.label||''}${Number(x.initialPaid||0)>0?' · '+(currentLang==='bn'?'প্রথম পেমেন্ট ':'Initial Paid ')+'৳'+money(x.initialPaid):''}`
+                : (x.note||x.label||'—');
+              return `<tr style="${x.type!=='installment'?'background:rgba(176,141,46,.045);':''}">
+                <td>${escapeHtml(x.ref||'—')}</td>
+                <td>${formatDateDMY(x.date)}</td>
+                <td>${typeLabel}</td>
+                <td>৳${money(x.previousDue)}</td>
+                <td>${amountCell}</td>
+                <td>${isInst && Number(x.discount)>0?'৳'+money(x.discount):'—'}</td>
+                <td><strong>৳${money(x.newDue)}</strong></td>
+                <td>${escapeHtml(note)}</td>
+                <td class="actions-cell no-print">${isInst ? `<button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${x.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${x.id}')">🗑️</button>` : ''}</td>
+              </tr>`;
+            }).reverse().join('')}</tbody>
+            <tfoot>
+              <tr style="font-weight:700;"><td colspan="4">${t('totals_label')} (${t('nav_installments')})</td><td>৳${money(rowsTotalAmount)}</td><td>৳${money(rowsTotalDiscount)}</td><td>৳${money(statement.closing)}</td><td colspan="2"></td></tr>
+            </tfoot>
           </table>
-          ${cid!=='walkin' ? `<div class="field-hint" style="margin-top:8px;">${t('col_due')} (${t('inst_col_new_due')}): ৳${money(cust?cust.due:0)}</div>` : ''}
+          <div class="field-hint" style="margin-top:8px;font-weight:700;">
+            ${currentLang==='bn'?'Closing Due / সর্বশেষ New Due':'Closing Due / Latest New Due'}: ৳${money(statement.closing)}
+          </div>
         </div>
       `;
     }
@@ -2498,6 +3339,7 @@ function renderReportsOverview(body){
     document.getElementById('ovBody').innerHTML = `
       <div class="stat-grid">
         <div class="stat-card c4"><div class="val">৳${money(totals.s)}</div><div class="lbl">${t('rep_col_sales')} (${t('totals_label')})</div></div>
+        <div class="stat-card c5"><div class="val">৳${money(totals.disc)}</div><div class="lbl">${currentLang==='bn'?'কিস্তির ছাড়':'Installment Discount'}</div></div>
         <div class="stat-card c6"><div class="val">৳${money(totals.p)}</div><div class="lbl">${t('rep_col_purchase')} (${t('totals_label')})</div></div>
         <div class="stat-card c7"><div class="val">৳${money(totals.e)}</div><div class="lbl">${t('rep_col_expense')} (${t('totals_label')})</div></div>
         <div class="stat-card c8"><div class="val">৳${money(totals.net)}</div><div class="lbl">${t('rep_col_net')} (${t('totals_label')})</div></div>
@@ -2506,9 +3348,9 @@ function renderReportsOverview(body){
         <div class="panel">
           <h3>${t('reports_summary')}</h3>
           <table class="data">
-            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
+            <thead><tr><th>${periodColLabel}</th><th>${t('rep_col_sales')}</th><th>${currentLang==='bn'?'কিস্তির ছাড়':'Inst. Discount'}</th><th>${t('rep_col_purchase')}</th><th>${t('rep_col_expense')}</th><th>${t('rep_col_net')}</th></tr></thead>
             <tbody>
-              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
+              ${rows.map(r=>`<tr><td>${r.d}</td><td>৳${money(r.s)}</td><td>৳${money(r.disc)}</td><td>৳${money(r.p)}</td><td>৳${money(r.e)}</td><td>৳${money(r.net)}</td></tr>`).join('')}
             </tbody>
           </table>
         </div>
@@ -2541,69 +3383,45 @@ function renderReportsOverview(body){
 function printCustLedger(cid){
   const cust = cid ? db.customers[cid] : null;
   if(!cust) return;
-  const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
-  const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth)).sort((a,b)=>b.ts-a.ts);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
-  const totalPaid = totalInitialPaid + totalInstPaid;
-  const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+  const sales = db.sales.filter(s=>s.customerId===cid && matchesYearMonth(s.date, custReportYear, custReportMonth));
+  const payments = db.installments.filter(p=>p.customerId===cid && matchesYearMonth(p.date, custReportYear, custReportMonth));
+  const totalProfit = sales.reduce((sum,x)=>sum+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
+  const d = buildCustomerBankLedger(cid,custReportYear,custReportMonth);
 
-  const ledgerRaw = [
-    ...sales.map(s=>({
-      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
-      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total), discount: Number(s.discount||0),
-      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
-      profit: saleNetProfit(s)
-    })),
-    ...payments.map(p=>({
-      ts: p.ts, date: p.date, type: 'installment', qty: null,
-      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
-      total: 0, discount: Number(p.discount||0),
-      paid: Number(p.amount),
-      profit: null
-    }))
-  ].sort((a,b)=>{
-    if(a.date!==b.date) return a.date<b.date?-1:1;
-    if(a.type!==b.type) return a.type==='booking'?-1:1;
-    return a.ts-b.ts;
-  });
-
-  let runningDue = 0;
-  const ledger = ledgerRaw.map(tx=>{
-    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
-    else runningDue -= (tx.paid + tx.discount);
-    return { ...tx, runningDue: Math.round(runningDue) };
-  });
+  const rows = d.rows.map(tx=>`<tr>
+    <td>${formatDateDMY(tx.date)}</td>
+    <td>${escapeHtml(tx.ref||'—')}</td>
+    <td>${escapeHtml(tx.description||'')}</td>
+    <td>${tx.qty!==null && tx.qty!==undefined?tx.qty:'—'}</td>
+    <td>${tx.debit>0?'৳'+money(tx.debit):'—'}</td>
+    <td>${tx.cash>0?'৳'+money(tx.cash):'—'}</td>
+    <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+    <td>৳${money(tx.balance)}</td>
+    <td>${tx.profit!==null && tx.profit!==undefined?'৳'+money(tx.profit):'—'}</td>
+  </tr>`).join('');
 
   const body = `
-    <div style="margin-bottom:10px;"><strong>${escapeHtml(cust.name)}</strong><br>${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div>
+    <div style="margin-bottom:10px;">
+      <strong>${escapeHtml(cust.name)}${cust.displayId?' · ID #'+escapeHtml(String(cust.displayId)):''}</strong><br>
+      ${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}
+    </div>
+    <div style="margin:8px 0 12px;font-size:12px;">
+      Opening: ৳${money(d.opening)} · Cash Received: ৳${money(d.cashPaid)} · Discount: ৳${money(d.discount)} · Closing: ৳${money(d.closing)} · ${t('col_profit')}: ৳${money(totalProfit)}
+    </div>
     <table>
-      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
-      <tbody>${ledger.map(tx=>`<tr>
-        <td>${formatDateDMY(tx.date)}</td>
-        <td>${tx.label}</td>
-        <td>${tx.qty!==null?tx.qty:'—'}</td>
-        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
-        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-        <td>৳${money(tx.paid)}</td>
-        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
-        <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
-      </tr>`).join('')}</tbody>
+      <thead><tr>
+        <th>${t('col_date')}</th><th>Ref</th><th>Description</th><th>${t('col_qty')}</th>
+        <th>Debit / Sale</th><th>Cash Received</th><th>${t('col_discount')}</th><th>Balance</th><th>${t('col_profit')}</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
       <tfoot><tr>
-        <td colspan="3">${t('totals_label')}</td>
-        <td>৳${money(totalBought)}</td>
-        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
-        <td>৳${money(totalPaid)}</td>
-        <td>${cust.due>0?'৳'+money(cust.due):'৳0'}</td>
-        <td>৳${money(totalProfit)}</td>
+        <td colspan="4">${t('totals_label')}</td>
+        <td>৳${money(d.debit)}</td><td>৳${money(d.cashPaid)}</td><td>৳${money(d.discount)}</td>
+        <td>৳${money(d.closing)}</td><td>৳${money(totalProfit)}</td>
       </tr></tfoot>
-    </table>
-  `;
-  printIsolated(cust.name, body);
+    </table>`;
+  printIsolated(cust.name+' — Customer Statement', body);
 }
-
 function printCustReportList(){
   const q = reportsCustQuery.trim().toLowerCase();
   const entries = Object.entries(db.customers).filter(([id,c]) => !q || c.name.toLowerCase().includes(q) || String(c.displayId||'').includes(q) || (c.phone && c.phone.toLowerCase().includes(q)));
@@ -2611,11 +3429,11 @@ function printCustReportList(){
     const sales = db.sales.filter(s=>s.customerId===id && matchesYearMonth(s.date, custReportYear, custReportMonth));
     const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
     const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
-    const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-    const instPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const initialPaid = sales.reduce((s,x)=>s+getSaleInitialPaid(x),0);
+    const instPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
     const paid = initialPaid + instPaid;
-    const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
-    return { c, qty, paid, profit };
+    const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
+    return { id, c, qty, paid, profit };
   });
   const body = `
     <table>
@@ -2626,14 +3444,14 @@ function printCustReportList(){
         <td>${escapeHtml(r.c.phone||'—')}</td>
         <td>${r.qty||'—'}</td>
         <td>৳${money(r.paid)}</td>
-        <td>৳${money(r.c.due)}</td>
+        <td>৳${money(calculateCustomerDueFromLedger(r.id))}</td>
         <td>৳${money(r.profit)}</td>
       </tr>`).join('')}</tbody>
       <tfoot><tr>
         <td colspan="3">${t('totals_label')} (${entries.length})</td>
         <td>${rows.reduce((s,r)=>s+r.qty,0)}</td>
         <td>৳${money(rows.reduce((s,r)=>s+r.paid,0))}</td>
-        <td>৳${money(entries.reduce((s,[,c])=>s+Number(c.due||0),0))}</td>
+        <td>৳${money(entries.reduce((sum,[id])=>sum+calculateCustomerDueFromLedger(id),0))}</td>
         <td>৳${money(rows.reduce((s,r)=>s+r.profit,0))}</td>
       </tr></tfoot>
     </table>
@@ -2679,10 +3497,10 @@ function renderCustomerReport(body){
       const sales = db.sales.filter(s=>s.customerId===id && matchesYearMonth(s.date, custReportYear, custReportMonth));
       const payments = db.installments.filter(p=>p.customerId===id && matchesYearMonth(p.date, custReportYear, custReportMonth));
       const qty = sales.reduce((s,x)=>s+Number(x.qty||0),0);
-      const initialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-      const instPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+      const initialPaid = sales.reduce((s,x)=>s+getSaleInitialPaid(x),0);
+      const instPaid = payments.reduce((s,p)=>s+Number(p.amount||0),0);
       const paid = initialPaid + instPaid;
-      const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
+      const profit = sales.reduce((s,x)=>s+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
       return { id, c, qty, paid, profit };
     });
     const listEl = document.getElementById('custReportList');
@@ -2697,7 +3515,7 @@ function renderCustomerReport(body){
               <td>${escapeHtml(r.c.phone||'—')}</td>
               <td>${r.qty||'—'}</td>
               <td>৳${money(r.paid)}</td>
-              <td>৳${money(r.c.due)}</td>
+              <td>৳${money(calculateCustomerDueFromLedger(r.id))}</td>
               <td>৳${money(r.profit)}</td>
               <td class="actions-cell"><button class="icon-btn cust-pick-btn" data-id="${r.id}" title="${t('view_title')}">👁</button></td>
             </tr>
@@ -2707,7 +3525,7 @@ function renderCustomerReport(body){
             <td colspan="3">${t('totals_label')} (${entries.length})</td>
             <td>${rows.reduce((s,r)=>s+r.qty,0)}</td>
             <td>৳${money(rows.reduce((s,r)=>s+r.paid,0))}</td>
-            <td>৳${money(entries.reduce((s,[,c])=>s+Number(c.due||0),0))}</td>
+            <td>৳${money(entries.reduce((sum,[id])=>sum+calculateCustomerDueFromLedger(id),0))}</td>
             <td>৳${money(rows.reduce((s,r)=>s+r.profit,0))}</td>
             <td></td>
           </tr></tfoot>
@@ -2723,78 +3541,36 @@ function renderCustomerReport(body){
   function buildCustDetailHtml(custId){
     const cust = db.customers[custId];
     if(!cust) return '';
-    const sales = db.sales
-      .filter(s=>s.customerId===custId && matchesYearMonth(s.date, custReportYear, custReportMonth))
-      .sort((a,b)=>b.ts-a.ts);
-    const payments = db.installments
-      .filter(p=>p.customerId===custId && matchesYearMonth(p.date, custReportYear, custReportMonth))
-      .sort((a,b)=>b.ts-a.ts);
-    const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-    const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-    const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+    const sales = db.sales.filter(s=>s.customerId===custId && matchesYearMonth(s.date, custReportYear, custReportMonth));
+    const payments = db.installments.filter(p=>p.customerId===custId && matchesYearMonth(p.date, custReportYear, custReportMonth));
+    const totalBought = sales.reduce((sum,x)=>sum+Number(x.total||0)+Number(x.discount||0),0);
+    const totalInitialPaid = sales.reduce((sum,x)=>sum+getSaleInitialPaid(x),0);
+    const totalInstPaid = payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
     const totalPaid = totalInitialPaid + totalInstPaid;
-    const totalProfit = sales.reduce((s,x)=>s+saleNetProfit(x),0);
-
-    const ledgerRaw = [
-      ...sales.map(s=>({
-        ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
-        label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-        total: Number(s.total), discount: Number(s.discount||0),
-        paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid),
-        profit: saleNetProfit(s)
-      })),
-      ...payments.map(p=>({
-        ts: p.ts, date: p.date, type: 'installment', qty: null,
-        label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
-        total: 0, discount: Number(p.discount||0),
-        paid: Number(p.amount),
-        profit: null
-      }))
-    ].sort((a,b)=>{
-      if(a.date!==b.date) return a.date<b.date?-1:1;
-      if(a.type!==b.type) return a.type==='booking'?-1:1;
-      return a.ts-b.ts;
-    });
-
-    let runningDue = 0;
-    const ledger = ledgerRaw.map(tx=>{
-      if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
-      else runningDue -= (tx.paid + tx.discount);
-      return { ...tx, runningDue: Math.round(runningDue) };
-    });
+    const totalProfit = sales.reduce((sum,x)=>sum+saleNetProfit(x),0) - payments.reduce((sum,p)=>sum+Number(p.discount||0),0);
+    const ledgerData = buildCustomerBankLedger(custId,custReportYear,custReportMonth);
 
     return `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
-          <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3>
-          <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
+          <div>
+            <h3 style="margin:0;">${escapeHtml(cust.name)}${cust.displayId?' <span class="field-hint">#'+escapeHtml(String(cust.displayId))+'</span>':''}</h3>
+            <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div>
+          </div>
           <button class="btn ghost no-print" onclick="printCustLedger('${custId}')">${t('print_report')}</button>
         </div>
-        <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, cust.due)} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
 
-        <h3 style="margin:14px 0 8px;">🧾 লেনদেনের হিসাব</h3>
-        ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
-        <table class="data">
-          <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
-          <tbody>${ledger.map(tx=>`<tr>
-            <td>${formatDateDMY(tx.date)}</td>
-            <td>${tx.label}</td>
-            <td>${tx.qty!==null?tx.qty:'—'}</td>
-            <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
-            <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-            <td>৳${money(tx.paid)}</td>
-            <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
-            <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
-          </tr>`).join('')}</tbody>
-          <tfoot><tr style="font-weight:700;background:var(--paper-card);">
-            <td colspan="3">${t('totals_label')}</td>
-            <td>৳${money(totalBought)}</td>
-            <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
-            <td>৳${money(totalPaid)}</td>
-            <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
-            <td>৳${money(totalProfit)}</td>
-          </tr></tfoot>
-        </table>`}
+        <div class="ledger-meta">
+          <span><strong>${currentLang==='bn'?'Opening Balance':'Opening Balance'}:</strong> ৳${money(ledgerData.opening)}</span>
+          <span><strong>${currentLang==='bn'?'এই সময়ের বিক্রি':'Period Sales'}:</strong> ৳${money(totalBought)}</span>
+          <span><strong>${currentLang==='bn'?'ক্যাশ প্রাপ্তি':'Cash Received'}:</strong> ৳${money(totalPaid)}</span>
+          <span><strong>${currentLang==='bn'?'ছাড়':'Discount'}:</strong> ৳${money(ledgerData.discount)}</span>
+          <span><strong>${currentLang==='bn'?'Closing Balance':'Closing Balance'}:</strong> ৳${money(ledgerData.closing)}</span>
+          <span><strong>${t('col_profit')}:</strong> ৳${money(totalProfit)}</span>
+        </div>
+
+        <h3 style="margin:14px 0 8px;">${currentLang==='bn'?'🏦 কাস্টমার স্টেটমেন্ট / লেজার':'🏦 Customer Statement / Ledger'}</h3>
+        ${customerLedgerTableHtml(custId,custReportYear,custReportMonth,true)}
       </div>
     `;
   }
@@ -2899,7 +3675,7 @@ const CONFIG = {
     extraRowActions:(id,item)=> `
       <button class="icon-btn" title="${t('history_title')}" onclick="openCustomerHistory('${id}')">🧾</button>
       <button class="icon-btn" title="${t('installment_history_title')}" onclick="openInstallmentHistory('${id}')">📋</button>
-      ${item.due>0 ? `<button class="icon-btn" title="${t('pay_due_title')}" onclick="openPayDue('${id}')">৳</button>` : ''}
+      
     `,
     isObj:true
   },
@@ -3010,7 +3786,7 @@ function groupSalesForDisplay(rawItems){
       qty: t('items_count')(group.length),
       total: group.reduce((s,[,x])=>s+Number(x.total),0),
       discount: group.reduce((s,[,x])=>s+Number(x.discount||0),0),
-      paid: group.reduce((s,[,x])=>s+Number(x.paid),0),
+      paid: group.reduce((s,[,x])=>s+getSaleInitialPaid(x),0),
       due: group.reduce((s,[,x])=>s+Number(x.due),0),
       _groupIds: group.map(([gid])=>gid),
     };
@@ -3045,10 +3821,11 @@ function renderListPage(tab){
   function applyFilters(){
     const search = document.getElementById('pgSearch').value.trim().toLowerCase();
     const cat = isProducts ? document.getElementById('pgCatFilter').value : '';
-    let filteredItems = items;
-    if(cat) filteredItems = filteredItems.filter(([id,item]) => item.cat===cat);
+    let liveItems = cfg.isObj ? Object.entries(db[tab]) : db[tab].map(x=>[x.id, x]).reverse();
+    if(tab==='sales') liveItems = groupSalesForDisplay(liveItems);
+    if(cat) liveItems = liveItems.filter(([id,item]) => item.cat===cat);
     pageNum[tab] = 1;
-    renderTable(tab, filteredItems, search);
+    renderTable(tab, liveItems, search);
   }
 
   applyFilters();
@@ -3060,7 +3837,7 @@ function renderListPage(tab){
 }
 
 let pageNum = {};
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 25;
 
 function renderTable(tab, items, search){
   const cfg = CONFIG[tab];
@@ -3433,8 +4210,7 @@ document.getElementById('formSaveBtn').addEventListener('click', async () => {
   await handleSave(tab, id, values);
   document.getElementById('formOverlay').classList.remove('open');
   formCtx = null;
-  renderNav();
-  renderPage();
+  refreshCurrentView();
 });
 
 async function handleSave(tab, id, values){
@@ -3526,8 +4302,20 @@ async function handleSave(tab, id, values){
     const rawTotal = Number(values.qty) * Number(values.unitPrice);
     const discount = Number(values.discount)||0;
     const total = Math.max(0, rawTotal - discount);
-    const paid = values.paid===''||values.paid===undefined ? total : Number(values.paid);
-    const due = Math.max(0, total - paid);
+    const initialPaid = Math.max(0, Math.min(total, values.paid===''||values.paid===undefined ? total : Number(values.paid)||0));
+
+    // Existing installments/returns are separate transactions and must survive a sale edit.
+    // Recalculate cumulative cash + due from those transactions instead of resetting them.
+    const existingAlloc = existing ? saleInstallmentAllocationTotals(existing.id) : {cash:0,discount:0,settlement:0};
+    const existingReturnAdjust = existing ? saleReturnDueAdjustTotal(existing.id) : 0;
+    if(existing && initialPaid + Number(existingAlloc.settlement||0) + Number(existingReturnAdjust||0) > total + 0.01){
+      alert(currentLang==='bn'
+        ? 'এই বিক্রিতে পরে কিস্তি/ছাড়/রিটার্ন সমন্বয় আছে। নতুন Total এত কম করা যাবে না। আগে সংশ্লিষ্ট কিস্তি/রিটার্ন ঠিক করুন।'
+        : 'This sale already has installment/discount/return adjustments. The new total cannot be lower than the amount already settled. Adjust those transactions first.');
+      return;
+    }
+    const paid = initialPaid + Number(existingAlloc.cash||0);
+    const due = Math.max(0, total - initialPaid - Number(existingAlloc.settlement||0) - Number(existingReturnAdjust||0));
     product.qty = Math.max(0, Number(product.qty) - Number(values.qty));
     touchedProducts.add(values.productId);
     let customerName = '';
@@ -3543,7 +4331,7 @@ async function handleSave(tab, id, values){
       customerId: values.customerId||null, customerName,
       productId: values.productId, productName: product.name,
       qty: Number(values.qty), unitPrice: Number(values.unitPrice), unitCost: Number(product.cost||0), discount,
-      total, paid, due, initialPaid: existing ? (existing.initialPaid!==undefined ? existing.initialPaid : paid) : paid,
+      total, paid, due, initialPaid,
       date: values.date, ts: existing ? existing.ts : Date.now()
     };
     if(existing){
@@ -3554,7 +4342,10 @@ async function handleSave(tab, id, values){
     }
     for(const pid of touchedProducts) await safePut('products', pid, db.products[pid]);
     await safePut('sales', record.id, record);
-    for(const cid of touchedCustomers) await safePut('customers', cid, db.customers[cid]);
+    for(const cid of touchedCustomers){
+      if(db.customers[cid]) db.customers[cid].due = calculateCustomerDueFromLedger(cid);
+      await safePut('customers', cid, db.customers[cid]);
+    }
 
     const instCount = Number(values.installmentCount)||0;
     if(!existing && due>0 && instCount>=2){
@@ -3709,70 +4500,177 @@ document.getElementById('productHistoryCloseBtn').addEventListener('click', () =
 document.getElementById('productHistoryPrintBtn').addEventListener('click', () => window.print());
 setupOverlayBackdropClose('productHistoryOverlay');
 
+
+function customerLedgerDateInPeriod(dateStr, year='all', month='all'){
+  return matchesYearMonth(dateStr, year, month);
+}
+
+function buildCustomerBankLedger(custId, year='all', month='all'){
+  const cust = db.customers[custId];
+  if(!cust) return {rows:[], opening:0, closing:0, debit:0, credit:0, cashPaid:0, discount:0};
+
+  const allSales = db.sales.filter(x=>x.customerId===custId);
+  const allPayments = db.installments.filter(x=>x.customerId===custId);
+  const allReturns = db.returns.filter(x=>!x.cancelled && x.customerId===custId);
+
+  // One sale row = receivable created. Booking discount is shown separately,
+  // therefore Debit is the gross amount and Credit includes booking discount + initial cash.
+  const txs = [
+    ...allSales.map(x=>({
+      ts:Number(x.ts||0), date:x.date||'', type:'sale',
+      ref:x.invoiceNo ? '#'+x.invoiceNo : (x.voucherNo||'—'),
+      description:(x.invoiceNo?'Invoice #'+x.invoiceNo+' — ':'')+(x.productName||t('history_type_sale')),
+      qty:Number(x.qty||0),
+      debit:Number(x.total||0)+Number(x.discount||0),
+      cash:getSaleInitialPaid(x),
+      discount:Number(x.discount||0),
+      otherCredit:0,
+      profit:saleNetProfit(x)
+    })),
+    ...allPayments.map(x=>({
+      ts:Number(x.ts||0), date:x.date||'', type:'payment',
+      ref:x.receiptNo ? '#'+x.receiptNo : '—',
+      description:x.note && x.note!=='—' ? x.note : t('installment_receipt_title'),
+      qty:null, debit:0, cash:Number(x.amount||0), discount:Number(x.discount||0),
+      otherCredit:0,
+      // A later discount is a waiver and reduces realized profit.
+      profit:Number(x.discount||0)>0 ? -Number(x.discount||0) : null
+    })),
+    ...allReturns.map(x=>({
+      ts:Number(x.ts||0), date:x.date||'', type:'return',
+      ref:x.returnNo ? '#'+x.returnNo : '—',
+      description:(currentLang==='bn'?'রিটার্ন':'Return')+(x.productName?' — '+x.productName:''),
+      qty:Number(x.qty||0), debit:0, cash:0, discount:0,
+      otherCredit:Number(x.dueAdjust||0),
+      profit:null
+    }))
+  ].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    const order={sale:1,payment:2,return:3};
+    if(a.type!==b.type) return (order[a.type]||9)-(order[b.type]||9);
+    return a.ts-b.ts;
+  });
+
+  const isAll = String(year)==='all' && String(month)==='all';
+  let periodStart = '';
+  if(!isAll && String(year)!=='all'){
+    const mm = String(month)==='all' ? '01' : String(month).padStart(2,'0');
+    periodStart = `${year}-${mm}-01`;
+  }
+
+  // Opening balance = all customer receivable movements before the selected period.
+  let opening = 0;
+  if(periodStart){
+    txs.filter(x=>x.date && x.date<periodStart).forEach(x=>{
+      opening += x.debit - x.cash - x.discount - x.otherCredit;
+    });
+  }
+
+  const periodTxs = txs.filter(x=>customerLedgerDateInPeriod(x.date, year, month));
+  let running = Math.max(0, Math.round(opening));
+  let debit=0, credit=0, cashPaid=0, discount=0;
+  const rows = [];
+
+  if(periodStart && running!==0){
+    rows.push({
+      type:'opening', date:periodStart, ref:'—',
+      description:currentLang==='bn'?'Opening Balance / পূর্বের জের':'Opening Balance',
+      qty:null, debit:0, cash:0, discount:0, otherCredit:0,
+      credit:0, balance:running, profit:null
+    });
+  }
+
+  periodTxs.forEach(x=>{
+    const txCredit = x.cash + x.discount + x.otherCredit;
+    running += x.debit - txCredit;
+    running = Math.max(0, Math.round(running));
+    debit += x.debit;
+    credit += txCredit;
+    cashPaid += x.cash;
+    discount += x.discount;
+    rows.push({...x, credit:txCredit, balance:running});
+  });
+
+  return {
+    rows, opening:Math.max(0,Math.round(opening)), closing:running,
+    debit, credit, cashPaid, discount
+  };
+}
+
+function customerLedgerTableHtml(custId, year='all', month='all', showProfit=false){
+  const data = buildCustomerBankLedger(custId, year, month);
+  const profitHead = showProfit ? `<th>${t('col_profit')}</th>` : '';
+  const profitCells = showProfit ? (tx=>`<td>${tx.profit!==null && tx.profit!==undefined ? '৳'+money(tx.profit) : '—'}</td>`) : (()=>'');
+  const colspan = showProfit ? 9 : 8;
+
+  if(data.rows.length===0){
+    return `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>`;
+  }
+
+  return `
+    <div class="customer-ledger-wrap">
+      <table class="customer-ledger">
+        <thead><tr>
+          <th>${t('col_date')}</th>
+          <th>${currentLang==='bn'?'রেফারেন্স':'Reference'}</th>
+          <th>${currentLang==='bn'?'বিবরণ':'Description'}</th>
+          <th>${t('col_qty')}</th>
+          <th>${currentLang==='bn'?'ডেবিট / বিক্রি':'Debit / Sale'}</th>
+          <th>${currentLang==='bn'?'ক্যাশ প্রাপ্তি':'Cash Received'}</th>
+          <th>${t('col_discount')}</th>
+          <th>${currentLang==='bn'?'চলতি বাকি':'Running Balance'}</th>
+          ${profitHead}
+        </tr></thead>
+        <tbody>${data.rows.map(tx=>`
+          <tr class="ledger-${tx.type}">
+            <td>${formatDateDMY(tx.date)}</td>
+            <td>${escapeHtml(tx.ref||'—')}</td>
+            <td class="ledger-desc">${escapeHtml(tx.description||'')}</td>
+            <td>${tx.qty!==null && tx.qty!==undefined ? tx.qty : '—'}</td>
+            <td class="${tx.debit>0?'ledger-debit':''}">${tx.debit>0?'৳'+money(tx.debit):'—'}</td>
+            <td class="${tx.cash>0?'ledger-credit':''}">${tx.cash>0?'৳'+money(tx.cash):'—'}</td>
+            <td class="${tx.discount>0?'ledger-credit':''}">${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
+            <td class="ledger-balance">৳${money(tx.balance)}</td>
+            ${profitCells(tx)}
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr>
+          <td colspan="4">${t('totals_label')}</td>
+          <td>৳${money(data.debit)}</td>
+          <td>৳${money(data.cashPaid)}</td>
+          <td>৳${money(data.discount)}</td>
+          <td>৳${money(data.closing)}</td>
+          ${showProfit?`<td>—</td>`:''}
+        </tr></tfoot>
+      </table>
+    </div>`;
+}
+
 function openCustomerHistory(custId){
   const cust = db.customers[custId];
   if(!cust) return;
   const sales = db.sales.filter(s=>s.customerId===custId);
   const payments = db.installments.filter(i=>i.customerId===custId);
-  const totalBought = sales.reduce((s,x)=>s+Number(x.total),0);
-  const totalInitialPaid = sales.reduce((s,x)=>s+Number(x.initialPaid!==undefined?x.initialPaid:x.paid),0);
-  const totalInstPaid = payments.reduce((s,p)=>s+Number(p.amount)+Number(p.discount||0),0);
+  const totalBought = sales.reduce((sum,x)=>sum+Number(x.total||0)+Number(x.discount||0),0);
+  const totalInitialPaid = sales.reduce((sum,x)=>sum+getSaleInitialPaid(x),0);
+  const totalInstPaid = payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
   const totalPaid = totalInitialPaid + totalInstPaid;
-
-  const ledgerRaw = [
-    ...sales.map(s=>({
-      ts: s.ts, date: s.date, type: 'booking', qty: s.qty,
-      label: (s.invoiceNo?'#'+s.invoiceNo+' — ':'')+escapeHtml(s.productName),
-      total: Number(s.total), discount: Number(s.discount||0),
-      paid: Number(s.initialPaid!==undefined?s.initialPaid:s.paid)
-    })),
-    ...payments.map(p=>({
-      ts: p.ts, date: p.date, type: 'installment', qty: null,
-      label: p.note && p.note!=='—' ? escapeHtml(p.note) : t('installment_receipt_title'),
-      total: 0, discount: Number(p.discount||0),
-      paid: Number(p.amount)
-    }))
-  ].sort((a,b)=>{
-    if(a.date!==b.date) return a.date<b.date?-1:1;
-    if(a.type!==b.type) return a.type==='booking'?-1:1;
-    return a.ts-b.ts;
-  });
-
-  let runningDue = 0;
-  const ledger = ledgerRaw.map(tx=>{
-    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
-    else runningDue -= (tx.paid + tx.discount);
-    return { ...tx, runningDue: Math.round(runningDue) };
-  });
+  const ledgerData = buildCustomerBankLedger(custId,'all','all');
 
   document.getElementById('historyTitle').textContent = cust.name + ' — ' + t('history_title');
   document.getElementById('historyBody').innerHTML = `
     <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
-      ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
+      ${escapeHtml(cust.name)}${cust.displayId?' · ID: #'+escapeHtml(String(cust.displayId)):''}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
-    <div class="field-hint" style="margin-bottom:10px;">
-      ${t('history_summary')(totalBought, totalPaid, cust.due)}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
+    <div class="ledger-meta">
+      <span><strong>${currentLang==='bn'?'মোট বিক্রি':'Total Sales'}:</strong> ৳${money(totalBought)}</span>
+      <span><strong>${currentLang==='bn'?'মোট ক্যাশ প্রাপ্তি':'Total Cash Received'}:</strong> ৳${money(totalPaid)}</span>
+      <span><strong>${currentLang==='bn'?'মোট ছাড়':'Total Discount'}:</strong> ৳${money(ledgerData.discount)}</span>
+      <span><strong>${currentLang==='bn'?'বর্তমান বাকি':'Current Due'}:</strong> ৳${money(calculateCustomerDueFromLedger(custId))}</span>
+      ${Number(cust.refundOwed)>0 ? `<span><strong>${t('return_excess_refund')}:</strong> ৳${money(cust.refundOwed)}</span>` : ''}
     </div>
-    ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
-    <table class="data">
-      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
-      <tbody>${ledger.map(tx=>`<tr>
-        <td>${formatDateDMY(tx.date)}</td>
-        <td>${tx.label}</td>
-        <td>${tx.qty!==null?tx.qty:'—'}</td>
-        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
-        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-        <td>৳${money(tx.paid)}</td>
-        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
-      </tr>`).join('')}</tbody>
-      <tfoot><tr style="font-weight:700;background:var(--paper-card);">
-        <td colspan="3">${t('totals_label')}</td>
-        <td>৳${money(totalBought)}</td>
-        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
-        <td>৳${money(totalPaid)}</td>
-        <td>${cust.due>0?'<span style="color:var(--red);">৳'+money(cust.due)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
-      </tr></tfoot>
-    </table>`}
+    <h3 style="margin:14px 0 8px;">${currentLang==='bn'?'🧾 কাস্টমার লেজার':'🧾 Customer Ledger'}</h3>
+    ${customerLedgerTableHtml(custId,'all','all',false)}
   `;
   document.getElementById('historyCloseBtn').textContent = t('close');
   document.getElementById('historyPrintBtn').textContent = t('print_report');
@@ -3888,6 +4786,11 @@ document.getElementById('quickAddSaveBtn').addEventListener('click', async () =>
     }
   }
   renderNav();
+  // If Quick Add was used from a standalone list/page, reflect the new record immediately.
+  if(!document.getElementById('formOverlay').classList.contains('open') &&
+     !document.getElementById('multiSaleOverlay').classList.contains('open')){
+    refreshCurrentView();
+  }
 });
 
 function renderInstallmentPlanHtml(plan){
@@ -3938,21 +4841,24 @@ async function markInstallmentPaid(planId, idx){
     remainingToApply -= applyAmt;
     sale.paid = Number(sale.paid||0) + applyAmt;
     sale.due = Math.max(0, Number(sale.due||0) - applyAmt);
-    if(applyAmt>0) adjustments.push({ saleId: sale.id, amount: applyAmt });
+    if(applyAmt>0) adjustments.push({ saleId: sale.id, cashAmount:applyAmt, discountAmount:0, amount:applyAmt });
   });
   for(const sale of groupSales) await safePut('sales', sale.id, sale);
 
   if(plan.customerId && db.customers[plan.customerId]){
     const cust = db.customers[plan.customerId];
-    const previousDue = Number(cust.due);
-    cust.due = Math.max(0, previousDue - Number(item.amount));
-    await safePut('customers', plan.customerId, cust);
+    const previousDue = calculateCustomerDueFromLedger(plan.customerId);
     const instRecord = {
       id: uid(), receiptNo: nextReceiptNo(), customerId: plan.customerId, customerName: plan.customerName,
-      amount: Number(item.amount), discount: 0, previousDue, newDue: cust.due, adjustments,
+      amount: Number(item.amount), discount: 0, previousDue,
+      newDue: Math.max(0,previousDue-Number(item.amount)), adjustments,
       date: todayStr(), ts: Date.now(), planId: plan.id, installmentNo: idx
     };
     db.installments.push(instRecord);
+    await safePut('installments', instRecord.id, instRecord);
+    cust.due = calculateCustomerDueFromLedger(plan.customerId);
+    instRecord.newDue = cust.due;
+    await safePut('customers', plan.customerId, cust);
     await safePut('installments', instRecord.id, instRecord);
     openInstallmentReceipt(instRecord);
   }
@@ -3970,15 +4876,23 @@ async function reverseInstallmentPaymentEffects(rec){
   for(const adj of adjustments){
     const sale = db.sales.find(s=>s.id===adj.saleId);
     if(sale){
-      sale.due = Number(sale.due) + Number(adj.amount);
-      sale.paid = Math.max(0, Number(sale.paid) - Number(adj.amount));
+      if(adj.cashAmount!==undefined || adj.discountAmount!==undefined){
+        const cashAmount = Number(adj.cashAmount||0);
+        const discountAmount = Number(adj.discountAmount||0);
+        sale.due = Number(sale.due||0) + cashAmount + discountAmount;
+        sale.paid = Math.max(0, Number(sale.paid||0) - cashAmount);
+      }else{
+        // Legacy records used one combined settlement amount and also added it to sale.paid.
+        sale.due = Number(sale.due||0) + Number(adj.amount||0);
+        sale.paid = Math.max(0, Number(sale.paid||0) - Number(adj.amount||0));
+      }
       await safePut('sales', sale.id, sale);
     }
   }
-  // undo the customer due change
   if(rec.customerId && db.customers[rec.customerId]){
     const cust = db.customers[rec.customerId];
-    cust.due = Number(cust.due) + Number(rec.amount) + Number(rec.discount||0);
+    // Rebuild cached due from transactions after caller removes/replaces the record.
+    cust.due = calculateCustomerDueFromLedger(rec.customerId);
     await safePut('customers', rec.customerId, cust);
   }
   // if this came from a formal installment plan, put that installment back to pending
@@ -3998,8 +4912,11 @@ async function deleteInstallmentPayment(id){
   await reverseInstallmentPaymentEffects(rec);
   db.installments = db.installments.filter(i=>i.id!==id);
   await safeRemove('installments', id);
-  renderNav();
-  renderPage();
+  if(rec.customerId && db.customers[rec.customerId]){
+    db.customers[rec.customerId].due = calculateCustomerDueFromLedger(rec.customerId);
+    await safePut('customers', rec.customerId, db.customers[rec.customerId]);
+  }
+  refreshCurrentView();
   if(document.getElementById('instHistoryOverlay').classList.contains('open') && rec.customerId) openInstallmentHistory(rec.customerId);
 }
 
@@ -4010,7 +4927,7 @@ function openEditInstallmentPayment(id){
   editInstPayCtx = id;
   const cust = rec.customerId ? db.customers[rec.customerId] : null;
   document.getElementById('dueTitle').textContent = t('edit_title') + (rec.receiptNo ? ' #'+rec.receiptNo : '');
-  document.getElementById('dueCurrentInfo').textContent = cust ? t('pay_due_current')(cust.name, cust.due) : (rec.customerName||'');
+  document.getElementById('dueCurrentInfo').textContent = cust ? t('pay_due_current')(cust.name, calculateCustomerDueFromLedger(rec.customerId)) : (rec.customerName||'');
   document.getElementById('dueAmountLabel').textContent = t('pay_amount');
   document.getElementById('dueDiscountLabel').textContent = t('pay_discount');
   document.getElementById('dueDateLabel').textContent = t('f_date');
@@ -4037,40 +4954,63 @@ async function saveEditedInstallmentPayment(){
   const newNote = document.getElementById('dueNoteInput').value.trim();
   const newIsOldEntry = document.getElementById('dueIsOldEntry').checked;
   if(newAmount<=0 && newDiscount<=0) return;
+  if(newAmount<0 || newDiscount<0) return;
 
-  // reverse the old effects first
+  const custBefore = rec.customerId ? db.customers[rec.customerId] : null;
+  const currentDue = rec.customerId ? calculateCustomerDueFromLedger(rec.customerId) : 0;
+  const maxSettlement = currentDue + Number(rec.amount||0) + Number(rec.discount||0);
+  if(rec.customerId && newAmount + newDiscount > maxSettlement){
+    alert(currentLang==='bn'
+      ? 'পরিশোধ + ছাড় উপলভ্য বকেয়ার চেয়ে বেশি হতে পারবে না।'
+      : 'Payment + discount cannot exceed the available due.');
+    return;
+  }
+
   await reverseInstallmentPaymentEffects(rec);
 
-  // re-apply with the new values, same as creating a fresh flexible payment
-  const cust = rec.customerId ? db.customers[rec.customerId] : null;
-  const previousDue = cust ? Number(cust.due) : Number(rec.previousDue);
-  const newDue = Math.max(0, previousDue - (newAmount+newDiscount));
-  if(cust){ cust.due = newDue; await safePut('customers', rec.customerId, cust); }
+  // Remove the old record from the calculation temporarily before rebuilding previous due.
+  const oldIndex = db.installments.findIndex(i=>i.id===rec.id);
+  if(oldIndex>=0) db.installments.splice(oldIndex,1);
 
-  let toApply = newAmount + newDiscount;
+  const cust = rec.customerId ? db.customers[rec.customerId] : null;
+  const previousDue = rec.customerId ? calculateCustomerDueFromLedger(rec.customerId) : Number(rec.previousDue||0);
+
+  let cashLeft = newAmount, discountLeft = newDiscount;
   const adjustments = [];
   if(rec.customerId){
     const openSales = db.sales.filter(s=>s.customerId===rec.customerId && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
     for(const sale of openSales){
-      if(toApply<=0) break;
-      const applyAmt = Math.min(Number(sale.due), toApply);
-      sale.paid = Number(sale.paid||0) + applyAmt;
-      sale.due = Math.max(0, Number(sale.due) - applyAmt);
-      toApply -= applyAmt;
-      adjustments.push({ saleId: sale.id, amount: applyAmt });
-      await safePut('sales', sale.id, sale);
+      if(cashLeft<=0 && discountLeft<=0) break;
+      let available = Number(sale.due||0);
+      const cashAmount = Math.min(available,cashLeft);
+      available -= cashAmount; cashLeft -= cashAmount;
+      const discountAmount = Math.min(available,discountLeft);
+      discountLeft -= discountAmount;
+      const settled = cashAmount + discountAmount;
+      if(settled>0){
+        sale.paid = getSaleCurrentCashPaid(sale) + cashAmount;
+        sale.due = Math.max(0,Number(sale.due||0)-settled);
+        adjustments.push({saleId:sale.id,cashAmount,discountAmount,amount:settled});
+        await safePut('sales',sale.id,sale);
+      }
     }
   }
 
   rec.amount = newAmount; rec.discount = newDiscount; rec.date = newDate; rec.note = newNote;
-  rec.isOldEntry = newIsOldEntry; rec.previousDue = previousDue; rec.newDue = newDue; rec.adjustments = adjustments;
+  rec.isOldEntry = newIsOldEntry; rec.previousDue = previousDue;
+  rec.newDue = Math.max(0,previousDue-newAmount-newDiscount); rec.adjustments = adjustments;
+  db.installments.push(rec);
+  if(cust){
+    cust.due = calculateCustomerDueFromLedger(rec.customerId);
+    rec.newDue = cust.due;
+    await safePut('customers',rec.customerId,cust);
+  }
   delete rec.planId; delete rec.installmentNo; // editing detaches it from any formal plan item
   await safePut('installments', rec.id, rec);
 
   document.getElementById('dueOverlay').classList.remove('open');
   editInstPayCtx = null;
-  renderNav();
-  renderPage();
+  refreshCurrentView();
   if(document.getElementById('instHistoryOverlay').classList.contains('open') && rec.customerId) openInstallmentHistory(rec.customerId);
 }
 
@@ -4194,7 +5134,7 @@ document.getElementById('returnConfirmBtn').addEventListener('click', async () =
 
   if(sale.customerId && db.customers[sale.customerId]){
     const cust = db.customers[sale.customerId];
-    cust.due = Math.max(0, Number(cust.due) - dueAdjust);
+    // Record is added just below; refund is updated now and due is reconciled after the record exists.
     cust.refundOwed = Number(cust.refundOwed||0) + excessRefund;
     await safePut('customers', sale.customerId, cust);
   }
@@ -4208,6 +5148,10 @@ document.getElementById('returnConfirmBtn').addEventListener('click', async () =
   };
   db.returns.push(record);
   await safePut('returns', record.id, record);
+  if(record.customerId && db.customers[record.customerId]){
+    db.customers[record.customerId].due = calculateCustomerDueFromLedger(record.customerId);
+    await safePut('customers', record.customerId, db.customers[record.customerId]);
+  }
 
   document.getElementById('returnOverlay').classList.remove('open');
   returnCtx = null;
@@ -4236,6 +5180,7 @@ async function cancelReturn(returnId){
     const cust = db.customers[sale.customerId];
     cust.due = Number(cust.due) + Number(rec.dueAdjust);
     cust.refundOwed = Math.max(0, Number(cust.refundOwed||0) - Number(rec.excessRefund));
+    cust.due = calculateCustomerDueFromLedger(sale.customerId);
     await safePut('customers', sale.customerId, cust);
   }
   renderNav();
@@ -4269,6 +5214,10 @@ async function deleteReturn(returnId){
 
   db.returns = db.returns.filter(r=>r.id!==returnId);
   await safeRemove('returns', returnId);
+  if(rec.customerId && db.customers[rec.customerId]){
+    db.customers[rec.customerId].due = calculateCustomerDueFromLedger(rec.customerId);
+    await safePut('customers', rec.customerId, db.customers[rec.customerId]);
+  }
   renderNav();
   renderPage();
   if(document.getElementById('saleViewOverlay').classList.contains('open')){
@@ -4340,7 +5289,7 @@ function openSaleView(id){
     ? db.installmentPlans.find(p=>p.invoiceId===sale.invoiceId)
     : db.installmentPlans.find(p=>p.saleId===id);
   const grandTotal = groupItems.reduce((s,x)=>s+Number(x.total),0);
-  const grandPaid = groupItems.reduce((s,x)=>s+Number(x.paid),0);
+  const grandPaid = groupItems.reduce((s,x)=>s+getSaleInitialPaid(x),0);
   const grandDue = groupItems.reduce((s,x)=>s+Number(x.due),0);
   document.getElementById('saleViewTitle').textContent = (sale.invoiceId ? t('invoice_label') : t('view_title')) + (sale.invoiceNo ? ' #'+sale.invoiceNo : '');
   document.getElementById('saleViewCloseBtn').textContent = t('close');
@@ -4447,7 +5396,7 @@ function openMultiSale(editInvoiceId){
         document.getElementById('msVoucherTag').value = first.voucherTag || '';
         document.getElementById('msPaymentSystem').value = first.paymentSystem || 'cash';
         document.getElementById('msIsOldEntry').checked = !!first.isOldEntry;
-        document.getElementById('msPaid').value = groupSales.reduce((s,x)=>s+Number(x.paid),0);
+        document.getElementById('msPaid').value = groupSales.reduce((s,x)=>s+getSaleInitialPaid(x),0);
         document.getElementById('msInstCount').value = plan ? plan.count : '';
         groupSales.forEach(sale => addMultiSaleRow(sale));
         document.getElementById('multiSaleOverlay').classList.add('open');
@@ -4513,7 +5462,7 @@ function onMsCustomerSearch(){
     ? entries.filter(([cid,c]) => c.name.toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || String(c.displayId||'').includes(q)).slice(0,10)
     : entries.slice(0,10);
   if(matches.length===0){ resultsEl.classList.remove('open'); resultsEl.innerHTML=''; return; }
-  resultsEl.innerHTML = matches.map(([cid,c]) => `<div class="ms-product-result-item" onclick="selectMsCustomer('${cid}')">${escapeHtml(c.name)} <span style="color:var(--ink-soft);font-size:11px;">${c.phone?escapeHtml(c.phone):''}${Number(c.due)>0?' · ৳'+money(c.due):''}</span></div>`).join('');
+  resultsEl.innerHTML = matches.map(([cid,c]) => `<div class="ms-product-result-item" onclick="selectMsCustomer('${cid}')">${escapeHtml(c.name)} <span style="color:var(--ink-soft);font-size:11px;">${c.phone?escapeHtml(c.phone):''}${calculateCustomerDueFromLedger(cid)>0?' · ৳'+money(calculateCustomerDueFromLedger(cid)):''}</span></div>`).join('');
   resultsEl.classList.add('open');
 }
 function selectMsCustomer(cid){
@@ -4607,12 +5556,44 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
     const price = Number(document.getElementById(`ms-price-${rowId}`).value)||0;
     const disc = Number(document.getElementById(`ms-discount-${rowId}`).value)||0;
     if(qty<=0) continue;
-    if(qty > Number(product.qty)){
-      if(!confirm(t('low_stock_more'))) return;
-    }
+    // Stock is validated after all rows are collected, so duplicate-product rows
+    // and edited invoices are checked against the correct combined availability.
     rowsData.push({ pid, product, qty, price, disc, rowTotal: Math.max(0, qty*price - disc) });
   }
   if(rowsData.length===0){ alert(t('product_not_found')); return; }
+
+  // Validate duplicate product rows together, otherwise two rows can each pass stock validation separately.
+  const requiredByProduct = {};
+  rowsData.forEach(r=>requiredByProduct[r.pid]=(requiredByProduct[r.pid]||0)+Number(r.qty||0));
+  for(const [pid,required] of Object.entries(requiredByProduct)){
+    const product=db.products[pid];
+    let effectiveStock=Number(product?.qty||0);
+    if(msEditInvoiceId){
+      effectiveStock += db.sales.filter(x=>x.invoiceId===msEditInvoiceId && x.productId===pid)
+        .reduce((sum,x)=>sum+Number(x.qty||0),0);
+    }
+    if(required>effectiveStock && !confirm(t('low_stock_more'))) return;
+  }
+
+  // if editing, protect historical installment/return allocations.
+  if(msEditInvoiceId){
+    const protectedSaleIds = new Set(db.sales.filter(s=>s.invoiceId===msEditInvoiceId).map(s=>String(s.id)));
+    const hasFlexiblePayments = db.installments.some(inst =>
+      Array.isArray(inst.adjustments) && inst.adjustments.some(a=>protectedSaleIds.has(String(a.saleId)))
+    );
+    const hasReturns = db.returns.some(r =>
+      !r.cancelled && (
+        protectedSaleIds.has(String(r.saleId)) ||
+        (Array.isArray(r.adjustments) && r.adjustments.some(a=>protectedSaleIds.has(String(a.saleId))))
+      )
+    );
+    if(hasFlexiblePayments || hasReturns){
+      alert(currentLang==='bn'
+        ? 'এই Invoice-এ কিস্তি/রিটার্ন লেনদেন হয়ে গেছে। হিসাবের নিরাপত্তার জন্য আগে সংশ্লিষ্ট কিস্তি/রিটার্ন Reverse/Delete করে তারপর Invoice Edit করুন।'
+        : 'This invoice already has installment/return transactions. Reverse/delete those transactions before editing the invoice to protect the ledger.');
+      return;
+    }
+  }
 
   // if editing, first reverse the old invoice's stock/due effects
   if(msEditInvoiceId){
@@ -4669,7 +5650,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   saleRecords.forEach(rec => db.sales.push(rec));
   await Promise.all(saleRecords.map(rec => safePut('sales', rec.id, rec)));
   if(customerId && cust){
-    cust.due = Number(cust.due||0) + overallDue;
+    cust.due = calculateCustomerDueFromLedger(customerId);
     await safePut('customers', customerId, cust);
   }
 
@@ -4693,8 +5674,7 @@ document.getElementById('msSaveBtn').addEventListener('click', async () => {
   document.getElementById('multiSaleOverlay').classList.remove('open');
   msEditInvoiceId = null;
   msEditInvoiceNo = null;
-  renderNav();
-  renderPage();
+  refreshCurrentView();
   if(saleRecords.length && typeof openSaleView==='function') openSaleView(saleRecords[0].id);
 });
 
@@ -4702,6 +5682,7 @@ let dueCtx = null;
 function openPayDue(custId){
   const cust = db.customers[custId];
   if(!cust) return;
+  cust.due = calculateCustomerDueFromLedger(custId);
   editInstPayCtx = null;
   dueCtx = custId;
   document.getElementById('dueTitle').textContent = t('pay_due_title');
@@ -4749,34 +5730,59 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
   const note = document.getElementById('dueNoteInput').value.trim();
   const isOldEntry = document.getElementById('dueIsOldEntry').checked;
   if(paid<=0 && discount<=0) return;
-  const previousDue = Number(cust.due);
-  const newDue = Math.max(0, previousDue - (paid+discount));
-  cust.due = newDue;
-  await safePut('customers', dueCtx, cust);
+  if(paid<0 || discount<0){
+    alert(currentLang==='bn' ? 'পরিশোধ বা ছাড় ঋণাত্মক হতে পারবে না।' : 'Payment or discount cannot be negative.');
+    return;
+  }
 
-  // distribute this payment across the customer's outstanding sales (oldest first)
-  // so each sale's own paid/due fields stay accurate too
-  let toApply = paid + discount;
+  const previousDue = calculateCustomerDueFromLedger(dueCtx);
+  if(paid + discount > previousDue){
+    alert(currentLang==='bn'
+      ? 'পরিশোধ + ছাড় বর্তমান বকেয়ার চেয়ে বেশি হতে পারবে না।'
+      : 'Payment + discount cannot exceed the current due.');
+    return;
+  }
+
+  // Cash and waiver are allocated separately. Only cash increases sale.paid.
+  let cashLeft = paid;
+  let discountLeft = discount;
   const openSales = db.sales.filter(s=>s.customerId===dueCtx && Number(s.due)>0).sort((a,b)=>a.ts-b.ts);
   const adjustments = [];
   const salesToUpdate = [];
+
   for(const sale of openSales){
-    if(toApply<=0) break;
-    const applyAmt = Math.min(Number(sale.due), toApply);
-    sale.paid = Number(sale.paid||0) + applyAmt;
-    sale.due = Math.max(0, Number(sale.due) - applyAmt);
-    toApply -= applyAmt;
-    adjustments.push({ saleId: sale.id, amount: applyAmt });
-    salesToUpdate.push(sale);
+    if(cashLeft<=0 && discountLeft<=0) break;
+    let available = Number(sale.due||0);
+    const cashAmount = Math.min(available, cashLeft);
+    available -= cashAmount;
+    cashLeft -= cashAmount;
+
+    const discountAmount = Math.min(available, discountLeft);
+    available -= discountAmount;
+    discountLeft -= discountAmount;
+
+    const settled = cashAmount + discountAmount;
+    if(settled>0){
+      sale.paid = getSaleCurrentCashPaid(sale) + cashAmount;
+      sale.due = Math.max(0, Number(sale.due||0) - settled);
+      adjustments.push({saleId:sale.id, cashAmount, discountAmount, amount:settled});
+      salesToUpdate.push(sale);
+    }
   }
   await Promise.all(salesToUpdate.map(sale => safePut('sales', sale.id, sale)));
 
   const instRecord = {
     id: uid(), receiptNo: nextReceiptNo(), customerId: dueCtx, customerName: cust.name,
-    amount: paid, discount, previousDue, newDue, note, isOldEntry, adjustments,
+    amount: paid, discount, previousDue, newDue: Math.max(0, previousDue-paid-discount),
+    note, isOldEntry, adjustments,
     date: payDate, ts: new Date(payDate).getTime() || Date.now()
   };
   db.installments.push(instRecord);
+  await safePut('installments', instRecord.id, instRecord);
+
+  cust.due = calculateCustomerDueFromLedger(dueCtx);
+  instRecord.newDue = cust.due;
+  await safePut('customers', dueCtx, cust);
   await safePut('installments', instRecord.id, instRecord);
   document.getElementById('dueOverlay').classList.remove('open');
   dueCtx = null;
@@ -4786,6 +5792,9 @@ document.getElementById('dueConfirmBtn').addEventListener('click', async () => {
 
 function openInstallmentReceipt(rec){
   const custRecord = rec.customerId ? db.customers[rec.customerId] : null;
+  const derived = rec.customerId ? getDerivedInstallmentSnapshot(rec.customerId, rec.id) : null;
+  const receiptPreviousDue = derived ? derived.previousDue : Number(rec.previousDue||0);
+  const receiptNewDue = derived ? derived.newDue : Number(rec.newDue||0);
   document.getElementById('instReceiptTitle').textContent = t('installment_receipt_title') + (rec.receiptNo ? ' #'+rec.receiptNo : '');
   document.getElementById('instReceiptCloseBtn').textContent = t('close');
   document.getElementById('instReceiptPrintBtn').textContent = t('print_report');
@@ -4796,10 +5805,10 @@ function openInstallmentReceipt(rec){
         <tr><td>${t('col_customer')}</td><td>${escapeHtml(rec.customerName)}</td></tr>
         ${custRecord && custRecord.phone ? `<tr><td>${t('col_phone')}</td><td>${escapeHtml(custRecord.phone)}</td></tr>` : ''}
         <tr><td>${t('inst_col_date')}</td><td>${formatDateDMY(rec.date)}</td></tr>
-        <tr><td>${t('inst_col_previous_due')}</td><td>৳${money(rec.previousDue)}</td></tr>
+        <tr><td>${t('inst_col_previous_due')}</td><td>৳${money(receiptPreviousDue)}</td></tr>
         <tr><td>${t('inst_col_amount')}</td><td>৳${money(rec.amount)}</td></tr>
         ${Number(rec.discount)>0 ? `<tr><td>${t('inst_col_discount')}</td><td>৳${money(rec.discount)}</td></tr>` : ''}
-        <tr><td>${t('inst_col_new_due')}</td><td>৳${money(rec.newDue)}</td></tr>
+        <tr><td>${t('inst_col_new_due')}</td><td>৳${money(receiptNewDue)}</td></tr>
         ${rec.note ? `<tr><td>${t('f_note')}</td><td>${escapeHtml(rec.note)}</td></tr>` : ''}
       </tbody>
     </table>
@@ -4815,9 +5824,17 @@ setupOverlayBackdropClose('instReceiptOverlay');
 function openInstallmentHistory(custId){
   const cust = db.customers[custId];
   if(!cust) return;
-  const list = db.installments.filter(x=>x.customerId===custId).sort((a,b)=>b.ts-a.ts);
-  const totalPaid = list.reduce((s,x)=>s+Number(x.amount)+Number(x.discount||0),0);
+  const rawList = db.installments.filter(x=>x.customerId===custId);
+  const totalPaid = rawList.reduce((sum,x)=>sum+Number(x.amount||0),0);
   const plans = db.installmentPlans.filter(p=>p.customerId===custId).sort((a,b)=>b.ts-a.ts);
+
+  // Rebuild from source transactions instead of trusting old saved previousDue/newDue snapshots.
+  const statement = buildCustomerReceivableStatement(custId);
+  const list = statement.rows.filter(x=>x.type==='installment').sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?1:-1;
+    return b.ts-a.ts;
+  });
+
   document.getElementById('instHistoryTitle').textContent = cust.name + ' — ' + t('installment_history_title');
   document.getElementById('instHistoryCloseBtn').textContent = t('close');
   document.getElementById('instHistoryPrintBtn').textContent = t('print_report');
@@ -4825,7 +5842,7 @@ function openInstallmentHistory(custId){
     <div class="field-hint" style="margin-bottom:6px;font-weight:700;color:var(--ink);">
       ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
-    <div class="field-hint" style="margin-bottom:10px;">${t('inst_total_paid')}: ৳${money(totalPaid)} · ${t('col_due')}: ৳${money(cust.due)}</div>
+    <div class="field-hint" style="margin-bottom:10px;">${t('inst_total_paid')}: ৳${money(totalPaid)} · ${t('col_due')}: ৳${money(statement.closing)}</div>
     ${plans.length>0 ? plans.map(p=>`
       <div class="panel">
         <div style="font-weight:700;margin-bottom:6px;">${escapeHtml(p.productName||'')} — ${t('inst_plan_summary')(p.count, p.perAmount)}</div>
@@ -4834,7 +5851,15 @@ function openInstallmentHistory(custId){
     ${list.length===0 ? `<div class="empty"><div class="big">${t('inst_no_history')}</div></div>` : `
     <table class="data">
       <thead><tr><th>${t('inst_col_date')}</th><th>${t('inst_col_previous_due')}</th><th>${t('inst_col_amount')}</th><th>${t('inst_col_discount')}</th><th>${t('inst_col_new_due')}</th><th>${t('f_note')}</th><th class="no-print"></th></tr></thead>
-      <tbody>${list.map(r=>`<tr><td>${formatDateDMY(r.date)}</td><td>৳${money(r.previousDue)}</td><td>৳${money(r.amount)}</td><td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td><td>৳${money(r.newDue)}</td><td>${escapeHtml(r.note||'—')}</td><td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${r.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${r.id}')">🗑️</button></td></tr>`).join('')}</tbody>
+      <tbody>${list.map(r=>`<tr>
+        <td>${formatDateDMY(r.date)}</td>
+        <td>৳${money(r.previousDue)}</td>
+        <td>৳${money(r.amount)}</td>
+        <td>${Number(r.discount)>0?'৳'+money(r.discount):'—'}</td>
+        <td>৳${money(r.newDue)}</td>
+        <td>${escapeHtml(r.note||'—')}</td>
+        <td class="actions-cell no-print"><button class="icon-btn" title="${t('edit_title')}" onclick="openEditInstallmentPayment('${r.id}')">✏️</button><button class="icon-btn" title="${t('delete_title')}" onclick="deleteInstallmentPayment('${r.id}')">🗑️</button></td>
+      </tr>`).join('')}</tbody>
     </table>`}
   `;
   document.getElementById('instHistoryOverlay').classList.add('open');
@@ -4933,7 +5958,7 @@ async function clearAllData(){
   if(typed !== t('clear_all_confirm_word')) { alert(t('clear_all_aborted')); return; }
 
   const objCollections = ['customers','suppliers','products','categories'];
-  const arrCollections = ['purchases','sales','expenses','installments','installmentPlans','returns','supplierPayments'];
+  const arrCollections = ['purchases','sales','expenses','installments','installmentPlans','returns','supplierPayments','personalLoanAccounts','personalLoanTransactions'];
 
   for(const name of objCollections){
     const ids = Object.keys(db[name]);
@@ -4947,6 +5972,7 @@ async function clearAllData(){
   db.customers = {}; db.suppliers = {}; db.products = {}; db.categories = {};
   db.purchases = []; db.sales = []; db.expenses = [];
   db.installments = []; db.installmentPlans = []; db.returns = []; db.supplierPayments = [];
+  db.personalLoanAccounts = []; db.personalLoanTransactions = [];
   try{ await storageSet(K.logo, null); }catch(e){}
   logoData = null;
 
