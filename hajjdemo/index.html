@@ -2037,7 +2037,7 @@ async function loadAll(){
   const objTabs = [],arrTabs=[];
   if(hasPermission('view_daily')||hasPermission('view_reports')||hasPermission('view_ledger')||hasPermission('financial_setup')){
     objTabs.push('customers','suppliers','products','categories','groupMembers','groups','agentLedgerHeads');
-    arrTabs.push('purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','agentLedger','travelAdjustments','preRegBatches','preRegPilgrims');
+    arrTabs.push('purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','agentLedger','travelAdjustments','preRegBatches','preRegPilgrims','tripCosts');
   }else{
     db.customers={};db.suppliers={};db.products={};db.categories={};db.groupMembers={};db.groups={};db.agentLedgerHeads={};
     db.purchases=[];db.sales=[];db.expenses=[];db.installments=[];db.installmentPlans=[];db.returns=[];db.vendorPayments=[];db.agentLedger=[];db.travelAdjustments=[];db.preRegBatches=[];db.preRegPilgrims=[];db.loanAccounts=[];db.loanTransactions=[];db.creditFacilities=[];db.creditTransactions=[];
