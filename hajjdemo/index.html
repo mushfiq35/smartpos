@@ -937,7 +937,7 @@ const I18N = {
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'কাস্টমার', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর',
     title_categories:'প্যাকেজের ধরন', add_categories:'+ নতুন ধরন', f_category_name:'ধরনের নাম',
-    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_pre_registration:'হজ প্রাক-নিবন্ধন', nav_returns:'বাতিল / ট্রান্সফার', nav_loans_advances:'ঋণ ও অগ্রিম', nav_balance_sheet:'ব্যালেন্স শিট', nav_payment_ledger:'পেমেন্ট লেজার', nav_opening_balances:'ওপেনিং ব্যালেন্স', nav_assets:'অ্যাসেট রেজিস্টার', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_user_management:'ইউজার ম্যানেজমেন্ট', nav_group_members:'গ্রুপস/এজেন্ট', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপস/এজেন্ট',
+    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_pre_registration:'হজ প্রাক-নিবন্ধন', nav_returns:'বাতিল / ট্রান্সফার', nav_trip_analysis:'ট্রিপ বিশ্লেষণ', nav_loans_advances:'ঋণ ও অগ্রিম', nav_balance_sheet:'ব্যালেন্স শিট', nav_payment_ledger:'পেমেন্ট লেজার', nav_opening_balances:'ওপেনিং ব্যালেন্স', nav_assets:'অ্যাসেট রেজিস্টার', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_user_management:'ইউজার ম্যানেজমেন্ট', nav_group_members:'গ্রুপস/এজেন্ট', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপস/এজেন্ট',
     reports_sales_returns_tab:'বুকিং ও বাতিল', sr_sales_count:'বুকিং সংখ্যা', sr_returns_count:'বাতিল সংখ্যা', sr_net_label:'নিট',
     return_title:'বুকিং বাতিল', return_new:'নতুন বাতিল', return_no:'বাতিল নং',
     return_original_qty:'মোট বুকড পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
@@ -1085,7 +1085,7 @@ const I18N = {
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Customers', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors',
     title_categories:'Package Types', add_categories:'+ New Type', f_category_name:'Type Name',
-    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_pre_registration:'Hajj Pre-registration', nav_returns:'Cancel / Transfer', nav_loans_advances:'Loans & Advances', nav_balance_sheet:'Balance Sheet', nav_payment_ledger:'Payment Ledger', nav_opening_balances:'Opening Balances', nav_assets:'Asset Register', nav_reports:'Reports', nav_settings:'Settings', nav_user_management:'User Management', nav_group_members:'Groups/Agent', nav_groups:'Groups / Lots', rep_group_tab:'Groups/Agent',
+    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_pre_registration:'Hajj Pre-registration', nav_returns:'Cancel / Transfer', nav_trip_analysis:'Trip Analysis', nav_loans_advances:'Loans & Advances', nav_balance_sheet:'Balance Sheet', nav_payment_ledger:'Payment Ledger', nav_opening_balances:'Opening Balances', nav_assets:'Asset Register', nav_reports:'Reports', nav_settings:'Settings', nav_user_management:'User Management', nav_group_members:'Groups/Agent', nav_groups:'Groups / Lots', rep_group_tab:'Groups/Agent',
     reports_sales_returns_tab:'Bookings & Cancellations', sr_sales_count:'Bookings Count', sr_returns_count:'Cancellations Count', sr_net_label:'Net',
     return_title:'Cancellations', return_new:'New Cancellation', return_no:'Cancellation No.',
     return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
@@ -1716,6 +1716,7 @@ const NAV = [
   {id:'expenses', ic:'💸', key:'nav_expenses'},
   {id:'pre_registration', ic:'🕋', key:'nav_pre_registration'},
   {id:'returns', ic:'↩️', key:'nav_returns'},
+  {id:'trip_analysis', ic:'📊', key:'nav_trip_analysis'},
   {id:'loans_advances', ic:'🤝', key:'nav_loans_advances'},
   {id:'balance_sheet', ic:'📑', key:'nav_balance_sheet'},
   {id:'opening_balances', ic:'⚖️', key:'nav_opening_balances'},
@@ -2205,6 +2206,7 @@ function renderPage(){
   else if(currentTab==='expenses') renderListPage('expenses');
   else if(currentTab==='pre_registration') renderPreRegistrationPage();
   else if(currentTab==='returns') renderReturnsPage();
+  else if(currentTab==='trip_analysis') renderTripAnalysisPage();
   else if(currentTab==='loans_advances') renderLoansAdvancesPage();
   else if(currentTab==='balance_sheet') renderBalanceSheetPage();
   else if(currentTab==='group_members') renderGroupMembersPage();
@@ -7213,6 +7215,595 @@ function openPreRegAdjustmentBatch(batchId, actionType){
     sourceLabel: 'PRB-'+String(b.batchNo).padStart(4,'0')+' — '+(b.ownerName||'')+(b.lotName?' / '+b.lotName:'')
   });
 }
+
+
+
+/* ===================== TRIP ANALYSIS ===================== */
+let tripAnalysisLotId = '';
+let tripAnalysisView = 'lot'; // 'lot' or 'pilgrim'
+let tripAnalysisPilgrimId = '';
+
+function renderTripAnalysisPage(){
+  const c = document.getElementById('content');
+  const lots = Object.entries(db.groups).sort((a,b)=>String(b[1].year||'').localeCompare(String(a[1].year||'')));
+  if(!tripAnalysisLotId && lots.length) tripAnalysisLotId = lots[0][0];
+  const lotOptions = lots.map(([id,g])=>`<option value="${id}" ${id===tripAnalysisLotId?'selected':''}>${escapeHtml(g.name||'—')} (${g.year||''})</option>`).join('');
+
+  c.innerHTML = `
+    <div class="toolbar no-print" style="margin-bottom:14px;">
+      <h2 style="margin:0;">📊 Trip Analysis — Profit & Loss</h2>
+      <button class="btn ghost" style="margin-left:auto;" onclick="printTripAnalysis()">🖨 Print</button>
+    </div>
+    <div class="no-print" style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:12px;font-weight:600;color:var(--ink-soft);">Lot / Kafela</label>
+        <select id="tripLotSelect" style="padding:7px 12px;border:1px solid var(--line);border-radius:6px;font-size:14px;min-width:220px;">${lotOptions}</select>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn ${tripAnalysisView==='lot'?'':'ghost'}" id="viewLotBtn" onclick="tripAnalysisView='lot';tripAnalysisPilgrimId='';renderTripAnalysisBody();">📊 Lot Overview</button>
+        <button class="btn ${tripAnalysisView==='pilgrim'?'':'ghost'}" id="viewPilgrimBtn" onclick="tripAnalysisView='pilgrim';renderTripAnalysisBody();">👤 Per Pilgrim</button>
+      </div>
+      <button class="btn amber no-print" data-permission="create_records" onclick="openTripCostForm(null,tripAnalysisLotId)">+ Cost যোগ করো</button>
+    </div>
+    <div id="tripAnalysisBody"></div>`;
+
+  document.getElementById('tripLotSelect').onchange = e => {
+    tripAnalysisLotId = e.target.value;
+    tripAnalysisPilgrimId = '';
+    renderTripAnalysisBody();
+  };
+  renderTripAnalysisBody();
+}
+
+function renderTripAnalysisBody(){
+  const host = document.getElementById('tripAnalysisBody');
+  if(!tripAnalysisLotId){ host.innerHTML='<div class="empty">কোনো Lot নেই।</div>'; return; }
+  const lot = db.groups[tripAnalysisLotId];
+  if(!lot){ host.innerHTML='<div class="empty">Lot পাওয়া যায়নি।</div>'; return; }
+
+  // Revenue from sales for this lot
+  const lotSales = db.sales.filter(s=>s.groupId===tripAnalysisLotId&&s.status!=='cancelled');
+  const totalRevenue = lotSales.reduce((n,s)=>n+Number(s.total||0),0);
+  // Count from sales OR pre-reg batches (whichever has data)
+  const salesQty = lotSales.reduce((n,s)=>n+Number(s.qty||1),0);
+  const preRegQty = (db.preRegBatches||[]).filter(b=>b.lotId===tripAnalysisLotId&&b.ownerType==='group_agent').reduce((n,b)=>n+Number(b.qty||0),0);
+  const pilgrimCount = Math.max(1, salesQty || preRegQty);
+
+  // All costs for this lot
+  const allCosts = (db.tripCosts||[]).filter(x=>x.lotId===tripAnalysisLotId);
+  const lotWideCosts = allCosts.filter(x=>!x.pilgrimId); // shared costs
+  const indivCosts = allCosts.filter(x=>x.pilgrimId);    // individual costs
+
+  const totalLotCost = lotWideCosts.reduce((n,x)=>n+Number(x.amount||0),0);
+  const totalIndivCost = indivCosts.reduce((n,x)=>n+Number(x.amount||0),0);
+  const totalCost = totalLotCost + totalIndivCost;
+  const profit = totalRevenue - totalCost;
+  const profitColor = profit >= 0 ? '#1B6B3A' : '#b4423a';
+
+  if(tripAnalysisView === 'pilgrim'){
+    renderTripPerPilgrimView(host, lot, lotSales, allCosts, lotWideCosts, totalLotCost, pilgrimCount, totalRevenue);
+  } else {
+    renderTripLotView(host, lot, lotSales, lotWideCosts, indivCosts, totalRevenue, totalCost, totalLotCost, totalIndivCost, profit, profitColor, pilgrimCount);
+  }
+  applyRoleUi();
+}
+
+function renderTripLotView(host, lot, lotSales, lotWideCosts, indivCosts, totalRevenue, totalCost, totalLotCost, totalIndivCost, profit, profitColor, pilgrimCount){
+  const totalPaid = lotSales.reduce((n,s)=>n+Number(s.paid||0),0);
+  const totalDue  = lotSales.reduce((n,s)=>n+Number(s.due||0),0);
+  const byHead = {};
+  lotWideCosts.forEach(x=>{ byHead[x.head]=(byHead[x.head]||0)+Number(x.amount||0); });
+
+  const costRows = lotWideCosts.length ? lotWideCosts.map(x=>`
+    <tr>
+      <td>${formatDateDMY(x.date)}</td>
+      <td><strong>${escapeHtml(x.head)}</strong>${x.note?'<br><small style="color:var(--ink-soft)">'+escapeHtml(x.note)+'</small>':''}</td>
+      <td>${escapeHtml(x.vendor||'—')}</td>
+      <td style="text-align:right;">৳${money(x.amount)}</td>
+      <td style="text-align:right;color:var(--ink-soft);">৳${money(Math.round(Number(x.amount)/Math.max(1,Number(x.qty||pilgrimCount))))}/জন<br><small style="font-size:10px;">(${Number(x.qty||pilgrimCount)}জন)</small></td>
+      <td class="actions-cell no-print">
+        <button class="icon-btn" onclick="openTripCostForm('${x.id}','${tripAnalysisLotId}')" title="Edit">✏️</button>
+        <button class="icon-btn" onclick="deleteTripCost('${x.id}')" title="Delete" data-permission="delete_records">🗑️</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:20px;">কোনো cost যোগ করা হয়নি — "+ Cost যোগ করো" বাটনে click করুন</td></tr>`;
+
+  const headRows = Object.entries(byHead).sort((a,b)=>b[1]-a[1]).map(([h,amt])=>`
+    <tr><td>${escapeHtml(h)}</td><td style="text-align:right;">৳${money(amt)}</td><td style="text-align:right;">${totalLotCost>0?Math.round(amt/totalLotCost*100)+'%':'—'}</td></tr>`).join('');
+
+  host.innerHTML = `
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:16px;font-weight:700;color:var(--hajj-green-dark);margin-bottom:12px;">🕌 ${escapeHtml(lot.name||'—')} · ${lot.year||''}</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <div style="background:var(--hajj-green);color:#fff;border-radius:10px;padding:14px 16px;">
+          <div style="font-size:11px;opacity:0.8;">মোট Pilgrim</div>
+          <div style="font-size:28px;font-weight:800;">${pilgrimCount}</div>
+        </div>
+        <div style="background:var(--hajj-gold);color:#1a1a1a;border-radius:10px;padding:14px 16px;">
+          <div style="font-size:11px;opacity:0.7;">Package Revenue</div>
+          <div style="font-size:20px;font-weight:800;">৳${money(totalRevenue)}</div>
+          <div style="font-size:11px;opacity:0.6;">Paid ৳${money(totalPaid)} · Due ৳${money(totalDue)}</div>
+        </div>
+        <div style="background:#b4423a;color:#fff;border-radius:10px;padding:14px 16px;">
+          <div style="font-size:11px;opacity:0.8;">মোট Trip Cost</div>
+          <div style="font-size:20px;font-weight:800;">৳${money(totalCost)}</div>
+          <div style="font-size:11px;opacity:0.7;">≈ ৳${money(Math.round(totalCost/pilgrimCount))}/জন</div>
+        </div>
+        <div style="background:${profitColor};color:#fff;border-radius:10px;padding:14px 16px;">
+          <div style="font-size:11px;opacity:0.8;">${profit>=0?'✅ Profit':'❌ Loss'}</div>
+          <div style="font-size:20px;font-weight:800;">৳${money(Math.abs(profit))}</div>
+          ${totalRevenue>0?`<div style="font-size:11px;opacity:0.7;">Margin: ${Math.round(profit/totalRevenue*100)}%</div>`:''}
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;">
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-weight:700;font-size:15px;">💸 Lot-wide Trip Cost (শেয়ার)</div>
+          <button class="btn amber no-print" style="font-size:12px;" data-permission="create_records" onclick="openTripCostForm(null,'${tripAnalysisLotId}',false)">+ Lot Cost</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data">
+            <thead><tr><th>তারিখ</th><th>Cost Head</th><th>Vendor</th><th style="text-align:right;">মোট</th><th style="text-align:right;">জন প্রতি</th><th class="no-print"></th></tr></thead>
+            <tbody>${costRows}</tbody>
+            <tfoot><tr>
+              <td colspan="3" style="font-weight:700;">মোট Lot Cost</td>
+              <td style="font-weight:800;text-align:right;">৳${money(totalLotCost)}</td>
+              <td style="text-align:right;color:var(--ink-soft);">≈ ৳${money(Math.round(totalLotCost/pilgrimCount))}/জন avg</td>
+              <td class="no-print"></td>
+            </tr></tfoot>
+          </table>
+        </div>
+        ${indivCosts.length?`<div style="margin-top:10px;padding:8px 12px;background:var(--c2-bg,#e8f4e8);border-radius:6px;font-size:13px;">Individual pilgrim costs: ৳${money(totalIndivCost)} (👤 Per Pilgrim view এ দেখুন)</div>`:''}
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;">
+        <div style="font-weight:700;font-size:15px;margin-bottom:12px;">📊 Cost Breakdown</div>
+        <table class="data">
+          <thead><tr><th>Head</th><th style="text-align:right;">Amount</th><th style="text-align:right;">%</th></tr></thead>
+          <tbody>${headRows||'<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);">—</td></tr>'}</tbody>
+        </table>
+        <div style="margin-top:14px;border-top:2px solid var(--hajj-green);padding-top:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span>Package Revenue</span><strong>৳${money(totalRevenue)}</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span style="color:#b4423a;">Lot Costs</span><strong style="color:#b4423a;">− ৳${money(totalLotCost)}</strong></div>
+          ${totalIndivCost?`<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span style="color:#b4423a;">Individual Costs</span><strong style="color:#b4423a;">− ৳${money(totalIndivCost)}</strong></div>`:''}
+          <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:1px solid var(--line);padding-top:8px;color:${profitColor};">
+            <span>${profit>=0?'Net Profit':'Net Loss'}</span><span>৳${money(Math.abs(profit))}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderTripPerPilgrimView(host, lot, lotSales, allCosts, lotWideCosts, totalLotCost, pilgrimCount, totalRevenue){
+  const perPersonLotCost = Math.round(totalLotCost / Math.max(1, pilgrimCount));
+
+  // Get pilgrims for this lot
+  const pilgrims = lotSales.map(s=>({
+    id: s.id,
+    name: s.customerName || s.groupMemberName || '—',
+    packagePrice: Number(s.total||0),
+    paid: Number(s.paid||0),
+    due: Number(s.due||0),
+    qty: Number(s.qty||1),
+  }));
+
+  if(!pilgrims.length){
+    host.innerHTML='<div class="empty">এই Lot এ কোনো booking নেই।</div>';
+    return;
+  }
+
+  const rows = pilgrims.map(p=>{
+    const indivCost = allCosts.filter(x=>x.pilgrimId===p.id).reduce((n,x)=>n+Number(x.amount||0),0);
+    const totalCostForP = (perPersonLotCost * p.qty) + indivCost;
+    const profit = p.packagePrice - totalCostForP;
+    const pc = profit >= 0 ? '#1B6B3A' : '#b4423a';
+    return `<tr style="cursor:pointer;" onclick="tripAnalysisPilgrimId='${p.id}';showPilgrimCostDetail('${p.id}')">
+      <td><strong>${escapeHtml(p.name)}</strong></td>
+      <td style="text-align:right;">৳${money(p.packagePrice)}</td>
+      <td style="text-align:right;">৳${money(perPersonLotCost * p.qty)}</td>
+      <td style="text-align:right;">${indivCost?'৳'+money(indivCost):'—'}
+        <button class="btn ghost no-print" style="font-size:10px;padding:2px 6px;margin-left:4px;" onclick="event.stopPropagation();openTripCostForm(null,'${tripAnalysisLotId}','${p.id}')">+</button>
+      </td>
+      <td style="text-align:right;font-weight:700;">৳${money(totalCostForP)}</td>
+      <td style="text-align:right;font-weight:800;color:${pc};">${profit>=0?'৳'+money(profit):'(৳'+money(Math.abs(profit))+')'}</td>
+    </tr>`;
+  }).join('');
+
+  const totalPkg = pilgrims.reduce((n,p)=>n+p.packagePrice,0);
+  const totalIndiv = allCosts.filter(x=>x.pilgrimId).reduce((n,x)=>n+Number(x.amount||0),0);
+  const totalAllCost = totalLotCost + totalIndiv;
+  const netProfit = totalPkg - totalAllCost;
+  const npc = netProfit >= 0 ? '#1B6B3A' : '#b4423a';
+
+  host.innerHTML = `
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;">👤 Per Pilgrim Profit/Loss — ${escapeHtml(lot.name||'')}</div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">
+        Lot Cost (৳${money(totalLotCost)}) ÷ ${pilgrimCount} জন = <strong>৳${money(perPersonLotCost)}/জন</strong> share
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data">
+          <thead><tr>
+            <th>Pilgrim / Customer</th>
+            <th style="text-align:right;">Package Price</th>
+            <th style="text-align:right;">Lot Cost Share</th>
+            <th style="text-align:right;">Individual Cost</th>
+            <th style="text-align:right;">Total Cost</th>
+            <th style="text-align:right;">Profit/Loss</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot><tr>
+            <td style="font-weight:700;">মোট</td>
+            <td style="text-align:right;font-weight:700;">৳${money(totalPkg)}</td>
+            <td style="text-align:right;">৳${money(totalLotCost)}</td>
+            <td style="text-align:right;">৳${money(totalIndiv)}</td>
+            <td style="text-align:right;font-weight:700;">৳${money(totalAllCost)}</td>
+            <td style="text-align:right;font-weight:800;color:${npc};">৳${money(Math.abs(netProfit))}</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">
+        💡 Row এ click করলে সেই pilgrim এর individual cost detail দেখাবে।
+      </div>
+    </div>
+    <div id="pilgrimCostDetail" style="margin-top:14px;"></div>`;
+  applyRoleUi();
+}
+
+function showPilgrimCostDetail(saleId){
+  const host = document.getElementById('pilgrimCostDetail');
+  const sale = db.sales[saleId] || db.sales.find(s=>s.id===saleId);
+  const costs = (db.tripCosts||[]).filter(x=>x.pilgrimId===saleId);
+  const lotWideCosts = (db.tripCosts||[]).filter(x=>x.lotId===tripAnalysisLotId&&!x.pilgrimId);
+  const pilgrimCount = Math.max(1, db.sales.filter(s=>s.groupId===tripAnalysisLotId&&s.status!=='cancelled').reduce((n,s)=>n+Number(s.qty||1),0));
+  const perPersonLotCost = Math.round(lotWideCosts.reduce((n,x)=>n+Number(x.amount||0),0)/pilgrimCount);
+
+  const indivRows = costs.map(x=>`
+    <tr>
+      <td>${formatDateDMY(x.date)}</td>
+      <td>${escapeHtml(x.head)}</td>
+      <td>${escapeHtml(x.note||'—')}</td>
+      <td style="text-align:right;">৳${money(x.amount)}</td>
+      <td class="actions-cell no-print">
+        <button class="icon-btn" onclick="openTripCostForm('${x.id}','${tripAnalysisLotId}','${saleId}')">✏️</button>
+        <button class="icon-btn" onclick="deleteTripCost('${x.id}')" data-permission="delete_records">🗑️</button>
+      </td>
+    </tr>`).join('');
+
+  const indivTotal = costs.reduce((n,x)=>n+Number(x.amount||0),0);
+  const packagePrice = sale ? Number(sale.total||0) : 0;
+  const totalCost = perPersonLotCost + indivTotal;
+  const profit = packagePrice - totalCost;
+  const pc = profit >= 0 ? '#1B6B3A' : '#b4423a';
+
+  host.innerHTML = `
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-weight:700;">🔍 Individual Cost — ${escapeHtml(sale?.customerName||'Pilgrim')}</div>
+        <button class="btn amber no-print" style="font-size:12px;" data-permission="create_records" onclick="openTripCostForm(null,'${tripAnalysisLotId}','${saleId}')">+ Individual Cost</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+        <div style="background:var(--hajj-gold);color:#1a1a1a;border-radius:8px;padding:10px 14px;">
+          <div style="font-size:11px;opacity:0.7;">Package Price</div>
+          <div style="font-size:18px;font-weight:800;">৳${money(packagePrice)}</div>
+        </div>
+        <div style="background:#6b7280;color:#fff;border-radius:8px;padding:10px 14px;">
+          <div style="font-size:11px;opacity:0.8;">Lot Share</div>
+          <div style="font-size:18px;font-weight:800;">৳${money(perPersonLotCost)}</div>
+        </div>
+        <div style="background:#b4423a;color:#fff;border-radius:8px;padding:10px 14px;">
+          <div style="font-size:11px;opacity:0.8;">Individual Cost</div>
+          <div style="font-size:18px;font-weight:800;">৳${money(indivTotal)}</div>
+        </div>
+        <div style="background:${pc};color:#fff;border-radius:8px;padding:10px 14px;">
+          <div style="font-size:11px;opacity:0.8;">${profit>=0?'Profit':'Loss'}</div>
+          <div style="font-size:18px;font-weight:800;">৳${money(Math.abs(profit))}</div>
+        </div>
+      </div>
+      ${costs.length?`<table class="data">
+        <thead><tr><th>তারিখ</th><th>Cost Head</th><th>Note</th><th style="text-align:right;">Amount</th><th class="no-print"></th></tr></thead>
+        <tbody>${indivRows}</tbody>
+        <tfoot><tr><td colspan="3" style="font-weight:700;">Individual Total</td><td style="font-weight:800;text-align:right;">৳${money(indivTotal)}</td><td class="no-print"></td></tr></tfoot>
+      </table>`:'<div style="color:var(--ink-soft);text-align:center;padding:12px;">কোনো individual cost নেই। "+ Individual Cost" বাটনে click করুন।</div>'}
+    </div>`;
+  applyRoleUi();
+}
+
+function openTripCostForm(editId, lotId, pilgrimId){
+  if(!requirePermission(editId?'edit_records':'create_records'))return;
+  const existing = editId ? (db.tripCosts||[]).find(x=>x.id===editId) : null;
+  const lotSalesQty2 = db.sales.filter(s=>s.groupId===lotId&&s.status!=='cancelled').reduce((n,s)=>n+Number(s.qty||1),0);
+  const preRegQty2 = (db.preRegBatches||[]).filter(b=>b.lotId===lotId&&b.ownerType==='group_agent').reduce((n,b)=>n+Number(b.qty||0),0);
+  const pilgrimCount = Math.max(1, lotSalesQty2 || preRegQty2);
+  const lot = db.groups[lotId];
+  const isIndividual = pilgrimId && pilgrimId !== 'false' && pilgrimId !== false;
+  const sale = isIndividual ? (db.sales.find(s=>s.id===pilgrimId)) : null;
+
+  const heads = ['Air Ticket','Visa','Hotel / Accommodation','Food & Catering',
+    'Ground Transport','Guide / Mutawwif','Government Fees','Insurance',
+    'Communication','Miscellaneous'];
+  const headOpts = heads.map(h=>`<option value="${h}" ${(existing?.head===h)?'selected':''}>${h}</option>`).join('');
+
+  const html = `<div class="overlay open" id="tripCostOverlay" style="z-index:195;">
+    <div class="modal" style="max-width:480px;">
+      <h2>${editId?'Edit':'New'} ${isIndividual?'Individual':'Lot-wide'} Cost</h2>
+      <div style="background:${isIndividual?'#e3f2fd':'var(--green-light,#e8f4ed)'};border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:12px;">
+        ${isIndividual
+          ? `👤 <strong>${escapeHtml(sale?.customerName||'Pilgrim')}</strong> এর জন্য — শুধু এই pilgrim এর হিসেবে যাবে`
+          : `🕌 <strong>${escapeHtml(lot?.name||'')}</strong> সব pilgrim এ ভাগ হবে`}
+      </div>
+      <div class="field">
+        <label>Cost Head</label>
+        <select id="tcHead">${headOpts}<option value="__custom__" ${(existing&&!heads.includes(existing.head))?'selected':''}>Other (custom)...</option></select>
+      </div>
+      <div class="field" id="tcCustomField" style="display:${(existing&&!heads.includes(existing.head))?'block':'none'};">
+        <label>Custom Head</label>
+        <input type="text" id="tcCustomHead" value="${existing&&!heads.includes(existing.head)?escapeHtml(existing.head):''}">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>মোট পরিমাণ (৳)</label>
+          <input type="number" id="tcAmount" value="${existing?.amount||''}" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>কতজনের জন্য?</label>
+          <input type="number" id="tcQty" value="${existing?.qty||pilgrimCount}" min="1" placeholder="${pilgrimCount}">
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:3px;">Lot এ মোট: ${pilgrimCount} জন</div>
+        </div>
+        <div class="field">
+          <label>তারিখ</label>
+          <input type="date" id="tcDate" value="${existing?.date||todayStr()}">
+        </div>
+      </div>
+      <div class="field">
+        <label>Vendor / Supplier (ঐচ্ছিক)</label>
+        <input id="tcVendor" value="${escapeHtml(existing?.vendor||'')}" placeholder="যেমন: Biman Bangladesh">
+      </div>
+      <div class="field">
+        <label>Note (ঐচ্ছিক)</label>
+        <input id="tcNote" value="${escapeHtml(existing?.note||'')}" placeholder="যেমন: DAC-JED × 30 জন">
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="tcCancel">বাতিল</button>
+        <button class="btn amber" id="tcSave">✅ সেভ করো</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+  const overlay = document.getElementById('tripCostOverlay');
+  document.getElementById('tcHead').onchange = () => {
+    document.getElementById('tcCustomField').style.display =
+      document.getElementById('tcHead').value==='__custom__'?'block':'none';
+  };
+  document.getElementById('tcCancel').onclick = ()=>overlay.remove();
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+
+  document.getElementById('tcSave').onclick = async()=>{
+    const headSel = document.getElementById('tcHead');
+    let head = headSel.value==='__custom__'
+      ? document.getElementById('tcCustomHead').value.trim()
+      : headSel.value;
+    const amount = Number(document.getElementById('tcAmount').value)||0;
+    const date   = document.getElementById('tcDate').value||todayStr();
+    if(!head||amount<=0){alert('Head এবং পরিমাণ আবশ্যক।');return;}
+
+    if(existing){
+      const costQtyUpd = Number(document.getElementById('tcQty')?.value)||existing.qty||pilgrimCount;
+      Object.assign(existing,{head,amount,qty:costQtyUpd,date,
+        vendor:document.getElementById('tcVendor').value.trim(),
+        note:document.getElementById('tcNote').value.trim(),updatedTs:Date.now()});
+      await safePut('tripCosts',existing.id,existing);
+    } else {
+      const costQty = Number(document.getElementById('tcQty')?.value)||pilgrimCount;
+      const rec={id:uid(),lotId,lotName:lot?.name||'',year:String(lot?.year||''),
+        head,amount,qty:costQty,date,
+        pilgrimId:isIndividual?pilgrimId:null,
+        pilgrimName:isIndividual?(sale?.customerName||''):null,
+        vendor:document.getElementById('tcVendor').value.trim(),
+        note:document.getElementById('tcNote').value.trim(),
+        createdBy:currentUserEmail(),ts:Date.now()};
+      db.tripCosts=db.tripCosts||[];
+      db.tripCosts.push(rec);
+      await safePut('tripCosts',rec.id,rec);
+    }
+    overlay.remove();
+    showToast('✅ Cost সেভ হয়েছে!');
+    renderTripAnalysisBody();
+    if(isIndividual && document.getElementById('pilgrimCostDetail'))
+      showPilgrimCostDetail(pilgrimId);
+  };
+}
+
+async function deleteTripCost(id){
+  if(!requirePermission('delete_records'))return;
+  if(!confirm('এই cost entry মুছে ফেলবেন?'))return;
+  db.tripCosts=(db.tripCosts||[]).filter(x=>x.id!==id);
+  await safeRemove('tripCosts',id);
+  showToast('🗑️ মুছে ফেলা হয়েছে।');
+  renderTripAnalysisBody();
+}
+
+function printTripAnalysis(){
+  const lot = db.groups[tripAnalysisLotId];
+  if(!lot) return;
+  const shop = db.shopdata||{};
+
+  // Data
+  const lotSales = db.sales.filter(s=>s.groupId===tripAnalysisLotId&&s.status!=='cancelled');
+  const totalRevenue = lotSales.reduce((n,s)=>n+Number(s.total||0),0);
+  const totalPaid    = lotSales.reduce((n,s)=>n+Number(s.paid||0),0);
+  const totalDue     = lotSales.reduce((n,s)=>n+Number(s.due||0),0);
+  const salesQty  = lotSales.reduce((n,s)=>n+Number(s.qty||1),0);
+  const preRegQty = (db.preRegBatches||[]).filter(b=>b.lotId===tripAnalysisLotId&&b.ownerType==='group_agent').reduce((n,b)=>n+Number(b.qty||0),0);
+  const pilgrimCount = Math.max(1, salesQty||preRegQty);
+  const costs = (db.tripCosts||[]).filter(x=>x.lotId===tripAnalysisLotId&&!x.pilgrimId);
+  const totalCost = costs.reduce((n,x)=>n+Number(x.amount||0),0);
+  const profit = totalRevenue - totalCost;
+  const isPending = totalRevenue === 0;
+
+  // Cost by head
+  const byHead = {};
+  costs.forEach(x=>{ byHead[x.head]=(byHead[x.head]||0)+Number(x.amount||0); });
+
+  const costRows = costs.map(x=>`
+    <tr>
+      <td>${formatDateDMY(x.date)}</td>
+      <td><strong>${escapeHtml(x.head)}</strong>${x.note?'<br><small style="color:#666;font-size:10px;">'+escapeHtml(x.note)+'</small>':''}</td>
+      <td>${escapeHtml(x.vendor||'—')}</td>
+      <td style="text-align:center;">${Number(x.qty||pilgrimCount)}</td>
+      <td style="text-align:right;">৳${money(x.amount)}</td>
+      <td style="text-align:right;color:#555;">৳${money(Math.round(Number(x.amount)/Math.max(1,Number(x.qty||pilgrimCount))))}</td>
+    </tr>`).join('');
+
+  const headRows = Object.entries(byHead).sort((a,b)=>b[1]-a[1]).map(([h,a])=>`
+    <tr>
+      <td>${escapeHtml(h)}</td>
+      <td style="text-align:right;">৳${money(a)}</td>
+      <td style="text-align:right;">${totalCost>0?Math.round(a/totalCost*100)+'%':'—'}</td>
+      <td style="text-align:right;color:#555;">৳${money(Math.round(a/pilgrimCount))}</td>
+    </tr>`).join('');
+
+  const html = `
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#1a1a1a;background:#fff;}
+    .page{padding:14mm 12mm;}
+    /* Header */
+    .doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;border-bottom:3px solid #1B6B3A;margin-bottom:12px;}
+    .doc-header h1{font-size:20px;font-weight:800;color:#1B6B3A;margin-bottom:2px;}
+    .doc-header .sub{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.8px;}
+    .doc-header .agency{text-align:right;font-size:11px;color:#444;line-height:1.5;}
+    .doc-header .agency strong{font-size:13px;color:#1B6B3A;display:block;}
+    /* Summary bar */
+    .summary-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;}
+    .scard{border:1.5px solid #ddd;border-radius:5px;padding:8px 10px;text-align:center;}
+    .scard .lbl{font-size:9px;color:#777;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+    .scard .val{font-size:15px;font-weight:800;line-height:1.1;}
+    .scard .sub{font-size:9px;color:#888;margin-top:2px;}
+    .scard.green{border-color:#1B6B3A;background:#f0f9f4;}
+    .scard.red{border-color:#b4423a;background:#fff4f4;}
+    .scard.gold{border-color:#B8960C;background:#fffbeb;}
+    /* Section title */
+    .sec-title{font-size:12px;font-weight:700;color:#1B6B3A;border-bottom:1.5px solid #1B6B3A;padding-bottom:4px;margin:14px 0 8px;display:flex;justify-content:space-between;}
+    /* Tables */
+    table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px;}
+    th{background:#1B6B3A;color:#fff;padding:6px 8px;text-align:left;font-size:10px;font-weight:600;white-space:nowrap;}
+    td{padding:5px 8px;border-bottom:1px solid #eee;vertical-align:middle;}
+    tr:nth-child(even) td{background:#fafafa;}
+    tfoot td{font-weight:700;border-top:2px solid #1B6B3A;background:#f0f9f4 !important;font-size:11px;}
+    /* Two col layout */
+    .two-col{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:12px;}
+    /* P&L box */
+    .pnl-box{border:2px solid ${profit>=0?'#1B6B3A':'#b4423a'};border-radius:6px;background:${profit>=0?'#f0f9f4':'#fff4f4'};padding:10px 14px;margin-top:10px;}
+    .pnl-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid ${profit>=0?'#c6e6d5':'#f5c4c4'};}
+    .pnl-row:last-child{border:none;font-size:15px;font-weight:800;color:${profit>=0?'#1B6B3A':'#b4423a'};padding-top:8px;margin-top:4px;border-top:2px solid ${profit>=0?'#1B6B3A':'#b4423a'};}
+    /* Pending note */
+    .pending{background:#fff8e1;border:1px solid #f59e0b;border-radius:4px;padding:6px 10px;font-size:10px;color:#92400e;margin-bottom:10px;}
+    /* Footer */
+    .doc-footer{margin-top:16px;padding-top:8px;border-top:1px solid #ddd;display:flex;justify-content:space-between;font-size:9px;color:#888;}
+    @page{margin:10mm 12mm;size:A4;}
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  </style>
+  <div class="page">
+
+  <div class="doc-header">
+    <div>
+      <div class="sub">Trip Profit & Loss Statement</div>
+      <h1>${escapeHtml(lot.name||'—')} &nbsp;·&nbsp; ${lot.year||''}</h1>
+      <div style="font-size:10px;color:#888;margin-top:4px;">Print: ${formatDateDMY(todayStr())}</div>
+    </div>
+    <div class="agency">
+      <strong>${escapeHtml(shop.name||'Hajj & Umrah Agency')}</strong>
+      ${shop.phone?`📞 ${escapeHtml(shop.phone)}<br>`:''}
+      ${shop.address?`📍 ${escapeHtml(shop.address)}`:''}
+    </div>
+  </div>
+
+  ${isPending?`<div class="pending">⏳ Full booking সম্পন্ন হয়নি — Revenue pending। Trip Cost ইতিমধ্যে যোগ করা হয়েছে।</div>`:''}
+
+  <div class="summary-bar">
+    <div class="scard green">
+      <div class="lbl">মোট Pilgrim</div>
+      <div class="val">${pilgrimCount}</div>
+    </div>
+    <div class="scard gold">
+      <div class="lbl">Package Revenue</div>
+      <div class="val">৳${money(totalRevenue)}</div>
+      <div class="sub">${totalRevenue>0?`Paid ৳${money(totalPaid)} · Due ৳${money(totalDue)}`:isPending?'Booking pending':'—'}</div>
+    </div>
+    <div class="scard red">
+      <div class="lbl">মোট Trip Cost</div>
+      <div class="val">৳${money(totalCost)}</div>
+      <div class="sub">≈ ৳${money(Math.round(totalCost/pilgrimCount))}/জন</div>
+    </div>
+    <div class="scard ${profit>=0?'green':'red'}">
+      <div class="lbl">${profit>=0?'Net Profit':'Net Loss'}</div>
+      <div class="val">৳${money(Math.abs(profit))}</div>
+      <div class="sub">${totalRevenue>0?`Margin: ${Math.round(profit/totalRevenue*100)}%`:isPending?'Revenue pending':'—'}</div>
+    </div>
+  </div>
+
+  <div class="sec-title"><span>💸 Trip Cost বিবরণ</span><span style="font-weight:400;font-size:10px;color:#666;">মোট ${costs.length}টি item</span></div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:90px;">তারিখ</th>
+        <th>Cost Head / বিবরণ</th>
+        <th style="width:120px;">Vendor</th>
+        <th style="width:60px;text-align:center;">জন</th>
+        <th style="width:110px;text-align:right;">মোট</th>
+        <th style="width:110px;text-align:right;">জন প্রতি</th>
+      </tr>
+    </thead>
+    <tbody>${costRows||'<tr><td colspan="6" style="text-align:center;color:#999;">কোনো cost নেই</td></tr>'}</tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4">মোট Trip Cost</td>
+        <td style="text-align:right;">৳${money(totalCost)}</td>
+        <td style="text-align:right;">৳${money(Math.round(totalCost/pilgrimCount))}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="two-col">
+    <div>
+      <div class="sec-title"><span>📊 Cost by Category</span></div>
+      <table>
+        <thead><tr><th>Cost Head</th><th style="text-align:right;">Amount</th><th style="text-align:right;">%</th><th style="text-align:right;">জন প্রতি</th></tr></thead>
+        <tbody>${headRows||'<tr><td colspan="4" style="text-align:center;color:#999;">—</td></tr>'}</tbody>
+        <tfoot><tr><td>মোট</td><td style="text-align:right;">৳${money(totalCost)}</td><td style="text-align:right;">100%</td><td style="text-align:right;">৳${money(Math.round(totalCost/pilgrimCount))}</td></tr></tfoot>
+      </table>
+    </div>
+    <div>
+      <div class="sec-title">📈 Profit & Loss</div>
+      <div class="pnl-box">
+        <div class="pnl-row"><span>Package Revenue</span><strong>৳${money(totalRevenue)}</strong></div>
+        <div class="pnl-row"><span style="color:#b4423a;">Total Trip Cost</span><strong style="color:#b4423a;">− ৳${money(totalCost)}</strong></div>
+        ${totalRevenue>0&&totalPaid<totalRevenue?`<div class="pnl-row"><span style="color:#888;font-size:10px;">Revenue Due (unpaid)</span><span style="color:#888;font-size:10px;">৳${money(totalDue)}</span></div>`:''}
+        <div class="pnl-row"><span>${profit>=0?'✅ Net Profit':'❌ Net Loss'}</span><span>৳${money(Math.abs(profit))}</span></div>
+      </div>
+      ${totalRevenue>0?`
+      <table style="margin-top:10px;">
+        <tbody>
+          <tr><td>Profit per Pilgrim</td><td style="text-align:right;font-weight:700;color:${profit>=0?'#1B6B3A':'#b4423a'};">৳${money(Math.round(profit/pilgrimCount))}</td></tr>
+          <tr><td>Profit Margin</td><td style="text-align:right;font-weight:700;color:${profit>=0?'#1B6B3A':'#b4423a'};">${Math.round(profit/totalRevenue*100)}%</td></tr>
+          <tr><td>Revenue Collected</td><td style="text-align:right;font-weight:700;">৳${money(totalPaid)} (${Math.round(totalPaid/Math.max(1,totalRevenue)*100)}%)</td></tr>
+        </tbody>
+      </table>`:'<div style="font-size:10px;color:#888;margin-top:8px;text-align:center;">Full booking সম্পন্ন হলে Profit/Loss দেখাবে</div>'}
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span>${escapeHtml(shop.name||'')}</span>
+    <span>Trip Analysis — ${escapeHtml(lot.name||'')} · ${lot.year||''}</span>
+    <span>Printed: ${formatDateDMY(todayStr())}</span>
+  </div>
+  </div>`;
+
+  printIsolated('Trip P&L — '+(lot.name||''), html);
+}
+/* ===================== END TRIP ANALYSIS ===================== */
+
 function travelActionLabel(v){return ({full_cancellation:'Full Cancellation / Will Not Travel',external_transfer:'Transfer to Another Agency',internal_transfer:'Internal Agent / Lot Transfer',service_transfer:'Transfer to Another Service',package_conversion:'Registered Haji → Package Booking'})[v]||v;}
 function travelServiceLabel(v){return ({hajj_pre_registration:'Hajj Pre-registration',hajj_package:'Hajj Package',umrah_package:'Umrah Package',air_ticket:'Air Ticket',hotel:'Hotel',visa:'Visa',transport:'Transport',other:'Other Service'})[v]||v;}
 function travelStatusLabel(v){return ({pending:'Pending',confirmed:'Confirmed',completed:'Completed / Settled',rejected:'Rejected'})[v]||v;}
