@@ -12,3 +12,4 @@ deployment:
     - /bin/cp -R hajjdemo "$DEPLOYPATH/"
     - /bin/cp -R muttakihajj "$DEPLOYPATH/"
     - /bin/cp -R msenayet "$DEPLOYPATH/"
+    - /bin/cp -R tradingdemo "$DEPLOYPATH/"
