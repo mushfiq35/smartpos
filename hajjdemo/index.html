@@ -1476,7 +1476,7 @@ async function restoreFromDrive(){
       const backupData = await fileRes.json();
       if(!confirm(t('confirm_restore'))) return;
       for(const key of ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads','assets']) for(const [rid,rec] of Object.entries(backupData[key]||{})){if(key==='appUsers'&&isPrimaryUserRecord(rid,rec))continue;db[key][rid]=rec;await safePut(key,rid,rec);}
-      for(const key of ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','travelAdjustments','preRegBatches','preRegPilgrims','loanAccounts','loanTransactions','creditFacilities','creditTransactions','paymentLedger','agentLedger','openingBalances','assetEvents']) for(const rec of (backupData[key]||[])) await safePut(key,rec.id,rec);
+      for(const key of ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','travelAdjustments','preRegBatches','preRegPilgrims','loanAccounts','loanTransactions','creditFacilities','creditTransactions','paymentLedger','agentLedger','openingBalances','assetEvents','tripCosts']) for(const rec of (backupData[key]||[])) await safePut(key,rec.id,rec);
       await loadAll();
       showToast(t('restore_success'));
     }catch(e){
@@ -3836,7 +3836,7 @@ function renderSettingsPage(){
         try{
           const data=JSON.parse(ev.target.result);const puts=[];
           ['appUsers','customers','suppliers','products','categories','groupMembers','groups','bankAccounts','mobileAccounts','paymentHeads','agentLedgerHeads','assets'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>{if(k==='appUsers'&&isPrimaryUserRecord(id,v))return;puts.push(safePut(k,id,v));});});
-          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','travelAdjustments','preRegBatches','preRegPilgrims','loanAccounts','loanTransactions','creditFacilities','creditTransactions','paymentLedger','agentLedger','openingBalances','assetEvents'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
+          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','travelAdjustments','preRegBatches','preRegPilgrims','loanAccounts','loanTransactions','creditFacilities','creditTransactions','paymentLedger','agentLedger','openingBalances','assetEvents','tripCosts'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
           await Promise.all(puts);showToast(t('restore_success'));setTimeout(()=>location.reload(),1500);
         }catch(err){alert(t('restore_failed')+': '+err.message);}
       };reader.readAsText(file);
@@ -8850,7 +8850,7 @@ async function clearAllData(){
   const typed = prompt(t('clear_all_confirm2'));
   if(typed !== t('clear_all_confirm_word')) { alert(t('clear_all_aborted')); return; }
 
-  const collections = ['customers','suppliers','products','categories','groupMembers','groups','purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','travelAdjustments','preRegBatches','preRegPilgrims','loanAccounts','loanTransactions','creditFacilities','creditTransactions','bankAccounts','mobileAccounts','paymentHeads','paymentLedger','agentLedgerHeads','agentLedger','openingBalances','assets','assetEvents'];
+  const collections = ['customers','suppliers','products','categories','groupMembers','groups','purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','travelAdjustments','preRegBatches','preRegPilgrims','loanAccounts','loanTransactions','creditFacilities','creditTransactions','bankAccounts','mobileAccounts','paymentHeads','paymentLedger','agentLedgerHeads','agentLedger','openingBalances','assets','assetEvents','tripCosts'];
   for(const name of collections){
     const items = db[name];
     const ids = Array.isArray(items) ? items.map(x=>x.id) : Object.keys(items);
@@ -8859,7 +8859,7 @@ async function clearAllData(){
   db.customers = {}; db.suppliers = {}; db.products = {}; db.categories={}; db.groupMembers={}; db.groups={};
   db.bankAccounts={}; db.mobileAccounts={}; db.paymentHeads={}; db.agentLedgerHeads={}; db.assets={};
   db.purchases = []; db.sales = []; db.expenses = [];
-  db.installments = []; db.installmentPlans = []; db.returns = []; db.vendorPayments=[]; db.travelAdjustments=[]; db.preRegBatches=[]; db.preRegPilgrims=[]; db.loanAccounts=[]; db.loanTransactions=[]; db.creditFacilities=[]; db.creditTransactions=[]; db.paymentLedger=[]; db.agentLedger=[]; db.openingBalances=[]; db.assetEvents=[];
+  db.installments = []; db.installmentPlans = []; db.returns = []; db.vendorPayments=[]; db.travelAdjustments=[]; db.preRegBatches=[]; db.preRegPilgrims=[]; db.loanAccounts=[]; db.loanTransactions=[]; db.creditFacilities=[]; db.creditTransactions=[]; db.paymentLedger=[]; db.agentLedger=[]; db.openingBalances=[]; db.assetEvents=[]; db.tripCosts=[];
   try{ await storageSet(K.logo, null); }catch(e){}
   logoData = null;
 
