@@ -119,6 +119,15 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
   display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;
   margin-bottom:18px;width:100%;max-width:100%;
 }
+@media print{
+  .agent-statement-grid{display:none!important;}
+  .print-summary-row{display:table!important;}
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+@media screen{
+  .print-summary-row{display:none!important;}
+}
 .agent-statement-grid .stat-card{min-width:0;overflow:hidden;padding:15px 14px;}
 .agent-statement-grid .stat-card .val{
   display:block;max-width:100%;font-size:clamp(17px,1.45vw,23px);
@@ -126,7 +135,8 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-
 }
 .agent-statement-grid .stat-card .lbl{line-height:1.25;overflow-wrap:anywhere;}
 .agent-statement-table-wrap{display:block;width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;}
-.agent-statement-table-wrap table.data{min-width:820px;}
+.agent-statement-table-wrap table.data{min-width:820px;table-layout:fixed;width:100%;}
+.agent-statement-table-wrap table.data td,.agent-statement-table-wrap table.data th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .agent-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;}
 .agent-tab-btn{background:#fff;color:var(--ink);border:1px solid var(--line);}
 .agent-tab-btn.active{background:var(--hajj-green);color:#fff;border-color:var(--hajj-green);}
@@ -402,7 +412,7 @@ body.erp-write-busy button,body.erp-write-busy input,body.erp-write-busy select,
 }
 
 @media print{
-  .sidebar, .topbar, #storageBanner, .toast, #backdrop, .toolbar button, .actions-cell, .no-print{display:none !important;}
+  .sidebar, .topbar, #storageBanner, .toast, #backdrop, .toolbar button, .actions-cell, .no-print, .agent-statement-grid{display:none !important;}
   .panel{break-inside:avoid;box-shadow:none;border:1px solid #ccc;overflow:visible !important;}
   table.data{font-size:10px;width:100%;}
   table.data th, table.data td{padding:4px 5px !important;white-space:nowrap;}
@@ -835,6 +845,8 @@ let currentTab = 'dashboard';
 let logoData = null;
 let activeGroupAgentTab = 'overview';
 let activeGroupAgentYear = 'all';
+let agentDateFrom = ''; // custom date range from
+let agentDateTo = '';   // custom date range to
 
 const DEFAULT_AGENT_LEDGER_HEADS = {
   sys_air_ticket:{id:'sys_air_ticket',name:'Air Ticket',type:'debit',cashDirection:'none',system:true},
@@ -2952,7 +2964,7 @@ function buildGroupAgentLedger(memberId,year){
     const products = [...new Set(items.map(s=>s.productName).filter(Boolean))].join(', ');
     const ref = first.invoiceNo ? 'INV-'+first.invoiceNo : 'INV';
     const lot=db.groups[first.groupId]||{};
-    rows.push({date:first.date,year:yearFromDate(first.date),ts:Number(first.ts||0),order:0,ref,desc:t('grp_booking_desc')+' — '+products+' × '+qty,debit,credit:0,method:'—',context:lot.name||first.customerName||'—',source:'booking',qty});
+    rows.push({date:first.date,year:yearFromDate(first.date),ts:Number(first.ts||0),order:0,ref,desc:t('grp_booking_desc')+' — '+products+' × '+qty,debit,credit:0,method:'—',context:lot.name||first.customerName||'—',source:'booking',qty,saleId:first.id||null});
     if(initialPaid>0){
       const pk = paymentSystemKey(first.paymentSystem);
       rows.push({date:first.date,year:yearFromDate(first.date),ts:Number(first.ts||0),order:1,ref,desc:t('grp_initial_payment'),debit:0,credit:initialPaid,method:(pk?t(pk):'—')+(first.paymentAccountId?' — '+paymentAccountLabel(first.paymentAccountId):''),context:lot.name||first.customerName||'—',source:'initial',cashDirection:'in'});
@@ -2975,7 +2987,7 @@ function buildGroupAgentLedger(memberId,year){
   (db.travelAdjustments||[]).filter(r=>(r.partyType==='group_agent'&&r.partyId===memberId)||r.sourceAgentId===memberId).forEach(r=>{
     if(r.status==='completed'){
       const released=Number((r.releasedAmount??r.originalAmount)||0),charge=Number(r.totalCharge||0),net=Number(r.netAmount||0);
-      const base={date:r.date,year:String(r.hajjYear||yearFromDate(r.date)),ts:Number(r.ts||0),ref:'ADJ-'+String(r.adjustmentNo||0).padStart(4,'0'),context:r.reference||r.sourceLotName||'—'};
+      const base={date:r.date,year:String(r.hajjYear||yearFromDate(r.date)),ts:Number(r.ts||0),adjNo:Number(r.adjustmentNo||0),ref:'ADJ-'+String(r.adjustmentNo||0).padStart(4,'0'),context:r.reference||r.sourceLotName||'—'};
       if(released>0)rows.push({...base,order:4.4,desc:travelActionLabel(r.actionType)+' — registration value released',debit:0,credit:released,method:'—',source:'travel_release'});
       if(charge>0)rows.push({...base,order:4.5,desc:'Govt / provider / agency charge',debit:charge,credit:0,method:'—',source:'travel_charge'});
       // internal_transfer: no settlement row — Kabir-Shariful মধ্যে কোনো লেনদেন নেই
@@ -2989,7 +3001,24 @@ function buildGroupAgentLedger(memberId,year){
     const context=[x.groupName||x.season,x.customerName].filter(Boolean).join(' / ')||'—';
     rows.push({date:x.date,year:String(x.accountingYear||yearFromDate(x.date)),ts:Number(x.ts||0),order:5,ref:x.entryNo||'AGT',desc:(x.headName||'Agent Entry')+(x.note?' — '+x.note:''),debit:x.type==='debit'?Number(x.amount||0):0,credit:x.type==='credit'?Number(x.amount||0):0,method,context,source:'agent_manual',recordId:x.id,cashDirection:x.cashDirection||'none'});
   });
-  rows.sort((a,b)=>(String(a.date||'').localeCompare(String(b.date||''))) || (a.order-b.order) || (a.ts-b.ts));
+  rows.sort((a,b)=>{
+    // 1. Date ascending
+    const dateCmp = String(a.date||'').localeCompare(String(b.date||''));
+    if(dateCmp!==0) return dateCmp;
+    // 2. Within same date: non-ADJ rows by ts, ADJ rows grouped by adjNo
+    const aIsAdj = a.source && a.source.startsWith('travel_');
+    const bIsAdj = b.source && b.source.startsWith('travel_');
+    if(aIsAdj && bIsAdj){
+      // Both ADJ: group by adjNo first, then by order within ADJ
+      const adjCmp = Number(a.adjNo||0) - Number(b.adjNo||0);
+      if(adjCmp!==0) return adjCmp;
+      return (a.order - b.order);
+    }
+    // Non-ADJ vs Non-ADJ: sort by ts
+    if(!aIsAdj && !bIsAdj) return Number(a.ts||0) - Number(b.ts||0);
+    // Mix: use ts to interleave ADJ with other entries correctly
+    return Number(a.ts||0) - Number(b.ts||0);
+  });
   let balance = 0;
   rows.forEach(r=>{ balance += Number(r.debit||0)-Number(r.credit||0); r.balance=balance; });
   const isYearFilter=year&&year!=='all';
@@ -3042,8 +3071,30 @@ function buildGroupLotsInfo(memberId){
 }
 
 function agentBalanceHtml(amount){ return Number(amount)>=0?'<span class="agent-balance-due">Due ৳'+money(amount)+'</span>':'<span class="agent-balance-advance">Advance ৳'+money(Math.abs(amount))+'</span>'; }
-function buildGroupAgentStatementHtml(memberId,year,limit){
-  const {rows,summary} = buildGroupAgentLedger(memberId,year);
+function buildGroupAgentStatementHtml(memberId,year,dateFrom,dateTo,limit){
+  let {rows,summary} = buildGroupAgentLedger(memberId,year);
+  // Apply custom date range filter
+  if(dateFrom||dateTo){
+    rows = rows.filter(r=>{
+      const d = String(r.date||'');
+      if(dateFrom && d < dateFrom) return false;
+      if(dateTo && d > dateTo) return false;
+      return true;
+    });
+    // Recalculate summary from filtered rows
+    summary = {qty:0,booking:0,otherDebit:0,initialPaid:0,laterPaid:0,otherCredit:0,cashIn:0,cashOut:0,balance:0};
+    let running=0;
+    rows.forEach(r=>{
+      if(r.debit){summary.booking+=(r.source==='booking'||r.source==='pre_registration'||r.source==='travel_release')?r.debit:0;summary.otherDebit+=(r.source==='agent_manual'||r.source==='travel_charge')?r.debit:0;running+=r.debit;}
+      if(r.credit){summary.initialPaid+=r.credit;running-=r.credit;}
+      if(r.cashDirection==='in') summary.cashIn+=r.credit||0;
+      if(r.cashDirection==='out') summary.cashOut+=r.debit||0;
+    });
+    summary.balance=running;
+  }
+  const balColor=summary.balance>0?'#b4423a':summary.balance<0?'#1565c0':'#1B6B3A';
+  const balLabel=summary.balance>0?'Current Due':summary.balance<0?'Agent Advance':'Balance Clear';
+  // Screen: colored stat cards grid
   const cards = '<div class="agent-statement-grid">'
     +'<div class="stat-card c1"><div class="val">'+summary.qty+'</div><div class="lbl">'+t('grp_total_qty')+'</div></div>'
     +'<div class="stat-card c4"><div class="val">৳'+money(summary.booking)+'</div><div class="lbl">Hajj / Umrah Booking</div></div>'
@@ -3051,18 +3102,67 @@ function buildGroupAgentStatementHtml(memberId,year,limit){
     +'<div class="stat-card c5"><div class="val">৳'+money(summary.initialPaid+summary.laterPaid+summary.otherCredit)+'</div><div class="lbl">Payment / Credit</div></div>'
     +'<div class="stat-card c8"><div class="val">৳'+money(summary.cashIn)+'</div><div class="lbl">Cash IN</div></div>'
     +'<div class="stat-card c6"><div class="val">৳'+money(summary.cashOut)+'</div><div class="lbl">Cash OUT</div></div>'
-    +'<div class="stat-card '+(summary.balance>0?'c7':'c1')+'"><div class="val">৳'+money(Math.abs(summary.balance))+'</div><div class="lbl">'+(summary.balance>0?'Current Due':summary.balance<0?'Agent Advance':'Balance Clear')+'</div></div></div>';
+    +'<div class="stat-card '+(summary.balance>0?'c7':'c1')+'"><div class="val">৳'+money(Math.abs(summary.balance))+'</div><div class="lbl">'+balLabel+'</div></div></div>'
+    // Print: compact one-line summary table
+    +'<table class="print-summary-row" style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px;">'
+    +'<tr>'
+    +'<td style="padding:6px 10px;border:1px solid #ddd;text-align:center;"><div style="font-size:10px;color:#6b7280;">Booking Qty</div><strong>'+summary.qty+'</strong></td>'
+    +'<td style="padding:6px 10px;border:1px solid #ddd;text-align:center;"><div style="font-size:10px;color:#6b7280;">Hajj/Umrah</div><strong>৳'+money(summary.booking)+'</strong></td>'
+    +'<td style="padding:6px 10px;border:1px solid #ddd;text-align:center;"><div style="font-size:10px;color:#6b7280;">Ticket/Visa/Other</div><strong>৳'+money(summary.otherDebit)+'</strong></td>'
+    +'<td style="padding:6px 10px;border:1px solid #ddd;text-align:center;"><div style="font-size:10px;color:#6b7280;">Payment/Credit</div><strong>৳'+money(summary.initialPaid+summary.laterPaid+summary.otherCredit)+'</strong></td>'
+    +'<td style="padding:6px 10px;border:1px solid #ddd;text-align:center;"><div style="font-size:10px;color:#6b7280;">Cash IN</div><strong>৳'+money(summary.cashIn)+'</strong></td>'
+    +'<td style="padding:6px 10px;border:1px solid #ddd;text-align:center;"><div style="font-size:10px;color:#6b7280;">Cash OUT</div><strong>৳'+money(summary.cashOut)+'</strong></td>'
+    +'<td style="padding:6px 10px;border:1px solid #ddd;text-align:center;background:'+balColor+';color:#fff;"><div style="font-size:10px;opacity:0.85;">'+balLabel+'</div><strong>৳'+money(Math.abs(summary.balance))+'</strong></td>'
+    +'</tr></table>';
   if(rows.length===0) return cards+'<div class="empty"><div class="big">'+t('grp_no_transactions')+'</div></div>';
   const viewRows=limit?rows.slice(-limit):rows;
-  const body = viewRows.map(r=>'<tr><td>'+formatDateDMY(r.date)+'</td><td>'+escapeHtml(r.ref)+'</td><td><strong>'+escapeHtml(r.desc)+'</strong><br><small>'+escapeHtml(r.context||'—')+'</small></td><td>'+escapeHtml(r.method)+'</td><td>'+(r.debit?'৳'+money(r.debit):'—')+'</td><td>'+(r.credit?'৳'+money(r.credit):'—')+'</td><td>'+agentBalanceHtml(r.filteredBalance)+'</td><td>'+(r.source==='agent_manual'&&hasPermission('delete_records')?'<button class="icon-btn" data-permission="delete_records" onclick="deleteAgentLedgerEntry(\''+r.recordId+'\',\''+memberId+'\')" title="Delete">🗑️</button>':'')+'</td></tr>').join('');
-  return cards+'<div class="agent-statement-table-wrap"><table class="data"><thead><tr><th>'+t('col_date')+'</th><th>'+t('grp_reference')+'</th><th>'+t('grp_description')+' / Lot</th><th>'+t('grp_method')+' / Account</th><th>Debit / Charge</th><th>Credit / Payment</th><th>'+t('grp_balance')+'</th><th></th></tr></thead><tbody>'+body+'</tbody></table></div>';
+  const body = viewRows.map(r=>'<tr><td style="white-space:nowrap">'+formatDateDMY(r.date)+'</td><td style="white-space:nowrap">'+escapeHtml(r.ref)+'</td><td style="overflow:hidden;word-break:break-word;white-space:normal"><strong style="font-size:13px">'+escapeHtml(r.desc)+'</strong><br><small style="font-size:10px;color:#6b7280">'+escapeHtml(r.context||'—')+'</small></td><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(r.method)+'</td><td>'+(r.debit?'৳'+money(r.debit):'—')+'</td><td>'+(r.credit?'৳'+money(r.credit):'—')+'</td><td>'+agentBalanceHtml(r.filteredBalance)+'</td><td>'+(r.saleId?'<button style="font-size:11px;padding:3px 8px;background:#1B6B3A;color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="openSaleView(\''+r.saleId+'\')" title="Invoice">👁 Invoice</button>':'')+(r.source==='agent_manual'?'<button style="font-size:11px;padding:3px 8px;background:#1B6B3A;color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="printAgentLedgerVoucher(\''+r.recordId+'\',\''+memberId+'\')" title="Invoice Print">👁 Invoice</button>':'')+(r.source==='agent_manual'&&hasPermission('edit_records')?'<button class="icon-btn" onclick="openAgentLedgerEntry(\''+memberId+'\',null,\''+r.recordId+'\')" title="Edit">✏️</button>':'')+(r.source==='agent_manual'&&hasPermission('delete_records')?'<button class="icon-btn" data-permission="delete_records" onclick="deleteAgentLedgerEntry(\''+r.recordId+'\',\''+memberId+'\')" title="Delete">🗑️</button>':'')+'</td></tr>').join('');
+  return cards+'<div class="agent-statement-table-wrap"><table class="data" style="table-layout:fixed;width:100%;"><colgroup><col style="width:90px"><col style="width:85px"><col style="width:200px"><col style="width:110px"><col style="width:95px"><col style="width:105px"><col style="width:115px"><col style="width:110px"></colgroup><thead><tr><th>'+t('col_date')+'</th><th>'+t('grp_reference')+'</th><th>'+t('grp_description')+' / Lot</th><th>'+t('grp_method')+'</th><th>Debit</th><th>Credit</th><th>Balance</th><th></th></tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 
 function printGroupMemberReport(memberId){
   const member = db.groupMembers[memberId];
   if(!member) return;
-  const header = '<div style="margin-bottom:12px;"><strong>'+escapeHtml(member.name)+'</strong><br>'+t('grp_member_no_label')+': #'+member.memberNo+(member.phone?'<br>📞 '+escapeHtml(member.phone):'')+'</div>';
-  printIsolated(member.name+' — '+t('grp_statement'), header+buildGroupAgentStatementHtml(memberId,activeGroupAgentYear)+buildGroupLotsInfo(memberId));
+  const shop = db.shopdata || {};
+  const bal = calculateGroupMemberBalanceFromLedger(memberId);
+  const isDue = bal > 0, isAdv = bal < 0;
+  const balLabel = isDue ? 'বাকি (Due)' : isAdv ? 'অগ্রিম (Advance)' : 'পরিষ্কার';
+  const yearLabel = activeGroupAgentYear === 'all' ? 'সকল বছর' : activeGroupAgentYear;
+
+  const header = `
+    <div style="border-bottom:3px solid #1B6B3A;padding-bottom:16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Agency Statement</div>
+        <div style="font-size:26px;font-weight:800;color:#0f3d20;">${escapeHtml(member.name)}</div>
+        <div style="font-size:13px;color:#374151;margin-top:4px;">
+          Agent #${member.memberNo}
+          ${member.phone ? ' &nbsp;·&nbsp; 📞 '+escapeHtml(member.phone) : ''}
+          ${member.address ? ' &nbsp;·&nbsp; '+escapeHtml(member.address) : ''}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
+          ${escapeHtml(shop.name||'Hajj & Umrah Agency')}
+        </div>
+        ${shop.phone ? `<div style="font-size:12px;color:#374151;">📞 ${escapeHtml(shop.phone)}</div>` : ''}
+        ${shop.address ? `<div style="font-size:12px;color:#374151;">📍 ${escapeHtml(shop.address)}</div>` : ''}
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">তারিখ: ${formatDateDMY(todayStr())} &nbsp;·&nbsp; বছর: ${yearLabel}</div>
+      </div>
+    </div>
+    <div style="background:${isDue?'#fff0f0':isAdv?'#e3f2fd':'#e8f4ed'};border:2px solid ${isDue?'#b4423a':isAdv?'#1565c0':'#1B6B3A'};border-radius:10px;padding:12px 18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:14px;font-weight:600;color:#374151;">${balLabel}</div>
+      <div style="font-size:24px;font-weight:800;color:${isDue?'#b4423a':isAdv?'#1565c0':'#1B6B3A'};">৳${money(Math.abs(bal))}</div>
+    </div>`;
+
+  // Build statement HTML — use a temp div to strip screen-only elements
+  const stmtHtml = buildGroupAgentStatementHtml(memberId,activeGroupAgentYear,agentDateFrom,agentDateTo);
+  const tmpDiv = document.createElement('div');
+  tmpDiv.innerHTML = stmtHtml;
+  // Remove screen-only stat cards grid
+  tmpDiv.querySelectorAll('.agent-statement-grid').forEach(el=>el.remove());
+  // Make sure print-summary-row is visible
+  tmpDiv.querySelectorAll('.print-summary-row').forEach(el=>el.style.display='table');
+  printIsolated(member.name+' — Agent Statement', header+tmpDiv.innerHTML+buildGroupLotsInfo(memberId));
 }
 
 function showGroupAgentTab(memberId,tab){
@@ -3072,8 +3172,20 @@ function showGroupAgentTab(memberId,tab){
   if(activeGroupAgentTab==='lots'){host.innerHTML=buildGroupLotsInfo(memberId)||'<div class="panel"><div class="empty">No lots or referred customers yet.</div></div>';return;}
   if(activeGroupAgentTab==='ledger'){
     const opts='<option value="all">All Years</option>'+agentLedgerYears(memberId).map(y=>'<option value="'+escapeHtml(y)+'" '+(String(activeGroupAgentYear)===String(y)?'selected':'')+'>'+escapeHtml(y)+'</option>').join('');
-    host.innerHTML='<div class="panel agent-statement-panel"><div class="toolbar no-print"><label><strong>Accounting Year</strong></label><select id="agentYearFilter">'+opts+'</select><button class="btn ghost" style="margin-left:auto" onclick="printGroupMemberReport(\''+memberId+'\')">🖨 Print Statement</button></div>'+buildGroupAgentStatementHtml(memberId,activeGroupAgentYear)+'</div>';
-    document.getElementById('agentYearFilter').onchange=e=>{activeGroupAgentYear=e.target.value;showGroupAgentTab(memberId,'ledger');};return;
+    host.innerHTML='<div class="panel agent-statement-panel">'
+      +'<div class="no-print" style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">'
+      +'<div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">Accounting Year</label><select id="agentYearFilter" style="padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;">'+opts+'</select></div>'
+      +'<div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">From Date</label><input type="date" id="agentDateFrom" value="'+agentDateFrom+'" style="padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;"></div>'
+      +'<div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);">To Date</label><input type="date" id="agentDateTo" value="'+agentDateTo+'" style="padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;"></div>'
+      +'<button class="btn ghost" onclick="agentDateFrom=\'\';agentDateTo=\'\';activeGroupAgentYear=\'all\';showGroupAgentTab(\''+memberId+'\',\'ledger\');">↺ Reset</button>'
+      +'<button class="btn ghost" style="margin-left:auto;" onclick="printGroupMemberReport(\''+memberId+'\');">🖨 Print Statement</button>'
+      +'</div>'
+      +buildGroupAgentStatementHtml(memberId,activeGroupAgentYear,agentDateFrom,agentDateTo)
+      +'</div>';
+    document.getElementById('agentYearFilter').onchange=e=>{activeGroupAgentYear=e.target.value;agentDateFrom='';agentDateTo='';showGroupAgentTab(memberId,'ledger');};
+    document.getElementById('agentDateFrom').onchange=e=>{agentDateFrom=e.target.value;activeGroupAgentYear='all';showGroupAgentTab(memberId,'ledger');};
+    document.getElementById('agentDateTo').onchange=e=>{agentDateTo=e.target.value;activeGroupAgentYear='all';showGroupAgentTab(memberId,'ledger');};
+    return;
   }
   host.innerHTML='<div class="panel" style="border-left:4px solid var(--hajj-green)"><h3>Agent Overview</h3><p class="field-hint">Booking, service charge, loan, payment and adjustment—সব হিসাব একই statement-এ।</p>'+buildGroupAgentStatementHtml(memberId,'all',8)+'</div>';
 }
@@ -3134,12 +3246,13 @@ function agentCustomerOptions(memberId){
   db.sales.filter(s=>s.groupMemberId===memberId||lotIds.includes(s.groupId)).forEach(s=>{if(s.customerId)ids.add(s.customerId);});
   return '<option value="">— No specific customer —</option>'+[...ids].map(id=>db.customers[id]).filter(Boolean).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).map(c=>'<option value="'+c.id+'">'+escapeHtml(c.name||'—')+(c.phone?' — '+escapeHtml(c.phone):'')+'</option>').join('');
 }
-function openAgentLedgerEntry(memberId,defaultType){
-  if(!requirePermission('create_records'))return;
+function openAgentLedgerEntry(memberId,defaultType,editId){
+  if(!requirePermission(editId?'edit_records':'create_records'))return;
   const member=db.groupMembers[memberId];if(!member)return;
+  const existing=editId?db.agentLedger.find(x=>x.id===editId):null;
   const lots=Object.entries(db.groups).filter(([,g])=>g.memberId===memberId).sort((a,b)=>String(b[1].year||'').localeCompare(String(a[1].year||'')));
   const lotOptions='<option value="">— No specific lot —</option>'+lots.map(([id,g])=>'<option value="'+id+'">'+escapeHtml(g.name||'—')+(g.year?' — '+escapeHtml(g.year):'')+'</option>').join('');
-  const type=defaultType==='credit'?'credit':'debit';
+  const type=existing?existing.type:defaultType==='credit'?'credit':'debit';
   const html='<div class="overlay open" id="agentLedgerEntryOverlay" style="z-index:195"><div class="modal" style="max-width:650px;width:96%"><h2>Agent Ledger Entry — '+escapeHtml(member.name)+'</h2>'
     +'<p class="field-hint">Charge দিলে agent-এর due বাড়বে। Payment/adjustment দিলে due কমবে। Cash movement হলে Bank/Mobile statement-এও যাবে।</p>'
     +'<div class="field"><label>What do you want to add?</label><select id="agType"><option value="debit" '+(type==='debit'?'selected':'')+'>Charge / Service / Loan (Due increases)</option><option value="credit" '+(type==='credit'?'selected':'')+'>Payment / Discount / Adjustment (Due decreases)</option></select></div>'
@@ -3161,15 +3274,77 @@ function openAgentLedgerEntry(memberId,defaultType){
   document.getElementById('agQty').oninput=calc;document.getElementById('agRate').oninput=calc;
   document.getElementById('agDate').onchange=e=>{if(e.target.value)document.getElementById('agYear').value=yearFromDate(e.target.value);};
   document.getElementById('agCancel').onclick=()=>overlay.remove();overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});refreshHeads();refreshCash();
+  if(existing){
+    setTimeout(()=>{
+      if(document.getElementById('agType')){document.getElementById('agType').value=existing.type||'debit';refreshHeads();setTimeout(()=>{if(document.getElementById('agHead'))document.getElementById('agHead').value=existing.headId||'';},30);}
+      if(document.getElementById('agQty')) document.getElementById('agQty').value=existing.qty||1;
+      if(document.getElementById('agRate')) document.getElementById('agRate').value=existing.rate||0;
+      if(document.getElementById('agAmount')) document.getElementById('agAmount').value=existing.amount||0;
+      if(document.getElementById('agDate')) document.getElementById('agDate').value=existing.date||todayStr();
+      if(document.getElementById('agYear')) document.getElementById('agYear').value=existing.accountingYear||new Date().getFullYear();
+      if(document.getElementById('agSeason')) document.getElementById('agSeason').value=existing.season||'Umrah';
+      if(document.getElementById('agLot')) document.getElementById('agLot').value=existing.groupId||'';
+      if(document.getElementById('agReference')) document.getElementById('agReference').value=existing.reference||'';
+      if(document.getElementById('agNote')) document.getElementById('agNote').value=existing.note||'';
+      if(document.getElementById('agCashDirection')){document.getElementById('agCashDirection').value=existing.cashDirection||'none';refreshCash();}
+    },60);
+    const h2=document.querySelector('#agentLedgerEntryOverlay h2');if(h2)h2.textContent='Ledger Entry Edit — '+member.name;
+    const sb=document.getElementById('agSave');if(sb)sb.textContent='✅ Update Entry';
+  }
   document.getElementById('agSave').onclick=async()=>{
     const head=agentLedgerHeadMap()[document.getElementById('agHead').value],amount=Number(document.getElementById('agAmount').value),cashDirection=document.getElementById('agCashDirection').value;
     if(!head||amount<=0){alert(t('required_fields'));return;}
     const paymentSystem=cashDirection==='none'?null:document.getElementById('agMethod').value,paymentAccountId=cashDirection==='none'?null:(document.getElementById('agAccount').value||null);
     if(cashDirection!=='none'&&!validatePaymentAccount(paymentSystem,paymentAccountId))return;
     const lotId=document.getElementById('agLot').value,customerId=document.getElementById('agCustomer').value,lot=db.groups[lotId],customer=db.customers[customerId],date=document.getElementById('agDate').value||todayStr();
-    const rec={id:uid(),entryNo:nextAgentLedgerNo(),memberId,memberName:member.name,type:document.getElementById('agType').value,headId:head.id,headName:head.name,qty:Number(document.getElementById('agQty').value)||0,rate:Number(document.getElementById('agRate').value)||0,amount,date,accountingYear:String(document.getElementById('agYear').value||yearFromDate(date)),season:document.getElementById('agSeason').value,groupId:lotId||null,groupName:lot?lot.name:'',customerId:customerId||null,customerName:customer?customer.name:'',cashDirection,paymentSystem,paymentAccountId,paymentAccountName:paymentAccountLabel(paymentAccountId),reference:document.getElementById('agReference').value.trim(),note:document.getElementById('agNote').value.trim(),createdBy:currentUserEmail(),ts:Date.now()};
-    db.agentLedger.push(rec);await safePut('agentLedger',rec.id,rec);member.due=calculateGroupMemberDueFromLedger(memberId);await safePut('groupMembers',memberId,member);overlay.remove();showToast('Agent ledger entry saved');openGroupMemberReport(memberId,'ledger');
+    if(existing){
+      // Update existing
+      Object.assign(existing,{type:document.getElementById('agType').value,headId:head.id,headName:head.name,qty:Number(document.getElementById('agQty').value)||0,rate:Number(document.getElementById('agRate').value)||0,amount,date,accountingYear:String(document.getElementById('agYear').value||yearFromDate(date)),season:document.getElementById('agSeason').value,groupId:lotId||null,groupName:lot?lot.name:'',customerId:customerId||null,customerName:customer?customer.name:'',cashDirection,paymentSystem,paymentAccountId,paymentAccountName:paymentAccountLabel(paymentAccountId),reference:document.getElementById('agReference').value.trim(),note:document.getElementById('agNote').value.trim(),updatedBy:currentUserEmail(),updatedTs:Date.now()});
+      await safePut('agentLedger',existing.id,existing);
+    }else{
+      const rec={id:uid(),entryNo:nextAgentLedgerNo(),memberId,memberName:member.name,type:document.getElementById('agType').value,headId:head.id,headName:head.name,qty:Number(document.getElementById('agQty').value)||0,rate:Number(document.getElementById('agRate').value)||0,amount,date,accountingYear:String(document.getElementById('agYear').value||yearFromDate(date)),season:document.getElementById('agSeason').value,groupId:lotId||null,groupName:lot?lot.name:'',customerId:customerId||null,customerName:customer?customer.name:'',cashDirection,paymentSystem,paymentAccountId,paymentAccountName:paymentAccountLabel(paymentAccountId),reference:document.getElementById('agReference').value.trim(),note:document.getElementById('agNote').value.trim(),createdBy:currentUserEmail(),ts:Date.now()};
+      db.agentLedger.push(rec);await safePut('agentLedger',rec.id,rec);
+    }
+    member.due=calculateGroupMemberDueFromLedger(memberId);await safePut('groupMembers',memberId,member);overlay.remove();showToast('✅ সেভ হয়েছে! হিসাব আপডেট হয়েছে।');openGroupMemberReport(memberId,'ledger');
   };
+}
+function printAgentLedgerVoucher(recordId, memberId){
+  const rec = db.agentLedger.find(x=>x.id===recordId);
+  const member = db.groupMembers[memberId];
+  if(!rec||!member) return;
+  const shop = db.shopdata||{};
+  const typeLabel = rec.type==='debit'?'Charge / Service':'Payment / Adjustment';
+  const dirLabel = rec.cashDirection==='in'?'Cash IN':rec.cashDirection==='out'?'Cash OUT':'Ledger Only';
+  const html = `
+    <div style="max-width:480px;margin:0 auto;font-family:Arial,sans-serif;font-size:13px;">
+      <div style="text-align:center;border-bottom:2px solid #1B6B3A;padding-bottom:12px;margin-bottom:16px;">
+        <div style="font-size:20px;font-weight:800;color:#1B6B3A;">${escapeHtml(shop.name||'Hajj & Umrah Agency')}</div>
+        ${shop.phone?`<div style="font-size:12px;color:#555;">📞 ${escapeHtml(shop.phone)}</div>`:''}
+        ${shop.address?`<div style="font-size:12px;color:#555;">📍 ${escapeHtml(shop.address)}</div>`:''}
+        <div style="font-size:14px;font-weight:700;margin-top:8px;color:#1B6B3A;">Service Invoice</div>
+        <div style="font-size:12px;color:#555;">Ref: ${escapeHtml(rec.entryNo||recordId)}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr><td style="padding:6px 0;color:#555;width:45%;">Agent:</td><td style="font-weight:700;">${escapeHtml(member.name)} (#${member.memberNo})</td></tr>
+        <tr><td style="padding:6px 0;color:#555;">Date:</td><td>${formatDateDMY(rec.date)}</td></tr>
+        <tr><td style="padding:6px 0;color:#555;">Type:</td><td>${typeLabel}</td></tr>
+        <tr><td style="padding:6px 0;color:#555;">Service:</td><td style="font-weight:700;">${escapeHtml(rec.headName||'—')}</td></tr>
+        ${rec.note?`<tr><td style="padding:6px 0;color:#555;">Details:</td><td>${escapeHtml(rec.note)}</td></tr>`:''}
+        ${rec.reference?`<tr><td style="padding:6px 0;color:#555;">Reference:</td><td>${escapeHtml(rec.reference)}</td></tr>`:''}
+        ${rec.groupName?`<tr><td style="padding:6px 0;color:#555;">Lot:</td><td>${escapeHtml(rec.groupName)}</td></tr>`:''}
+        <tr><td colspan="2" style="border-top:1px solid #ddd;padding-top:8px;margin-top:8px;"></td></tr>
+        <tr>
+          <td style="padding:6px 0;font-weight:700;font-size:15px;">${rec.type==='debit'?'Amount Charged:':'Amount Credited:'}</td>
+          <td style="font-weight:800;font-size:18px;color:${rec.type==='debit'?'#b4423a':'#1B6B3A'};">৳${money(rec.amount)}</td>
+        </tr>
+        ${rec.cashDirection!=='none'?`<tr><td style="padding:6px 0;color:#555;">Payment:</td><td>${dirLabel} — ${escapeHtml(rec.paymentAccountName||rec.paymentSystem||'—')}</td></tr>`:''}
+      </table>
+      <div style="border-top:2px solid #1B6B3A;margin-top:20px;padding-top:10px;display:flex;justify-content:space-between;font-size:11px;color:#888;">
+        <span>Printed: ${formatDateDMY(todayStr())}</span>
+        <span>Agency Copy</span>
+      </div>
+    </div>`;
+  printIsolated('Service Invoice — '+rec.entryNo, html);
 }
 async function deleteAgentLedgerEntry(id,memberId){
   if(!requirePermission('delete_records'))return;if(!confirm(t('confirm_delete')))return;
@@ -3307,7 +3482,7 @@ function openGroupAgentPayment(memberId){
     await safePut('installments',rec.id,rec);
 
     overlay.remove();
-    showToast('✅ Payment সেভ হয়েছে!');
+    showToast('✅ Payment সেভ হয়েছে! হিসাব আপডেট হয়েছে।');
     openGroupMemberReport(memberId,'ledger');
     openInstallmentReceipt(rec);
   };
@@ -4749,6 +4924,15 @@ function printIsolated(title, tableHtml){
   th,td{padding:6px 8px;border-bottom:1px solid #ccc;text-align:left;}
   th{background:#f0f0f0;text-transform:uppercase;font-size:11px;}
   tfoot td{font-weight:700;border-top:2px solid #333;}
+  /* Hide screen-only elements in print iframe */
+  .agent-statement-grid{display:none!important;}
+  .print-summary-row{display:table!important;}
+  .no-print{display:none!important;}
+  /* Hide action buttons column in print */
+  .agent-statement-table-wrap table td:last-child,
+  .agent-statement-table-wrap table th:last-child{display:none!important;}
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
 </style>
 </head>
 <body>
@@ -6883,7 +7067,28 @@ function prStatusClass(v){return v==='active'?'pre-reg-status-active':v==='cance
 function prOwner(b){return b.ownerType==='group_agent'?(b.ownerName||'Groups/Agent'):(b.ownerName||'Direct Customer');}
 function prStats(b){const a=prPilgrims(b.id);return {named:a.length,active:a.filter(x=>['active','pending','cancel_pending','transfer_pending'].includes(x.status)).length,cancelled:a.filter(x=>x.status==='cancelled').length,transferred:a.filter(x=>x.status==='transferred').length,packaged:a.filter(x=>x.status==='package_booked').length+Number(b.bulkPackagedQty||0)};}
 function preRegBatchDue(b){
-  const effect=(db.travelAdjustments||[]).filter(r=>r.preRegBatchId===b.id&&r.status==='completed').reduce((sum,r)=>sum-Number((r.releasedAmount??r.originalAmount)||0)+Number(r.totalCharge||0)+((r.settlementMethod!=='ledger_adjustment'||r.actionType==='package_conversion')?Number(r.netAmount||0):0),0);
+  // Match ADJ by preRegBatchId, or by agent+year when not explicitly linked
+  const batchAdj=(db.travelAdjustments||[]).filter(r=>
+    r.status==='completed'&&
+    r.serviceType==='hajj_pre_registration'&&
+    String(r.hajjYear)===String(b.year)&&
+    (r.preRegBatchId===b.id||(
+      !r.preRegBatchId&&
+      r.partyType==='group_agent'&&
+      r.partyId===b.ownerId&&
+      b.ownerType==='group_agent'
+    ))
+  );
+  const effect=batchAdj.reduce((sum,r)=>{
+    const released=Number((r.releasedAmount??r.originalAmount)||0);
+    const charge=Number(r.totalCharge||0);
+    const net=Number(r.netAmount||0);
+    // internal_transfer: released value goes out, charge stays → net credit to agent
+    // package_conversion / cancellation with settlement: net goes out too
+    const settlementOut=(r.actionType!=='internal_transfer'&&(r.settlementMethod!=='ledger_adjustment'||r.actionType==='package_conversion'))?net:0;
+    return sum-released+charge+settlementOut;
+  },0);
+  // Also account for transfer-in batches (sourceAdjustmentId): their paidAmount is already in b.paidAmount
   return Math.max(0,Math.round(Number(b.totalAmount||0)-Number(b.paidAmount||0)+effect));
 }
 function erpModal(id,title,body,saveLabel,onSave,width='820px'){
@@ -6908,10 +7113,26 @@ function renderPreRegList(){
   const host=document.getElementById('preRegList');if(!host)return;const q=preRegQuery.trim().toLowerCase();
   if(preRegPageTab==='batches'){
     const list=(db.preRegBatches||[]).filter(b=>(preRegYearFilter==='all'||String(b.year)===preRegYearFilter)&&(!q||[b.batchNo,b.ownerName,b.lotName,b.voucher,b.year].join(' ').toLowerCase().includes(q))).sort((a,b)=>Number(b.ts||0)-Number(a.ts||0));
-    host.innerHTML=list.length?`<div style="overflow-x:auto"><table class="data"><thead><tr><th>Batch</th><th>Year</th><th>Agent / Owner</th><th>Lot</th><th>Reserved / Active</th><th>Total</th><th>Paid</th><th>Due</th><th>Actions</th></tr></thead><tbody>${list.map(b=>{const s=prStats(b),due=preRegBatchDue(b),pct=Math.min(100,Math.round(s.active/Math.max(1,Number(b.qty))*100));return `<tr class="pre-reg-batch-row"><td><strong>PRB-${String(b.batchNo).padStart(4,'0')}</strong><br><small>${escapeHtml(b.voucher||'')}</small></td><td>${escapeHtml(b.year)}</td><td>${escapeHtml(prOwner(b))}</td><td>${escapeHtml(b.lotName||'—')}</td><td>${b.qty} / ${s.active}<br><small>Total Haji records: ${s.named}</small><div class="pre-reg-progress"><span style="width:${pct}%"></span></div></td><td>৳${money(b.totalAmount)}</td><td>৳${money(b.paidAmount)}</td><td>${due?'৳'+money(due):'—'}</td><td><div class="pre-reg-actions"><button class="btn" data-permission="create_records" onclick="openPreRegPilgrimForm(null,'${b.id}')">➕ Add Haji</button>${hasPermission('edit_records')?`<button class="btn ghost" onclick="openPreRegBatchForm('${b.id}')">✏️ Edit</button>`:''}${hasPermission('delete_records')?`<button class="btn ghost" onclick="deletePreRegBatch('${b.id}')">🗑️</button>`:''}</div></td></tr>`;}).join('')}</tbody></table></div>`:'<div class="empty">No pre-registration batch found.</div>';
+    host.innerHTML=list.length?`<div style="overflow-x:auto"><table class="data"><thead><tr><th>Batch</th><th>Year</th><th>Agent / Owner</th><th>Lot</th><th>Reserved / Active</th><th>Total</th><th>Paid</th><th>Due</th><th>Actions</th></tr></thead><tbody>${list.map(b=>{const s=prStats(b),due=preRegBatchDue(b);
+          // Effective qty = original qty minus bulk transfers (non-individual)
+          // Match by preRegBatchId OR by agent+year+service (when batch not explicitly linked)
+          const batchTransferred=(db.travelAdjustments||[]).filter(r=>
+            r.status==='completed'&&
+            !r.preRegPilgrimIds?.length&&
+            ['internal_transfer','external_transfer','full_cancellation'].includes(r.actionType)&&
+            r.serviceType==='hajj_pre_registration'&&
+            String(r.hajjYear)===String(b.year)&&
+            (r.preRegBatchId===b.id||(
+              !r.preRegBatchId&&
+              r.partyType==='group_agent'&&
+              r.partyId===b.ownerId
+            ))
+          ).reduce((n,r)=>n+Number(r.qty||0),0);
+          const effectiveQty=Math.max(0,Number(b.qty||0)-batchTransferred);
+          const pct=Math.min(100,Math.round(s.active/Math.max(1,effectiveQty)*100));return `<tr class="pre-reg-batch-row"><td><strong>PRB-${String(b.batchNo).padStart(4,'0')}</strong><br><small>${escapeHtml(b.voucher||'')}</small></td><td>${escapeHtml(b.year)}</td><td>${escapeHtml(prOwner(b))}</td><td>${escapeHtml(b.lotName||'—')}</td><td>${effectiveQty} / ${s.active}<br><small>Total Haji records: ${s.named}${s.transferred>0?' · '+s.transferred+' transferred':''}${s.cancelled>0?' · '+s.cancelled+' cancelled':''}${s.packaged>0?' · '+s.packaged+' packaged':''}</small><div class="pre-reg-progress"><span style="width:${pct}%"></span></div></td><td>৳${money(b.totalAmount)}</td><td>${(()=>{const tIn=(db.travelAdjustments||[]).filter(r=>r.status==='completed'&&r.actionType==='internal_transfer'&&r.destinationAgentId===b.ownerId&&String(r.hajjYear)===String(b.year)).reduce((n,r)=>n+Number(r.netAmount||0),0);const aPaid=Math.max(0,Number(b.paidAmount||0)-tIn);return '৳'+money(aPaid)+(tIn>0?'<br><small style="color:var(--ink-soft)">(+৳'+money(tIn)+' transfer)</small>':'');})()}</td><td>${(()=>{const d=Math.max(0,Number(b.totalAmount||0)-Number(b.paidAmount||0));return d?'৳'+money(d):'—';})()}</td><td><div class="pre-reg-actions"><button class="btn" data-permission="create_records" onclick="openPreRegPilgrimForm(null,'${b.id}')">➕ Add Haji</button><button class="btn" style="background:var(--hajj-gold);color:#1a1a1a" data-permission="create_records" onclick="openPreRegAdjustmentBatch('${b.id}','package_conversion')">📦 Move to Package</button>${(()=>{const pkgAdj=(db.travelAdjustments||[]).find(r=>r.preRegBatchId===b.id&&r.actionType==='package_conversion'&&r.status==='completed'&&r.saleId);return pkgAdj?`<button class="btn" style="background:var(--hajj-green);color:#fff" onclick="openSaleView('${pkgAdj.saleId}')">👁 Invoice</button>`:'';})()}${hasPermission('edit_records')?`<button class="btn ghost" onclick="openPreRegBatchForm('${b.id}')">✏️ Edit</button>`:''}${hasPermission('delete_records')?`<button class="btn ghost" onclick="deletePreRegBatch('${b.id}')">🗑️</button>`:''}</div></td></tr>`;}).join('')}</tbody></table></div>`:'<div class="empty">No pre-registration batch found.</div>';
   }else{
     const list=(db.preRegPilgrims||[]).filter(p=>(preRegYearFilter==='all'||String(p.year)===preRegYearFilter)&&(preRegStatusFilter==='all'||p.status===preRegStatusFilter)&&(!q||[p.preRegNo,p.customerName,p.phone,p.passport,p.tracking,p.govReference,p.agentName,p.lotName,p.year,p.batchNo].join(' ').toLowerCase().includes(q))).sort((a,b)=>Number(b.ts||0)-Number(a.ts||0));
-    host.innerHTML=list.length?`<div style="overflow-x:auto"><table class="data"><thead><tr><th>Pre-Reg</th><th>Haji / Customer</th><th>Year</th><th>Agent / Lot</th><th>Tracking</th><th>Fee / Paid</th><th>Status</th><th>Actions</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>PR-${String(p.preRegNo).padStart(5,'0')}</strong><br><small>${formatDateDMY(p.date)}</small></td><td><strong>${escapeHtml(p.customerName)}</strong><br><small>${escapeHtml(p.phone||p.passport||'—')}</small></td><td>${escapeHtml(p.year)}</td><td>${escapeHtml(p.agentName||'Direct')}${p.lotName?'<br><small>'+escapeHtml(p.lotName)+'</small>':''}</td><td>${escapeHtml(p.tracking||p.govReference||'—')}</td><td>৳${money(p.fee)}<br><small>Paid/Allocated ৳${money(p.paidAmount)}</small></td><td><span class="pill ${prStatusClass(p.status)}">${prStatusLabel(p.status)}</span></td><td><div class="pre-reg-actions">${['active','pending'].includes(p.status)?`<button class="btn ghost" onclick="openPreRegAdjustment('${p.id}',null,'full_cancellation')">↩ Cancel</button><button class="btn ghost" onclick="openPreRegAdjustment('${p.id}',null,'external_transfer')">↔ Transfer</button><button class="btn" onclick="openPreRegAdjustment('${p.id}',null,'package_conversion')">📦 Move to Package</button>`:''}${hasPermission('edit_records')?`<button class="btn ghost" onclick="openPreRegPilgrimForm('${p.id}')">✏️ Edit</button>`:''}${hasPermission('delete_records')?`<button class="btn ghost" onclick="deletePreRegPilgrim('${p.id}')">🗑️</button>`:''}</div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No individual pre-registration found.</div>';
+    host.innerHTML=list.length?`<div style="overflow-x:auto"><table class="data"><thead><tr><th>Pre-Reg</th><th>Haji / Customer</th><th>Year</th><th>Agent / Lot</th><th>Tracking</th><th>Fee / Paid</th><th>Status</th><th>Actions</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>PR-${String(p.preRegNo).padStart(5,'0')}</strong><br><small>${formatDateDMY(p.date)}</small></td><td><strong>${escapeHtml(p.customerName)}</strong><br><small>${escapeHtml(p.phone||p.passport||'—')}</small></td><td>${escapeHtml(p.year)}</td><td>${escapeHtml(p.agentName||'Direct')}${p.lotName?'<br><small>'+escapeHtml(p.lotName)+'</small>':''}</td><td>${escapeHtml(p.tracking||p.govReference||'—')}</td><td>৳${money(p.fee)}<br><small>Paid/Allocated ৳${money(p.paidAmount)}</small></td><td><span class="pill ${prStatusClass(p.status)}">${prStatusLabel(p.status)}</span></td><td><div class="pre-reg-actions">${['active','pending'].includes(p.status)?`<button class="btn ghost" onclick="openPreRegAdjustment('${p.id}',null,'full_cancellation')">↩ Cancel</button><button class="btn ghost" onclick="openPreRegAdjustment('${p.id}',null,'external_transfer')">↔ Transfer</button><button class="btn" onclick="openPreRegAdjustment('${p.id}',null,'package_conversion')">📦 Move to Package</button>`:''}${p.packageSaleId?`<button class="btn" style="background:var(--hajj-green);color:#fff" onclick="openSaleView('${p.packageSaleId}')">👁 Invoice</button>`:''}${hasPermission('edit_records')?`<button class="btn ghost" onclick="openPreRegPilgrimForm('${p.id}')">✏️ Edit</button>`:''}${hasPermission('delete_records')?`<button class="btn ghost" onclick="deletePreRegPilgrim('${p.id}')">🗑️</button>`:''}</div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No individual pre-registration found.</div>';
   }applyRoleUi();
 }
 function openPreRegBatchForm(id){
@@ -6940,6 +7161,58 @@ async function savePreRegPilgrim(id){
 }
 async function deletePreRegBatch(id){if(!requirePermission('delete_records'))return;const b=prBatch(id);if(!b)return;if(prPilgrims(id).length){alert('This batch contains individual Haji records. Resolve them first.');return;}if(!confirm(t('confirm_delete')))return;db.preRegBatches=db.preRegBatches.filter(x=>x.id!==id);await safeRemove('preRegBatches',id);if(b.ownerType==='group_agent'&&db.groupMembers[b.ownerId]){db.groupMembers[b.ownerId].due=calculateGroupMemberDueFromLedger(b.ownerId);await safePut('groupMembers',b.ownerId,db.groupMembers[b.ownerId]);}renderPreRegistrationPage();}
 async function deletePreRegPilgrim(id){if(!requirePermission('delete_records'))return;const p=prPilgrim(id);if(!p||p.adjustmentId||p.packageSaleId){alert('Linked adjustment/package থাকলে direct delete করা যাবে না।');return;}if(!confirm(t('confirm_delete')))return;const b=prBatch(p.batchId);db.preRegPilgrims=db.preRegPilgrims.filter(x=>x.id!==id);await safeRemove('preRegPilgrims',id);if(b?.ownerType==='customer'&&!prPilgrims(b.id).length){db.preRegBatches=db.preRegBatches.filter(x=>x.id!==b.id);await safeRemove('preRegBatches',b.id);}if(db.customers[p.customerId]){db.customers[p.customerId].due=calculateCustomerDueFromLedger(p.customerId);await safePut('customers',p.customerId,db.customers[p.customerId]);}renderPreRegistrationPage();}
+function openPreRegAdjustmentBatch(batchId, actionType){
+  const b = prBatch(batchId);
+  if(!b) return;
+  const agent = b.ownerType==='group_agent' ? db.groupMembers[b.ownerId] : null;
+  const customer = b.ownerType==='customer' ? db.customers[b.ownerId] : null;
+  const partyType = b.ownerType==='group_agent' ? 'group_agent' : 'customer';
+  const partyId = b.ownerId;
+  // Match transfer OUT by preRegBatchId OR agent+year (manually created ADJ without batch link)
+  const batchTransferred = (db.travelAdjustments||[]).filter(r=>
+    r.status==='completed'&&
+    !r.preRegPilgrimIds?.length&&
+    ['internal_transfer','external_transfer','full_cancellation'].includes(r.actionType)&&
+    r.serviceType==='hajj_pre_registration'&&
+    String(r.hajjYear)===String(b.year)&&
+    (r.preRegBatchId===b.id||(
+      !r.preRegBatchId&&
+      r.partyType==='group_agent'&&
+      r.partyId===b.ownerId&&
+      b.ownerType==='group_agent'
+    ))
+  ).reduce((n,r)=>n+Number(r.qty||0),0);
+  const effectiveQty = Math.max(1, Number(b.qty||0) - batchTransferred);
+  // Actual paid = paidAmount minus any transfer-in amounts
+  // Transfer-in batches bring money that wasn't paid directly by this agent
+  const transferInAmount = (db.travelAdjustments||[]).filter(r=>
+    r.status==='completed'&&
+    r.actionType==='internal_transfer'&&
+    r.destinationAgentId===b.ownerId&&
+    String(r.hajjYear)===String(b.year)&&
+    (r.destinationBatchId===b.id||!r.destinationBatchId)
+  ).reduce((n,r)=>n+Number(r.netAmount||0),0);
+  // Also subtract transfer-in batches (sourceAdjustmentId) paidAmount
+  const transferInBatchPaid = (db.preRegBatches||[]).filter(x=>
+    x.sourceAdjustmentId&&x.ownerId===b.ownerId&&String(x.year)===String(b.year)
+  ).reduce((n,x)=>n+Number(x.paidAmount||0),0);
+  const actualAgentPaid = Math.max(0, Number(b.paidAmount||0) - transferInAmount - transferInBatchPaid);
+  const totalPaidDeposit = actualAgentPaid;
+  const perPersonDeposit = effectiveQty>0 ? Math.round(totalPaidDeposit/effectiveQty) : Number(b.feePerPerson||0);
+  openTravelAdjustmentForm(null, {
+    preRegBatchId: batchId,
+    preRegPilgrimIds: [],
+    sourceAgentId: partyType==='group_agent' ? partyId : '',
+    sourceLotId: b.lotId||'',
+    partyType, partyId,
+    actionType: actionType||'package_conversion',
+    qty: effectiveQty,
+    amount: totalPaidDeposit,  // actual paid amount — this becomes 'paid' in the booking
+    year: b.year,
+    hajjYear: b.year,
+    sourceLabel: 'PRB-'+String(b.batchNo).padStart(4,'0')+' — '+(b.ownerName||'')+(b.lotName?' / '+b.lotName:'')
+  });
+}
 function travelActionLabel(v){return ({full_cancellation:'Full Cancellation / Will Not Travel',external_transfer:'Transfer to Another Agency',internal_transfer:'Internal Agent / Lot Transfer',service_transfer:'Transfer to Another Service',package_conversion:'Registered Haji → Package Booking'})[v]||v;}
 function travelServiceLabel(v){return ({hajj_pre_registration:'Hajj Pre-registration',hajj_package:'Hajj Package',umrah_package:'Umrah Package',air_ticket:'Air Ticket',hotel:'Hotel',visa:'Visa',transport:'Transport',other:'Other Service'})[v]||v;}
 function travelStatusLabel(v){return ({pending:'Pending',confirmed:'Confirmed',completed:'Completed / Settled',rejected:'Rejected'})[v]||v;}
@@ -6969,7 +7242,7 @@ function applyTravelActionMode(ctx={}){
     external_transfer:{help:'অন্য agency-এর নাম লিখুন; transfer charge বাদ দিয়ে net amount settle করুন।',fields:['taExternalField']},
     internal_transfer:{help:'যে Agent ও Lot-এ Haji যাবে সেটি নির্বাচন করুন। কোনো Cash movement হবে না।',fields:['taDestAgentField','taDestLotField']},
     service_transfer:{help:'যে নতুন service-এ টাকা ব্যবহার হবে সেটির নাম লিখুন।',fields:['taNewServiceField']},
-    package_conversion:{help:'Package ও Hajj year নির্বাচন করুন। Pre-registration deposit package booking-এ paid amount হবে।',fields:['taDestAgentField','taDestLotField','taPackageField','taPackageYearField']}
+    package_conversion:{help:'Package বেছে নিন। Pre-reg deposit automatically বাকি থেকে কাটবে। অতিরিক্ত discount থাকলে সেটাও দিন।',fields:['taDestAgentField','taDestLotField','taPackageField','taPackageYearField','taDiscountRow']}
   };
   const mode=modes[action]||modes.full_cancellation;
   document.getElementById('taWorkflowHelp').textContent=mode.help;
@@ -6992,10 +7265,10 @@ function applyTravelActionMode(ctx={}){
 }
 function openTravelAdjustmentForm(id,ctx={}){
   if(!requirePermission(id?'edit_records':'create_records'))return;const old=id?(db.travelAdjustments||[]).find(x=>x.id===id):null,x=old||ctx,partyType=x.partyType||'customer',partyId=x.partyId||'',nowYear=new Date().getFullYear()+1;
-  const partyOptions=partyType==='group_agent'?prAgentOptions(partyId):prCustomerOptions(partyId);erpModal('travelModal',old?'Edit Cancellation / Transfer':'New Cancellation / Transfer / Refund',`<div class="workflow-note" id="taWorkflowNote"><strong>${escapeHtml(x.sourceLabel||((x.preRegPilgrimIds||[]).map(id=>prPilgrim(id)?.customerName).filter(Boolean).join(', '))||x.partyName||'Select what happened')}</strong><span id="taWorkflowHelp">Only the fields needed for this action will be shown.</span></div><div class="form-section" id="taSourceSection"><div class="form-section-title">1. Select Action & Source</div><div class="field-row"><div class="field" id="taActionField"><label>What happened?</label><select id="taAction"><option value="full_cancellation">Full Cancellation / Will Not Travel</option><option value="external_transfer">Transfer to Another Agency</option><option value="internal_transfer">Internal Agent / Lot Transfer</option><option value="service_transfer">Transfer to Another Service</option><option value="package_conversion">Registered Haji → Package Booking</option></select></div><div class="field" id="taPartyTypeField"><label>Party Type</label><select id="taPartyType"><option value="customer">Customer</option><option value="group_agent">Groups/Agent</option></select></div><div class="field" id="taPartyField"><label>Customer / Agent</label><select id="taParty">${partyOptions}</select></div></div><div class="field" id="taBookingField"><label>Original Booking / Reference</label><select id="taBooking">${travelBookingOptions(partyType,partyId,x.originalBookingId||'')}</select></div></div><div class="form-section"><div class="form-section-title">2. Service, Amount & Charges</div><div class="field-row"><div class="field"><label>Service</label><select id="taService"><option value="hajj_pre_registration">Hajj Pre-registration</option><option value="hajj_package">Hajj Package</option><option value="umrah_package">Umrah Package</option><option value="air_ticket">Air Ticket</option><option value="hotel">Hotel</option><option value="visa">Visa</option><option value="transport">Transport</option><option value="other">Other</option></select></div><div class="field"><label>Service / Hajj Year</label><input type="number" id="taYear" value="${x.year||x.hajjYear||nowYear}" min="2020" max="2100"></div><div class="field"><label>Affected Qty</label><input type="number" id="taQty" value="${x.qty||1}" min="1"></div><div class="field"><label>Paid Deposit Available</label><input type="number" id="taOriginal" value="${x.amount??x.originalAmount??0}" min="0"></div><div class="field"><label>Registration Value Released</label><input type="number" id="taReleased" value="${x.releasedAmount??x.originalAmount??x.amount??0}" min="0" readonly></div></div><div class="field-row"><div class="field"><label>Govt / Provider Charge</label><input type="number" id="taProvider" value="${x.providerCharge||0}" min="0"></div><div class="field"><label>Agency Charge</label><input type="number" id="taAgency" value="${x.agencyCharge||0}" min="0"></div><div class="field"><label>Other Charge</label><input type="number" id="taOther" value="${x.otherCharge||0}" min="0"></div></div><div class="net-refund-box"><span>Net Refund / Transfer Credit</span><strong id="taNet">৳0</strong></div></div><div class="form-section" id="taDestinationSection"><div class="form-section-title" id="taDestinationTitle">3. Destination</div><div class="field-row"><div class="field" id="taExternalField"><label>Destination Agency</label><input id="taExternal" value="${escapeHtml(x.externalAgency||'')}"></div><div class="field" id="taDestAgentField"><label>Destination Agent</label><select id="taDestAgent">${prAgentOptions(x.destinationAgentId||'')}</select></div><div class="field" id="taDestLotField"><label>Destination Lot</label><select id="taDestLot">${prLotOptions(x.destinationLotId||'')}</select></div></div><div class="field-row"><div class="field" id="taNewServiceField"><label>New Service / Booking</label><input id="taNewService" value="${escapeHtml(x.newService||'')}"></div><div class="field" id="taPackageField"><label>Destination Package</label><select id="taPackage"><option value="">— Select Package —</option>${Object.entries(db.products).map(([pid,p])=>`<option value="${pid}" ${pid===x.packageId?'selected':''}>${escapeHtml(p.name)} — ৳${money(p.price)}</option>`).join('')}</select></div><div class="field" id="taPackageYearField"><label>Package Hajj Year</label><input type="number" id="taPackageYear" value="${x.packageYear||x.year||nowYear}" min="2020" max="2100"></div></div></div><div class="form-section" id="taSettlementSection"><div class="form-section-title">4. Final Result & Reference</div><div class="field-row"><div class="field" id="taSettlementField"><label>How will the net amount be handled?</label><select id="taSettlement"><option value="pending">Refund / Transfer Pending</option><option value="cash">Cash Refund</option><option value="bank">Bank Refund</option><option value="mobile_banking">Mobile Banking Refund</option><option value="ledger_adjustment">Party Ledger Adjustment</option><option value="direct_provider">Direct by Govt / Provider</option><option value="transfer_adjustment">Transfer Without Cash Movement</option></select></div><div class="field" id="taPayAccountField"><label>Refund Account</label><select id="taPayAccount"></select></div><div class="field"><label>Status</label><select id="taStatus"><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">Completed / Settled</option><option value="rejected">Rejected</option></select></div><div class="field"><label>Date</label><input type="date" id="taDate" value="${x.date||todayStr()}"></div></div><div class="field-row"><div class="field"><label>Govt / Provider Reference</label><input id="taReference" value="${escapeHtml(x.reference||'')}"></div><div class="field"><label>Transaction Reference</label><input id="taAccountRef" value="${escapeHtml(x.accountReference||'')}"></div></div><div class="field"><label>Reason / Note</label><textarea id="taNote">${escapeHtml(x.note||'')}</textarea></div></div>`,old?'Save Changes':'Save Adjustment',()=>saveTravelAdjustment(id,{preRegBatchId:x.preRegBatchId||'',preRegPilgrimIds:x.preRegPilgrimIds||[],sourceAgentId:x.sourceAgentId||'',sourceLotId:x.sourceLotId||''}),'920px');
+  const partyOptions=partyType==='group_agent'?prAgentOptions(partyId):prCustomerOptions(partyId);erpModal('travelModal',old?'Edit Cancellation / Transfer':'New Cancellation / Transfer / Refund',`<div class="workflow-note" id="taWorkflowNote"><strong>${escapeHtml(x.sourceLabel||((x.preRegPilgrimIds||[]).map(id=>prPilgrim(id)?.customerName).filter(Boolean).join(', '))||x.partyName||'Select what happened')}</strong><span id="taWorkflowHelp">Only the fields needed for this action will be shown.</span></div><div class="form-section" id="taSourceSection"><div class="form-section-title">1. Select Action & Source</div><div class="field-row"><div class="field" id="taActionField"><label>What happened?</label><select id="taAction"><option value="full_cancellation">Full Cancellation / Will Not Travel</option><option value="external_transfer">Transfer to Another Agency</option><option value="internal_transfer">Internal Agent / Lot Transfer</option><option value="service_transfer">Transfer to Another Service</option><option value="package_conversion">Registered Haji → Package Booking</option></select></div><div class="field" id="taPartyTypeField"><label>Party Type</label><select id="taPartyType"><option value="customer">Customer</option><option value="group_agent">Groups/Agent</option></select></div><div class="field" id="taPartyField"><label>Customer / Agent</label><select id="taParty">${partyOptions}</select></div></div><div class="field" id="taBookingField"><label>Original Booking / Reference</label><select id="taBooking">${travelBookingOptions(partyType,partyId,x.originalBookingId||'')}</select></div></div><div class="form-section"><div class="form-section-title">2. Service, Amount & Charges</div><div class="field-row"><div class="field"><label>Service</label><select id="taService"><option value="hajj_pre_registration">Hajj Pre-registration</option><option value="hajj_package">Hajj Package</option><option value="umrah_package">Umrah Package</option><option value="air_ticket">Air Ticket</option><option value="hotel">Hotel</option><option value="visa">Visa</option><option value="transport">Transport</option><option value="other">Other</option></select></div><div class="field"><label>Service / Hajj Year</label><input type="number" id="taYear" value="${x.year||x.hajjYear||nowYear}" min="2020" max="2100"></div><div class="field"><label>Affected Qty</label><input type="number" id="taQty" value="${x.qty||1}" min="1"></div><div class="field"><label>Paid Deposit Available</label><input type="number" id="taOriginal" value="${x.amount??x.originalAmount??0}" min="0"></div><div class="field"><label>Registration Value Released</label><input type="number" id="taReleased" value="${x.releasedAmount??x.originalAmount??x.amount??0}" min="0" readonly></div></div><div class="field-row"><div class="field"><label>Govt / Provider Charge</label><input type="number" id="taProvider" value="${x.providerCharge||0}" min="0"></div><div class="field"><label>Agency Charge</label><input type="number" id="taAgency" value="${x.agencyCharge||0}" min="0"></div><div class="field"><label>Other Charge</label><input type="number" id="taOther" value="${x.otherCharge||0}" min="0"></div></div><div class="net-refund-box"><span>Net Refund / Transfer Credit</span><strong id="taNet">৳0</strong></div></div><div class="form-section" id="taDestinationSection"><div class="form-section-title" id="taDestinationTitle">3. Destination</div><div class="field-row"><div class="field" id="taExternalField"><label>Destination Agency</label><input id="taExternal" value="${escapeHtml(x.externalAgency||'')}"></div><div class="field" id="taDestAgentField"><label>Destination Agent</label><select id="taDestAgent">${prAgentOptions(x.destinationAgentId||'')}</select></div><div class="field" id="taDestLotField"><label>Destination Lot</label><select id="taDestLot">${prLotOptions(x.destinationLotId||'')}</select></div></div><div class="field-row"><div class="field" id="taNewServiceField"><label>New Service / Booking</label><input id="taNewService" value="${escapeHtml(x.newService||'')}"></div><div class="field" id="taPackageField"><label>Destination Package</label><select id="taPackage"><option value="">— Select Package —</option>${Object.entries(db.products).map(([pid,p])=>`<option value="${pid}" ${pid===x.packageId?'selected':''}>${escapeHtml(p.name)} — ৳${money(p.price)}</option>`).join('')}</select></div><div class="field" id="taPackageYearField"><label>Package Hajj Year</label><input type="number" id="taPackageYear" value="${x.packageYear||x.year||nowYear}" min="2020" max="2100"></div></div><div class="field-row" id="taDiscountRow" style="display:none"><div class="field"><label>Discount / Special Allowance (৳)</label><input type="number" id="taDiscount" value="${x.packageDiscount||0}" min="0" placeholder="0"><div class="field-hint">Pre-reg deposit আলাদাভাবে কাটা হবে। শুধু অতিরিক্ত ছাড় দিলে এখানে লিখুন।</div></div><div class="field"><div style="background:var(--green-light);border:1px solid var(--green);border-radius:8px;padding:12px;margin-top:20px;font-size:13px;"><div id="taPackageSummary">— Package select করুন —</div></div></div></div></div><div class="form-section" id="taSettlementSection"><div class="form-section-title">4. Final Result & Reference</div><div class="field-row"><div class="field" id="taSettlementField"><label>How will the net amount be handled?</label><select id="taSettlement"><option value="pending">Refund / Transfer Pending</option><option value="cash">Cash Refund</option><option value="bank">Bank Refund</option><option value="mobile_banking">Mobile Banking Refund</option><option value="ledger_adjustment">Party Ledger Adjustment</option><option value="direct_provider">Direct by Govt / Provider</option><option value="transfer_adjustment">Transfer Without Cash Movement</option></select></div><div class="field" id="taPayAccountField"><label>Refund Account</label><select id="taPayAccount"></select></div><div class="field"><label>Status</label><select id="taStatus"><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">Completed / Settled</option><option value="rejected">Rejected</option></select></div><div class="field"><label>Date</label><input type="date" id="taDate" value="${x.date||todayStr()}"></div></div><div class="field-row"><div class="field"><label>Govt / Provider Reference</label><input id="taReference" value="${escapeHtml(x.reference||'')}"></div><div class="field"><label>Transaction Reference</label><input id="taAccountRef" value="${escapeHtml(x.accountReference||'')}"></div></div><div class="field"><label>Reason / Note</label><textarea id="taNote">${escapeHtml(x.note||'')}</textarea></div></div>`,old?'Save Changes':'Save Adjustment',()=>saveTravelAdjustment(id,{preRegBatchId:x.preRegBatchId||'',preRegPilgrimIds:x.preRegPilgrimIds||[],sourceAgentId:x.sourceAgentId||'',sourceLotId:x.sourceLotId||''}),'920px');
   document.getElementById('taAction').value=x.actionType||'full_cancellation';document.getElementById('taPartyType').value=partyType;document.getElementById('taService').value=x.serviceType||'hajj_pre_registration';document.getElementById('taSettlement').value=x.settlementMethod||'pending';document.getElementById('taStatus').value=x.status||'pending';const calc=()=>{const net=Math.max(0,Number(document.getElementById('taOriginal').value)-Number(document.getElementById('taProvider').value)-Number(document.getElementById('taAgency').value)-Number(document.getElementById('taOther').value));document.getElementById('taNet').textContent='৳'+money(net);};['taOriginal','taProvider','taAgency','taOther'].forEach(k=>document.getElementById(k).oninput=calc);calc();const refreshBookings=()=>document.getElementById('taBooking').innerHTML=travelBookingOptions(document.getElementById('taPartyType').value,document.getElementById('taParty').value);document.getElementById('taPartyType').onchange=e=>{document.getElementById('taParty').innerHTML=e.target.value==='group_agent'?prAgentOptions():prCustomerOptions();refreshBookings();};document.getElementById('taParty').onchange=refreshBookings;document.getElementById('taBooking').onchange=e=>{const s=db.sales.find(v=>v.id===e.target.value);if(!s)return;document.getElementById('taQty').value=s.qty||1;document.getElementById('taOriginal').value=s.paid||s.total||0;const n=String(s.productName||'').toLowerCase();document.getElementById('taService').value=n.includes('ticket')?'air_ticket':n.includes('visa')?'visa':n.includes('hotel')?'hotel':n.includes('umrah')?'umrah_package':n.includes('hajj')?'hajj_package':'other';calc();};document.getElementById('taAction').onchange=()=>{applyTravelActionMode(x);settlement();};document.getElementById('taDestAgent').onchange=e=>document.getElementById('taDestLot').innerHTML=prLotOptions('',e.target.value);const settlement=()=>{const method=document.getElementById('taSettlement').value,acct=document.getElementById('taPayAccount');acct.innerHTML=paymentAccountOptions(method,old?.paymentAccountId||'');document.getElementById('taPayAccountField').style.display=['bank','mobile_banking'].includes(method)?'block':'none';};document.getElementById('taSettlement').onchange=settlement;if(!old&&x.sourceAgentId){document.getElementById('taDestAgent').value=x.sourceAgentId;document.getElementById('taDestLot').innerHTML=prLotOptions(x.sourceLotId||'',x.sourceAgentId);}applyTravelActionMode(x);settlement();
 }
-async function createPackageFromAdjustment(rec){const product=db.products[rec.packageId];if(!product)throw new Error('Select destination package.');const qty=Math.max(1,Number(rec.qty)),total=Number(product.price||0)*qty,paid=Math.min(total,Number(rec.netAmount||0)),due=Math.max(0,total-paid),customer=rec.partyType==='customer'?db.customers[rec.partyId]:null,member=rec.partyType==='group_agent'?db.groupMembers[rec.partyId]:null,lot=rec.destinationLotId?db.groups[rec.destinationLotId]:null,invoiceId=uid(),sale={id:uid(),invoiceId,invoiceNo:nextInvoiceNo(),voucherNo:rec.reference||'',voucherTag:`Pre-Reg ${rec.hajjYear} → Package ${rec.packageYear}`,paymentSystem:'ledger_adjustment',paymentAccountId:'',isOldEntry:false,customerId:customer?rec.partyId:null,customerName:rec.partyName,buyerType:rec.partyType,groupMemberId:member?rec.partyId:null,groupMemberName:member?.name||'',productId:rec.packageId,productName:product.name,qty,unitPrice:Number(product.price||0),unitCost:Number(product.cost||0),discount:0,total,paid,due,initialPaid:paid,date:rec.date,ts:Date.now(),groupId:customer&&lot?rec.destinationLotId:null,groupName:customer&&lot?lot.name:'',preRegistrationAdjustmentId:rec.id,registrationYear:rec.hajjYear,packageYear:rec.packageYear};product.qty=Number(product.qty||0)-qty;await incrementRecordField('products',rec.packageId,'qty',-qty);db.sales.push(sale);await safePut('sales',sale.id,sale);if(customer&&lot){lot.hajjiIds=[...new Set([...normalizeHajjiIds(lot.hajjiIds),rec.partyId])];await safePut('groups',rec.destinationLotId,lot);}return {saleId:sale.id,invoiceId,invoiceNo:sale.invoiceNo,total,paid,due};}
+async function createPackageFromAdjustment(rec){const product=db.products[rec.packageId];if(!product)throw new Error('Select destination package.');const qty=Math.max(1,Number(rec.qty)),total=Number(product.price||0)*qty,preRegDeposit=Math.min(total,Number(rec.netAmount||0)),discount=Number(rec.packageDiscount||0),paid=Math.min(total,preRegDeposit),due=Math.max(0,total-paid-discount),customer=rec.partyType==='customer'?db.customers[rec.partyId]:null,member=rec.partyType==='group_agent'?db.groupMembers[rec.partyId]:null,lot=rec.destinationLotId?db.groups[rec.destinationLotId]:null,invoiceId=uid(),sale={id:uid(),invoiceId,invoiceNo:nextInvoiceNo(),voucherNo:rec.reference||'',voucherTag:`Pre-Reg ${rec.hajjYear} → Package ${rec.packageYear}`,paymentSystem:'ledger_adjustment',paymentAccountId:'',isOldEntry:false,customerId:customer?rec.partyId:null,customerName:rec.partyName,buyerType:rec.partyType,groupMemberId:member?rec.partyId:null,groupMemberName:member?.name||'',productId:rec.packageId,productName:product.name,qty,unitPrice:Number(product.price||0),unitCost:Number(product.cost||0),discount:discount,total,paid,due,initialPaid:paid,date:rec.date,ts:Date.now(),groupId:customer&&lot?rec.destinationLotId:null,groupName:customer&&lot?lot.name:'',preRegistrationAdjustmentId:rec.id,registrationYear:rec.hajjYear,packageYear:rec.packageYear};product.qty=Number(product.qty||0)-qty;await incrementRecordField('products',rec.packageId,'qty',-qty);db.sales.push(sale);await safePut('sales',sale.id,sale);if(customer&&lot){lot.hajjiIds=[...new Set([...normalizeHajjiIds(lot.hajjiIds),rec.partyId])];await safePut('groups',rec.destinationLotId,lot);}return {saleId:sale.id,invoiceId,invoiceNo:sale.invoiceNo,total,paid,due};}
 async function completeInternalPreRegTransfer(rec){
   if(rec.actionType!=='internal_transfer'||rec.status!=='completed')return;
   const agent=db.groupMembers[rec.destinationAgentId],lot=db.groups[rec.destinationLotId];
@@ -7054,7 +7327,35 @@ async function completeInternalPreRegTransfer(rec){
   agent.due=calculateGroupMemberDueFromLedger(rec.destinationAgentId);await safePut('groupMembers',rec.destinationAgentId,agent);
 }
 async function saveTravelAdjustment(id,link={}){
-  if(!requirePermission(id?'edit_records':'create_records'))return;const partyType=document.getElementById('taPartyType').value,partyId=document.getElementById('taParty').value,party=partyType==='group_agent'?db.groupMembers[partyId]:db.customers[partyId];if(!party){alert('Select Customer or Groups/Agent.');return;}const original=Math.max(0,Number(document.getElementById('taOriginal').value)||0),released=Math.max(0,Number(document.getElementById('taReleased').value)||original),provider=Math.max(0,Number(document.getElementById('taProvider').value)||0),agency=Math.max(0,Number(document.getElementById('taAgency').value)||0),other=Math.max(0,Number(document.getElementById('taOther').value)||0);if(provider+agency+other>original){alert('Total charge cannot exceed original amount.');return;}const action=document.getElementById('taAction').value,settlement=document.getElementById('taSettlement').value,status=document.getElementById('taStatus').value,accountId=document.getElementById('taPayAccount').value;if(status==='completed'&&settlement==='pending'){alert('Completed করার আগে refund/adjustment কীভাবে settle হয়েছে তা নির্বাচন করুন।');return;}if(status==='completed'&&['bank','mobile_banking'].includes(settlement)&&!validatePaymentAccount(settlement,accountId))return;if(action==='external_transfer'&&!document.getElementById('taExternal').value.trim()){alert('Enter destination agency.');return;}if(action==='internal_transfer'&&!document.getElementById('taDestAgent').value){alert('Select destination Agent.');return;}if(action==='internal_transfer'&&document.getElementById('taDestAgent').value===(link.sourceAgentId||'')&&document.getElementById('taDestLot').value===(link.sourceLotId||'')){alert('Destination must be a different Agent or Lot.');return;}if(action==='package_conversion'&&!document.getElementById('taPackage').value){alert('Select destination package.');return;}const old=id?(db.travelAdjustments||[]).find(x=>x.id===id):null,bookingId=document.getElementById('taBooking').value,booking=db.sales.find(x=>x.id===bookingId),rec={...(old||{}),id:id||uid(),adjustmentNo:old?.adjustmentNo||travelAdjustmentNo(),actionType:action,partyType,partyId,partyName:party.name||'',partyPhone:party.phone||'',originalBookingId:bookingId||'',originalBookingLabel:booking?`#${booking.invoiceNo||'—'} — ${booking.productName||'Service'}`:'',serviceType:document.getElementById('taService').value,hajjYear:String(document.getElementById('taYear').value),qty:Math.max(1,Number(document.getElementById('taQty').value)||1),originalAmount:original,releasedAmount:released,providerCharge:provider,agencyCharge:agency,otherCharge:other,totalCharge:provider+agency+other,netAmount:Math.max(0,original-provider-agency-other),sourceAgentId:link.sourceAgentId||old?.sourceAgentId||'',sourceLotId:link.sourceLotId||old?.sourceLotId||'',destinationAgentId:document.getElementById('taDestAgent').value,destinationAgentName:db.groupMembers[document.getElementById('taDestAgent').value]?.name||'',destinationLotId:document.getElementById('taDestLot').value,destinationLotName:db.groups[document.getElementById('taDestLot').value]?.name||'',externalAgency:document.getElementById('taExternal').value.trim(),newService:document.getElementById('taNewService').value.trim(),packageId:document.getElementById('taPackage').value,packageName:db.products[document.getElementById('taPackage').value]?.name||'',packageYear:String(document.getElementById('taPackageYear').value),settlementMethod:settlement,paymentSystem:['cash','bank','mobile_banking'].includes(settlement)?settlement:'ledger_adjustment',paymentAccountId:['bank','mobile_banking'].includes(settlement)?accountId:'',status,date:document.getElementById('taDate').value||todayStr(),reference:document.getElementById('taReference').value.trim(),accountReference:document.getElementById('taAccountRef').value.trim(),note:document.getElementById('taNote').value.trim(),preRegBatchId:link.preRegBatchId||old?.preRegBatchId||'',preRegPilgrimIds:link.preRegPilgrimIds||old?.preRegPilgrimIds||[],createdBy:old?.createdBy||currentUserEmail(),updatedBy:currentUserEmail(),ts:old?.ts||Date.now(),updatedTs:Date.now()};if(!old&&action==='package_conversion'&&status==='completed'){try{Object.assign(rec,await createPackageFromAdjustment(rec));}catch(e){alert(e.message);return;}}if(old)db.travelAdjustments=db.travelAdjustments.map(x=>x.id===id?rec:x);else db.travelAdjustments.push(rec);await safePut('travelAdjustments',rec.id,rec);await syncPreRegAdjustment(rec);try{await completeInternalPreRegTransfer(rec);}catch(e){alert(e.message);return;}if(rec.actionType==='package_conversion'&&rec.status==='completed'&&rec.preRegBatchId&&!rec.preRegPilgrimIds.length){const b=prBatch(rec.preRegBatchId);if(b){b.bulkPackagedQty=Number(b.bulkPackagedQty||0)+Number(rec.qty);await safePut('preRegBatches',b.id,b);}}if(partyType==='customer'){party.due=calculateCustomerDueFromLedger(partyId);await safePut('customers',partyId,party);}else{party.due=calculateGroupMemberDueFromLedger(partyId);await safePut('groupMembers',partyId,party);}document.getElementById('travelModal').remove();showToast('Adjustment saved');renderReturnsPage();if(rec.saleId)openSaleView(rec.saleId);
+  if(!requirePermission(id?'edit_records':'create_records'))return;const partyType=document.getElementById('taPartyType').value,partyId=document.getElementById('taParty').value,party=partyType==='group_agent'?db.groupMembers[partyId]:db.customers[partyId];if(!party){alert('Select Customer or Groups/Agent.');return;}const original=Math.max(0,Number(document.getElementById('taOriginal').value)||0),released=Math.max(0,Number(document.getElementById('taReleased').value)||original),provider=Math.max(0,Number(document.getElementById('taProvider').value)||0),agency=Math.max(0,Number(document.getElementById('taAgency').value)||0),other=Math.max(0,Number(document.getElementById('taOther').value)||0);if(provider+agency+other>original){alert('Total charge cannot exceed original amount.');return;}const action=document.getElementById('taAction').value,settlement=document.getElementById('taSettlement').value,status=document.getElementById('taStatus').value,accountId=document.getElementById('taPayAccount').value;if(status==='completed'&&settlement==='pending'){alert('Completed করার আগে refund/adjustment কীভাবে settle হয়েছে তা নির্বাচন করুন।');return;}if(status==='completed'&&['bank','mobile_banking'].includes(settlement)&&!validatePaymentAccount(settlement,accountId))return;// Live package summary
+  const updatePkgSummary=()=>{
+    const pid=document.getElementById('taPackage')?.value,qty=Number(document.getElementById('taQty')?.value||1),disc=Number(document.getElementById('taDiscount')?.value||0),dep=Number(document.getElementById('taOriginal')?.value||0),prod=db.products[pid];
+    const el=document.getElementById('taPackageSummary');if(!el)return;
+    if(!prod){el.innerHTML='— Package select করুন —';return;}
+    const total=Number(prod.price||0)*qty,due=Math.max(0,total-dep-disc);
+    el.innerHTML=`<strong>${escapeHtml(prod.name)}</strong><br>`
+      +`Package মূল্য: <strong>৳${money(total)}</strong> (${qty} জন × ৳${money(prod.price)})<br>`
+      +`Pre-reg deposit: <span style="color:var(--green)">− ৳${money(dep)}</span><br>`
+      +(disc>0?`Discount: <span style="color:var(--green)">− ৳${money(disc)}</span><br>`:'')
+      +`<strong style="color:var(--red)">বাকি: ৳${money(due)}</strong>`;
+  };
+  document.getElementById('taPackage')?.addEventListener('change',updatePkgSummary);
+  document.getElementById('taDiscount')?.addEventListener('input',updatePkgSummary);
+  document.getElementById('taQty')?.addEventListener('input',updatePkgSummary);
+  document.getElementById('taOriginal')?.addEventListener('input',updatePkgSummary);
+  updatePkgSummary();
+  if(action==='external_transfer'&&!document.getElementById('taExternal').value.trim()){alert('Enter destination agency.');return;}if(action==='internal_transfer'&&!document.getElementById('taDestAgent').value){alert('Select destination Agent.');return;}if(action==='internal_transfer'&&document.getElementById('taDestAgent').value===(link.sourceAgentId||'')&&document.getElementById('taDestLot').value===(link.sourceLotId||'')){alert('Destination must be a different Agent or Lot.');return;}if(action==='package_conversion'&&!document.getElementById('taPackage').value){alert('Select destination package.');return;}const old=id?(db.travelAdjustments||[]).find(x=>x.id===id):null,bookingId=document.getElementById('taBooking').value,booking=db.sales.find(x=>x.id===bookingId),rec={...(old||{}),id:id||uid(),adjustmentNo:old?.adjustmentNo||travelAdjustmentNo(),actionType:action,partyType,partyId,partyName:party.name||'',partyPhone:party.phone||'',originalBookingId:bookingId||'',originalBookingLabel:booking?`#${booking.invoiceNo||'—'} — ${booking.productName||'Service'}`:'',serviceType:document.getElementById('taService').value,hajjYear:String(document.getElementById('taYear').value),qty:Math.max(1,Number(document.getElementById('taQty').value)||1),originalAmount:original,releasedAmount:released,providerCharge:provider,agencyCharge:agency,otherCharge:other,totalCharge:provider+agency+other,netAmount:Math.max(0,original-provider-agency-other),sourceAgentId:link.sourceAgentId||old?.sourceAgentId||'',sourceLotId:link.sourceLotId||old?.sourceLotId||'',destinationAgentId:document.getElementById('taDestAgent').value,destinationAgentName:db.groupMembers[document.getElementById('taDestAgent').value]?.name||'',destinationLotId:document.getElementById('taDestLot').value,destinationLotName:db.groups[document.getElementById('taDestLot').value]?.name||'',externalAgency:document.getElementById('taExternal').value.trim(),newService:document.getElementById('taNewService').value.trim(),packageId:document.getElementById('taPackage').value,packageName:db.products[document.getElementById('taPackage').value]?.name||'',packageYear:String(document.getElementById('taPackageYear').value),packageDiscount:Math.max(0,Number(document.getElementById('taDiscount')?.value||0)),settlementMethod:settlement,paymentSystem:['cash','bank','mobile_banking'].includes(settlement)?settlement:'ledger_adjustment',paymentAccountId:['bank','mobile_banking'].includes(settlement)?accountId:'',status,date:document.getElementById('taDate').value||todayStr(),reference:document.getElementById('taReference').value.trim(),accountReference:document.getElementById('taAccountRef').value.trim(),note:document.getElementById('taNote').value.trim(),preRegBatchId:link.preRegBatchId||old?.preRegBatchId||'',preRegPilgrimIds:link.preRegPilgrimIds||old?.preRegPilgrimIds||[],createdBy:old?.createdBy||currentUserEmail(),updatedBy:currentUserEmail(),ts:old?.ts||Date.now(),updatedTs:Date.now()};if(!old&&action==='package_conversion'&&status==='completed'){try{Object.assign(rec,await createPackageFromAdjustment(rec));}catch(e){alert(e.message);return;}}if(old)db.travelAdjustments=db.travelAdjustments.map(x=>x.id===id?rec:x);else db.travelAdjustments.push(rec);await safePut('travelAdjustments',rec.id,rec);await syncPreRegAdjustment(rec);try{await completeInternalPreRegTransfer(rec);}catch(e){alert(e.message);return;}if(rec.actionType==='package_conversion'&&rec.status==='completed'&&rec.preRegBatchId&&!rec.preRegPilgrimIds.length){const b=prBatch(rec.preRegBatchId);if(b){b.bulkPackagedQty=Number(b.bulkPackagedQty||0)+Number(rec.qty);await safePut('preRegBatches',b.id,b);}}if(partyType==='customer'){party.due=calculateCustomerDueFromLedger(partyId);await safePut('customers',partyId,party);}else{party.due=calculateGroupMemberDueFromLedger(partyId);await safePut('groupMembers',partyId,party);}document.getElementById('travelModal').remove();showToast('✅ সেভ হয়েছে! হিসাব আপডেট হয়েছে।');
+  // Refresh whatever page is currently showing
+  const curTab = currentTab;
+  if(curTab==='returns') renderReturnsPage();
+  else if(curTab==='group_members'){
+    // If agent statement page open, refresh it
+    const agentId = partyType==='group_agent'?partyId:null;
+    if(agentId && document.querySelector('.agent-tabs')) openGroupMemberReport(agentId, 'ledger');
+    else renderGroupMembersPage();
+  }
+  else if(curTab==='reports') renderReportsPage && renderReportsPage();
+  if(rec.saleId) openSaleView(rec.saleId);
 }
 async function syncPreRegAdjustment(r){let st=r.status==='rejected'?'active':r.actionType==='package_conversion'&&r.status==='completed'?'package_booked':r.actionType==='full_cancellation'?(r.status==='completed'?'cancelled':'cancel_pending'):['external_transfer','internal_transfer','service_transfer'].includes(r.actionType)?(r.status==='completed'?'transferred':'transfer_pending'):null;if(!st)return;for(const id of r.preRegPilgrimIds||[]){const p=prPilgrim(id);if(!p)continue;Object.assign(p,{status:st,adjustmentId:r.id,packageSaleId:r.saleId||'',packageInvoiceId:r.invoiceId||'',packageId:r.packageId||'',packageName:r.packageName||'',packageYear:r.packageYear||'',updatedTs:Date.now()});await safePut('preRegPilgrims',p.id,p);}}
 async function deleteTravelAdjustment(id){
@@ -7067,7 +7368,20 @@ async function deleteTravelAdjustment(id){
   for(const pid of r.preRegPilgrimIds||[]){const p=prPilgrim(pid);if(p){Object.assign(p,{batchId:sourceBatch?.id||p.batchId,batchNo:sourceBatch?.batchNo||p.batchNo,agentId:r.sourceAgentId||p.agentId,agentName:sourceAgent?.name||p.agentName,lotId:r.sourceLotId||'',lotName:sourceLot?.name||'',status:'active',adjustmentId:'',previousAdjustmentId:'',packageSaleId:'',packageInvoiceId:'',packageId:'',packageName:'',packageYear:''});await safePut('preRegPilgrims',p.id,p);}}
   const transferBatch=(db.preRegBatches||[]).find(b=>b.sourceAdjustmentId===id);
   if(transferBatch){db.preRegBatches=db.preRegBatches.filter(b=>b.id!==transferBatch.id);await safeRemove('preRegBatches',transferBatch.id);}
-  db.travelAdjustments=db.travelAdjustments.filter(x=>x.id!==id);await safeRemove('travelAdjustments',id);renderReturnsPage();
+  db.travelAdjustments=db.travelAdjustments.filter(x=>x.id!==id);await safeRemove('travelAdjustments',id);
+  // Update party due after delete
+  if(r.partyType==='group_agent'&&db.groupMembers[r.partyId]){
+    db.groupMembers[r.partyId].due=calculateGroupMemberDueFromLedger(r.partyId);
+    await safePut('groupMembers',r.partyId,db.groupMembers[r.partyId]);
+  } else if(r.partyType==='customer'&&db.customers[r.partyId]){
+    db.customers[r.partyId].due=calculateCustomerDueFromLedger(r.partyId);
+    await safePut('customers',r.partyId,db.customers[r.partyId]);
+  }
+  showToast('🗑️ মুছে ফেলা হয়েছে। হিসাব আপডেট হয়েছে।');
+  // Refresh current view
+  if(currentTab==='group_members'&&document.querySelector('.agent-tabs'))
+    openGroupMemberReport(r.partyId,'ledger');
+  else renderReturnsPage();
 }
 function renderReturnsPage(){
   document.getElementById('content').innerHTML=`<div class="returns-workspace-tabs no-print"><button class="btn ghost ${returnsWorkspaceTab==='service_adjustments'?'active':''}" onclick="returnsWorkspaceTab='service_adjustments';renderReturnsPage()">↩️ বাতিল / ট্রান্সফার (Service)</button><button class="btn ghost ${returnsWorkspaceTab==='booking_returns'?'active':''}" onclick="returnsWorkspaceTab='booking_returns';renderReturnsPage()">📦 Booking Returns</button></div><div id="returnsWorkspace"></div>`;if(returnsWorkspaceTab==='booking_returns'){const parent=document.getElementById('content'),tabs=parent.firstElementChild;renderBookingReturnsList();document.getElementById('content').prepend(tabs);return;}renderTravelAdjustmentList();
@@ -7106,7 +7420,8 @@ function renderTravelAdjustmentList(){
             <div style="font-size:13px;color:var(--ink-soft);">${travelActionLabel(r.actionType)} · ${travelServiceLabel(r.serviceType)} · ${formatDateDMY(r.date)}</div>
             <div style="font-size:13px;margin-top:2px;">মূল: ৳${money(r.originalAmount)} · চার্জ: ৳${money(r.totalCharge)} · <strong>নেট: ৳${money(r.netAmount)}</strong></div>
           </div>
-          <div style="display:flex;gap:6px;">
+          <div style="display:flex;gap:6px;align-items:center;">
+            ${r.saleId?`<button class="icon-btn" title="Invoice দেখুন" onclick="openSaleView('${r.saleId}')">👁</button>`:''}
             ${hasPermission('edit_records')?`<button class="btn amber" style="font-size:12px;padding:6px 12px;" onclick="openTravelAdjustmentForm('${r.id}')">✏️ Update</button>`:''}
             ${hasPermission('delete_records')?`<button class="icon-btn" onclick="deleteTravelAdjustment('${r.id}')">🗑️</button>`:''}
           </div>
@@ -7125,7 +7440,7 @@ function renderTravelAdjustmentList(){
       <td>৳${money(r.totalCharge)}</td>
       <td><strong>৳${money(r.netAmount)}</strong></td>
       <td>${escapeHtml(r.settlementMethod||'—')}</td>
-      <td class="actions-cell">${hasPermission('edit_records')?`<button class="icon-btn" onclick="openTravelAdjustmentForm('${r.id}')">✏️</button>`:''}${hasPermission('delete_records')?`<button class="icon-btn" onclick="deleteTravelAdjustment('${r.id}')">🗑️</button>`:''}</td>
+      <td class="actions-cell">${r.saleId?`<button class="icon-btn" title="Invoice দেখুন" onclick="openSaleView('${r.saleId}')">👁</button>`:''} ${hasPermission('edit_records')?`<button class="icon-btn" onclick="openTravelAdjustmentForm('${r.id}')">✏️</button>`:''}${hasPermission('delete_records')?`<button class="icon-btn" onclick="deleteTravelAdjustment('${r.id}')">🗑️</button>`:''}</td>
     </tr>`).join('')}</tbody></table></div>` : '';
 
   host.innerHTML = guideHtml + statsHtml + pendingCards + (all.length===0?'<div class="empty">কোনো রেকর্ড নেই।</div>':completedHtml);
