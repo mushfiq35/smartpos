@@ -3941,9 +3941,10 @@ function renderPaymentHeads(){
   const one=type=>Object.entries(db.paymentHeads).filter(([,h])=>h.type===type).map(([id,h])=>'<span class="pill '+(type==='receivable'?'green':'red')+'" style="margin:3px">'+escapeHtml(h.name)+' <button onclick="deletePaymentHead(\''+id+'\')" style="border:0;background:none;cursor:pointer;color:inherit">×</button></span>').join('')||'<span class="field-hint">No heads yet</span>';
   return '<div class="erp-grid"><div><strong class="ledger-type-receivable">Receivable Heads</strong><div style="margin-top:8px">'+one('receivable')+'</div></div><div><strong class="ledger-type-payable">Payable Heads</strong><div style="margin-top:8px">'+one('payable')+'</div></div></div>';
 }
-function openPaymentLedgerEntry(){
-  if(!hasPermission('view_ledger')||!requirePermission('create_records'))return;
-  const html='<div class="overlay open" id="ledgerEntryOverlay" style="z-index:180"><div class="modal" style="max-width:460px"><h2>New Payment Entry</h2>'
+function openPaymentLedgerEntry(editId){
+  if(!hasPermission('view_ledger')||!requirePermission(editId?'edit_records':'create_records'))return;
+  const existing = editId ? db.paymentLedger.find(x=>x.id===editId) : null;
+  const html='<div class="overlay open" id="ledgerEntryOverlay" style="z-index:180"><div class="modal" style="max-width:460px"><h2>'+(existing?'Edit':'New')+' Payment Entry</h2>'
     +'<div class="field"><label>Entry Type</label><select id="leType"><option value="receivable">Receivable (Money IN)</option><option value="payable">Payable (Money OUT)</option></select></div>'
     +'<div class="field"><label>Ledger Head</label><select id="leHead"></select></div><div class="field"><label>Amount</label><input type="number" id="leAmount" min="0" step="any"></div>'
     +'<div class="field"><label>Payment Method</label><select id="leMethod"><option value="cash">Cash</option><option value="bank">Bank</option><option value="mobile_banking">Mobile Banking</option></select></div>'
@@ -3954,11 +3955,68 @@ function openPaymentLedgerEntry(){
   document.getElementById('leType').onchange=heads;heads();
   document.getElementById('leMethod').onchange=()=>refreshPaymentAccountSelect('leMethod','leAccount');refreshPaymentAccountSelect('leMethod','leAccount');
   document.getElementById('leCancel').onclick=()=>overlay.remove();
-  document.getElementById('leSave').onclick=async()=>{const type=document.getElementById('leType').value,headId=document.getElementById('leHead').value,amount=Number(document.getElementById('leAmount').value),paymentSystem=document.getElementById('leMethod').value,paymentAccountId=document.getElementById('leAccount').value;
+  // Pre-fill if editing
+  if(existing){
+    setTimeout(()=>{
+      if(document.getElementById('leType')){document.getElementById('leType').value=existing.type;heads();setTimeout(()=>{if(document.getElementById('leHead'))document.getElementById('leHead').value=existing.headId||'';},50);}
+      if(document.getElementById('leAmount'))document.getElementById('leAmount').value=existing.amount||'';
+      if(document.getElementById('leDate'))document.getElementById('leDate').value=existing.date||todayStr();
+      if(document.getElementById('leReference'))document.getElementById('leReference').value=existing.reference||'';
+      if(document.getElementById('leNote'))document.getElementById('leNote').value=existing.note||'';
+      if(document.getElementById('leMethod')){document.getElementById('leMethod').value=existing.paymentSystem||'cash';refreshPaymentAccountSelect('leMethod','leAccount').then(()=>{if(document.getElementById('leAccount'))document.getElementById('leAccount').value=existing.paymentAccountId||'';});}
+    },60);
+    const sb=document.getElementById('leSave');if(sb)sb.textContent='✅ Update Entry';
+  }
+  document.getElementById('leSave').onclick=async()=>{
+    const type=document.getElementById('leType').value,headId=document.getElementById('leHead').value,amount=Number(document.getElementById('leAmount').value),paymentSystem=document.getElementById('leMethod').value,paymentAccountId=document.getElementById('leAccount').value;
     if(!headId||amount<=0){alert(t('required_fields'));return;}if(!validatePaymentAccount(paymentSystem,paymentAccountId))return;const head=db.paymentHeads[headId];
-    const rec={id:uid(),entryNo:nextLedgerNo(),type,headId,headName:head.name,amount,paymentSystem,paymentAccountId:paymentAccountId||null,paymentAccountName:paymentAccountLabel(paymentAccountId),date:document.getElementById('leDate').value||todayStr(),reference:document.getElementById('leReference').value.trim(),note:document.getElementById('leNote').value.trim(),createdBy:(firebase.auth().currentUser||{}).email||'',ts:Date.now()};
-    db.paymentLedger.push(rec);await safePut('paymentLedger',rec.id,rec);overlay.remove();showToast(t('saved_toast'));renderPaymentLedgerPage();};
+    if(existing){
+      Object.assign(existing,{type,headId,headName:head.name,amount,paymentSystem,paymentAccountId:paymentAccountId||null,paymentAccountName:paymentAccountLabel(paymentAccountId),date:document.getElementById('leDate').value||todayStr(),reference:document.getElementById('leReference').value.trim(),note:document.getElementById('leNote').value.trim(),updatedTs:Date.now()});
+      await safePut('paymentLedger',existing.id,existing);
+    }else{
+      const rec={id:uid(),entryNo:nextLedgerNo(),type,headId,headName:head.name,amount,paymentSystem,paymentAccountId:paymentAccountId||null,paymentAccountName:paymentAccountLabel(paymentAccountId),date:document.getElementById('leDate').value||todayStr(),reference:document.getElementById('leReference').value.trim(),note:document.getElementById('leNote').value.trim(),createdBy:(firebase.auth().currentUser||{}).email||'',ts:Date.now()};
+      db.paymentLedger.push(rec);await safePut('paymentLedger',rec.id,rec);
+    }
+    overlay.remove();showToast('✅ সেভ হয়েছে!');renderPaymentLedgerPage();
+  };
 }
+function printPaymentLedgerVoucher(id){
+  const rec = db.paymentLedger.find(x=>x.id===id);
+  if(!rec) return;
+  const shop = db.shopdata||{};
+  const isIn = rec.type==='receivable';
+  const html = `
+    <div style="max-width:480px;margin:0 auto;font-family:Arial,sans-serif;font-size:13px;">
+      <div style="text-align:center;border-bottom:2px solid #1B6B3A;padding-bottom:12px;margin-bottom:16px;">
+        <div style="font-size:20px;font-weight:800;color:#1B6B3A;">${escapeHtml(shop.name||'Hajj & Umrah Agency')}</div>
+        ${shop.phone?`<div style="font-size:12px;color:#555;">📞 ${escapeHtml(shop.phone)}</div>`:''}
+        ${shop.address?`<div style="font-size:12px;color:#555;">📍 ${escapeHtml(shop.address)}</div>`:''}
+        <div style="font-size:14px;font-weight:700;margin-top:8px;color:#1B6B3A;">Payment ${isIn?'Receipt':'Voucher'}</div>
+        <div style="font-size:12px;color:#555;">Ref: ${escapeHtml(rec.entryNo||id)}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr><td style="padding:7px 0;color:#555;width:45%;">Date:</td><td style="font-weight:700;">${formatDateDMY(rec.date)}</td></tr>
+        <tr><td style="padding:7px 0;color:#555;">Type:</td><td><span style="font-weight:700;color:${isIn?'#1B6B3A':'#b4423a'}">${isIn?'RECEIVABLE (Money IN)':'PAYABLE (Money OUT)'}</span></td></tr>
+        <tr><td style="padding:7px 0;color:#555;">Head:</td><td style="font-weight:700;">${escapeHtml(rec.headName||'—')}</td></tr>
+        ${rec.reference?`<tr><td style="padding:7px 0;color:#555;">Reference:</td><td>${escapeHtml(rec.reference)}</td></tr>`:''}
+        ${rec.note?`<tr><td style="padding:7px 0;color:#555;">Note:</td><td>${escapeHtml(rec.note)}</td></tr>`:''}
+        <tr><td style="padding:7px 0;color:#555;">Method:</td><td>${escapeHtml(paymentMethodLabel(rec.paymentSystem))}${rec.paymentAccountName?' — '+escapeHtml(rec.paymentAccountName):''}</td></tr>
+        <tr><td colspan="2" style="border-top:1px solid #ddd;padding-top:8px;margin-top:4px;"></td></tr>
+        <tr>
+          <td style="padding:8px 0;font-weight:700;font-size:15px;">${isIn?'Amount Received:':'Amount Paid:'}</td>
+          <td style="font-weight:800;font-size:20px;color:${isIn?'#1B6B3A':'#b4423a'};">৳${money(rec.amount)}</td>
+        </tr>
+      </table>
+      <div style="display:flex;justify-content:space-between;margin-top:40px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#888;">
+        <div>Printed: ${formatDateDMY(todayStr())}</div>
+        <div style="text-align:right;">
+          <div style="border-top:1px solid #555;margin-top:24px;padding-top:4px;">Authorized Signature</div>
+        </div>
+      </div>
+    </div>`;
+  printIsolated('Payment '+(isIn?'Receipt':'Voucher')+' — '+rec.entryNo, html);
+}
+
 async function deletePaymentLedgerEntry(id){if(!requirePermission('delete_records'))return;if(!confirm(t('confirm_delete')))return;db.paymentLedger=db.paymentLedger.filter(x=>x.id!==id);await safeRemove('paymentLedger',id);renderPaymentLedgerPage();}
 function allPaymentLedgerRows(){
   const out=[],sales={};
@@ -3973,8 +4031,10 @@ function allPaymentLedgerRows(){
 }
 function renderPaymentLedgerPage(){
   if(!hasPermission('view_ledger')){currentTab='dashboard';renderNav();renderPage();return;}
-  const sorted=allPaymentLedgerRows(),incoming=sorted.filter(x=>x.type==='receivable').reduce((s,x)=>s+Number(x.amount||0),0),outgoing=sorted.filter(x=>x.type==='payable').reduce((s,x)=>s+Number(x.amount||0),0);let running=0;
-  const rows=sorted.map(x=>{running+=x.type==='receivable'?Number(x.amount):-Number(x.amount);return '<tr><td>'+formatDateDMY(x.date)+'</td><td>'+escapeHtml(x.entryNo)+'</td><td><span class="ledger-type-'+x.type+'">'+(x.type==='receivable'?'RECEIVABLE':'PAYABLE')+'</span></td><td>'+escapeHtml(x.headName)+'</td><td>'+escapeHtml(paymentMethodLabel(x.paymentSystem))+(x.paymentAccountId?'<br><small>'+escapeHtml(paymentAccountLabel(x.paymentAccountId))+'</small>':'')+'</td><td>'+escapeHtml(x.reference||x.note||'—')+'</td><td>'+(x.type==='receivable'?'৳'+money(x.amount):'—')+'</td><td>'+(x.type==='payable'?'৳'+money(x.amount):'—')+'</td><td><strong>৳'+money(running)+'</strong></td><td>'+(x.source==='manual'?'<button class="icon-btn" onclick="deletePaymentLedgerEntry(\''+x.id+'\')">🗑️</button>':'<span class="field-hint">Auto</span>')+'</td></tr>';}).join('');
+  // শুধু manual paymentLedger entries দেখাবে (PL- prefix)
+  const sorted=[...db.paymentLedger].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.ts||0)-Number(b.ts||0));
+  const incoming=sorted.filter(x=>x.type==='receivable').reduce((s,x)=>s+Number(x.amount||0),0),outgoing=sorted.filter(x=>x.type==='payable').reduce((s,x)=>s+Number(x.amount||0),0);let running=0;
+  const rows=sorted.map(x=>{running+=x.type==='receivable'?Number(x.amount):-Number(x.amount);return '<tr><td>'+formatDateDMY(x.date)+'</td><td>'+escapeHtml(x.entryNo)+'</td><td><span class="ledger-type-'+x.type+'">'+(x.type==='receivable'?'RECEIVABLE':'PAYABLE')+'</span></td><td>'+escapeHtml(x.headName)+'</td><td>'+escapeHtml(paymentMethodLabel(x.paymentSystem))+(x.paymentAccountId?'<br><small>'+escapeHtml(paymentAccountLabel(x.paymentAccountId))+'</small>':'')+'</td><td>'+escapeHtml(x.reference||x.note||'—')+'</td><td>'+(x.type==='receivable'?'৳'+money(x.amount):'—')+'</td><td>'+(x.type==='payable'?'৳'+money(x.amount):'—')+'</td><td><strong>৳'+money(running)+'</strong></td><td>'+'<button class="icon-btn" onclick="printPaymentLedgerVoucher(\''+x.id+'\')" title="Invoice">👁</button>'+(hasPermission('edit_records')?'<button class="icon-btn" onclick="openPaymentLedgerEntry(\''+x.id+'\')" title="Edit">✏️</button>':'')+(hasPermission('delete_records')?'<button class="icon-btn" onclick="deletePaymentLedgerEntry(\''+x.id+'\')" title="Delete">🗑️</button>':'')+'</td></tr>';}).join('');
   document.getElementById('content').innerHTML='<div class="toolbar"><button class="btn amber" onclick="openPaymentLedgerEntry()">+ New Payment Entry</button><button class="btn ghost" style="margin-left:auto" onclick="safePrintPage()">🖨 Print</button></div>'
     +'<div class="stat-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="stat-card c1"><div class="val">৳'+money(incoming)+'</div><div class="lbl">Total Receivable / IN</div></div><div class="stat-card c7"><div class="val">৳'+money(outgoing)+'</div><div class="lbl">Total Payable / OUT</div></div><div class="stat-card c2"><div class="val">৳'+money(incoming-outgoing)+'</div><div class="lbl">Net Cash Flow</div></div></div>'
     +'<div class="panel no-print"><h3>Payable & Receivable Heads</h3><div class="field-row"><div class="field"><label>Type</label><select id="headType"><option value="receivable">Receivable</option><option value="payable">Payable</option></select></div><div class="field"><label>New Head Name</label><input id="headName" placeholder="e.g. Agent Commission"></div><div class="field" style="align-self:end"><button class="btn amber" style="width:100%" onclick="addPaymentHead()">+ Add Head</button></div></div>'+renderPaymentHeads()+'</div>'
