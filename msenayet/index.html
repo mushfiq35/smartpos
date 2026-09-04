@@ -10439,9 +10439,8 @@
       let list=kind==='customer'?customers:suppliers,party=list.find(x=>String(x.id)===String(id));if(!party)return alert('Account not found.');
       let input=document.querySelector(`[data-opening-${kind}="${id}"]`),raw=Object.prototype.hasOwnProperty.call(openingDraft[kind],id)?openingDraft[kind][id]:input?.value,amount=openingNum(raw);
       let date=openingConfig.date||document.getElementById('openingDate')?.value||'';
-      if(!date)return alert(currentLang==='BN'?'আগে System Start Date দিন।':'Select the System Start Date first.');
-      let transactionDates=[...salesHistory,...purchases,...payments,...accountTransactions,...payableEntries,...receivableEntries,...personalLoanTransactions].map(x=>x.date).filter(Boolean).sort();
-      if(transactionDates.length&&date>transactionDates[0])return alert(`${currentLang==='BN'?'Start Date প্রথম transaction-এর পরে হতে পারবে না':'Start Date cannot be after the first transaction'} (${transactionDates[0]}).`);
+      // NOTE: Date restriction removed — opening due can be set/updated at any time,
+      // even after transactions exist (needed for adding new customers/suppliers later).
       party.openingDue=amount;openingConfig={...openingConfig,date,saved:true,supplierPayments:openingConfig.supplierPayments||[],liabilityPayments:openingConfig.liabilityPayments||[]};delete openingDraft[kind][id];
       saveData();await firestoreSaveQueue.catch(()=>{});
       if(firestoreLastSaveError)return alert(currentLang==='BN'?'Local-এ রাখা হয়েছে, কিন্তু Cloud save হয়নি। Internet ঠিক করে আবার Save দিন।':'Saved locally, but cloud save failed. Reconnect and save again.');
@@ -10489,7 +10488,10 @@
       let date=document.getElementById('openingDate').value;
       if(!date) return alert(currentLang==='BN'?'System Start Date দিন।':'Select the system start date.');
       let transactionDates=[...salesHistory,...purchases,...payments,...accountTransactions,...payableEntries,...receivableEntries,...personalLoanTransactions].map(x=>x.date).filter(Boolean).sort();
-      if(transactionDates.length&&date>transactionDates[0]) return alert(`${currentLang==='BN'?'Start Date প্রথম transaction-এর পরে হতে পারবে না':'Start Date cannot be after the first transaction'} (${transactionDates[0]}).`);
+      if(transactionDates.length&&date>transactionDates[0]){
+        // Warn but allow — admin may need to set opening dues for newly added parties
+        if(!confirm(`${currentLang==='BN'?'সতর্কতা: Start Date প্রথম transaction-এর পরে আছে ('+transactionDates[0]+'). Cash/Stock opening balance-এর জন্য এটি সমস্যা হতে পারে। Customer/Supplier due শুধু সেট করতে চাইলে চালিয়ে যান। চালিয়ে যাবেন?':'Warning: Start Date is after the first transaction ('+transactionDates[0]+'). This may affect Cash/Stock opening balance accuracy. If you only need to set customer/supplier opening dues, you can proceed. Continue?'}`)) return;
+      }
       let newLoan=openingNum(document.getElementById('openingLoan').value),newOtherLiability=openingNum(document.getElementById('openingOtherLiabilities').value);
       let loanPaid=(openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.type==='loan').reduce((s,p)=>s+(Number(p.amount)||0),0),otherPaid=(openingConfig.liabilityPayments||[]).filter(p=>!p.reversed&&p.type==='other').reduce((s,p)=>s+(Number(p.amount)||0),0);
       if(newLoan+0.001<loanPaid||newOtherLiability+0.001<otherPaid)return alert('Opening liability cannot be less than its already recorded payments.');
