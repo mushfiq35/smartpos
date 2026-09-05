@@ -1852,8 +1852,15 @@
               <div><label data-key="lblToDate">To Date:</label><input type="date" id="rcToDate" onchange="searchReportCustomers()"></div>
               <div><label>Search (Name/Invoice/Phone):</label><input type="text" id="rcSearchInput" onkeyup="searchReportCustomers()" placeholder="🔎"></div>
             </div>
+            <div style="margin-top:10px;" class="no-print">
+              <button onclick="printCustomerReport()" class="btn-action" style="width:auto;padding:7px 18px;background:var(--primary);color:#fff;border-radius:6px;">🖨️ Print</button>
+            </div>
           </div>
-          <div class="card">
+          <div class="card" id="customerReportPrintArea">
+            <div class="print-only" style="display:none;margin-bottom:10px;">
+              <h3 style="margin:0;font-size:16px;" id="customerReportPrintTitle">Customer Report</h3>
+              <p style="margin:2px 0;font-size:12px;color:#555;" id="customerReportPrintDate"></p>
+            </div>
             <div class="table-responsive">
               <table id="reportCustomersTable">
                 <thead>
@@ -1862,10 +1869,11 @@
                     <th data-key="lblMobileNumShort">মোবাইল নম্বর</th>
                     <th data-key="totalPurchaseShort">মোট ক্রয়</th>
                     <th data-key="currentDueShort">বর্তমান বাকি</th>
-                    <th style="text-align:center;" data-key="thAction">অ্যাকশন</th>
+                    <th style="text-align:center;" class="no-print" data-key="thAction">অ্যাকশন</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
+                <tfoot id="reportCustomersTfoot"></tfoot>
               </table>
             </div>
           </div>
@@ -1880,9 +1888,22 @@
               <div><label data-key="lblToDate">To Date:</label><input type="date" id="rspToDate" onchange="runSuppliersReport()"></div>
               <div><label>Search (Name/Invoice/Phone):</label><input type="text" id="rspSearchInput" onkeyup="runSuppliersReport()" placeholder="🔎"></div>
             </div>
+            <div style="margin-top:10px;" class="no-print">
+              <button onclick="printSupplierReport()" class="btn-action" style="width:auto;padding:7px 18px;background:var(--primary);color:#fff;border-radius:6px;">🖨️ Print</button>
+            </div>
           </div>
-          <div class="card">
-            <div class="table-responsive"><table id="reportSuppliersTable"><thead><tr><th>Supplier</th><th>Phone</th><th style="text-align:right;">Period Purchase</th><th style="text-align:right;">Period Paid</th><th style="text-align:right;">Closing Payable</th><th style="text-align:center;">Action</th></tr></thead><tbody></tbody></table></div>
+          <div class="card" id="supplierReportPrintArea">
+            <div class="print-only" style="display:none;margin-bottom:10px;">
+              <h3 style="margin:0;font-size:16px;" id="supplierReportPrintTitle">Supplier Report</h3>
+              <p style="margin:2px 0;font-size:12px;color:#555;" id="supplierReportPrintDate"></p>
+            </div>
+            <div class="table-responsive">
+              <table id="reportSuppliersTable">
+                <thead><tr><th>Supplier</th><th>Phone</th><th style="text-align:right;">Period Purchase</th><th style="text-align:right;">Period Paid</th><th style="text-align:right;">Closing Payable</th><th style="text-align:center;" class="no-print">Action</th></tr></thead>
+                <tbody></tbody>
+                <tfoot id="reportSuppliersTfoot"></tfoot>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -5617,20 +5638,75 @@
       });
 
       let tbody = document.querySelector('#reportCustomersTable tbody');
+      let tfoot = document.getElementById('reportCustomersTfoot');
+      let totalSales=0,totalDue=0;
       tbody.innerHTML = filtered.length ? filtered.map(c => {
         let all=getCustomerStatementLines(c.id),period=filterPartyStatementLines(all,from,to,''),totalBilled=period.lines.reduce((s,x)=>s+(Number(x.debit)||0),0),due=period.closing;
+        totalSales+=totalBilled; totalDue+=due;
         return `
           <tr>
             <td><b>${c.name}</b></td>
             <td>${c.phone}</td>
             <td><span class="currency-symbol">৳</span>${totalBilled.toFixed(2)}</td>
             <td style="color:${due > 0 ? '#dc2626' : '#16a34a'};"><b><span class="currency-symbol">৳</span>${due.toFixed(2)}</b></td>
-            <td style="text-align:center;">
+            <td style="text-align:center;" class="no-print">
               <button onclick="showCustomerStatement(${c.id},document.getElementById('rcFromDate').value,document.getElementById('rcToDate').value,'')" class="btn-icon-action btn-view" title="${t('titleViewStatement')}">${SVG_VIEW}</button>
             </td>
           </tr>
         `;
       }).join('') : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">${t('noResultsFound')}</td></tr>`;
+      if(tfoot) tfoot.innerHTML = filtered.length ? `<tr style="background:var(--header-bg,#f1f5f9);font-weight:700;border-top:2px solid var(--border,#e2e8f0);">
+        <td colspan="2" style="padding:10px 8px;">মোট (${filtered.length} জন কাস্টমার)</td>
+        <td style="text-align:right;padding:10px 8px;"><span class="currency-symbol">৳</span>${totalSales.toFixed(2)}</td>
+        <td style="text-align:right;padding:10px 8px;color:${totalDue>0?'#dc2626':'#16a34a'};"><span class="currency-symbol">৳</span>${totalDue.toFixed(2)}</td>
+        <td class="no-print"></td>
+      </tr>` : '';
+    }
+
+    function printCustomerReport(){
+      let from=document.getElementById('rcFromDate').value,to=document.getElementById('rcToDate').value;
+      let title=`Customer Report${from||to?' ('+( from||'শুরু')+' → '+(to||'আজ')+')':''}`;
+      let shop=shopConfig?.shopName||'';
+      let dateStr=from&&to?`${from} থেকে ${to}`:from?`${from} থেকে`:to?`শেষ ${to}`:'সকল সময়';
+      let printArea=document.getElementById('customerReportPrintArea');
+      let titleEl=document.getElementById('customerReportPrintTitle');
+      let dateEl=document.getElementById('customerReportPrintDate');
+      if(titleEl) titleEl.textContent=(shop?shop+' — ':'')+title;
+      if(dateEl) dateEl.textContent='সময়কাল: '+dateStr+'  |  প্রিন্ট তারিখ: '+new Date().toLocaleDateString('bn-BD');
+      let printOnlyEls=printArea.querySelectorAll('.print-only');
+      printOnlyEls.forEach(el=>el.style.display='block');
+      let w=window.open('','_blank','width=900,height=700');
+      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>
+        body{font-family:Arial,sans-serif;padding:20px;color:#222;} table{width:100%;border-collapse:collapse;font-size:13px;}
+        th{background:#f1f5f9;padding:8px;text-align:left;border:1px solid #ddd;} td{padding:7px 8px;border:1px solid #ddd;}
+        tfoot tr{background:#f1f5f9;font-weight:700;} .no-print{display:none!important;}
+        h3{margin:0 0 4px;} p{margin:0 0 12px;font-size:12px;color:#555;}
+      </style></head><body>${printArea.innerHTML}</body></html>`);
+      w.document.close(); w.focus(); w.print(); w.close();
+      printOnlyEls.forEach(el=>el.style.display='none');
+    }
+
+    function printSupplierReport(){
+      let from=document.getElementById('rspFromDate').value,to=document.getElementById('rspToDate').value;
+      let title=`Supplier Report${from||to?' ('+( from||'শুরু')+' → '+(to||'আজ')+')':''}`;
+      let shop=shopConfig?.shopName||'';
+      let dateStr=from&&to?`${from} থেকে ${to}`:from?`${from} থেকে`:to?`শেষ ${to}`:'সকল সময়';
+      let printArea=document.getElementById('supplierReportPrintArea');
+      let titleEl=document.getElementById('supplierReportPrintTitle');
+      let dateEl=document.getElementById('supplierReportPrintDate');
+      if(titleEl) titleEl.textContent=(shop?shop+' — ':'')+title;
+      if(dateEl) dateEl.textContent='সময়কাল: '+dateStr+'  |  প্রিন্ট তারিখ: '+new Date().toLocaleDateString('bn-BD');
+      let printOnlyEls=printArea.querySelectorAll('.print-only');
+      printOnlyEls.forEach(el=>el.style.display='block');
+      let w=window.open('','_blank','width=900,height=700');
+      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>
+        body{font-family:Arial,sans-serif;padding:20px;color:#222;} table{width:100%;border-collapse:collapse;font-size:13px;}
+        th{background:#f1f5f9;padding:8px;text-align:left;border:1px solid #ddd;} td{padding:7px 8px;border:1px solid #ddd;}
+        tfoot tr{background:#f1f5f9;font-weight:700;} .no-print{display:none!important;}
+        h3{margin:0 0 4px;} p{margin:0 0 12px;font-size:12px;color:#555;}
+      </style></head><body>${printArea.innerHTML}</body></html>`);
+      w.document.close(); w.focus(); w.print(); w.close();
+      printOnlyEls.forEach(el=>el.style.display='none');
     }
 
     function getSupplierStatementLines(supplierId){
@@ -5656,7 +5732,16 @@
       let select=document.getElementById('rspSupplierFilter');if(!select)return;let keep=select.value;select.innerHTML='<option value="All">All Suppliers</option>'+suppliers.map(s=>`<option value="${s.id}">${s.name} — ${s.phone||'N/A'}</option>`).join('');select.value=[...select.options].some(o=>o.value===keep)?keep:'All';
       let party=select.value,from=document.getElementById('rspFromDate').value,to=document.getElementById('rspToDate').value,q=document.getElementById('rspSearchInput').value.toLowerCase().trim();
       let list=suppliers.filter(s=>(party==='All'||String(s.id)===party)&&(!q||`${s.name} ${s.phone||''} ${s.address||''}`.toLowerCase().includes(q)||purchases.some(p=>String(p.supplierId)===String(s.id)&&`${p.purchaseNo||''} ${p.prodName||''}`.toLowerCase().includes(q))));
-      document.querySelector('#reportSuppliersTable tbody').innerHTML=list.length?list.map(s=>{let period=filterPartyStatementLines(getSupplierStatementLines(s.id),from,to,''),purchase=period.lines.reduce((n,x)=>n+(Number(x.debit)||0),0),paid=period.lines.reduce((n,x)=>n+(Number(x.credit)||0),0);return `<tr><td><b>${s.name}</b></td><td>${s.phone||'N/A'}</td><td style="text-align:right;">৳${purchase.toFixed(2)}</td><td style="text-align:right;color:var(--green);">৳${paid.toFixed(2)}</td><td style="text-align:right;color:${period.closing>0?'var(--red)':'var(--green)'};">${period.closing<0?'<small style="display:block;">ADVANCE</small>':''}<b>৳${Math.abs(period.closing).toFixed(2)}</b></td><td style="text-align:center;"><button onclick="showSupplierReportStatement(${s.id},document.getElementById('rspFromDate').value,document.getElementById('rspToDate').value,'')" class="btn-icon-action btn-view" title="View Statement">${SVG_VIEW}</button></td></tr>`;}).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">No suppliers found.</td></tr>';
+      let stfoot=document.getElementById('reportSuppliersTfoot');
+      let sTotalPurchase=0,sTotalPaid=0,sTotalPayable=0;
+      document.querySelector('#reportSuppliersTable tbody').innerHTML=list.length?list.map(s=>{let period=filterPartyStatementLines(getSupplierStatementLines(s.id),from,to,''),purchase=period.lines.reduce((n,x)=>n+(Number(x.debit)||0),0),paid=period.lines.reduce((n,x)=>n+(Number(x.credit)||0),0);sTotalPurchase+=purchase;sTotalPaid+=paid;sTotalPayable+=period.closing;return `<tr><td><b>${s.name}</b></td><td>${s.phone||'N/A'}</td><td style="text-align:right;">৳${purchase.toFixed(2)}</td><td style="text-align:right;color:var(--green);">৳${paid.toFixed(2)}</td><td style="text-align:right;color:${period.closing>0?'var(--red)':'var(--green)'};">${period.closing<0?'<small style="display:block;">ADVANCE</small>':''}<b>৳${Math.abs(period.closing).toFixed(2)}</b></td><td style="text-align:center;" class="no-print"><button onclick="showSupplierReportStatement(${s.id},document.getElementById('rspFromDate').value,document.getElementById('rspToDate').value,'')" class="btn-icon-action btn-view" title="View Statement">${SVG_VIEW}</button></td></tr>`;}).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">No suppliers found.</td></tr>';
+      if(stfoot) stfoot.innerHTML=list.length?`<tr style="background:var(--header-bg,#f1f5f9);font-weight:700;border-top:2px solid var(--border,#e2e8f0);">
+        <td colspan="2" style="padding:10px 8px;">মোট (${list.length} জন Supplier)</td>
+        <td style="text-align:right;padding:10px 8px;">৳${sTotalPurchase.toFixed(2)}</td>
+        <td style="text-align:right;padding:10px 8px;color:var(--green);">৳${sTotalPaid.toFixed(2)}</td>
+        <td style="text-align:right;padding:10px 8px;color:${sTotalPayable>0?'var(--red)':'var(--green)'};">৳${Math.abs(sTotalPayable).toFixed(2)}</td>
+        <td class="no-print"></td>
+      </tr>`:'';
     }
 
     function runProductsReport() {
