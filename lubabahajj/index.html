@@ -688,6 +688,134 @@ table.data tr:hover td{background:rgba(27,107,58,0.06);}
   </div>
 </div>
 
+<!-- Payment Ledger Entry Modal -->
+<div class="overlay" id="ledgerEntryOverlay">
+  <div class="modal" style="max-width:420px;">
+    <h2 id="ledgerEntryTitle">New Payment Entry</h2>
+    <div class="field">
+      <label>ENTRY TYPE</label>
+      <select id="plEntryType">
+        <option value="receivable">Receivable (Money IN)</option>
+        <option value="payable">Payable (Money OUT)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>LEDGER HEAD</label>
+      <select id="plEntryHead">
+        <option value="">— Select head —</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>AMOUNT (৳)</label>
+      <input type="number" id="plEntryAmount" min="0" placeholder="0">
+    </div>
+    <div class="field">
+      <label>PAYMENT METHOD</label>
+      <select id="plEntryMethod">
+        <option value="cash">Cash</option>
+        <option value="bank">Bank Transfer</option>
+        <option value="bkash">Bkash</option>
+        <option value="nagad">Nagad</option>
+        <option value="rocket">Rocket</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>DATE</label><input type="date" id="plEntryDate"></div>
+      <div class="field"><label>REFERENCE</label><input type="text" id="plEntryRef" placeholder="Optional"></div>
+    </div>
+    <div class="field">
+      <label>NOTE</label>
+      <input type="text" id="plEntryNote" list="dl-pl-note" placeholder="Transaction details" autocomplete="off">
+      <datalist id="dl-pl-note"></datalist>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="plEntryCancelBtn">Cancel</button>
+      <button class="btn amber" id="plEntrySaveBtn">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loan Account Modal -->
+<div class="overlay" id="loanAccountOverlay">
+  <div class="modal" style="max-width:500px;">
+    <h2 id="loanAccountTitle">New Person Loan Account</h2>
+    <div class="field-row">
+      <div class="field" style="flex:2;"><label>PERSON / STAFF NAME</label><input type="text" id="laName" placeholder="Name"></div>
+      <div class="field" style="flex:2;"><label>ACCOUNT TYPE</label>
+        <select id="laType">
+          <option value="advance_receivable">Advance Receivable (we give)</option>
+          <option value="borrowed_payable">Borrowed Payable (we take)</option>
+          <option value="bank_loan">Bank Loan</option>
+          <option value="credit_card">Credit Card</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>PHONE</label><input type="text" id="laPhone" placeholder="Optional"></div>
+      <div class="field" style="flex:2;"><label>PURPOSE</label><input type="text" id="laPurpose" placeholder="e.g. Office Advance, Home Loan"></div>
+      <div class="field"><label>DUE DATE</label><input type="date" id="laDueDate"></div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:2;"><label>STARTING PRINCIPAL (৳)</label><input type="number" id="laPrincipal" value="0" min="0"></div>
+      <div class="field" style="flex:2;"><label>ENTRY MODE</label>
+        <select id="laEntryMode">
+          <option value="opening">Opening balance only (no money movement)</option>
+          <option value="disburse">Actual disbursement (records money out/in)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>NOTE</label><textarea id="laNote" rows="2" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;resize:vertical;"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="laCancelBtn">Cancel</button>
+      <button class="btn amber" id="laSaveBtn">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loan Transaction Modal -->
+<div class="overlay" id="loanTxnOverlay">
+  <div class="modal" style="max-width:420px;">
+    <h2 id="loanTxnTitle">Add Transaction</h2>
+    <div class="field-hint" id="loanTxnInfo" style="margin-bottom:12px;font-weight:600;"></div>
+    <div class="field"><label>TRANSACTION TYPE</label>
+      <select id="ltType">
+        <option value="repayment">Repayment / Recovery</option>
+        <option value="interest">Interest / Fee</option>
+        <option value="disbursement">Additional Disbursement</option>
+      </select>
+    </div>
+    <div class="field"><label>AMOUNT (৳)</label><input type="number" id="ltAmount" min="0" placeholder="0"></div>
+    <div class="field"><label>PAYMENT METHOD</label>
+      <select id="ltMethod">
+        <option value="cash">Cash</option>
+        <option value="bank">Bank Transfer</option>
+        <option value="bkash">Bkash</option>
+        <option value="nagad">Nagad</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="field"><label>DATE</label><input type="date" id="ltDate"></div>
+    <div class="field"><label>NOTE</label><input type="text" id="ltNote" placeholder="Optional"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="ltCancelBtn">Cancel</button>
+      <button class="btn amber" id="ltSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loan Statement Modal -->
+<div class="overlay" id="loanStmtOverlay">
+  <div class="modal" style="max-width:650px;width:95%;">
+    <h2 id="loanStmtTitle">Account Statement</h2>
+    <div id="loanStmtBody"></div>
+    <div class="modal-actions no-print">
+      <button class="btn ghost" id="loanStmtCloseBtn">Close</button>
+      <button class="btn amber" id="loanStmtPrintBtn">🖨 Print</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -697,9 +825,11 @@ const K = {
   purchases:'pos-purchases', sales:'pos-sales', expenses:'pos-expenses', logo:'pos-logo',
   groupMembers:'pos-group-members', groups:'pos-groups',
   vendorPayments:'pos-vendor-payments',
-  settings:'pos-settings'
+  settings:'pos-settings',
+  ledgerHeads:'pos-ledger-heads', ledgerEntries:'pos-ledger-entries',
+  loanAccounts:'pos-loan-accounts', loanTxns:'pos-loan-txns'
 };
-let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], groupMembers:{}, groups:{}, vendorPayments:[] };
+let db = { customers:{}, suppliers:{}, products:{}, categories:{}, purchases:[], sales:[], expenses:[], installments:[], installmentPlans:[], returns:[], groupMembers:{}, groups:{}, vendorPayments:[], ledgerHeads:[], ledgerEntries:[], loanAccounts:[], loanTxns:[] };
 let currentTab = 'dashboard';
 let logoData = null;
 
@@ -711,12 +841,19 @@ const I18N = {
     loading:'লোড হচ্ছে...', crumb_prefix:'ড্যাশবোর্ড',
     nav_dashboard:'ড্যাশবোর্ড', nav_customers:'হাজী', nav_products:'প্যাকেজ', nav_categories:'প্যাকেজের ধরন', nav_suppliers:'ভেন্ডর',
     title_categories:'প্যাকেজের ধরন', add_categories:'+ নতুন ধরন', f_category_name:'ধরনের নাম',
-    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_group_members:'গ্রুপ মেম্বার', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপ',
+    nav_purchases:'ক্রয়', nav_sales:'বুকিং', nav_installments:'কিস্তি', nav_expenses:'খরচ', nav_returns:'বাতিল', nav_reports:'রিপোর্ট', nav_settings:'সেটিংস', nav_group_members:'গ্রুপ মেম্বার', nav_groups:'গ্রুপ / লট', rep_group_tab:'গ্রুপ', nav_ledger:'লেজার', nav_loans:'ঋণ ও অগ্রিম',
+    ledger_title:'পেমেন্ট লেজার', ledger_heads:'লেজার হেড', ledger_add_head:'+ নতুন হেড', ledger_head_name:'হেডের নাম', ledger_head_type:'ধরন', ledger_head_opening:'শুরুর ব্যালেন্স (৳)', ledger_type_cash:'নগদ', ledger_type_bank:'ব্যাংক', ledger_type_mobile:'মোবাইল ব্যাংকিং', ledger_type_other:'অন্যান্য',
+    ledger_add_entry:'+ নতুন এন্ট্রি', ledger_entry_head:'হেড', ledger_entry_type:'ধরন', ledger_debit:'ডেবিট (আয়/প্রাপ্তি)', ledger_credit:'ক্রেডিট (খরচ/পরিশোধ)', ledger_entry_note:'বিবরণ', ledger_no_heads:'কোনো হেড নেই', ledger_no_entries:'কোনো এন্ট্রি নেই',
+    ledger_opening_bal:'শুরুর ব্যালেন্স', ledger_closing_bal:'সমাপনী ব্যালেন্স', ledger_all_heads:'— সব হেড —', ledger_del_head:'এই হেড মুছবেন?', ledger_del_entry:'এই এন্ট্রি মুছবেন?', ledger_head_inuse:'এই হেডে এন্ট্রি আছে, মুছতে পারবেন না।', ledger_select_head:'হেড নির্বাচন করুন',
     reports_sales_returns_tab:'বুকিং ও বাতিল', sr_sales_count:'বুকিং সংখ্যা', sr_returns_count:'বাতিল সংখ্যা', sr_net_label:'নিট',
     return_title:'বুকিং বাতিল', return_new:'নতুন বাতিল', return_no:'বাতিল নং',
     return_original_qty:'মোট বুকড পরিমাণ', return_already:'আগে রিটার্ন হয়েছে', return_remaining:'অবশিষ্ট',
     return_qty_label:'রিটার্ন পরিমাণ', return_value:'রিটার্ন মূল্য', return_due_adjust:'বাকি থেকে সমন্বয়',
     return_excess_refund:'অতিরিক্ত রিফান্ড', return_note:'কারণ/নোট', return_confirm:'রিটার্ন নিশ্চিত করুন',
+    lbl_due_cancelled:'🚫 বাকি মাফ', lbl_cash_refund:'💵 নগদ ফেরত',
+    lbl_due_cancelled_hint:'(বাকি মাফ হবে)', lbl_cash_refund_hint:'(নগদ ফেরত দিতে হবে)',
+    lbl_due_cancelled_stat:'🚫 বাকি মাফ (Due Cancelled)', lbl_cash_refund_stat:'💵 নগদ ফেরত (Cash Refund)',
+    col_description:'বিবরণ', lbl_ledger_title:'🧾 লেনদেনের হিসাব',
     return_qty_invalid:'রিটার্নের পরিমাণ অবশিষ্ট পরিমাণের বেশি হতে পারবে না', return_history:'রিটার্ন ইতিহাস',
     return_no_history:'কোনো বাতিল নেই', return_cancel_action:'বুকিং বাতিল করুন', return_cancelled:'বাতিল হয়েছে',
     return_confirm_cancel:'এই বুকিং বাতিল করতে চান? আসন ও বাকির হিসাব আগের অবস্থায় ফিরে যাবে।',
@@ -847,12 +984,19 @@ const I18N = {
     loading:'Loading...', crumb_prefix:'Dashboard',
     nav_dashboard:'Dashboard', nav_customers:'Hajji', nav_products:'Packages', nav_categories:'Package Types', nav_suppliers:'Vendors',
     title_categories:'Package Types', add_categories:'+ New Type', f_category_name:'Type Name',
-    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports', nav_settings:'Settings', nav_group_members:'Group Members', nav_groups:'Groups / Lots', rep_group_tab:'Group',
+    nav_purchases:'Purchases', nav_sales:'Bookings', nav_installments:'Installment', nav_expenses:'Expense', nav_returns:'Cancellations', nav_reports:'Reports', nav_settings:'Settings', nav_group_members:'Group Members', nav_groups:'Groups / Lots', rep_group_tab:'Group', nav_ledger:'Ledger', nav_loans:'Loans & Advances',
+    ledger_title:'Payment Ledger', ledger_heads:'Ledger Heads', ledger_add_head:'+ New Head', ledger_head_name:'Head Name', ledger_head_type:'Type', ledger_head_opening:'Opening Balance (৳)', ledger_type_cash:'Cash', ledger_type_bank:'Bank', ledger_type_mobile:'Mobile Banking', ledger_type_other:'Other',
+    ledger_add_entry:'+ New Entry', ledger_entry_head:'Head', ledger_entry_type:'Type', ledger_debit:'Debit (Income/Received)', ledger_credit:'Credit (Expense/Paid)', ledger_entry_note:'Description', ledger_no_heads:'No heads yet', ledger_no_entries:'No entries yet',
+    ledger_opening_bal:'Opening Balance', ledger_closing_bal:'Closing Balance', ledger_all_heads:'— All Heads —', ledger_del_head:'Delete this head?', ledger_del_entry:'Delete this entry?', ledger_head_inuse:'This head has entries and cannot be deleted.', ledger_select_head:'Select head',
     reports_sales_returns_tab:'Bookings & Cancellations', sr_sales_count:'Bookings Count', sr_returns_count:'Cancellations Count', sr_net_label:'Net',
     return_title:'Cancellations', return_new:'New Cancellation', return_no:'Cancellation No.',
     return_original_qty:'Sold Qty', return_already:'Already Returned', return_remaining:'Remaining',
     return_qty_label:'Return Qty', return_value:'Return Value', return_due_adjust:'Adjusted from Due',
     return_excess_refund:'Excess Refund', return_note:'Reason/Note', return_confirm:'Confirm Return',
+    lbl_due_cancelled:'🚫 Due Cancelled', lbl_cash_refund:'💵 Cash Refund',
+    lbl_due_cancelled_hint:'(due will be written off)', lbl_cash_refund_hint:'(cash to be returned)',
+    lbl_due_cancelled_stat:'🚫 Due Cancelled', lbl_cash_refund_stat:'💵 Cash Refund',
+    col_description:'Description', lbl_ledger_title:'🧾 Transaction Ledger',
     return_qty_invalid:'Return quantity cannot exceed the remaining quantity', return_history:'Cancellation History',
     return_no_history:'No cancellations yet', return_cancel_action:'Cancel this booking', return_cancelled:'Cancelled',
     return_confirm_cancel:'Cancel this booking? Seats and due will be restored to their previous state.',
@@ -1068,7 +1212,12 @@ async function backupToDrive(){
       const payload = JSON.stringify({
         exportedAt: new Date().toISOString(),
         customers: db.customers, suppliers: db.suppliers, products: db.products,
-        purchases: db.purchases, sales: db.sales, expenses: db.expenses
+        purchases: db.purchases, sales: db.sales, expenses: db.expenses,
+        installments: db.installments, installmentPlans: db.installmentPlans,
+        returns: db.returns, vendorPayments: db.vendorPayments,
+        categories: db.categories, groupMembers: db.groupMembers, groups: db.groups,
+        ledgerHeads: db.ledgerHeads, ledgerEntries: db.ledgerEntries,
+        loanAccounts: db.loanAccounts, loanTxns: db.loanTxns
       }, null, 2);
       const fileName = `${SHOP_NAME}-backup-${todayStr()}-${Date.now()}.json`;
       const metadata = { name: fileName, mimeType: 'application/json' };
@@ -1117,9 +1266,20 @@ async function restoreFromDrive(){
       for(const [rid, rec] of Object.entries(backupData.customers||{})){ db.customers[rid]=rec; await safePut('customers', rid, rec); }
       for(const [rid, rec] of Object.entries(backupData.suppliers||{})){ db.suppliers[rid]=rec; await safePut('suppliers', rid, rec); }
       for(const [rid, rec] of Object.entries(backupData.products||{})){ db.products[rid]=rec; await safePut('products', rid, rec); }
+      for(const [rid, rec] of Object.entries(backupData.categories||{})){ db.categories[rid]=rec; await safePut('categories', rid, rec); }
+      for(const [rid, rec] of Object.entries(backupData.groupMembers||{})){ db.groupMembers[rid]=rec; await safePut('groupMembers', rid, rec); }
+      for(const [rid, rec] of Object.entries(backupData.groups||{})){ db.groups[rid]=rec; await safePut('groups', rid, rec); }
       for(const rec of (backupData.purchases||[])) await safePut('purchases', rec.id, rec);
       for(const rec of (backupData.sales||[])) await safePut('sales', rec.id, rec);
       for(const rec of (backupData.expenses||[])) await safePut('expenses', rec.id, rec);
+      for(const rec of (backupData.installments||[])) await safePut('installments', rec.id, rec);
+      for(const rec of (backupData.installmentPlans||[])) await safePut('installmentPlans', rec.id, rec);
+      for(const rec of (backupData.returns||[])) await safePut('returns', rec.id, rec);
+      for(const rec of (backupData.vendorPayments||[])) await safePut('vendorPayments', rec.id, rec);
+      for(const rec of (backupData.ledgerHeads||[])) await safePut('ledgerHeads', rec.id, rec);
+      for(const rec of (backupData.ledgerEntries||[])) await safePut('ledgerEntries', rec.id, rec);
+      for(const rec of (backupData.loanAccounts||[])) await safePut('loanAccounts', rec.id, rec);
+      for(const rec of (backupData.loanTxns||[])) await safePut('loanTxns', rec.id, rec);
       await loadAll();
       showToast(t('restore_success'));
     }catch(e){
@@ -1329,6 +1489,8 @@ const NAV = [
   {id:'installments', ic:'📆', key:'nav_installments'},
   {id:'expenses', ic:'💸', key:'nav_expenses'},
   {id:'returns', ic:'↩️', key:'nav_returns'},
+  {id:'ledger', ic:'📒', key:'nav_ledger'},
+  {id:'loans', ic:'🤝', key:'nav_loans'},
   {id:'reports', ic:'📈', key:'nav_reports'},
   {id:'settings', ic:'⚙️', key:'nav_settings', adminOnly:true},
 ];
@@ -1403,7 +1565,7 @@ function paymentSystemKey(v){
 /* ---------- Load / Save ---------- */
 async function loadAll(){
   const objTabs = ['customers','suppliers','products','categories','groupMembers','groups'];
-  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments'];
+  const arrTabs = ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','ledgerHeads','ledgerEntries','loanAccounts','loanTxns'];
   let hadError = false;
   for(const key of [...objTabs, ...arrTabs]){
     try{
@@ -1547,6 +1709,8 @@ function renderPage(){
   else if(currentTab==='installments') renderInstallmentsPage();
   else if(currentTab==='expenses') renderListPage('expenses');
   else if(currentTab==='returns') renderReturnsPage();
+  else if(currentTab==='ledger') renderLedgerPage();
+  else if(currentTab==='loans') renderLoansPage();
   else if(currentTab==='group_members') renderGroupMembersPage();
   else if(currentTab==='groups') renderGroupsPage();
   else if(currentTab==='reports') renderReportsPage();
@@ -2558,7 +2722,7 @@ function renderSettingsPage(){
         try{
           const data=JSON.parse(ev.target.result);const puts=[];
           ['customers','suppliers','products','categories','groupMembers','groups'].forEach(k=>{if(data[k])Object.entries(data[k]).forEach(([id,v])=>puts.push(safePut(k,id,v)));});
-          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
+          ['purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','ledgerHeads','ledgerEntries','loanAccounts','loanTxns'].forEach(k=>{if(data[k])data[k].forEach(v=>puts.push(safePut(k,v.id,v)));});
           await Promise.all(puts);showToast(t('restore_success'));setTimeout(()=>location.reload(),1500);
         }catch(err){alert(t('restore_failed')+': '+err.message);}
       };reader.readAsText(file);
@@ -3127,6 +3291,7 @@ function renderReportsPage(){
       <button class="sub-tab ${reportsSubTab==='supplier'?'active':''}" data-sub="supplier">${t('nav_suppliers')}</button>
       <button class="sub-tab ${reportsSubTab==='stock'?'active':''}" data-sub="stock">${t('nav_products')}</button>
       <button class="sub-tab ${reportsSubTab==='purchaserpt'?'active':''}" data-sub="purchaserpt">${t('nav_purchases')}</button>
+      <button class="sub-tab ${reportsSubTab==='ledgerrpt'?'active':''}" data-sub="ledgerrpt">📒 ${t('nav_ledger')}</button>
     </div>
     <div id="reportsBody"></div>
   `;
@@ -3144,6 +3309,7 @@ function renderReportsPage(){
   else if(reportsSubTab==='group') renderGroupReport(body);
   else if(reportsSubTab==='stock') renderStockReport(body);
   else if(reportsSubTab==='purchaserpt') renderPurchaseReport(body);
+  else if(reportsSubTab==='ledgerrpt') renderLedgerReport(body);
 }
 
 let summaryRange = 'last14';
@@ -3374,15 +3540,15 @@ function renderReturnsOnlyReport(body){
     document.getElementById('returnsRptBody').innerHTML = `
       <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
         <div class="stat-card c7"><div class="val">৳${money(totalValue)}</div><div class="lbl">${t('return_value')}</div></div>
-        <div class="stat-card c6"><div class="val">৳${money(totalDueAdjust)}</div><div class="lbl">${t('return_due_adjust')}</div></div>
-        <div class="stat-card c8"><div class="val">৳${money(totalRefund)}</div><div class="lbl">${t('return_excess_refund')}</div></div>
+        <div class="stat-card c7" style="background:var(--red);"><div class="val">৳${money(totalDueAdjust)}</div><div class="lbl">${t('lbl_due_cancelled_stat')}</div></div>
+        <div class="stat-card c8"><div class="val">৳${money(totalRefund)}</div><div class="lbl">${t('lbl_cash_refund_stat')}</div></div>
       </div>
       <div class="panel">
         <h3>${t('nav_returns')}</h3>
         <table class="data">
-          <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th></tr></thead>
-          <tbody>${list.map(r=>`<tr><td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td><td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td><td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td></tr>`).join('')}</tbody>
-          <tfoot><tr style="font-weight:700;"><td colspan="5">${t('totals_label')} (${t('return_active')})</td><td>৳${money(totalValue)}</td><td></td></tr></tfoot>
+          <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th style="color:var(--red)">${t('lbl_due_cancelled')}</th><th style="color:var(--green)">${t('lbl_cash_refund')}</th><th>${t('return_status')}</th></tr></thead>
+          <tbody>${list.map(r=>`<tr><td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td><td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td><td style="color:var(--red);font-weight:600;">${Number(r.dueAdjust)>0?'৳'+money(r.dueAdjust):'—'}</td><td style="color:var(--green);font-weight:700;">${Number(r.excessRefund)>0?'৳'+money(r.excessRefund):'—'}</td><td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td></tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;"><td colspan="5">${t('totals_label')} (${t('return_active')})</td><td>৳${money(totalValue)}</td><td style="color:var(--red);">৳${money(totalDueAdjust)}</td><td style="color:var(--green);">৳${money(totalRefund)}</td><td></td></tr></tfoot>
         </table>
       </div>
     `;
@@ -3897,7 +4063,7 @@ function printCustLedger(cid){
         <td>৳${money(totalBought)}</td>
         <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
         <td>৳${money(totalPaid)}</td>
-        <td>${calculateCustomerDueFromLedger(custId)>0?'৳'+money(calculateCustomerDueFromLedger(custId)):'৳0'}</td>
+        <td>${calculateCustomerDueFromLedger(cid)>0?'৳'+money(calculateCustomerDueFromLedger(cid)):'৳0'}</td>
         <td>৳${money(totalProfit)}</td>
       </tr></tfoot>
     </table>
@@ -4067,41 +4233,89 @@ function renderCustomerReport(body){
       return { ...tx, runningDue: Math.round(runningDue) };
     });
 
+    // Bank ledger style: each tx has debit (booking) and credit (payment/discount/return)
+    let runningBal2 = 0;
+    const bankLedger = ledgerRaw.map(tx => {
+      let debit = 0, credit = 0;
+      if(tx.type==='booking'){
+        debit = tx.total - tx.discount; // net booking amount (after discount)
+        credit = tx.paid;               // initial payment at booking
+      } else {
+        credit = tx.paid + tx.discount; // installment + discount
+      }
+      runningBal2 = Math.round(runningBal2 + debit - credit);
+      return { ...tx, debit, credit, balance: runningBal2 };
+    });
+  // Add return rows - Due Cancelled row + separate Cash Refund debit row
+  const custReturns = db.returns.filter(r=>!r.cancelled && r.customerId===cid);
+  const returnRows = [];
+  custReturns.forEach(r=>{
+    if(Number(r.dueAdjust)>0){
+      returnRows.push({ts:r.ts, date:r.date, type:'return',
+        label:`↩️ ${t('return_title')} #${r.returnNo} — ${escapeHtml(r.productName)} (${t('lbl_due_cancelled')})`,
+        qty:null, profit:null, debit:0, credit:Number(r.dueAdjust)});
+    }
+    if(Number(r.excessRefund)>0){
+      returnRows.push({ts:r.ts+1, date:r.date, type:'refund',
+        label:`💵 ${t('lbl_cash_refund')} #${r.returnNo} — ${escapeHtml(r.productName)}`,
+        qty:null, profit:null, debit:Number(r.excessRefund), credit:0});
+    }
+  });
+  returnRows.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.ts||0)-(b.ts||0));
+    // Merge and re-sort
+    const allRows = [...bankLedger, ...returnRows].sort((a,b)=>{
+      if(a.date!==b.date) return a.date<b.date?-1:1;
+      return (a.ts||0)-(b.ts||0);
+    });
+    // Recalculate running balance
+    let rb = 0;
+    const finalLedger = allRows.map(tx=>{
+      rb = Math.round(rb + tx.debit - tx.credit);
+      return {...tx, balance: rb};
+    });
+    const totalDebit = finalLedger.reduce((s,x)=>s+x.debit, 0);
+    const totalCredit = finalLedger.reduce((s,x)=>s+x.credit, 0);
+
     return `
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div><h3 style="margin:0;">${escapeHtml(cust.name)}</h3>
           <div class="field-hint">${escapeHtml(cust.phone||'')}${cust.address?' · '+escapeHtml(cust.address):''}</div></div>
-          <button class="btn ghost no-print" onclick="printCustLedger('${cid}')">${t('print_report')}</button>
         </div>
         <div class="field-hint" style="margin:12px 0;">${t('history_summary')(totalBought, totalPaid, calculateCustomerDueFromLedger(cid))} · ${t('col_profit')}: ৳${money(totalProfit)}</div>
 
-        <h3 style="margin:14px 0 8px;">🧾 লেনদেনের হিসাব</h3>
-        ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+        <h3 style="margin:14px 0 8px;">${t('lbl_ledger_title')}</h3>
+        ${finalLedger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
         <table class="data">
-          <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th><th>${t('col_profit')}</th></tr></thead>
-          <tbody>${ledger.map(tx=>`<tr>
-            <td>${formatDateDMY(tx.date)}</td>
+          <thead>
+            <tr>
+              <th>${t('col_date')}</th>
+              <th>${t('col_description')}</th>
+              <th style="color:var(--red);text-align:right;">${t('col_debit')}</th>
+              <th style="color:var(--green);text-align:right;">${t('col_credit')}</th>
+              <th style="text-align:right;">${t('hdr_balance')}</th>
+              <th style="text-align:right;">${t('col_profit')}</th>
+            </tr>
+          </thead>
+          <tbody>${finalLedger.map(tx=>`<tr>
+            <td style="white-space:nowrap;">${formatDateDMY(tx.date)}</td>
             <td>${tx.label}</td>
-            <td>${tx.qty!==null?tx.qty:'—'}</td>
-            <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
-            <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-            <td>৳${money(tx.paid)}</td>
-            <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
-            <td>${tx.profit!==null?'৳'+money(tx.profit):'—'}</td>
+            <td style="text-align:right;color:var(--red);font-weight:${tx.debit>0?'600':'400'};">${tx.debit>0?'৳'+money(tx.debit):'—'}</td>
+            <td style="text-align:right;color:var(--green);font-weight:${tx.credit>0?'600':'400'};">${tx.credit>0?'৳'+money(tx.credit):'—'}</td>
+            <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;color:${tx.balance>0?'var(--red)':'var(--green)'};">${tx.balance>0?'৳'+money(tx.balance):'৳0'}</td>
+            <td style="text-align:right;">${tx.profit!=null?'৳'+money(tx.profit):'—'}</td>
           </tr>`).join('')}</tbody>
           <tfoot><tr style="font-weight:700;background:var(--paper-card);">
-            <td colspan="3">${t('totals_label')}</td>
-            <td>৳${money(totalBought)}</td>
-            <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
-            <td>৳${money(totalPaid)}</td>
-            <td>${canonicalDue>0?'<span style="color:var(--red);">৳'+money(canonicalDue)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
-            <td>৳${money(totalProfit)}</td>
+            <td colspan="2">${t('totals_label')}</td>
+            <td style="text-align:right;color:var(--red);">৳${money(totalDebit)}</td>
+            <td style="text-align:right;color:var(--green);">৳${money(totalCredit)}</td>
+            <td style="text-align:right;font-family:'IBM Plex Mono',monospace;">${canonicalDue>0?'<span style="color:var(--red);">৳'+money(canonicalDue)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+            <td style="text-align:right;">৳${money(totalProfit)}</td>
           </tr></tfoot>
         </table>`}
 
         <!-- Summary box -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;">
           <div style="background:var(--hajj-green-light);border-radius:8px;padding:12px;text-align:center;">
             <div style="font-size:18px;font-weight:700;color:var(--hajj-green);">৳${money(totalBought)}</div>
             <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">${t('lbl_total_booking')}</div>
@@ -4113,6 +4327,10 @@ function renderCustomerReport(body){
           <div style="background:${canonicalDue>0?'var(--red-bg)':'var(--green-bg)'};border-radius:8px;padding:12px;text-align:center;">
             <div style="font-size:18px;font-weight:700;color:${canonicalDue>0?'var(--red)':'var(--green)'};">৳${money(canonicalDue)}</div>
             <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">${t('lbl_due_col')}</div>
+          </div>
+          <div style="background:var(--gold-bg);border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:var(--gold);">৳${money(totalProfit)}</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">${t('col_profit')}</div>
           </div>
         </div>
       </div>
@@ -4930,12 +5148,37 @@ function openCustomerHistory(custId){
     return a.ts-b.ts;
   });
 
-  let runningDue = 0;
-  const ledger = ledgerRaw.map(tx=>{
-    if(tx.type==='booking') runningDue += (tx.total - tx.discount - tx.paid);
-    else runningDue -= (tx.paid + tx.discount);
-    return { ...tx, runningDue: Math.round(runningDue) };
+  // Bank ledger: debit = booking amount (net of discount), credit = payment/discount
+  const histBankLedger = ledgerRaw.map(tx=>{
+    let debit=0, credit=0;
+    if(tx.type==='booking'){ debit = tx.total - tx.discount; credit = tx.paid; }
+    else { credit = tx.paid + tx.discount; }
+    return {...tx, debit, credit};
   });
+  // Add return rows - Due Cancelled row + separate Cash Refund debit row
+  const histReturnData = db.returns.filter(r=>!r.cancelled && r.customerId===custId);
+  const histReturns = [];
+  histReturnData.forEach(r=>{
+    if(Number(r.dueAdjust)>0){
+      histReturns.push({ts:r.ts, date:r.date, type:'return',
+        label:`↩️ ${t('return_title')} #${r.returnNo} — ${escapeHtml(r.productName)} (${t('lbl_due_cancelled')})`,
+        qty:null, debit:0, credit:Number(r.dueAdjust)});
+    }
+    if(Number(r.excessRefund)>0){
+      histReturns.push({ts:r.ts+1, date:r.date, type:'refund',
+        label:`💵 ${t('lbl_cash_refund')} #${r.returnNo} — ${escapeHtml(r.productName)}`,
+        qty:null, debit:Number(r.excessRefund), credit:0});
+    }
+  });
+  const histAll = [...histBankLedger, ...histReturns].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?-1:1;
+    return (a.ts||0)-(b.ts||0);
+  });
+  let hRB=0;
+  const histFinal = histAll.map(tx=>{ hRB=Math.round(hRB+tx.debit-tx.credit); return {...tx,balance:hRB}; });
+  const hTotalDebit = histFinal.reduce((s,x)=>s+x.debit,0);
+  const hTotalCredit = histFinal.reduce((s,x)=>s+x.credit,0);
+  const hDue = calculateCustomerDueFromLedger(custId);
 
   document.getElementById('historyTitle').textContent = cust.name + ' — ' + t('history_title');
   document.getElementById('historyBody').innerHTML = `
@@ -4943,26 +5186,29 @@ function openCustomerHistory(custId){
       ${escapeHtml(cust.name)}${cust.phone ? ' · ' + t('col_phone') + ': ' + escapeHtml(cust.phone) : ''}
     </div>
     <div class="field-hint" style="margin-bottom:10px;">
-      ${t('history_summary')(totalBought, totalPaid, calculateCustomerDueFromLedger(custId))}${Number(cust.refundOwed)>0 ? ' · ' + t('return_excess_refund') + ': ৳' + money(cust.refundOwed) : ''}
+      ${t('history_summary')(totalBought, totalPaid, hDue)}${Number(cust.refundOwed)>0 ? ' · ' + t('lbl_cash_refund') + ': ৳' + money(cust.refundOwed) : ''}
     </div>
-    ${ledger.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
+    ${histFinal.length===0 ? `<div class="empty"><div class="big">${t('no_sales_yet')}</div></div>` : `
     <table class="data">
-      <thead><tr><th>${t('col_date')}</th><th>বিবরণ</th><th>${t('col_qty')}</th><th>${t('col_total')}</th><th>${t('col_discount')}</th><th>${t('col_paid')}</th><th>${t('col_due')}</th></tr></thead>
-      <tbody>${ledger.map(tx=>`<tr>
-        <td>${formatDateDMY(tx.date)}</td>
+      <thead><tr>
+        <th>${t('col_date')}</th>
+        <th>${t('col_description')}</th>
+        <th style="color:var(--red);text-align:right;">${t('col_debit')}</th>
+        <th style="color:var(--green);text-align:right;">${t('col_credit')}</th>
+        <th style="text-align:right;">${t('hdr_balance')}</th>
+      </tr></thead>
+      <tbody>${histFinal.map(tx=>`<tr>
+        <td style="white-space:nowrap;">${formatDateDMY(tx.date)}</td>
         <td>${tx.label}</td>
-        <td>${tx.qty!==null?tx.qty:'—'}</td>
-        <td>${tx.type==='booking'?'৳'+money(tx.total):'—'}</td>
-        <td>${tx.discount>0?'৳'+money(tx.discount):'—'}</td>
-        <td>৳${money(tx.paid)}</td>
-        <td>${tx.runningDue>0?'৳'+money(tx.runningDue):'৳0'}</td>
+        <td style="text-align:right;color:var(--red);font-weight:${tx.debit>0?'600':'400'};">${tx.debit>0?'৳'+money(tx.debit):'—'}</td>
+        <td style="text-align:right;color:var(--green);font-weight:${tx.credit>0?'600':'400'};">${tx.credit>0?'৳'+money(tx.credit):'—'}</td>
+        <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;color:${tx.balance>0?'var(--red)':'var(--green)'};">${tx.balance>0?'৳'+money(tx.balance):'৳0'}</td>
       </tr>`).join('')}</tbody>
       <tfoot><tr style="font-weight:700;background:var(--paper-card);">
-        <td colspan="3">${t('totals_label')}</td>
-        <td>৳${money(totalBought)}</td>
-        <td>৳${money(ledger.reduce((s,x)=>s+x.discount,0))}</td>
-        <td>৳${money(totalPaid)}</td>
-        <td>${calculateCustomerDueFromLedger(custId)>0?'<span style="color:var(--red);">৳'+money(calculateCustomerDueFromLedger(custId))+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
+        <td colspan="2">${t('totals_label')}</td>
+        <td style="text-align:right;color:var(--red);">৳${money(hTotalDebit)}</td>
+        <td style="text-align:right;color:var(--green);">৳${money(hTotalCredit)}</td>
+        <td style="text-align:right;font-family:'IBM Plex Mono',monospace;">${hDue>0?'<span style="color:var(--red);">৳'+money(hDue)+'</span>':'<span style="color:var(--green);">'+t('lbl_clear')+'</span>'}</td>
       </tr></tfoot>
     </table>`}
   `;
@@ -5194,11 +5440,13 @@ function renderReturnHistoryHtml(saleIds){
     <div style="margin-top:16px;">
       <h3 style="font-family:'Roboto Slab',serif;font-size:15px;margin:0 0 8px;">${t('return_history')}</h3>
       <table class="data">
-        <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th style="color:var(--red)">${t('lbl_due_cancelled')}</th><th style="color:var(--green)">${t('lbl_cash_refund')}</th><th>${t('return_status')}</th><th class="no-print"></th></tr></thead>
         <tbody>
           ${list.map(r => `<tr>
             <td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.productName)}</td>
             <td>${r.qty}</td><td>৳${money(r.value)}</td>
+            <td style="color:var(--red);font-weight:600;">${Number(r.dueAdjust)>0?'৳'+money(r.dueAdjust):'—'}</td>
+            <td style="color:var(--green);font-weight:700;">${Number(r.excessRefund)>0?'৳'+money(r.excessRefund):'—'}</td>
             <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
             <td class="no-print">
               ${!r.cancelled ? `<button class="icon-btn" title="${t('return_cancel_action')}" onclick="cancelReturn('${r.id}')">↩️</button>` : ''}
@@ -5252,10 +5500,11 @@ function updateReturnCalcInfo(){
   const returnValue = qty*perUnitValue;
   const dueAdjust = Math.min(returnValue, invoiceDueTotal(sale));
   const excessRefund = Math.max(0, returnValue - dueAdjust);
+  const paidRefund = excessRefund;
   document.getElementById('returnCalcInfo').innerHTML = `
-    ${t('return_value')}: ৳${money(returnValue)}<br>
-    ${t('return_due_adjust')}: ৳${money(dueAdjust)}<br>
-    ${t('return_excess_refund')}: ৳${money(excessRefund)}
+    <span style="color:var(--ink-soft);font-size:12px;">${t('return_value')}: ৳${money(returnValue)}</span><br>
+    <span style="color:var(--red);font-size:13px;">${t('lbl_due_cancelled')}: ৳${money(dueAdjust)}</span> <span style="color:var(--ink-soft);font-size:11px;">${t('lbl_due_cancelled_hint')}</span><br>
+    <span style="color:var(--green);font-size:14px;font-weight:700;">${t('lbl_cash_refund')}: ৳${money(paidRefund)}</span> <span style="color:var(--ink-soft);font-size:11px;">${t('lbl_cash_refund_hint')}</span>
   `;
 }
 document.getElementById('returnQtyInput').addEventListener('input', updateReturnCalcInfo);
@@ -5395,7 +5644,726 @@ async function deleteReturn(returnId){
   }
 }
 
-/* ---------- Returns List Page ---------- */
+/* ============================================================
+   📒 PAYMENT LEDGER SYSTEM (Payable & Receivable)
+   ============================================================ */
+
+// ---------- State ----------
+let plEntryCtx = null; // null=new, id=edit
+let plFilterHead = 'all';
+let plFilterType = 'all';
+let plRptFilterHead = 'all';
+
+// ---------- Helpers ----------
+function plNextEntryNo(){
+  const max = db.ledgerEntries.reduce((m,e)=>Math.max(m,Number(e.entryNo||0)),0);
+  return max+1;
+}
+function plEntryNoStr(n){ return 'PL-'+String(n).padStart(4,'0'); }
+function plMethodLabel(m){
+  const map = {cash:'Cash',bank:'Bank Transfer',bkash:'Bkash',nagad:'Nagad',rocket:'Rocket',other:'Other'};
+  return map[m]||m;
+}
+function plTotals(headId, type){
+  const entries = db.ledgerEntries.filter(e=>!e.deleted && (headId?e.headId===headId:true) && (type?e.type===type:true));
+  return entries.reduce((s,e)=>s+Number(e.amount||0),0);
+}
+
+// ---------- Ledger Page ----------
+function renderLedgerPage(){
+  const c = document.getElementById('content');
+  const heads = db.ledgerHeads;
+  const totalIn = plTotals(null,'receivable');
+  const totalOut = plTotals(null,'payable');
+  const netFlow = totalIn - totalOut;
+
+  c.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+      <button class="btn amber" id="plAddEntryBtn">+ New Payment Entry</button>
+      <button class="btn ghost no-print" onclick="window.print()">🖨 Print</button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
+      <div class="stat-card" style="background:var(--c1);">
+        <div class="val">৳${money(totalIn)}</div>
+        <div class="lbl">Total Receivable / IN</div>
+      </div>
+      <div class="stat-card" style="background:var(--red);">
+        <div class="val">৳${money(totalOut)}</div>
+        <div class="lbl">Total Payable / OUT</div>
+      </div>
+      <div class="stat-card" style="background:#2E6B8A;">
+        <div class="val">${netFlow<0?'৳-'+money(Math.abs(netFlow)):'৳'+money(netFlow)}</div>
+        <div class="lbl">Net Cash Flow</div>
+      </div>
+    </div>
+
+    <!-- Heads Manager Panel -->
+    <div class="panel" style="margin-bottom:18px;">
+      <h3 style="margin:0 0 14px;">Payable &amp; Receivable Heads</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
+        <div class="field" style="margin:0;flex:0 0 200px;">
+          <label>TYPE</label>
+          <select id="plNewHeadType" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;">
+            <option value="receivable">Receivable</option>
+            <option value="payable">Payable</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0;flex:1;min-width:180px;">
+          <label>NEW HEAD NAME</label>
+          <input type="text" id="plNewHeadName" placeholder="e.g. Agent Commission" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;">
+        </div>
+        <button class="btn amber" id="plAddHeadBtn" style="flex-shrink:0;padding:9px 20px;">+ Add Head</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-weight:700;color:var(--green);margin-bottom:8px;font-size:13px;">Receivable Heads</div>
+          <div id="plReceivableHeads" style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${heads.filter(h=>h.type==='receivable').length===0
+              ? '<span style="color:var(--ink-soft);font-size:13px;">No heads yet</span>'
+              : heads.filter(h=>h.type==='receivable').map(h=>`
+                <span style="display:inline-flex;align-items:center;gap:4px;background:var(--green-bg);color:var(--green);border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:13px;font-weight:600;">
+                  ${escapeHtml(h.name)}
+                  <button onclick="deleteLedgerHead('${h.id}')" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:14px;padding:0;line-height:1;">×</button>
+                </span>`).join('')}
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:700;color:var(--red);margin-bottom:8px;font-size:13px;">Payable Heads</div>
+          <div id="plPayableHeads" style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${heads.filter(h=>h.type==='payable').length===0
+              ? '<span style="color:var(--ink-soft);font-size:13px;">No heads yet</span>'
+              : heads.filter(h=>h.type==='payable').map(h=>`
+                <span style="display:inline-flex;align-items:center;gap:4px;background:var(--red-bg);color:var(--red);border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:13px;font-weight:600;">
+                  ${escapeHtml(h.name)}
+                  <button onclick="deleteLedgerHead('${h.id}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;padding:0;line-height:1;">×</button>
+                </span>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statement Panel -->
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <h3 style="margin:0;">Payment Ledger Statement</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select id="plFilterHead" style="padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:13px;">
+            <option value="all">All Heads</option>
+            ${heads.map(h=>`<option value="${h.id}" ${plFilterHead===h.id?'selected':''}>${h.name}</option>`).join('')}
+          </select>
+          <select id="plFilterType" style="padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:13px;">
+            <option value="all">All Types</option>
+            <option value="receivable" ${plFilterType==='receivable'?'selected':''}>Receivable (IN)</option>
+            <option value="payable" ${plFilterType==='payable'?'selected':''}>Payable (OUT)</option>
+          </select>
+        </div>
+      </div>
+      <div id="plStatementTable"></div>
+    </div>
+  `;
+
+  document.getElementById('plAddEntryBtn').addEventListener('click', ()=>openPlEntryForm(null));
+  document.getElementById('plAddHeadBtn').addEventListener('click', addLedgerHead);
+  document.getElementById('plFilterHead').addEventListener('change', e=>{ plFilterHead=e.target.value; renderPlStatement(); });
+  document.getElementById('plFilterType').addEventListener('change', e=>{ plFilterType=e.target.value; renderPlStatement(); });
+  renderPlStatement();
+}
+
+function renderPlStatement(){
+  const el = document.getElementById('plStatementTable');
+  if(!el) return;
+  let entries = [...db.ledgerEntries].filter(e=>!e.deleted);
+  if(plFilterHead!=='all') entries = entries.filter(e=>e.headId===plFilterHead);
+  if(plFilterType!=='all') entries = entries.filter(e=>e.type===plFilterType);
+  entries.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.ts-b.ts);
+
+  if(entries.length===0){
+    el.innerHTML=`<div class="empty"><div class="big">No entries yet</div></div>`; return;
+  }
+
+  let running = 0;
+  el.innerHTML = `
+    <table class="data">
+      <thead><tr>
+        <th>DATE</th><th>ENTRY</th><th>TYPE</th><th>HEAD</th>
+        <th>METHOD / ACCOUNT</th><th>DETAILS</th>
+        <th style="text-align:right;">IN</th>
+        <th style="text-align:right;">OUT</th>
+        <th style="text-align:right;">RUNNING BALANCE</th>
+        <th class="no-print"></th>
+      </tr></thead>
+      <tbody>
+        ${entries.map(e=>{
+          const head = db.ledgerHeads.find(h=>h.id===e.headId);
+          const isIn = e.type==='receivable';
+          const amt = Number(e.amount||0);
+          running += isIn ? amt : -amt;
+          return `<tr>
+            <td style="white-space:nowrap;">${formatDateDMY(e.date)}</td>
+            <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;">${plEntryNoStr(e.entryNo)}</td>
+            <td><span style="font-weight:700;color:${isIn?'var(--green)':'var(--red)'};">${isIn?'RECEIVABLE':'PAYABLE'}</span></td>
+            <td>${escapeHtml(head?.name||'—')}</td>
+            <td>${plMethodLabel(e.method||'')}</td>
+            <td>${escapeHtml(e.note||'—')}</td>
+            <td style="text-align:right;font-weight:${isIn?'700':'400'};color:var(--green);">${isIn?'৳'+money(amt):'—'}</td>
+            <td style="text-align:right;font-weight:${!isIn?'700':'400'};color:var(--red);">${!isIn?'৳'+money(amt):'—'}</td>
+            <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700;color:${running>=0?'var(--green)':'var(--red)'};">${running<0?'৳-'+money(Math.abs(running)):'৳'+money(running)}</td>
+            <td class="no-print">
+              <div class="actions-cell">
+                <button class="icon-btn" title="Edit" onclick="openPlEntryForm('${e.id}')">✏️</button>
+                <button class="icon-btn" title="Delete" onclick="deletePlEntry('${e.id}')">🗑️</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+      <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+        <td colspan="6">Total</td>
+        <td style="text-align:right;color:var(--green);">৳${money(entries.filter(e=>e.type==='receivable').reduce((s,e)=>s+Number(e.amount||0),0))}</td>
+        <td style="text-align:right;color:var(--red);">৳${money(entries.filter(e=>e.type==='payable').reduce((s,e)=>s+Number(e.amount||0),0))}</td>
+        <td style="text-align:right;font-family:'IBM Plex Mono',monospace;color:${running>=0?'var(--green)':'var(--red)'};">${running<0?'৳-'+money(Math.abs(running)):'৳'+money(running)}</td>
+        <td class="no-print"></td>
+      </tr></tfoot>
+    </table>
+  `;
+}
+
+// ---------- Add Head ----------
+async function addLedgerHead(){
+  const name = document.getElementById('plNewHeadName').value.trim();
+  const type = document.getElementById('plNewHeadType').value;
+  if(!name){ alert('Head name required'); return; }
+  const head = {id:uid(), name, type, ts:Date.now()};
+  db.ledgerHeads.push(head);
+  await safePut('ledgerHeads', head.id, head);
+  document.getElementById('plNewHeadName').value = '';
+  renderNav(); renderPage();
+}
+async function deleteLedgerHead(headId){
+  const inUse = db.ledgerEntries.some(e=>e.headId===headId && !e.deleted);
+  if(inUse){ alert('This head has entries and cannot be deleted.'); return; }
+  if(!confirm('Delete this head?')) return;
+  db.ledgerHeads = db.ledgerHeads.filter(h=>h.id!==headId);
+  await safeRemove('ledgerHeads', headId);
+  renderNav(); renderPage();
+}
+
+// ---------- Entry Form ----------
+function openPlEntryForm(entryId){
+  plEntryCtx = entryId;
+  const entry = entryId ? db.ledgerEntries.find(e=>e.id===entryId) : null;
+  const overlay = document.getElementById('ledgerEntryOverlay');
+  document.getElementById('ledgerEntryTitle').textContent = entry ? 'Edit Payment Entry' : 'New Payment Entry';
+
+  // Populate head select by type
+  function refreshHeadSelect(){
+    const type = document.getElementById('plEntryType').value;
+    const headSel = document.getElementById('plEntryHead');
+    const filtered = db.ledgerHeads.filter(h=>h.type===type);
+    headSel.innerHTML = `<option value="">— Select head —</option>`
+      + filtered.map(h=>`<option value="${h.id}" ${entry?.headId===h.id?'selected':''}>${escapeHtml(h.name)}</option>`).join('');
+  }
+
+  document.getElementById('plEntryType').value = entry?.type||'receivable';
+  refreshHeadSelect();
+  document.getElementById('plEntryType').onchange = refreshHeadSelect;
+  document.getElementById('plEntryHead').value = entry?.headId||'';
+  document.getElementById('plEntryAmount').value = entry?.amount||'';
+  document.getElementById('plEntryMethod').value = entry?.method||'cash';
+  document.getElementById('plEntryDate').value = entry?.date||todayStr();
+  document.getElementById('plEntryRef').value = entry?.ref||'';
+  document.getElementById('plEntryNote').value = entry?.note||'';
+
+  const notes = [...new Set(db.ledgerEntries.map(e=>e.note).filter(Boolean))];
+  document.getElementById('dl-pl-note').innerHTML = notes.map(n=>`<option value="${escapeHtml(n)}">`).join('');
+
+  overlay.classList.add('open');
+}
+
+document.getElementById('plEntryCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('ledgerEntryOverlay').classList.remove('open'); plEntryCtx=null;
+});
+setupOverlayBackdropClose('ledgerEntryOverlay', ()=>{ plEntryCtx=null; });
+
+document.getElementById('plEntrySaveBtn').addEventListener('click', async()=>{
+  const type = document.getElementById('plEntryType').value;
+  const headId = document.getElementById('plEntryHead').value;
+  const amount = Number(document.getElementById('plEntryAmount').value)||0;
+  const method = document.getElementById('plEntryMethod').value;
+  const date = document.getElementById('plEntryDate').value||todayStr();
+  const ref = document.getElementById('plEntryRef').value.trim();
+  const note = document.getElementById('plEntryNote').value.trim();
+
+  if(!headId){ alert('Please select a head'); return; }
+  if(amount<=0){ alert('Please enter an amount'); return; }
+
+  if(plEntryCtx){
+    const entry = db.ledgerEntries.find(e=>e.id===plEntryCtx);
+    if(entry){ Object.assign(entry, {type, headId, amount, method, date, ref, note}); await safePut('ledgerEntries', entry.id, entry); }
+  } else {
+    const entry = {id:uid(), entryNo:plNextEntryNo(), type, headId, amount, method, date, ref, note, ts:Date.now()};
+    db.ledgerEntries.push(entry);
+    await safePut('ledgerEntries', entry.id, entry);
+  }
+  document.getElementById('ledgerEntryOverlay').classList.remove('open');
+  plEntryCtx=null;
+  renderNav(); renderPage();
+});
+
+async function deletePlEntry(entryId){
+  if(!confirm('Delete this entry?')) return;
+  db.ledgerEntries = db.ledgerEntries.filter(e=>e.id!==entryId);
+  await safeRemove('ledgerEntries', entryId);
+  renderNav(); renderPage();
+}
+
+// ---------- Ledger Report ----------
+let plRptFrom = '';
+let plRptTo = '';
+let plRptRange = 'all';
+let plRptType = 'all';
+
+function renderLedgerReport(body){
+  const heads = db.ledgerHeads;
+
+  body.innerHTML = `
+    <div class="toolbar no-print" style="margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <select id="plRptTypeFilter" style="padding:9px 12px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;">
+        <option value="all">All Types</option>
+        <option value="receivable">Receivable (IN)</option>
+        <option value="payable">Payable (OUT)</option>
+      </select>
+      <select id="plRptHeadFilter" style="min-width:160px;padding:9px 12px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;">
+        <option value="all">All Heads</option>
+        ${heads.map(h=>`<option value="${h.id}" ${plRptFilterHead===h.id?'selected':''}>${h.name} (${h.type})</option>`).join('')}
+      </select>
+      <select id="plRptRangeSelect" style="padding:9px 12px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;">
+        <option value="all" ${plRptRange==='all'?'selected':''}>All Time</option>
+        <option value="last14" ${plRptRange==='last14'?'selected':''}>Last 14 Days</option>
+        <option value="this_month" ${plRptRange==='this_month'?'selected':''}>This Month</option>
+        <option value="this_year" ${plRptRange==='this_year'?'selected':''}>This Year</option>
+        <option value="custom" ${plRptRange==='custom'?'selected':''}>Custom Range</option>
+      </select>
+      <input type="date" id="plRptFrom" value="${plRptFrom}" style="display:${plRptRange==='custom'?'':'none'};padding:9px 12px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;">
+      <input type="date" id="plRptTo" value="${plRptTo}" style="display:${plRptRange==='custom'?'':'none'};padding:9px 12px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;">
+      <button class="btn ghost" style="margin-left:auto;" onclick="safePrintPage()">🖨 ${t('print_report')}</button>
+    </div>
+    <div id="plRptBody"></div>
+  `;
+
+  document.getElementById('plRptTypeFilter').value = plRptType;
+  document.getElementById('plRptTypeFilter').addEventListener('change', e=>{ plRptType=e.target.value; refreshPlRpt(); });
+  document.getElementById('plRptHeadFilter').addEventListener('change', e=>{ plRptFilterHead=e.target.value; refreshPlRpt(); });
+  document.getElementById('plRptRangeSelect').addEventListener('change', e=>{
+    plRptRange=e.target.value;
+    document.getElementById('plRptFrom').style.display = plRptRange==='custom'?'':'none';
+    document.getElementById('plRptTo').style.display = plRptRange==='custom'?'':'none';
+    refreshPlRpt();
+  });
+  document.getElementById('plRptFrom').addEventListener('change', e=>{ plRptFrom=e.target.value; refreshPlRpt(); });
+  document.getElementById('plRptTo').addEventListener('change', e=>{ plRptTo=e.target.value; refreshPlRpt(); });
+
+  function getDateRange(){
+    const today = todayStr();
+    if(plRptRange==='last14'){ const d=new Date(); d.setDate(d.getDate()-13); return {from:d.toISOString().slice(0,10), to:today}; }
+    if(plRptRange==='this_month'){ return {from:today.slice(0,7)+'-01', to:today}; }
+    if(plRptRange==='this_year'){ return {from:today.slice(0,4)+'-01-01', to:today}; }
+    if(plRptRange==='custom'){ return {from:plRptFrom||'0000-01-01', to:plRptTo||'9999-12-31'}; }
+    return {from:'0000-01-01', to:'9999-12-31'};
+  }
+
+  function refreshPlRpt(){
+    const {from, to} = getDateRange();
+    const showHeads = plRptFilterHead==='all' ? heads : heads.filter(h=>h.id===plRptFilterHead);
+
+    // Filter entries by date
+    const allFiltered = db.ledgerEntries.filter(e=>!e.deleted && e.date>=from && e.date<=to && (plRptType==='all'||e.type===plRptType));
+    const totalIn  = allFiltered.filter(e=>e.type==='receivable').reduce((s,e)=>s+Number(e.amount||0),0);
+    const totalOut = allFiltered.filter(e=>e.type==='payable').reduce((s,e)=>s+Number(e.amount||0),0);
+    const net = totalIn - totalOut;
+
+    const rptEl = document.getElementById('plRptBody');
+    if(!rptEl) return;
+
+    rptEl.innerHTML = `
+      <div class="stat-grid no-print" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="stat-card" style="background:var(--c1);"><div class="val">৳${money(totalIn)}</div><div class="lbl">Total Receivable (IN)</div></div>
+        <div class="stat-card" style="background:var(--red);"><div class="val">৳${money(totalOut)}</div><div class="lbl">Total Payable (OUT)</div></div>
+        <div class="stat-card" style="background:#2E6B8A;"><div class="val">${net<0?'৳-'+money(Math.abs(net)):'৳'+money(net)}</div><div class="lbl">Net Cash Flow</div></div>
+      </div>
+      ${heads.length===0
+        ? `<div class="empty"><div class="big">No ledger heads yet</div></div>`
+        : showHeads.map(head=>{
+            const entries = allFiltered.filter(e=>e.headId===head.id).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.ts-b.ts);
+            const headTotal = entries.reduce((s,e)=>s+Number(e.amount||0),0);
+            return `<div class="panel" style="margin-bottom:16px;">
+              <h3 style="margin:0 0 12px;">${escapeHtml(head.name)} <span class="pill ${head.type==='receivable'?'green':'red'}" style="font-size:11px;">${head.type==='receivable'?'RECEIVABLE':'PAYABLE'}</span></h3>
+              ${entries.length===0
+                ? `<div style="color:var(--ink-soft);font-size:13px;">No entries in this period</div>`
+                : `<table class="data">
+                  <thead><tr><th>DATE</th><th>ENTRY</th><th>METHOD</th><th>NOTE</th><th>REF</th><th style="text-align:right;">AMOUNT</th></tr></thead>
+                  <tbody>${entries.map(e=>`<tr>
+                    <td>${formatDateDMY(e.date)}</td>
+                    <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;">${plEntryNoStr(e.entryNo)}</td>
+                    <td>${plMethodLabel(e.method||'')}</td>
+                    <td>${escapeHtml(e.note||'—')}</td>
+                    <td style="font-size:12px;color:var(--ink-soft);">${escapeHtml(e.ref||'—')}</td>
+                    <td style="text-align:right;font-weight:700;color:${head.type==='receivable'?'var(--green)':'var(--red)'};">৳${money(e.amount)}</td>
+                  </tr>`).join('')}</tbody>
+                  <tfoot><tr style="font-weight:700;background:var(--paper-card);">
+                    <td colspan="5">Total</td>
+                    <td style="text-align:right;color:${head.type==='receivable'?'var(--green)':'var(--red)'};">৳${money(headTotal)}</td>
+                  </tr></tfoot>
+                </table>`
+              }
+            </div>`;
+          }).join('')
+      }
+    `;
+  }
+
+  refreshPlRpt();
+}
+
+
+/* ============================================================
+   🤝 LOANS & ADVANCES
+   ============================================================ */
+let loanAccountCtx = null; // null=new, id=edit
+let loanTxnCtx = null;     // accountId for new txn
+let loansSubTab = 'people';
+let loanStmtAccountId = null;
+
+function laNextNo(){
+  const max = db.loanAccounts.reduce((m,a)=>Math.max(m,Number(a.no||0)),0);
+  return max+1;
+}
+function laNoStr(n){ return 'LA-'+String(n).padStart(5,'0'); }
+
+function laTypeLabel(type){
+  return {advance_receivable:'Advance Receivable', borrowed_payable:'Borrowed Payable',
+          bank_loan:'Bank Loan', credit_card:'Credit Card'}[type]||type;
+}
+function laIsPersonal(type){ return type==='advance_receivable'||type==='borrowed_payable'; }
+
+// Outstanding = principal + interest - repayments
+function laOutstanding(accId){
+  const acc = db.loanAccounts.find(a=>a.id===accId); if(!acc) return 0;
+  const txns = db.loanTxns.filter(t=>t.accId===accId&&!t.deleted);
+  const principal = Number(acc.principal||0);
+  const disbursed = txns.filter(t=>t.type==='disbursement').reduce((s,t)=>s+Number(t.amount||0),0);
+  const interest  = txns.filter(t=>t.type==='interest').reduce((s,t)=>s+Number(t.amount||0),0);
+  const repaid    = txns.filter(t=>t.type==='repayment').reduce((s,t)=>s+Number(t.amount||0),0);
+  return principal + disbursed + interest - repaid;
+}
+function laStatus(acc){
+  const outstanding = laOutstanding(acc.id);
+  if(outstanding<=0) return 'Settled';
+  if(acc.dueDate && acc.dueDate < todayStr()) return 'Overdue';
+  return 'Active';
+}
+function laStatusColor(s){ return {Settled:'var(--green)', Overdue:'var(--red)', Active:'var(--ink)'}[s]||'var(--ink)'; }
+
+// ---------- Page ----------
+function renderLoansPage(){
+  const c = document.getElementById('content');
+  const accs = db.loanAccounts.filter(a=>!a.deleted);
+  const peopleAccs = accs.filter(a=>laIsPersonal(a.type));
+  const bankAccs   = accs.filter(a=>!laIsPersonal(a.type));
+
+  const advRec  = peopleAccs.filter(a=>a.type==='advance_receivable').reduce((s,a)=>s+Math.max(0,laOutstanding(a.id)),0);
+  const borPay  = peopleAccs.filter(a=>a.type==='borrowed_payable').reduce((s,a)=>s+Math.max(0,laOutstanding(a.id)),0);
+  const bankOut = bankAccs.reduce((s,a)=>s+Math.max(0,laOutstanding(a.id)),0);
+  const interest= db.loanTxns.filter(t=>!t.deleted&&t.type==='interest').reduce((s,t)=>s+Number(t.amount||0),0);
+
+  c.innerHTML = `
+    <!-- Header -->
+    <div class="panel" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding:16px 20px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;">🤝 Loans & Advances</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">Principal is tracked as receivable/payable—not income or expense.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn amber" id="laAddPersonBtn">+ Person Loan Account</button>
+        <button class="btn" style="background:var(--c2);color:#fff;" id="laAddBankBtn">+ Bank Loan / Card</button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+      <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Advance Receivable</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--green);">৳${money(advRec)}</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Borrowed Payable</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${borPay>0?'var(--red)':'var(--ink)'};">৳${money(borPay)}</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Bank / Card Outstanding</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${bankOut>0?'var(--red)':'var(--ink)'};">৳${money(bankOut)}</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Interest & Fees</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${interest>0?'var(--red)':'var(--ink)'};">৳${money(interest)}</div>
+      </div>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:16px;">
+      <button id="lsTabPeople" style="padding:9px 20px;border-radius:6px;border:1px solid var(--line);font-weight:600;font-size:14px;cursor:pointer;background:${loansSubTab==='people'?'var(--c1)':'#fff'};color:${loansSubTab==='people'?'#fff':'var(--ink)'};">People & Staff</button>
+      <button id="lsTabBank" style="padding:9px 20px;border-radius:6px;border:1px solid var(--line);font-weight:600;font-size:14px;cursor:pointer;background:${loansSubTab==='bank'?'var(--c1)':'#fff'};color:${loansSubTab==='bank'?'#fff':'var(--ink)'};">Bank Loans & Credit Cards</button>
+    </div>
+
+    <!-- Table Panel -->
+    <div class="panel">
+      <h3 style="margin:0 0 14px;">${loansSubTab==='people'?'People & Loan Accounts':'Bank Loan & Card Accounts'}</h3>
+      <div id="loanTableBody"></div>
+    </div>
+  `;
+
+  document.getElementById('laAddPersonBtn').addEventListener('click', ()=>openLoanAccountForm(null,'person'));
+  document.getElementById('laAddBankBtn').addEventListener('click', ()=>openLoanAccountForm(null,'bank'));
+  document.getElementById('lsTabPeople').addEventListener('click', ()=>{ loansSubTab='people'; renderLoansPage(); });
+  document.getElementById('lsTabBank').addEventListener('click', ()=>{ loansSubTab='bank'; renderLoansPage(); });
+  renderLoanTable(loansSubTab==='people'?peopleAccs:bankAccs);
+}
+
+function renderLoanTable(accs){
+  const el = document.getElementById('loanTableBody');
+  if(!el) return;
+  if(accs.length===0){
+    el.innerHTML=`<div class="empty"><div class="big">No accounts yet</div></div>`; return;
+  }
+  el.innerHTML = `
+    <table class="data">
+      <thead><tr>
+        <th>ACCOUNT / PERSON</th><th>TYPE</th><th>PURPOSE</th>
+        <th>DUE DATE</th><th>STATUS</th><th style="text-align:right;">OUTSTANDING</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${accs.map(acc=>{
+          const outstanding = laOutstanding(acc.id);
+          const status = laStatus(acc);
+          return `<tr>
+            <td style="font-weight:700;">${laNoStr(acc.no)} — ${escapeHtml(acc.name)}</td>
+            <td>${laTypeLabel(acc.type)}</td>
+            <td>${escapeHtml(acc.purpose||'—')}</td>
+            <td>${acc.dueDate?formatDateDMY(acc.dueDate):'—'}</td>
+            <td><span style="font-weight:600;color:${laStatusColor(status)};">${status}</span></td>
+            <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700;color:${outstanding>0?'var(--red)':'var(--green)'};">৳${money(outstanding)}</td>
+            <td>
+              <div class="actions-cell">
+                <button class="icon-btn" title="Statement" onclick="openLoanStatement('${acc.id}')">📋</button>
+                <button class="icon-btn" title="Add Transaction" onclick="openLoanTxnForm('${acc.id}')">+</button>
+                <button class="icon-btn" title="Edit" onclick="openLoanAccountForm('${acc.id}')">✏️</button>
+                <button class="icon-btn" title="Delete" onclick="deleteLoanAccount('${acc.id}')">🗑️</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// ---------- Account Form ----------
+function openLoanAccountForm(accId, mode){
+  loanAccountCtx = accId;
+  const acc = accId ? db.loanAccounts.find(a=>a.id===accId) : null;
+  const isBank = mode==='bank' || (acc && !laIsPersonal(acc.type));
+  const overlay = document.getElementById('loanAccountOverlay');
+  document.getElementById('loanAccountTitle').textContent = acc
+    ? 'Edit Account — '+acc.name
+    : (isBank ? 'New Bank Loan / Card Account' : 'New Person Loan Account');
+
+  const typeEl = document.getElementById('laType');
+  typeEl.innerHTML = isBank
+    ? `<option value="bank_loan">Bank Loan</option><option value="credit_card">Credit Card</option>`
+    : `<option value="advance_receivable">Advance Receivable (we give)</option><option value="borrowed_payable">Borrowed Payable (we take)</option>`;
+
+  document.getElementById('laName').value = acc?.name||'';
+  typeEl.value = acc?.type||(isBank?'bank_loan':'advance_receivable');
+  document.getElementById('laPhone').value = acc?.phone||'';
+  document.getElementById('laPurpose').value = acc?.purpose||'';
+  document.getElementById('laDueDate').value = acc?.dueDate||'';
+  document.getElementById('laPrincipal').value = acc?.principal||0;
+  document.getElementById('laEntryMode').value = acc?.entryMode||'opening';
+  document.getElementById('laNote').value = acc?.note||'';
+  document.getElementById('laSaveBtn').textContent = acc ? 'Save Changes' : 'Create Account';
+  overlay.classList.add('open');
+}
+document.getElementById('laCancelBtn').addEventListener('click',()=>{
+  document.getElementById('loanAccountOverlay').classList.remove('open'); loanAccountCtx=null;
+});
+setupOverlayBackdropClose('loanAccountOverlay',()=>{ loanAccountCtx=null; });
+document.getElementById('laSaveBtn').addEventListener('click', async()=>{
+  const name = document.getElementById('laName').value.trim();
+  if(!name){ alert('Please enter a name'); return; }
+  const type = document.getElementById('laType').value;
+  const principal = Number(document.getElementById('laPrincipal').value)||0;
+  const obj = {
+    name, type, phone: document.getElementById('laPhone').value.trim(),
+    purpose: document.getElementById('laPurpose').value.trim(),
+    dueDate: document.getElementById('laDueDate').value,
+    principal, entryMode: document.getElementById('laEntryMode').value,
+    note: document.getElementById('laNote').value.trim()
+  };
+  if(loanAccountCtx){
+    const acc = db.loanAccounts.find(a=>a.id===loanAccountCtx);
+    if(acc){ Object.assign(acc, obj); await safePut('loanAccounts', acc.id, acc); }
+  } else {
+    const acc = { id:uid(), no:laNextNo(), ts:Date.now(), ...obj };
+    db.loanAccounts.push(acc);
+    await safePut('loanAccounts', acc.id, acc);
+  }
+  document.getElementById('loanAccountOverlay').classList.remove('open');
+  loanAccountCtx=null;
+  renderNav(); renderPage();
+});
+async function deleteLoanAccount(accId){
+  if(!confirm('Delete this account and all its transactions?')) return;
+  db.loanTxns = db.loanTxns.filter(t=>t.accId!==accId);
+  db.loanAccounts = db.loanAccounts.filter(a=>a.id!==accId);
+  const txnIds = db.loanTxns.filter(t=>t.accId===accId).map(t=>t.id);
+  for(const id of txnIds) await safeRemove('loanTxns', id);
+  await safeRemove('loanAccounts', accId);
+  renderNav(); renderPage();
+}
+
+// ---------- Transaction Form ----------
+function openLoanTxnForm(accId, txnId){
+  loanTxnCtx = accId;
+  const acc = db.loanAccounts.find(a=>a.id===accId); if(!acc) return;
+  const txn = txnId ? db.loanTxns.find(t=>t.id===txnId) : null;
+  const outstanding = laOutstanding(accId);
+  document.getElementById('loanTxnTitle').textContent = txn ? 'Edit Transaction' : 'Add Transaction';
+  document.getElementById('loanTxnInfo').textContent = `${laNoStr(acc.no)} — ${acc.name} | Outstanding: ৳${money(outstanding)}`;
+  document.getElementById('ltType').value = txn?.type||'repayment';
+  document.getElementById('ltAmount').value = txn?.amount||'';
+  document.getElementById('ltMethod').value = txn?.method||'cash';
+  document.getElementById('ltDate').value = txn?.date||todayStr();
+  document.getElementById('ltNote').value = txn?.note||'';
+  document.getElementById('ltSaveBtn').dataset.txnId = txnId||'';
+  document.getElementById('loanTxnOverlay').classList.add('open');
+}
+document.getElementById('ltCancelBtn').addEventListener('click',()=>{
+  document.getElementById('loanTxnOverlay').classList.remove('open');
+});
+setupOverlayBackdropClose('loanTxnOverlay');
+document.getElementById('ltSaveBtn').addEventListener('click', async()=>{
+  const accId = loanTxnCtx; if(!accId) return;
+  const amount = Number(document.getElementById('ltAmount').value)||0;
+  if(amount<=0){ alert('Please enter an amount'); return; }
+  const txnId = document.getElementById('ltSaveBtn').dataset.txnId;
+  const obj = {
+    accId, type: document.getElementById('ltType').value,
+    amount, method: document.getElementById('ltMethod').value,
+    date: document.getElementById('ltDate').value||todayStr(),
+    note: document.getElementById('ltNote').value.trim()
+  };
+  if(txnId){
+    const txn = db.loanTxns.find(t=>t.id===txnId);
+    if(txn){ Object.assign(txn, obj); await safePut('loanTxns', txn.id, txn); }
+  } else {
+    const txn = { id:uid(), ts:Date.now(), ...obj };
+    db.loanTxns.push(txn);
+    await safePut('loanTxns', txn.id, txn);
+  }
+  document.getElementById('loanTxnOverlay').classList.remove('open');
+  renderNav(); renderPage();
+  // Refresh statement if open
+  if(document.getElementById('loanStmtOverlay').classList.contains('open') && loanStmtAccountId===accId)
+    openLoanStatement(accId);
+});
+
+// ---------- Statement ----------
+function openLoanStatement(accId){
+  loanStmtAccountId = accId;
+  const acc = db.loanAccounts.find(a=>a.id===accId); if(!acc) return;
+  const txns = db.loanTxns.filter(t=>t.accId===accId&&!t.deleted).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.ts-b.ts);
+  const outstanding = laOutstanding(accId);
+  const status = laStatus(acc);
+
+  let running = Number(acc.principal||0);
+  const rows = txns.map(t=>{
+    const amt = Number(t.amount||0);
+    if(t.type==='repayment') running -= amt;
+    else running += amt;
+    return `<tr>
+      <td style="white-space:nowrap;">${formatDateDMY(t.date)}</td>
+      <td>${{repayment:'✅ Repayment', interest:'💸 Interest/Fee', disbursement:'➕ Disbursement'}[t.type]||t.type}</td>
+      <td>${escapeHtml(t.note||'—')}</td>
+      <td style="text-align:right;color:${t.type==='repayment'?'var(--green)':'var(--red)'};font-weight:600;">
+        ${t.type==='repayment'?'−':'+'} ৳${money(amt)}
+      </td>
+      <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700;color:${running>0?'var(--red)':'var(--green)'};">৳${money(running)}</td>
+      <td class="no-print">
+        <div class="actions-cell">
+          <button class="icon-btn" onclick="openLoanTxnForm('${accId}','${t.id}')">✏️</button>
+          <button class="icon-btn" onclick="deleteLoanTxn('${t.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('loanStmtTitle').textContent = `${laNoStr(acc.no)} — ${acc.name}`;
+  document.getElementById('loanStmtBody').innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <div style="flex:1;min-width:120px;background:var(--paper-card);border-radius:8px;padding:10px 14px;">
+        <div style="font-size:11px;color:var(--ink-soft);">Type</div>
+        <div style="font-weight:700;">${laTypeLabel(acc.type)}</div>
+      </div>
+      ${acc.purpose?`<div style="flex:1;min-width:120px;background:var(--paper-card);border-radius:8px;padding:10px 14px;"><div style="font-size:11px;color:var(--ink-soft);">Purpose</div><div style="font-weight:700;">${escapeHtml(acc.purpose)}</div></div>`:''}
+      <div style="flex:1;min-width:120px;background:var(--paper-card);border-radius:8px;padding:10px 14px;">
+        <div style="font-size:11px;color:var(--ink-soft);">Status</div>
+        <div style="font-weight:700;color:${laStatusColor(status)};">${status}</div>
+      </div>
+      <div style="flex:1;min-width:120px;background:${outstanding>0?'var(--red-bg)':'var(--green-bg)'};border-radius:8px;padding:10px 14px;">
+        <div style="font-size:11px;color:var(--ink-soft);">Outstanding</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:${outstanding>0?'var(--red)':'var(--green)'};">৳${money(outstanding)}</div>
+      </div>
+    </div>
+    <table class="data">
+      <thead><tr>
+        <th>DATE</th><th>TYPE</th><th>NOTE</th>
+        <th style="text-align:right;">AMOUNT</th>
+        <th style="text-align:right;">BALANCE</th>
+        <th class="no-print"></th>
+      </tr></thead>
+      <tbody>
+        <tr style="background:var(--paper-card);font-size:12px;color:var(--ink-soft);">
+          <td>—</td><td>Opening Principal</td><td>—</td><td style="text-align:right;">৳${money(acc.principal||0)}</td>
+          <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">৳${money(acc.principal||0)}</td>
+          <td class="no-print"></td>
+        </tr>
+        ${rows.join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:12px;text-align:right;">
+      <button class="btn amber no-print" onclick="openLoanTxnForm('${accId}')">+ Add Transaction</button>
+    </div>
+  `;
+  document.getElementById('loanStmtOverlay').classList.add('open');
+}
+document.getElementById('loanStmtCloseBtn').addEventListener('click',()=>{
+  document.getElementById('loanStmtOverlay').classList.remove('open'); loanStmtAccountId=null;
+});
+document.getElementById('loanStmtPrintBtn').addEventListener('click', ()=>safePrint());
+setupOverlayBackdropClose('loanStmtOverlay',()=>{ loanStmtAccountId=null; });
+
+async function deleteLoanTxn(txnId){
+  if(!confirm('Delete this transaction?')) return;
+  const txn = db.loanTxns.find(t=>t.id===txnId);
+  const accId = txn?.accId;
+  db.loanTxns = db.loanTxns.filter(t=>t.id!==txnId);
+  await safeRemove('loanTxns', txnId);
+  renderNav(); renderPage();
+  if(accId && document.getElementById('loanStmtOverlay').classList.contains('open')) openLoanStatement(accId);
+}
+
 let returnsPageQuery = '';
 function renderReturnsPage(){
   const c = document.getElementById('content');
@@ -5423,11 +6391,13 @@ function renderReturnsPage(){
     }
     listEl.innerHTML = `
       <table class="data">
-        <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th>${t('return_status')}</th><th></th></tr></thead>
+        <thead><tr><th>${t('return_no')}</th><th>${t('col_date')}</th><th>${t('col_customer')}</th><th>${t('col_product')}</th><th>${t('return_qty_label')}</th><th>${t('return_value')}</th><th style="color:var(--red)">${t('lbl_due_cancelled')}</th><th style="color:var(--green)">${t('lbl_cash_refund')}</th><th>${t('return_status')}</th><th></th></tr></thead>
         <tbody>
           ${list.map(r => `<tr class="${r.cancelled?'':''}">
             <td>#${r.returnNo}</td><td>${formatDateDMY(r.date)}</td><td>${escapeHtml(r.customerName||t('walk_in'))}</td>
             <td>${escapeHtml(r.productName)}</td><td>${r.qty}</td><td>৳${money(r.value)}</td>
+            <td style="color:var(--red);font-weight:600;">${Number(r.dueAdjust)>0?'৳'+money(r.dueAdjust):'—'}</td>
+            <td style="color:var(--green);font-weight:700;">${Number(r.excessRefund)>0?'৳'+money(r.excessRefund):'—'}</td>
             <td><span class="pill ${r.cancelled?'red':'green'}">${r.cancelled?t('return_cancelled'):t('return_active')}</span></td>
             <td class="actions-cell">
               <button class="icon-btn" title="${t('view_title')}" onclick="openSaleView('${r.saleId}')">👁</button>
@@ -6164,15 +7134,15 @@ async function clearAllData(){
   const typed = prompt(t('clear_all_confirm2'));
   if(typed !== t('clear_all_confirm_word')) { alert(t('clear_all_aborted')); return; }
 
-  const collections = ['customers','suppliers','products','purchases','sales','expenses','installments','installmentPlans','returns'];
+  const collections = ['customers','suppliers','products','categories','groupMembers','groups','purchases','sales','expenses','installments','installmentPlans','returns','vendorPayments','ledgerHeads','ledgerEntries','loanAccounts','loanTxns'];
   for(const name of collections){
     const items = db[name];
     const ids = Array.isArray(items) ? items.map(x=>x.id) : Object.keys(items);
     for(const id of ids){ await safeRemove(name, id); }
   }
-  db.customers = {}; db.suppliers = {}; db.products = {};
+  db.customers = {}; db.suppliers = {}; db.products = {}; db.categories = {}; db.groupMembers = {}; db.groups = {};
   db.purchases = []; db.sales = []; db.expenses = [];
-  db.installments = []; db.installmentPlans = []; db.returns = [];
+  db.installments = []; db.installmentPlans = []; db.returns = []; db.vendorPayments = []; db.ledgerHeads = []; db.ledgerEntries = []; db.loanAccounts = []; db.loanTxns = [];
   try{ await storageSet(K.logo, null); }catch(e){}
   logoData = null;
 
