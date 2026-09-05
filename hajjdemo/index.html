@@ -3001,7 +3001,7 @@ function buildGroupAgentLedger(memberId,year){
   db.agentLedger.filter(x=>x.memberId===memberId).forEach(x=>{
     const method=x.cashDirection==='none'||!x.cashDirection?'—':paymentMethodLabel(x.paymentSystem||'cash')+(x.paymentAccountId?' — '+paymentAccountLabel(x.paymentAccountId):'');
     const context=[x.groupName||x.season,x.customerName].filter(Boolean).join(' / ')||'—';
-    rows.push({date:x.date,year:String(x.accountingYear||yearFromDate(x.date)),ts:Number(x.ts||0),order:5,ref:x.entryNo||'AGT',desc:(x.headName||'Agent Entry')+(x.note?' — '+x.note:''),debit:x.type==='debit'?Number(x.amount||0):0,credit:x.type==='credit'?Number(x.amount||0):0,method,context,source:'agent_manual',recordId:x.id,cashDirection:x.cashDirection||'none'});
+    rows.push({date:x.date,year:String(x.accountingYear||yearFromDate(x.date)),ts:Number(x.ts||0),order:5,ref:x.entryNo||'AGT',desc:(x.headName||'Agent Entry')+(x.note?' — '+x.note:''),debit:x.type==='debit'?Number(x.amount||0):0,credit:x.type==='credit'?Number(x.amount||0):0,method,context,source:'agent_manual',recordId:x.id,cashDirection:x.cashDirection||'none',type:x.type||'debit',refundedBy:x.refundedBy||null,refundFor:x.refundFor||null});
   });
   rows.sort((a,b)=>{
     // 1. Date ascending
@@ -3118,7 +3118,40 @@ function buildGroupAgentStatementHtml(memberId,year,dateFrom,dateTo,limit){
     +'</tr></table>';
   if(rows.length===0) return cards+'<div class="empty"><div class="big">'+t('grp_no_transactions')+'</div></div>';
   const viewRows=limit?rows.slice(-limit):rows;
-  const body = viewRows.map(r=>'<tr><td style="white-space:nowrap">'+formatDateDMY(r.date)+'</td><td style="white-space:nowrap">'+escapeHtml(r.ref)+'</td><td style="overflow:hidden;word-break:break-word;white-space:normal"><strong style="font-size:13px">'+escapeHtml(r.desc)+'</strong><br><small style="font-size:10px;color:#6b7280">'+escapeHtml(r.context||'—')+'</small></td><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(r.method)+'</td><td>'+(r.debit?'৳'+money(r.debit):'—')+'</td><td>'+(r.credit?'৳'+money(r.credit):'—')+'</td><td>'+agentBalanceHtml(r.filteredBalance)+'</td><td>'+(r.saleId?'<button style="font-size:11px;padding:3px 8px;background:#1B6B3A;color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="openSaleView(\''+r.saleId+'\')" title="Invoice">👁 Invoice</button>':'')+(r.source==='agent_manual'?'<button style="font-size:11px;padding:3px 8px;background:#1B6B3A;color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="printAgentLedgerVoucher(\''+r.recordId+'\',\''+memberId+'\')" title="Invoice Print">👁 Invoice</button>':'')+(r.source==='agent_manual'&&hasPermission('edit_records')?'<button class="icon-btn" onclick="openAgentLedgerEntry(\''+memberId+'\',null,\''+r.recordId+'\')" title="Edit">✏️</button>':'')+(r.source==='agent_manual'&&hasPermission('delete_records')?'<button class="icon-btn" data-permission="delete_records" onclick="deleteAgentLedgerEntry(\''+r.recordId+'\',\''+memberId+'\')" title="Delete">🗑️</button>':'')+'</td></tr>').join('');
+    const body = viewRows.map(r=>{
+    const isAgt = r.source==='agent_manual';
+    const invoiceBtn = r.saleId
+      ? '<button style="font-size:11px;padding:3px 7px;background:#1B6B3A;color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="openSaleView(\''+r.saleId+'\')">👁 Invoice</button>'
+      : isAgt
+        ? '<button style="font-size:11px;padding:3px 7px;background:#1B6B3A;color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="printAgentLedgerVoucher(\''+r.recordId+'\',\''+memberId+'\')">👁 Invoice</button>'
+        : '';
+    const refundBtn = isAgt&&r.type==='debit'&&!r.refundedBy
+      ? '<button class="refund-btn" data-rid="'+r.recordId+'" data-mid="'+memberId+'" style="font-size:11px;padding:3px 7px;background:#b4423a;color:#fff;border:none;border-radius:4px;cursor:pointer">↩ Refund</button>'
+      : '';
+    const editBtn = isAgt&&hasPermission('edit_records')
+      ? '<button class="icon-btn" onclick="openAgentLedgerEntry(\''+memberId+'\',null,\''+r.recordId+'\')">✏️</button>'
+      : '';
+    const delBtn = isAgt&&hasPermission('delete_records')
+      ? '<button class="icon-btn" onclick="deleteAgentLedgerEntry(\''+r.recordId+'\',\''+memberId+'\')">🗑️</button>'
+      : '';
+    const actions = '<td><div style="display:grid;grid-template-columns:auto auto;gap:3px;">'+invoiceBtn+refundBtn+editBtn+delBtn+'</div></td>';
+    return '<tr>'
+      +'<td style="white-space:nowrap">'+formatDateDMY(r.date)+'</td>'
+      +'<td style="white-space:nowrap">'+escapeHtml(r.ref)+'</td>'
+      +'<td style="overflow:hidden;word-break:break-word;white-space:normal"><strong style="font-size:13px">'+escapeHtml(r.desc)+'</strong><br><small style="font-size:10px;color:#6b7280">'+escapeHtml(r.context||'—')+'</small></td>'
+      +'<td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(r.method)+'</td>'
+      +'<td>'+(r.debit?'৳'+money(r.debit):'—')+'</td>'
+      +'<td>'+(r.credit?'৳'+money(r.credit):'—')+'</td>'
+      +'<td>'+agentBalanceHtml(r.filteredBalance)+'</td>'
+      +actions
+      +'</tr>';
+  }).join('');
+  // Event delegation for refund buttons (avoids escaping issues)
+  setTimeout(()=>{
+    document.querySelectorAll('.refund-btn').forEach(btn=>{
+      btn.onclick = ()=>openAgentLedgerRefund(btn.dataset.rid, btn.dataset.mid);
+    });
+  }, 50);
   return cards+'<div class="agent-statement-table-wrap"><table class="data" style="table-layout:fixed;width:100%;"><colgroup><col style="width:90px"><col style="width:85px"><col style="width:200px"><col style="width:110px"><col style="width:95px"><col style="width:105px"><col style="width:115px"><col style="width:110px"></colgroup><thead><tr><th>'+t('col_date')+'</th><th>'+t('grp_reference')+'</th><th>'+t('grp_description')+' / Lot</th><th>'+t('grp_method')+'</th><th>Debit</th><th>Credit</th><th>Balance</th><th></th></tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 
@@ -3348,6 +3381,169 @@ function printAgentLedgerVoucher(recordId, memberId){
     </div>`;
   printIsolated('Service Invoice — '+rec.entryNo, html);
 }
+
+/* ============ AGENT LEDGER REFUND / CANCEL ============ */
+function openAgentLedgerRefund(recordId, memberId){
+  if(!requirePermission('create_records')) return;
+  const rec = db.agentLedger.find(x=>x.id===recordId);
+  const member = db.groupMembers[memberId];
+  if(!rec||!member) return;
+
+  const html = `<div class="overlay open" id="agtRefundOverlay" style="z-index:195;">
+    <div class="modal" style="max-width:520px;">
+      <h2>↩ Cancel / Refund — ${escapeHtml(rec.headName||'Service')}</h2>
+      <div style="background:var(--paper-alt);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="color:var(--ink-soft);">Original Entry:</span>
+          <strong>${escapeHtml(rec.headName||'—')} — ${formatDateDMY(rec.date)}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--ink-soft);">Original Amount:</span>
+          <strong style="color:#b4423a;">৳${money(rec.amount)}</strong>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Govt / Provider Charge (৳)</label>
+          <input type="number" id="arGovt" value="0" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Service Charge (৳)</label>
+          <input type="number" id="arService" value="0" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Agency Charge (৳)</label>
+          <input type="number" id="arAgency" value="0" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Other Charge (৳)</label>
+          <input type="number" id="arOther" value="0" min="0" placeholder="0">
+        </div>
+      </div>
+
+      <div style="background:#111827;color:#fff;border-radius:8px;padding:12px 16px;margin:12px 0;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:13px;">Net Refund Amount</span>
+        <span id="arNetDisplay" style="font-size:22px;font-weight:800;color:#4ade80;">৳${money(rec.amount)}</span>
+      </div>
+
+      <div class="field">
+        <label>Settlement Method</label>
+        <select id="arSettlement">
+          <option value="ledger_credit">Ledger Credit (Due কমবে)</option>
+          <option value="cash">Cash ফেরত</option>
+          <option value="bank">Bank ফেরত</option>
+          <option value="mobile_banking">Mobile Banking ফেরত</option>
+        </select>
+      </div>
+      <div class="field" id="arAccountField" style="display:none;">
+        <label>Account</label>
+        <select id="arAccount"></select>
+      </div>
+      <div class="field">
+        <label>তারিখ</label>
+        <input type="date" id="arDate" value="${todayStr()}">
+      </div>
+      <div class="field">
+        <label>Note (ঐচ্ছিক)</label>
+        <input type="text" id="arNote" placeholder="যেমন: Biman cancel — weather issue">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn ghost" id="arCancel">বাতিল</button>
+        <button class="btn" style="background:#b4423a;color:#fff;" id="arSave">✅ Refund নিশ্চিত করো</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+  const overlay = document.getElementById('agtRefundOverlay');
+
+  // Net calculation
+  function calcNet(){
+    const govt = Number(document.getElementById('arGovt').value)||0;
+    const service = Number(document.getElementById('arService').value)||0;
+    const agency = Number(document.getElementById('arAgency').value)||0;
+    const other = Number(document.getElementById('arOther').value)||0;
+    const net = Math.max(0, rec.amount - govt - service - agency - other);
+    document.getElementById('arNetDisplay').textContent = '৳'+money(net);
+    return net;
+  }
+  ['arGovt','arService','arAgency','arOther'].forEach(id=>document.getElementById(id).oninput=calcNet);
+
+  // Settlement change
+  document.getElementById('arSettlement').onchange = async function(){
+    const val = this.value;
+    const field = document.getElementById('arAccountField');
+    if(['cash','bank','mobile_banking'].includes(val)){
+      field.style.display='block';
+      await refreshPaymentAccountSelect('arSettlement','arAccount');
+    } else {
+      field.style.display='none';
+    }
+  };
+
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  document.getElementById('arCancel').onclick = ()=>overlay.remove();
+
+  document.getElementById('arSave').onclick = async ()=>{
+    const govt = Number(document.getElementById('arGovt').value)||0;
+    const service = Number(document.getElementById('arService').value)||0;
+    const agency = Number(document.getElementById('arAgency').value)||0;
+    const other = Number(document.getElementById('arOther').value)||0;
+    const net = calcNet();
+    const settlement = document.getElementById('arSettlement').value;
+    const date = document.getElementById('arDate').value||todayStr();
+    const note = document.getElementById('arNote').value.trim();
+    const paymentAccountId = document.getElementById('arAccount')?.value||'';
+    const totalCharge = govt+service+agency+other;
+
+    // 1. Mark original as refunded
+    rec.refundedBy = 'pending';
+    rec.refundDate = date;
+
+    // 2. Delete any previous wrong refund entries for this original record
+    const prevRefunds = db.agentLedger.filter(x=>x.refundFor===recordId);
+    for(const pr of prevRefunds){
+      db.agentLedger = db.agentLedger.filter(x=>x.id!==pr.id);
+      await safeRemove('agentLedger', pr.id);
+    }
+    // Also reset original's refundedBy so we can re-refund
+    rec.refundedBy = null;
+
+    // 3. Create refund/credit entry
+    const cashDir = settlement==='ledger_credit'?'none':(settlement==='cash'?'out':'out');
+    const refundRec = {
+      id:uid(), entryNo:nextAgentLedgerNo(), memberId, memberName:member.name,
+      type:'credit', headId:rec.headId, headName:(rec.headName||'Service')+' Refund',
+      qty:1, rate:net, amount:net,
+      date, accountingYear:String(yearFromDate(date)),
+      season:rec.season||'', groupId:rec.groupId||null, groupName:rec.groupName||'',
+      cashDirection:cashDir,
+      paymentSystem:settlement==='ledger_credit'?'':settlement,
+      paymentAccountId:settlement==='ledger_credit'?'':paymentAccountId,
+      paymentAccountName:settlement==='ledger_credit'?'':paymentAccountLabel(paymentAccountId),
+      note:note||('Refund for '+escapeHtml(rec.headName||'')),
+      createdBy:currentUserEmail(), ts:Date.now()+1, refundFor:recordId
+    };
+    db.agentLedger.push(refundRec);
+    await safePut('agentLedger', refundRec.id, refundRec);
+
+    // 4. Mark original as refunded
+    rec.refundedBy = refundRec.id;
+    await safePut('agentLedger', rec.id, rec);
+
+    // 5. Update member due
+    member.due = calculateGroupMemberDueFromLedger(memberId);
+    await safePut('groupMembers', memberId, member);
+
+    overlay.remove();
+    showToast('✅ Refund সম্পন্ন হয়েছে!');
+    openGroupMemberReport(memberId, 'ledger');
+  };
+}
+/* ============ END AGENT LEDGER REFUND ============ */
+
 async function deleteAgentLedgerEntry(id,memberId){
   if(!requirePermission('delete_records'))return;if(!confirm(t('confirm_delete')))return;
   db.agentLedger=db.agentLedger.filter(x=>x.id!==id);await safeRemove('agentLedger',id);const m=db.groupMembers[memberId];if(m){m.due=calculateGroupMemberDueFromLedger(memberId);await safePut('groupMembers',memberId,m);}openGroupMemberReport(memberId,'ledger');
